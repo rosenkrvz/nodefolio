@@ -1,44 +1,50 @@
 <!doctype html>
 <html lang="en" class="dark">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <script>
-      // Defensive guard against scripts attempting to assign window.fetch in strict mode
-      // when window.fetch only has a getter in sandboxed iframe environments
-      try {
-        const currentFetch = window.fetch ? window.fetch.bind(window) : undefined;
-        let activeFetch = currentFetch;
-        Object.defineProperty(window, 'fetch', {
-          get() {
-            return activeFetch;
-          },
-          set(newFetch) {
-            activeFetch = newFetch;
-          },
-          configurable: true,
-          enumerable: true,
-        });
-      } catch (err) {
-        // Safe fallback
-      }
-    </script>
-    <title>Shubham Sharma — Nodefolio v0.4.2</title>
-    <meta name="description" content="Computational portfolio of Shubham Sharma. AI & Data Science Engineer exploring generative architectures, distributed neural pipelines, and interactive graph systems." />
-    <meta property="og:title" content="Shubham Sharma — Nodefolio v0.4.2" />
-    <meta property="og:description" content="Computational portfolio of Shubham Sharma. AI & Data Science Engineer exploring generative architectures, distributed neural pipelines, and interactive graph systems." />
-    <meta property="og:type" content="website" />
-    <meta name="twitter:card" content="summary_large_image" />
-    <link rel="preconnect" href="https://api.fontshare.com">
-    <link href="https://api.fontshare.com/v2/css?f[]=satoshi@900,700,600,500,400&display=swap" rel="stylesheet">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Dongle:wght@300;400;700&family=Josefin+Sans:ital,wght@0,300;0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
-  </head>
-  <body class="bg-[#181c21] text-[#eaeaea] antialiased overflow-hidden select-none">
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
-</html>
 
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <script>
+    // Defensive guard against scripts attempting to assign window.fetch in strict mode
+    // when window.fetch only has a getter in sandboxed iframe environments
+    try {
+      const currentFetch = window.fetch ? window.fetch.bind(window) : undefined;
+      let activeFetch = currentFetch;
+      Object.defineProperty(window, 'fetch', {
+        get() {
+          return activeFetch;
+        },
+        set(newFetch) {
+          activeFetch = newFetch;
+        },
+        configurable: true,
+        enumerable: true,
+      });
+    } catch (err) {
+      // Safe fallback
+    }
+  </script>
+  <title>Shubham Sharma — Nodefolio v0.4.2</title>
+  <meta name="description"
+    content="Computational portfolio of Shubham Sharma. AI & Data Science Engineer exploring generative architectures, distributed neural pipelines, and interactive graph systems." />
+  <meta property="og:title" content="Shubham Sharma — Nodefolio v0.4.2" />
+  <meta property="og:description"
+    content="Computational portfolio of Shubham Sharma. AI & Data Science Engineer exploring generative architectures, distributed neural pipelines, and interactive graph systems." />
+  <meta property="og:type" content="website" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <link rel="preconnect" href="https://api.fontshare.com">
+  <link href="https://api.fontshare.com/v2/css?f[]=satoshi@900,700,600,500,400&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500;600&display=swap"
+    rel="stylesheet">
+</head>
+
+<body class="bg-[#181c21] text-[#eaeaea] antialiased overflow-hidden select-none">
+  <div id="root"></div>
+  <script type="module" src="/src/main.tsx"></script>
+</body>
+
+</html>

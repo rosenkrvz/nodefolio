@@ -1,3 +1,4 @@
+import React, { useState, useEffect } from 'react';
 import {
   RotateCcw,
   Mail,
@@ -31,10 +32,10 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
   activeView,
   onToggleView,
 }) => {
-  const [copied, setCopied] = React.useState(false);
-  const [timeStr, setTimeStr] = React.useState('');
+  const [copied, setCopied] = useState(false);
+  const [timeStr, setTimeStr] = useState('');
 
-  React.useEffect(() => {
+  useEffect(() => {
     const update = () => {
       setTimeStr(
         new Date().toLocaleTimeString('en-US', {
