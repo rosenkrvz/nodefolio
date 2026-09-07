@@ -1,14 +1,6 @@
 import React from 'react';
 import { Connection } from '../types';
 
-interface DragWireState {
-  fromPinId: string;
-  fromX: number;
-  fromY: number;
-  currentX: number;
-  currentY: number;
-}
-
 interface SplineWiresProps {
   connections: Connection[];
   pinPositions: Record<string, { x: number; y: number }>;
@@ -16,8 +8,6 @@ interface SplineWiresProps {
   wireStyle: 'glow' | 'minimal' | 'cyber';
   activeConnectionId: string | null;
   onSelectConnection?: (id: string | null) => void;
-  onDetachConnection?: (id: string) => void;
-  dragWire?: DragWireState | null;
 }
 
 export const SplineWires: React.FC<SplineWiresProps> = ({
@@ -27,8 +17,6 @@ export const SplineWires: React.FC<SplineWiresProps> = ({
   wireStyle,
   activeConnectionId,
   onSelectConnection,
-  onDetachConnection,
-  dragWire,
 }) => {
   return (
     <svg
@@ -54,7 +42,6 @@ export const SplineWires: React.FC<SplineWiresProps> = ({
         </filter>
       </defs>
 
-      {/* Existing established connections */}
       {connections.map((conn) => {
         const fromPos = pinPositions[conn.fromPinId];
         const toPos = pinPositions[conn.toPinId];
@@ -84,22 +71,15 @@ export const SplineWires: React.FC<SplineWiresProps> = ({
         return (
           <g
             key={conn.id}
-            className="cursor-pointer pointer-events-auto transition-all duration-200 group"
-            onClick={(e) => {
-              e.stopPropagation();
-              onSelectConnection && onSelectConnection(conn.id);
-            }}
-            onDoubleClick={(e) => {
-              e.stopPropagation();
-              onDetachConnection && onDetachConnection(conn.id);
-            }}
+            className="cursor-pointer pointer-events-auto transition-all duration-200"
+            onClick={() => onSelectConnection && onSelectConnection(conn.id)}
           >
             {/* Wider transparent hit zone for effortless clicking/hovering */}
             <path
               d={pathData}
               fill="none"
               stroke="transparent"
-              strokeWidth={18}
+              strokeWidth={16}
               className="pointer-events-stroke"
             />
 
@@ -109,8 +89,8 @@ export const SplineWires: React.FC<SplineWiresProps> = ({
                 d={pathData}
                 fill="none"
                 stroke={baseColor}
-                strokeWidth={isSelected ? 5 : 3}
-                strokeOpacity={isSelected ? 0.45 : 0.12}
+                strokeWidth={isSelected ? 5 : 3.5}
+                strokeOpacity={isSelected ? 0.4 : 0.15}
                 filter="url(#wire-glow-filter)"
                 strokeLinecap="round"
               />
@@ -121,15 +101,15 @@ export const SplineWires: React.FC<SplineWiresProps> = ({
               d={pathData}
               fill="none"
               stroke={isSelected ? '#ffffff' : baseColor}
-              strokeWidth={isSelected ? 2 : 1.3}
-              strokeOpacity={isSelected ? 0.95 : 0.5}
+              strokeWidth={isSelected ? 2 : 1.5}
+              strokeOpacity={isSelected ? 0.95 : 0.55}
               strokeDasharray={wireStyle === 'cyber' ? '6, 6' : undefined}
               strokeLinecap="round"
-              className="transition-all duration-150 group-hover:stroke-white group-hover:stroke-[1.8]"
+              className="transition-all duration-150"
             />
 
             {/* Animated signal pulses flowing along spline */}
-            {(conn.animated || isSimulating || isSelected) && (
+            {(conn.animated || isSimulating) && (
               <>
                 {/* Secondary flowing energy line */}
                 <path
@@ -138,7 +118,7 @@ export const SplineWires: React.FC<SplineWiresProps> = ({
                   stroke="#ffffff"
                   strokeWidth={1.5}
                   strokeDasharray="6, 32"
-                  strokeOpacity={0.75}
+                  strokeOpacity={0.7}
                   strokeLinecap="round"
                 >
                   <animate
@@ -158,85 +138,28 @@ export const SplineWires: React.FC<SplineWiresProps> = ({
                     rotate="auto"
                   />
                 </circle>
+
+                {/* Second staggered packet */}
+                {isSimulating && (
+                  <circle r={2} fill={baseColor} filter="url(#wire-glow-filter)">
+                    <animateMotion
+                      path={pathData}
+                      dur="2.2s"
+                      begin="1.1s"
+                      repeatCount="indefinite"
+                      rotate="auto"
+                    />
+                  </circle>
+                )}
               </>
             )}
 
             {/* Origin & target contact dots */}
             <circle cx={x1} cy={y1} r={2.5} fill={baseColor} />
             <circle cx={x2} cy={y2} r={2.5} fill={baseColor} />
-
-            {/* Detach Wire Indicator on selection */}
-            {isSelected && (
-              <g
-                transform={`translate(${(x1 + x2) / 2}, ${(y1 + y2) / 2})`}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDetachConnection && onDetachConnection(conn.id);
-                }}
-                className="cursor-pointer"
-              >
-                <rect
-                  x="-36"
-                  y="-10"
-                  width="72"
-                  height="20"
-                  rx="6"
-                  fill="#000000"
-                  stroke="#e11d48"
-                  strokeWidth="1"
-                />
-                <text
-                  x="0"
-                  y="3"
-                  fill="#ffffff"
-                  fontSize="9"
-                  fontFamily="sans-serif"
-                  fontWeight="600"
-                  textAnchor="middle"
-                >
-                  Detach Wire
-                </text>
-              </g>
-            )}
           </g>
         );
       })}
-
-      {/* Dynamic Dragging Wire (when dragging from a port) */}
-      {dragWire && (
-        <g className="pointer-events-none">
-          {(() => {
-            const x1 = dragWire.fromX;
-            const y1 = dragWire.fromY;
-            const x2 = dragWire.currentX;
-            const y2 = dragWire.currentY;
-            const deltaX = Math.abs(x2 - x1);
-            const controlDist = Math.max(60, deltaX * 0.5);
-            const pathData = `M ${x1} ${y1} C ${x1 + controlDist} ${y1}, ${x2 - controlDist} ${y2}, ${x2} ${y2}`;
-
-            return (
-              <>
-                <path
-                  d={pathData}
-                  fill="none"
-                  stroke="#e11d48"
-                  strokeWidth={4}
-                  strokeOpacity={0.4}
-                  filter="url(#wire-glow-filter)"
-                />
-                <path
-                  d={pathData}
-                  fill="none"
-                  stroke="#ffffff"
-                  strokeWidth={2}
-                  strokeDasharray="4, 4"
-                />
-                <circle cx={x2} cy={y2} r={4} fill="#e11d48" stroke="#ffffff" strokeWidth={1.5} />
-              </>
-            );
-          })()}
-        </g>
-      )}
     </svg>
   );
 };

@@ -7,7 +7,6 @@ import {
   Activity,
   SlidersHorizontal,
   Clock as ClockIcon,
-  FileText,
 } from 'lucide-react';
 
 interface TopNavbarProps {
@@ -17,12 +16,9 @@ interface TopNavbarProps {
   onToggleSimulate: () => void;
   onResetGraph: () => void;
   onOpenContact: () => void;
-  onOpenResume?: () => void;
   onFocusClock?: () => void;
   activeView: 'canvas' | 'list' | 'timeline';
   onToggleView: (view: 'canvas' | 'list' | 'timeline') => void;
-  activeNavTab: 'home' | 'network' | 'projects' | 'lab' | 'notebook' | 'about';
-  onSelectNavTab: (tab: 'home' | 'network' | 'projects' | 'lab' | 'notebook' | 'about') => void;
 }
 
 export const TopNavbar: React.FC<TopNavbarProps> = ({
@@ -32,12 +28,9 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
   onToggleSimulate,
   onResetGraph,
   onOpenContact,
-  onOpenResume,
   onFocusClock,
   activeView,
   onToggleView,
-  activeNavTab,
-  onSelectNavTab,
 }) => {
   const [copied, setCopied] = useState(false);
   const [timeStr, setTimeStr] = useState('');
@@ -64,196 +57,145 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
   };
 
   return (
-    <header className="fixed top-0 inset-x-0 h-16 z-50 flex items-center justify-between px-4 sm:px-8 md:px-10 bg-[#090b10]/90 backdrop-blur-md border-b border-white/[0.08] pointer-events-auto select-none">
-      {/* Brand Identity / Geometric Designed Monogram Logo */}
-      <div className="flex items-center gap-4">
-        <button
-          type="button"
-          onClick={() => onSelectNavTab('home')}
-          className="flex items-center gap-3 text-left group"
-        >
-          {/* Geometric Designed Monogram SVG (Matches reference image) */}
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-white/[0.08] to-white/[0.02] border border-white/15 group-hover:border-rose-500/50 flex items-center justify-center shadow-lg transition-colors shrink-0">
-            <svg
-              className="w-4 h-4 text-white group-hover:text-rose-400 transition-colors"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.4"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M7 6h10a3 3 0 0 1 0 6H9a3 3 0 0 0 0 6h10" />
-            </svg>
+    <header className="absolute top-0 inset-x-0 h-14 z-40 flex items-center justify-between px-3 sm:px-6 md:px-8 bg-[#14171c]/85 backdrop-blur-md border-b border-white/[0.08] pointer-events-auto select-none">
+      {/* Brand Identity / Monogram */}
+      <div className="flex items-center gap-3 sm:gap-5">
+        <div className="flex items-center gap-2.5">
+          <div className="w-7 h-7 rounded-lg bg-white/[0.04] border border-white/[0.1] flex items-center justify-center font-display text-xs text-zinc-200 font-bold tracking-wider shadow-inner">
+            SS
           </div>
-
           <div>
             <div className="flex items-center gap-1.5 leading-none">
-              <span className="font-display text-xs sm:text-sm font-bold text-white tracking-widest uppercase">
+              <span className="font-display text-sm font-bold text-white tracking-wider uppercase">
                 SHUBHAM SHARMA
               </span>
-              <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shadow-[0_0_6px_#f43f5e]" />
+              <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
             </div>
-            <span className="font-body text-[10px] font-semibold text-zinc-400 tracking-wider uppercase block mt-1">
+            <span className="font-body text-[10px] font-medium text-zinc-400 tracking-wider uppercase block mt-0.5">
               AI • DATA • SYSTEMS
             </span>
           </div>
+        </div>
+
+        {/* View Switcher: Graph Canvas / Index Catalog / Timeline */}
+        <div className="hidden sm:flex items-center p-0.5 rounded-lg bg-white/[0.04] border border-white/[0.07] text-xs font-body ml-2">
+          <button
+            type="button"
+            onClick={() => onToggleView('canvas')}
+            className={`px-3 py-1 rounded-md transition-all text-xs ${
+              activeView === 'canvas'
+                ? 'bg-white/10 text-white font-medium shadow-sm'
+                : 'text-zinc-400 hover:text-white'
+            }`}
+          >
+            Graph Canvas
+          </button>
+          <button
+            type="button"
+            onClick={() => onToggleView('list')}
+            className={`px-3 py-1 rounded-md transition-all text-xs ${
+              activeView === 'list'
+                ? 'bg-white/10 text-white font-medium shadow-sm'
+                : 'text-zinc-400 hover:text-white'
+            }`}
+          >
+            Index Catalog
+          </button>
+          <button
+            type="button"
+            onClick={() => onToggleView('timeline')}
+            className={`px-3 py-1 rounded-md transition-all text-xs ${
+              activeView === 'timeline'
+                ? 'bg-white/10 text-white font-medium shadow-sm'
+                : 'text-zinc-400 hover:text-white'
+            }`}
+          >
+            Timeline
+          </button>
+        </div>
+      </div>
+
+      {/* Center / Filter: Preset View */}
+      <div className="hidden lg:flex items-center gap-2">
+        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/[0.03] border border-white/[0.07] text-xs">
+          <SlidersHorizontal className="w-3 h-3 text-rose-400" />
+          <span className="font-body text-[11px] text-zinc-400 uppercase tracking-wider font-semibold">View:</span>
+          <select
+            value={activePreset}
+            onChange={(e) => onSelectPreset(e.target.value)}
+            className="bg-transparent text-zinc-200 font-body text-xs focus:outline-none cursor-pointer pr-1 font-medium"
+          >
+            <option value="all" className="bg-[#181c21]">Complete Network</option>
+            <option value="skills" className="bg-[#181c21]">Architecture & Models</option>
+            <option value="certificates" className="bg-[#181c21]">Academic Foundation</option>
+            <option value="project" className="bg-[#181c21]">Latent Graph Artifact</option>
+          </select>
+        </div>
+
+        <button
+          type="button"
+          onClick={onResetGraph}
+          className="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-white/[0.06] transition-colors"
+          title="Reset Graph Layout & Perspective"
+        >
+          <RotateCcw className="w-3.5 h-3.5" />
         </button>
       </div>
 
-      {/* Center Navigation Links (Matching reference screenshot) */}
-      <nav aria-label="Main Navigation" className="hidden md:flex items-center gap-1 text-xs font-body font-semibold">
-        <button
-          type="button"
-          onClick={() => onSelectNavTab('home')}
-          className={`px-3 py-1.5 rounded-full transition-all flex items-center gap-1.5 ${
-            activeNavTab === 'home'
-              ? 'text-white bg-white/[0.08] border border-white/10'
-              : 'text-zinc-400 hover:text-white'
-          }`}
-        >
-          <span className={`w-1.5 h-1.5 rounded-full ${activeNavTab === 'home' ? 'bg-rose-500 shadow-[0_0_6px_#f43f5e]' : 'bg-transparent'}`} />
-          <span className="tracking-wider uppercase">HOME</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => onSelectNavTab('network')}
-          className={`px-3 py-1.5 rounded-full transition-all flex items-center gap-1.5 ${
-            activeNavTab === 'network'
-              ? 'text-white bg-white/[0.08] border border-white/10'
-              : 'text-zinc-400 hover:text-white'
-          }`}
-        >
-          <span className={`w-1.5 h-1.5 rounded-full ${activeNavTab === 'network' ? 'bg-rose-500 shadow-[0_0_6px_#f43f5e]' : 'bg-transparent'}`} />
-          <span className="tracking-wider uppercase">NETWORK</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => onSelectNavTab('projects')}
-          className={`px-3 py-1.5 rounded-full transition-all flex items-center gap-1.5 ${
-            activeNavTab === 'projects'
-              ? 'text-white bg-white/[0.08] border border-white/10'
-              : 'text-zinc-400 hover:text-white'
-          }`}
-        >
-          <span className="tracking-wider uppercase">PROJECTS</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => onSelectNavTab('lab')}
-          className={`px-3 py-1.5 rounded-full transition-all flex items-center gap-1.5 ${
-            activeNavTab === 'lab'
-              ? 'text-white bg-white/[0.08] border border-white/10'
-              : 'text-zinc-400 hover:text-white'
-          }`}
-        >
-          <span className="tracking-wider uppercase">LAB</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => onSelectNavTab('notebook')}
-          className={`px-3 py-1.5 rounded-full transition-all flex items-center gap-1.5 ${
-            activeNavTab === 'notebook'
-              ? 'text-white bg-white/[0.08] border border-white/10'
-              : 'text-zinc-400 hover:text-white'
-          }`}
-        >
-          <span className="tracking-wider uppercase">NOTEBOOK</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => onSelectNavTab('about')}
-          className={`px-3 py-1.5 rounded-full transition-all flex items-center gap-1.5 ${
-            activeNavTab === 'about'
-              ? 'text-white bg-white/[0.08] border border-white/10'
-              : 'text-zinc-400 hover:text-white'
-          }`}
-        >
-          <span className="tracking-wider uppercase">ABOUT</span>
-        </button>
-      </nav>
-
       {/* Right Controls */}
-      <div className="flex items-center gap-2.5 font-body">
-        {/* View Switcher for Workspace (Canvas / Index Catalog / Timeline) */}
-        {activeNavTab !== 'home' && (
-          <div className="hidden xl:flex items-center p-0.5 rounded-lg bg-white/[0.04] border border-white/[0.08] text-xs">
-            <button
-              type="button"
-              onClick={() => onToggleView('canvas')}
-              className={`px-2.5 py-1 rounded-md transition-all text-xs font-medium ${
-                activeView === 'canvas' ? 'bg-white/10 text-white shadow-sm' : 'text-zinc-400 hover:text-white'
-              }`}
-            >
-              Canvas
-            </button>
-            <button
-              type="button"
-              onClick={() => onToggleView('list')}
-              className={`px-2.5 py-1 rounded-md transition-all text-xs font-medium ${
-                activeView === 'list' ? 'bg-white/10 text-white shadow-sm' : 'text-zinc-400 hover:text-white'
-              }`}
-            >
-              Index
-            </button>
-            <button
-              type="button"
-              onClick={() => onToggleView('timeline')}
-              className={`px-2.5 py-1 rounded-md transition-all text-xs font-medium ${
-                activeView === 'timeline' ? 'bg-white/10 text-white shadow-sm' : 'text-zinc-400 hover:text-white'
-              }`}
-            >
-              Timeline
-            </button>
-          </div>
-        )}
-
-        {/* Live Clock button */}
+      <div className="flex items-center gap-2 font-body">
+        {/* Live Clock Button */}
         <button
           type="button"
           onClick={onFocusClock}
-          className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/[0.03] hover:bg-white/[0.07] border border-white/[0.07] text-xs text-zinc-300 font-medium transition-colors"
-          title="System Chronometer"
+          className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white/[0.03] hover:bg-white/[0.07] border border-white/[0.07] text-xs font-body font-medium text-zinc-200 transition-colors"
+          title="Focus System Chronometer"
         >
-          <ClockIcon className="w-3.5 h-3.5 text-rose-400" />
+          <ClockIcon className="w-3 h-3 text-rose-400" />
           <span>{timeStr || '12:00 PM'}</span>
         </button>
 
-        {/* Resume CV button */}
-        {onOpenResume && (
-          <button
-            type="button"
-            onClick={onOpenResume}
-            className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-zinc-300 hover:text-white border border-white/[0.08] text-xs font-semibold transition-colors"
-          >
-            <FileText className="w-3.5 h-3.5 text-rose-400" />
-            <span>CV</span>
-          </button>
-        )}
+        {/* Live status telemetry dot */}
+        <div className="hidden md:flex items-center gap-1.5 px-2 py-1 rounded-md bg-white/[0.03] border border-white/[0.06] text-xs font-body font-medium text-zinc-400">
+          <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
+          <span className="text-zinc-300">Live</span>
+        </div>
 
-        {/* Share button */}
+        {/* Pulse Toggle */}
+        <button
+          type="button"
+          onClick={onToggleSimulate}
+          className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-body font-medium transition-all border ${
+            isSimulating
+              ? 'bg-rose-950/50 text-rose-300 border-rose-500/40'
+              : 'bg-white/[0.03] text-zinc-400 border-white/[0.06] hover:text-white'
+          }`}
+          title={isSimulating ? 'Signal Pulse Active' : 'Enable Signal Flow'}
+        >
+          <Activity className={`w-3 h-3 ${isSimulating ? 'text-rose-400' : 'text-zinc-400'}`} />
+          <span className="font-body text-xs hidden sm:inline">
+            Pulse
+          </span>
+        </button>
+
+        {/* Share Button */}
         <button
           type="button"
           onClick={handleShare}
-          className="p-2 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-zinc-300 hover:text-white border border-white/[0.08] text-xs transition-all"
+          className="p-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-zinc-300 hover:text-white border border-white/[0.06] text-xs transition-all"
           title="Share URL"
         >
           {copied ? <Check className="w-3.5 h-3.5 text-rose-400" /> : <Share2 className="w-3.5 h-3.5" />}
         </button>
 
-        {/* CONTACT Button (Matching reference: Pill with glowing red dot) */}
+        {/* Contact Button */}
         <button
           type="button"
           onClick={onOpenContact}
-          className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-black/60 hover:bg-rose-950/40 text-white text-xs font-semibold tracking-wider uppercase border border-rose-500/50 hover:border-rose-400 transition-all shadow-[0_0_12px_rgba(225,29,72,0.25)] active:scale-95"
+          className="flex items-center gap-1.5 px-3.5 py-1 rounded-lg bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold transition-all shadow-sm active:scale-95"
         >
-          <span>CONTACT</span>
-          <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shadow-[0_0_6px_#f43f5e] animate-pulse" />
+          <Mail className="w-3 h-3" />
+          <span>Contact</span>
         </button>
       </div>
     </header>

@@ -32,9 +32,6 @@ interface GraphNodeProps {
   onOpenProjectModal: (proj: ProjectItem) => void;
   onOpenContactModal: () => void;
   onOpenResumeModal: () => void;
-  onOpenExpandedNode?: (node: NodeData) => void;
-  onStartDragWire?: (pin: Pin, e: React.MouseEvent) => void;
-  onEndDragWire?: (pin: Pin) => void;
 }
 
 const CATEGORY_ICON_MAP: Record<string, React.ReactNode> = {
@@ -57,9 +54,6 @@ export const GraphNode: React.FC<GraphNodeProps> = ({
   onOpenProjectModal,
   onOpenContactModal,
   onOpenResumeModal,
-  onOpenExpandedNode,
-  onStartDragWire,
-  onEndDragWire,
 }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const isDraggingRef = useRef(false);
@@ -69,6 +63,7 @@ export const GraphNode: React.FC<GraphNodeProps> = ({
 
   // Mouse drag handler
   const handleMouseDown = (e: React.MouseEvent) => {
+    // Avoid dragging if clicking an interactive control like input/button
     const target = e.target as HTMLElement;
     if (['BUTTON', 'INPUT', 'SELECT', 'A'].includes(target.tagName) || target.closest('button')) {
       return;
@@ -152,22 +147,21 @@ export const GraphNode: React.FC<GraphNodeProps> = ({
         onSelectNode?.(node.id);
       }}
     >
-      {/* Node Container Card with Dark Neumorphic Aesthetic (#212121) */}
+      {/* Node Container Card with Dark Neumorphic Aesthetic */}
       <div
-        className={`rounded-[30px] node-card transition-all duration-200 overflow-hidden ${
-          isSelected ? 'node-card-active ring-1 ring-rose-500/50 shadow-[0_0_30px_rgba(225,29,72,0.25)]' : 'hover:border-white/15'
+        className={`rounded-[30px] node-card transition-all duration-200 ${
+          isSelected ? 'node-card-active ring-1 ring-rose-500/40' : 'hover:border-white/10'
         }`}
       >
         {/* Node Top Header (Draggable Bar) */}
         <div
           onMouseDown={handleMouseDown}
           onTouchStart={handleTouchStart}
-          onDoubleClick={() => onOpenExpandedNode?.(node)}
-          className="flex items-center justify-between px-4 py-3 rounded-t-[30px] bg-white/[0.04] border-b border-white/[0.08] cursor-grab active:cursor-grabbing hover:bg-white/[0.07] transition-colors"
+          className="flex items-center justify-between px-4 py-3 rounded-t-[30px] bg-white/[0.03] border-b border-white/[0.06] cursor-grab active:cursor-grabbing hover:bg-white/[0.06] transition-colors"
         >
           <div className="flex items-center gap-2.5 min-w-0">
             {/* Category Indicator Dot / Icon */}
-            <div className="flex items-center justify-center w-6 h-6 rounded-md bg-white/[0.06] border border-white/10 shrink-0">
+            <div className="flex items-center justify-center w-5 h-5 rounded-md bg-white/[0.06] border border-white/10 shrink-0">
               {CATEGORY_ICON_MAP[node.category] || <Layers className="w-3.5 h-3.5 text-white" />}
             </div>
 
@@ -183,34 +177,22 @@ export const GraphNode: React.FC<GraphNodeProps> = ({
             </div>
           </div>
 
-          <div className="flex items-center gap-1.5 shrink-0">
-            {/* Focused Inspection Trigger */}
-            <button
-              type="button"
-              onClick={() => onOpenExpandedNode?.(node)}
-              className="p-1 rounded-md text-zinc-400 hover:text-white hover:bg-white/10 transition-colors"
-              title="Open focused inspection modal"
-            >
-              <Maximize2 className="w-3.5 h-3.5 text-rose-400" />
-            </button>
-
-            {/* Collapse toggle */}
+          <div className="flex items-center gap-1 shrink-0">
             <button
               type="button"
               onClick={() => setIsCollapsed(!isCollapsed)}
-              className="p-1 rounded-md text-zinc-400 hover:text-white hover:bg-white/10 transition-colors"
+              className="p-1 rounded-md text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
               title={isCollapsed ? 'Expand node' : 'Collapse node'}
             >
               {isCollapsed ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronUp className="w-3.5 h-3.5" />}
             </button>
-
-            <GripHorizontal className="w-4 h-4 text-zinc-500 hover:text-zinc-300 transition-colors cursor-grab" />
+            <GripHorizontal className="w-4 h-4 text-slate-500 hover:text-slate-300 transition-colors cursor-grab" />
           </div>
         </div>
 
-        {/* Pins Section: Inputs on Left, Outputs on Right with Drag handlers */}
+        {/* Pins Section: Inputs on Left, Outputs on Right */}
         {(hasInputs || hasOutputs) && (
-          <div className="flex justify-between items-start px-3 py-2 bg-black/40 border-b border-white/[0.06] gap-3">
+          <div className="flex justify-between items-start px-3 py-2 bg-black/30 border-b border-white/[0.05] gap-3">
             {/* Input pins column */}
             <div className="flex flex-col gap-1 min-w-0">
               {node.inputs?.map((pin) => (
@@ -218,8 +200,6 @@ export const GraphNode: React.FC<GraphNodeProps> = ({
                   key={pin.id}
                   pin={pin}
                   isConnected={true}
-                  onStartDragWire={onStartDragWire}
-                  onEndDragWire={onEndDragWire}
                 />
               ))}
             </div>
@@ -231,17 +211,15 @@ export const GraphNode: React.FC<GraphNodeProps> = ({
                   key={pin.id}
                   pin={pin}
                   isConnected={true}
-                  onStartDragWire={onStartDragWire}
-                  onEndDragWire={onEndDragWire}
                 />
               ))}
             </div>
           </div>
         )}
 
-        {/* Node Body Content with generous spacing to avoid text clipping */}
+        {/* Node Body Content */}
         {!isCollapsed && (
-          <div className="p-4 sm:p-5 pb-6">
+          <div className="p-4 pb-5">
             {node.category === 'profile' && node.profile && (
               <ProfileNodeContent
                 data={node.profile}
