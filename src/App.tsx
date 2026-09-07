@@ -74,8 +74,8 @@ export default function App() {
           let nextX = Math.round(n.x + deltaX);
           let nextY = Math.round(n.y + deltaY);
 
-          if (nodeId === 'node-project') {
-            // Latent Graph Visualizer stays anchored to the right of the hero heading
+          if (nodeId === 'node-project' || nodeId === 'node-clock') {
+            // Upper hero row nodes stay anchored to the right of the hero heading
             if (nextX < 670) nextX = 670;
             if (nextY < 40) nextY = 40;
           } else {
@@ -233,6 +233,7 @@ export default function App() {
         onToggleSimulate={() => setIsSimulating(!isSimulating)}
         onResetGraph={handleResetGraph}
         onOpenContact={() => setIsContactOpen(true)}
+        onFocusClock={() => handleFocusNode('node-clock')}
         activeView={activeView}
         onToggleView={setActiveView}
       />

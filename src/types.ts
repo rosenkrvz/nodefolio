@@ -62,7 +62,7 @@ export interface ExperienceItem {
   highlights: string[];
 }
 
-export type NodeCategory = 'profile' | 'skills' | 'certificates' | 'project' | 'experience' | 'controls';
+export type NodeCategory = 'profile' | 'skills' | 'certificates' | 'project' | 'experience' | 'controls' | 'clock';
 
 export interface NodeData {
   id: string;

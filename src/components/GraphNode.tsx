@@ -7,6 +7,7 @@ import { CertificatesNodeContent } from './nodes/CertificatesNodeContent';
 import { ControlsNodeContent } from './nodes/ControlsNodeContent';
 import { ProjectNodeContent } from './nodes/ProjectNodeContent';
 import { ExperienceNodeContent } from './nodes/ExperienceNodeContent';
+import { ClockNodeContent } from './nodes/ClockNodeContent';
 import {
   GripHorizontal,
   ChevronDown,
@@ -18,6 +19,7 @@ import {
   Sliders,
   Eye,
   User,
+  Clock as ClockIcon,
 } from 'lucide-react';
 
 interface GraphNodeProps {
@@ -39,6 +41,7 @@ const CATEGORY_ICON_MAP: Record<string, React.ReactNode> = {
   controls: <Sliders className="w-3.5 h-3.5 text-rose-400" />,
   project: <Eye className="w-3.5 h-3.5 text-rose-400" />,
   experience: <Activity className="w-3.5 h-3.5 text-rose-400" />,
+  clock: <ClockIcon className="w-3.5 h-3.5 text-rose-400" />,
 };
 
 export const GraphNode: React.FC<GraphNodeProps> = ({
@@ -249,6 +252,10 @@ export const GraphNode: React.FC<GraphNodeProps> = ({
 
             {node.category === 'experience' && node.experience && (
               <ExperienceNodeContent experience={node.experience} />
+            )}
+
+            {node.category === 'clock' && (
+              <ClockNodeContent />
             )}
           </div>
         )}

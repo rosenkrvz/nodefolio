@@ -1,4 +1,3 @@
-import React from 'react';
 import {
   RotateCcw,
   Mail,
@@ -6,6 +5,7 @@ import {
   Check,
   Activity,
   SlidersHorizontal,
+  Clock as ClockIcon,
 } from 'lucide-react';
 
 interface TopNavbarProps {
@@ -15,6 +15,7 @@ interface TopNavbarProps {
   onToggleSimulate: () => void;
   onResetGraph: () => void;
   onOpenContact: () => void;
+  onFocusClock?: () => void;
   activeView: 'canvas' | 'list' | 'timeline';
   onToggleView: (view: 'canvas' | 'list' | 'timeline') => void;
 }
@@ -26,10 +27,27 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
   onToggleSimulate,
   onResetGraph,
   onOpenContact,
+  onFocusClock,
   activeView,
   onToggleView,
 }) => {
   const [copied, setCopied] = React.useState(false);
+  const [timeStr, setTimeStr] = React.useState('');
+
+  React.useEffect(() => {
+    const update = () => {
+      setTimeStr(
+        new Date().toLocaleTimeString('en-US', {
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: true,
+        })
+      );
+    };
+    update();
+    const timer = setInterval(update, 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   const handleShare = () => {
     navigator.clipboard?.writeText(window.location.href);
@@ -125,6 +143,17 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
 
       {/* Right Controls */}
       <div className="flex items-center gap-2 font-body">
+        {/* Live Clock Button */}
+        <button
+          type="button"
+          onClick={onFocusClock}
+          className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white/[0.03] hover:bg-white/[0.07] border border-white/[0.07] text-[11px] font-tech text-zinc-300 transition-colors"
+          title="Focus System Chronometer"
+        >
+          <ClockIcon className="w-3 h-3 text-rose-400" />
+          <span>{timeStr || '12:00 PM'}</span>
+        </button>
+
         {/* Live status telemetry dot */}
         <div className="hidden md:flex items-center gap-1.5 px-2 py-1 rounded-md bg-white/[0.03] border border-white/[0.06] text-[10px] font-tech text-zinc-400">
           <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />

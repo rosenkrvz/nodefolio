@@ -159,6 +159,23 @@ export const INITIAL_NODES: NodeData[] = [
       },
     ],
   },
+
+  // 6. System Chronometer Node (Positioned upper right alongside Latent Visualizer)
+  {
+    id: 'node-clock',
+    title: 'System Chronometer',
+    subtitle: 'Temporal Coordinates • Live Sync',
+    category: 'clock',
+    x: 1160,
+    y: 50,
+    width: 250,
+    inputs: [
+      { id: 'pin-in-clock', label: 'temporal.sync', color: 'crimson', type: 'input', nodeId: 'node-clock' },
+    ],
+    outputs: [],
+    accentColor: '#e11d48',
+    glowColor: 'rgba(225, 29, 72, 0.22)',
+  },
 ];
 
 export const INITIAL_CONNECTIONS: Connection[] = [
@@ -190,6 +207,16 @@ export const INITIAL_CONNECTIONS: Connection[] = [
     toPinId: 'pin-in-project',
     color: '#f43f5e',
     label: 'latent.projection',
+    animated: true,
+  },
+  {
+    id: 'conn-visualizer-clock',
+    fromNodeId: 'node-project',
+    fromPinId: 'pin-out-visualizer',
+    toNodeId: 'node-clock',
+    toPinId: 'pin-in-clock',
+    color: '#f43f5e',
+    label: 'temporal.sync',
     animated: true,
   },
   {
