@@ -12,32 +12,11 @@ export const HeroCover: React.FC<HeroCoverProps> = ({
   onViewWork,
   scrollProgress,
 }) => {
-  // Progressive defocus and fade as user scrolls according to timeline:
-  // 0% - 35%: sharp, in focus
-  // 35% - 75%: gradual defocus and slow fade
-  // > 75%: hidden to save render cost
-  let blur = 0;
-  let opacity = 1;
-  let scale = 1;
-  let translateY = 0;
-
-  if (scrollProgress <= 0.32) {
-    blur = 0;
-    opacity = 1;
-    scale = 1;
-    translateY = 0;
-  } else if (scrollProgress <= 0.75) {
-    const t = (scrollProgress - 0.32) / 0.43; // 0 to 1
-    blur = t * 12; // 0px to 12px
-    opacity = Math.max(0, 1 - t * 0.95);
-    scale = 1 - t * 0.06;
-    translateY = t * -40;
-  } else {
-    blur = 12;
-    opacity = 0;
-    scale = 0.94;
-    translateY = -40;
-  }
+  // Progressive defocus and fade as user scrolls
+  const opacity = Math.max(0, 1 - scrollProgress * 2.2);
+  const blur = scrollProgress * 16;
+  const scale = 1 - scrollProgress * 0.08;
+  const translateY = scrollProgress * -80;
 
   return (
     <section
@@ -46,9 +25,9 @@ export const HeroCover: React.FC<HeroCoverProps> = ({
         opacity,
         filter: `blur(${blur}px)`,
         transform: `translateY(${translateY}px) scale(${scale})`,
-        pointerEvents: opacity < 0.2 ? 'none' : 'auto',
+        pointerEvents: opacity < 0.15 ? 'none' : 'auto',
       }}
-      className="absolute inset-0 w-full h-screen flex flex-col justify-between px-6 sm:px-12 md:px-16 pt-24 pb-10 transition-all duration-75 ease-out select-none overflow-hidden"
+      className="relative min-h-screen w-full flex flex-col justify-between px-6 sm:px-12 md:px-16 pt-24 pb-10 transition-all duration-150 ease-out select-none overflow-hidden"
     >
       {/* Background Celestial Orbital Atmosphere */}
       <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
@@ -202,9 +181,6 @@ export const HeroCover: React.FC<HeroCoverProps> = ({
 
           {/* Editorial Philosophy Statement */}
           <div className="pt-8 border-t border-white/[0.08] max-w-[220px]">
-            <span className="font-accent text-3xl leading-none text-rose-400/90 tracking-wide block mb-1">
-              01 &mdash; PHILOSOPHY
-            </span>
             <p className="font-display italic text-base sm:text-lg text-zinc-300 leading-snug">
               Better questions build better systems.
             </p>
@@ -215,16 +191,11 @@ export const HeroCover: React.FC<HeroCoverProps> = ({
 
       {/* Bottom Scroll Prompt */}
       <div className="relative z-10 w-full max-w-7xl mx-auto flex items-center justify-between pt-6 border-t border-white/[0.05] text-xs font-body text-zinc-500">
-        <button
-          type="button"
-          onClick={onExplore}
-          className="flex items-center gap-2 tracking-[0.2em] uppercase font-semibold text-zinc-400 hover:text-white transition-colors cursor-pointer group focus:outline-none"
-          title="Scroll to enter computational workspace"
-        >
-          <span className="w-2 h-2 rounded-full border border-zinc-400 group-hover:border-rose-500 group-hover:bg-rose-500 transition-colors inline-block" />
+        <div className="flex items-center gap-2 tracking-[0.2em] uppercase font-semibold text-zinc-400">
+          <span className="w-2 h-2 rounded-full border border-zinc-400 inline-block" />
           <span>SCROLL TO EXPLORE</span>
-          <ChevronDown className="w-3.5 h-3.5 animate-bounce text-rose-400 group-hover:translate-y-0.5 transition-transform" />
-        </button>
+          <ChevronDown className="w-3.5 h-3.5 animate-bounce text-rose-400" />
+        </div>
 
         <div className="hidden sm:flex items-center gap-4 text-[11px] font-body text-zinc-500 tracking-wider uppercase">
           <span>PORTFOLIO COVER</span>

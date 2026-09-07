@@ -5,8 +5,7 @@ import {
   Maximize,
   Grid,
   Activity,
-  SlidersHorizontal,
-  ArrowUp,
+  Sparkles,
 } from 'lucide-react';
 
 interface CanvasControlsDockProps {
@@ -20,7 +19,6 @@ interface CanvasControlsDockProps {
   onCycleWireStyle: () => void;
   isSimulating: boolean;
   onToggleSimulate: () => void;
-  onReturnToCover?: () => void;
 }
 
 export const CanvasControlsDock: React.FC<CanvasControlsDockProps> = ({
@@ -34,7 +32,6 @@ export const CanvasControlsDock: React.FC<CanvasControlsDockProps> = ({
   onCycleWireStyle,
   isSimulating,
   onToggleSimulate,
-  onReturnToCover,
 }) => {
   return (
     <aside aria-label="Canvas view and zoom controls" className="absolute right-4 top-1/2 -translate-y-1/2 z-30 flex flex-col gap-1 p-1 rounded-xl bg-[#181c21]/85 backdrop-blur-md border border-white/[0.08] shadow-2xl">
@@ -94,7 +91,7 @@ export const CanvasControlsDock: React.FC<CanvasControlsDockProps> = ({
         className="w-8 h-8 rounded-lg flex items-center justify-center text-zinc-400 hover:text-white hover:bg-white/[0.08] transition-colors"
         title={`Spline Cable Style: ${wireStyle}`}
       >
-        <SlidersHorizontal className="w-3.5 h-3.5 text-rose-400/80" />
+        <Sparkles className="w-3.5 h-3.5 text-rose-400/80" />
       </button>
 
       {/* Signal Flow Toggle */}
@@ -108,21 +105,6 @@ export const CanvasControlsDock: React.FC<CanvasControlsDockProps> = ({
       >
         <Activity className={`w-3.5 h-3.5 ${isSimulating ? 'animate-pulse' : ''}`} />
       </button>
-
-      {onReturnToCover && (
-        <>
-          <div className="w-full h-px bg-white/[0.06] my-0.5" />
-          {/* Return to Cover Page */}
-          <button
-            type="button"
-            onClick={onReturnToCover}
-            className="w-8 h-8 rounded-lg flex items-center justify-center text-zinc-400 hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
-            title="Return to Cover Page"
-          >
-            <ArrowUp className="w-3.5 h-3.5" />
-          </button>
-        </>
-      )}
     </aside>
   );
 };
