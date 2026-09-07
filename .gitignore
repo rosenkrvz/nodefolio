@@ -1,27 +1,10 @@
-﻿# Dependencies
 node_modules/
-.pnp
-.pnp.js
-
-# Production build
-dist/
 build/
-.output/
-
-# Environment and secrets
-.env
-.env.local
-.env.*.local
-*.pem
-*.key
-
-# Vercel
-.vercel
-
-# IDE and OS
+dist/
+coverage/
 .DS_Store
-Thumbs.db
-.vscode/
-.idea/
 *.log
+.env*
+!.env.example
 .vercel
+

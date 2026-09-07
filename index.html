@@ -1,51 +1,44 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en" class="dark">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Shubham Sharma — AI &amp; Data Science | Software &amp; ML Engineer</title>
-  <meta name="description" content="Applied AI &amp; Data Science at IIT Jodhpur. Building high-performance machine learning systems, computer vision algorithms, and distributed software architectures." />
-  <meta name="author" content="Shubham Sharma" />
-  <meta name="theme-color" content="#0C0C0E" />
-  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-
-  <!-- Canonical & Social Sharing -->
-  <link rel="canonical" id="canonical-link" href="https://portfolio-eight-delta-c5m41m049y.vercel.app/" />
-  <meta property="og:type" content="website" />
-  <meta property="og:title" id="og-title" content="Shubham Sharma — AI &amp; Data Science | IIT Jodhpur" />
-  <meta property="og:description" id="og-description" content="Applied AI &amp; Data Science at IIT Jodhpur. Building high-performance machine learning models, computer vision systems, and robust software architectures." />
-  <meta property="og:url" id="og-url" content="https://portfolio-eight-delta-c5m41m049y.vercel.app" />
-  <meta property="og:image" id="og-image" content="https://portfolio-eight-delta-c5m41m049y.vercel.app/assets/og-image.jpg" />
-  <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" id="tw-title" content="Shubham Sharma — AI &amp; Data Science | IIT Jodhpur" />
-  <meta name="twitter:description" id="tw-description" content="Applied AI &amp; Data Science at IIT Jodhpur. Building high-performance machine learning models, computer vision systems, and robust software architectures." />
-  <meta name="twitter:image" id="tw-image" content="https://portfolio-eight-delta-c5m41m049y.vercel.app/assets/og-image.jpg" />
-
-  <!-- Typography: Plus Jakarta Sans / Inter (Minimal Fluid Body & Headers) + Space Grotesk + JetBrains Mono -->
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Manrope:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
-
-  <!-- Structured Data -->
-  <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "Person",
-    "name": "Shubham Sharma",
-    "alternateName": "rosenkrvz",
-    "url": "https://portfolio-eight-delta-c5m41m049y.vercel.app",
-    "alumniOf": "Indian Institute of Technology Jodhpur",
-    "jobTitle": "Applied AI & Data Science Student / Software Engineer",
-    "email": "marksrv047@gmail.com",
-    "sameAs": [
-      "https://github.com/rosenkrvz",
-      "https://linkedin.com/in/rosenkrvz"
-    ]
-  }
-  </script>
-</head>
-<body class="bg-[#0C0C0E] text-[#F4F4F2] font-sans antialiased overflow-x-hidden min-h-screen">
-  <div id="root"></div>
-  <script type="module" src="/src/main.jsx"></script>
-</body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <script>
+      // Defensive guard against scripts attempting to assign window.fetch in strict mode
+      // when window.fetch only has a getter in sandboxed iframe environments
+      try {
+        const currentFetch = window.fetch ? window.fetch.bind(window) : undefined;
+        let activeFetch = currentFetch;
+        Object.defineProperty(window, 'fetch', {
+          get() {
+            return activeFetch;
+          },
+          set(newFetch) {
+            activeFetch = newFetch;
+          },
+          configurable: true,
+          enumerable: true,
+        });
+      } catch (err) {
+        // Safe fallback
+      }
+    </script>
+    <title>Shubham Sharma — Nodefolio v0.4.2</title>
+    <meta name="description" content="Computational portfolio of Shubham Sharma. AI & Data Science Engineer exploring generative architectures, distributed neural pipelines, and interactive graph systems." />
+    <meta property="og:title" content="Shubham Sharma — Nodefolio v0.4.2" />
+    <meta property="og:description" content="Computational portfolio of Shubham Sharma. AI & Data Science Engineer exploring generative architectures, distributed neural pipelines, and interactive graph systems." />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="preconnect" href="https://api.fontshare.com">
+    <link href="https://api.fontshare.com/v2/css?f[]=satoshi@900,700,600,500,400&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@300;400;500;600&display=swap" rel="stylesheet">
+  </head>
+  <body class="bg-[#181c21] text-[#eaeaea] antialiased overflow-hidden select-none">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
 </html>
+

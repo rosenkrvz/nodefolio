@@ -1,4 +1,0 @@
-User-agent: *
-Allow: /
-
-Sitemap: https://portfolio-eight-delta-c5m41m049y.vercel.app/sitemap.xml
