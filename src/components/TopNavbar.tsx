@@ -60,17 +60,17 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
       {/* Brand Identity / Monogram */}
       <div className="flex items-center gap-3 sm:gap-5">
         <div className="flex items-center gap-2.5">
-          <div className="w-7 h-7 rounded-lg bg-white/[0.04] border border-white/[0.1] flex items-center justify-center font-tech text-xs text-zinc-200 font-semibold shadow-inner">
+          <div className="w-7 h-7 rounded-lg bg-white/[0.04] border border-white/[0.1] flex items-center justify-center font-display text-xs text-zinc-200 font-bold tracking-wider shadow-inner">
             SS
           </div>
           <div>
             <div className="flex items-center gap-1.5 leading-none">
-              <span className="font-body text-xs sm:text-[13px] font-bold text-white tracking-wide uppercase">
+              <span className="font-display text-sm font-bold text-white tracking-wider uppercase">
                 SHUBHAM SHARMA
               </span>
               <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
             </div>
-            <span className="font-tech text-[9px] text-zinc-400 tracking-wider uppercase block mt-0.5">
+            <span className="font-body text-[10px] font-medium text-zinc-400 tracking-wider uppercase block mt-0.5">
               AI • DATA • SYSTEMS
             </span>
           </div>
@@ -118,11 +118,11 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
       <div className="hidden lg:flex items-center gap-2">
         <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/[0.03] border border-white/[0.07] text-xs">
           <SlidersHorizontal className="w-3 h-3 text-rose-400" />
-          <span className="font-tech text-[10px] text-zinc-500 uppercase tracking-wider">View:</span>
+          <span className="font-body text-[11px] text-zinc-400 uppercase tracking-wider font-semibold">View:</span>
           <select
             value={activePreset}
             onChange={(e) => onSelectPreset(e.target.value)}
-            className="bg-transparent text-zinc-200 font-body text-xs focus:outline-none cursor-pointer pr-1"
+            className="bg-transparent text-zinc-200 font-body text-xs focus:outline-none cursor-pointer pr-1 font-medium"
           >
             <option value="all" className="bg-[#181c21]">Complete Network</option>
             <option value="skills" className="bg-[#181c21]">Architecture & Models</option>
@@ -147,7 +147,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
         <button
           type="button"
           onClick={onFocusClock}
-          className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white/[0.03] hover:bg-white/[0.07] border border-white/[0.07] text-[11px] font-tech text-zinc-300 transition-colors"
+          className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white/[0.03] hover:bg-white/[0.07] border border-white/[0.07] text-xs font-body font-medium text-zinc-200 transition-colors"
           title="Focus System Chronometer"
         >
           <ClockIcon className="w-3 h-3 text-rose-400" />
@@ -155,7 +155,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
         </button>
 
         {/* Live status telemetry dot */}
-        <div className="hidden md:flex items-center gap-1.5 px-2 py-1 rounded-md bg-white/[0.03] border border-white/[0.06] text-[10px] font-tech text-zinc-400">
+        <div className="hidden md:flex items-center gap-1.5 px-2 py-1 rounded-md bg-white/[0.03] border border-white/[0.06] text-xs font-body font-medium text-zinc-400">
           <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
           <span className="text-zinc-300">Live</span>
         </div>
@@ -164,7 +164,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
         <button
           type="button"
           onClick={onToggleSimulate}
-          className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs transition-all border ${
+          className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-body font-medium transition-all border ${
             isSimulating
               ? 'bg-rose-950/50 text-rose-300 border-rose-500/40'
               : 'bg-white/[0.03] text-zinc-400 border-white/[0.06] hover:text-white'
@@ -172,7 +172,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
           title={isSimulating ? 'Signal Pulse Active' : 'Enable Signal Flow'}
         >
           <Activity className={`w-3 h-3 ${isSimulating ? 'text-rose-400' : 'text-zinc-400'}`} />
-          <span className="font-tech text-[10px] hidden sm:inline">
+          <span className="font-body text-xs hidden sm:inline">
             Pulse
           </span>
         </button>

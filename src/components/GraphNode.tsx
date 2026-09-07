@@ -166,11 +166,11 @@ export const GraphNode: React.FC<GraphNodeProps> = ({
             </div>
 
             <div className="min-w-0">
-              <h3 className="text-[13px] sm:text-sm font-semibold text-zinc-100 tracking-tight truncate font-body">
+              <h3 className="text-sm sm:text-[15px] font-semibold text-white tracking-wide truncate font-display uppercase">
                 {node.title}
               </h3>
               {node.subtitle && (
-                <p className="text-[11px] font-tech text-zinc-400 truncate tracking-tight">
+                <p className="text-xs font-body text-zinc-400 truncate tracking-normal font-medium mt-0.5">
                   {node.subtitle}
                 </p>
               )}

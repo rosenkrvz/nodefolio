@@ -272,36 +272,46 @@ export default function App() {
             className="w-[2600px] h-[1600px] relative pointer-events-auto"
           >
             {/* HERO ZONE (LEFT / CENTER-LEFT): Protected Hero Typography & Identity */}
-            <div className="absolute top-[60px] left-[60px] w-[580px] z-10 pointer-events-auto select-text">
-              {/* Eyebrow */}
-              <div className="flex items-center gap-2.5 mb-3.5">
+            <div className="absolute top-[50px] left-[60px] w-[580px] z-10 pointer-events-auto select-text">
+              {/* Eyebrow in Satoshi */}
+              <div className="flex items-center gap-2 mb-2">
                 <span className="w-2 h-2 rounded-full bg-rose-500 shadow-[0_0_8px_#f43f5e]" />
-                <span className="font-tech text-xs tracking-[0.25em] uppercase text-rose-400 font-medium">
-                  COMPUTATION • DATA • INTELLIGENCE
+                <span className="font-body text-xs tracking-[0.2em] uppercase text-rose-400 font-bold">
+                  AI &amp; DATA SCIENCE • RESEARCH INTERFACE
                 </span>
               </div>
 
-              {/* Main Headline */}
-              <h1 className="hero-heading text-white font-normal tracking-tight mb-4 select-none">
-                <span className="block font-display italic text-zinc-100 font-normal leading-[0.92]">
+              {/* Main Headline in Josefin Sans */}
+              <h1 className="hero-heading text-white font-normal tracking-tight mb-2 select-none">
+                <span className="block font-display font-light text-zinc-300 uppercase tracking-widest text-lg sm:text-xl mb-0.5">
+                  SHUBHAM SHARMA
+                </span>
+                <span className="block font-display font-bold text-white tracking-[-0.02em] uppercase">
                   BUILDING WITH
                 </span>
-                <span className="block font-body font-bold text-white tracking-[-0.035em] leading-[0.95] mt-1.5">
+                <span className="block font-display font-bold text-white tracking-[-0.02em] uppercase">
                   DATA &amp; MODELS<span className="text-rose-500">.</span>
                 </span>
               </h1>
 
-              {/* Editorial Line (18-21px) */}
-              <p className="hero-subtext font-body text-zinc-300 font-normal leading-relaxed max-w-lg mb-6 select-text">
-                I study how data, mathematics and machine learning become useful systems.
+              {/* Artistic Accent in Dongle */}
+              <div className="font-accent text-3xl sm:text-4xl text-rose-400/90 leading-none -mt-1 mb-3.5 select-none flex items-center gap-2">
+                <span>compute / reason / discover</span>
+                <span className="text-zinc-600 text-sm font-body">•</span>
+                <span className="text-zinc-400 text-2xl font-accent">ideas → systems</span>
+              </div>
+
+              {/* Supporting Editorial Paragraph in Satoshi */}
+              <p className="hero-subtext font-body text-zinc-200 font-normal leading-relaxed max-w-lg mb-6 select-text">
+                I study how data, mathematics and machine learning become useful systems — from statistical reasoning to intelligent software.
               </p>
 
-              {/* Action Buttons & Quick Anchors */}
+              {/* Action Buttons & Quick Anchors in Satoshi */}
               <div className="flex items-center gap-3 font-body">
                 <button
                   type="button"
                   onClick={() => handleFocusNode('node-project')}
-                  className="px-4 py-2 rounded-xl bg-white/[0.08] hover:bg-white/[0.14] border border-white/[0.12] text-xs font-medium text-white transition-all flex items-center gap-2 shadow-sm"
+                  className="px-4 py-2.5 rounded-xl bg-white/[0.08] hover:bg-white/[0.14] border border-white/[0.12] text-xs font-semibold text-white tracking-wide transition-all flex items-center gap-2 shadow-sm"
                 >
                   <span>Explore Latent Visualizer</span>
                   <ArrowUpRight className="w-3.5 h-3.5 text-rose-400" />
@@ -310,7 +320,7 @@ export default function App() {
                 <button
                   type="button"
                   onClick={() => handleFocusNode('node-models')}
-                  className="px-4 py-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.07] text-xs font-medium text-zinc-300 transition-all flex items-center gap-1.5"
+                  className="px-4 py-2.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.07] text-xs font-semibold text-zinc-200 tracking-wide transition-all flex items-center gap-1.5"
                 >
                   <span>Model Architecture</span>
                   <ArrowDown className="w-3.5 h-3.5 text-zinc-400" />
@@ -319,7 +329,7 @@ export default function App() {
                 <button
                   type="button"
                   onClick={() => setIsContactOpen(true)}
-                  className="px-4 py-2 rounded-xl bg-rose-600/90 hover:bg-rose-500 border border-rose-500/40 text-xs font-medium text-white transition-all shadow-sm"
+                  className="px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 border border-rose-500/40 text-xs font-semibold text-white tracking-wide transition-all shadow-sm"
                 >
                   Contact
                 </button>
@@ -369,42 +379,42 @@ export default function App() {
           <div className="mb-8">
             <div className="flex items-center gap-2 mb-2">
               <span className="w-2 h-2 rounded-full bg-rose-500" />
-              <span className="font-tech text-xs tracking-widest uppercase text-rose-400">
+              <span className="font-body text-xs tracking-widest uppercase text-rose-400 font-bold">
                 Research &amp; Exploration Chronicle
               </span>
             </div>
-            <h2 className="font-display text-4xl text-white font-normal">
+            <h2 className="font-display text-3xl sm:text-4xl text-white font-bold uppercase tracking-tight">
               Computational Milestones
             </h2>
-            <p className="text-zinc-400 text-sm mt-1">
+            <p className="font-body text-zinc-300 text-sm sm:text-base mt-1.5 leading-relaxed">
               Key trajectories in statistical learning, generative models, and mathematical research.
             </p>
           </div>
 
-          <div className="relative border-l border-white/10 pl-6 ml-3 space-y-8">
+          <div className="relative border-l border-white/10 pl-6 ml-3 space-y-8 font-body">
             <div className="relative">
               <div className="absolute -left-[31px] top-1.5 w-3 h-3 rounded-full bg-rose-500 border-2 border-[#14171c]" />
-              <span className="font-tech text-[11px] text-rose-400 uppercase tracking-wider">Present • Active Focus</span>
-              <h3 className="font-display text-xl text-white font-normal mt-0.5">High-Dimensional Latent Manifold Traversal</h3>
-              <p className="text-sm text-zinc-300 mt-1 leading-relaxed">
+              <span className="text-xs text-rose-400 uppercase tracking-wider font-semibold">Present • Active Focus</span>
+              <h3 className="font-display text-xl text-white font-semibold mt-0.5 tracking-wide">High-Dimensional Latent Manifold Traversal</h3>
+              <p className="text-sm sm:text-[15px] text-zinc-200 mt-1 leading-relaxed">
                 Investigating continuous trajectory interpolation in diffusion latent representations with WebGL manifold projection.
               </p>
             </div>
 
             <div className="relative">
               <div className="absolute -left-[31px] top-1.5 w-3 h-3 rounded-full bg-zinc-600 border-2 border-[#14171c]" />
-              <span className="font-tech text-[11px] text-zinc-500 uppercase tracking-wider">Research Study</span>
-              <h3 className="font-display text-xl text-white font-normal mt-0.5">Transformers &amp; Self-Attention Dynamics</h3>
-              <p className="text-sm text-zinc-300 mt-1 leading-relaxed">
+              <span className="text-xs text-zinc-400 uppercase tracking-wider font-semibold">Research Study</span>
+              <h3 className="font-display text-xl text-white font-semibold mt-0.5 tracking-wide">Transformers &amp; Self-Attention Dynamics</h3>
+              <p className="text-sm sm:text-[15px] text-zinc-200 mt-1 leading-relaxed">
                 Implementation of FlashAttention kernels, KV cache optimization, and sequence representations for multimodal inference.
               </p>
             </div>
 
             <div className="relative">
               <div className="absolute -left-[31px] top-1.5 w-3 h-3 rounded-full bg-zinc-600 border-2 border-[#14171c]" />
-              <span className="font-tech text-[11px] text-zinc-500 uppercase tracking-wider">Academic Foundation</span>
-              <h3 className="font-display text-xl text-white font-normal mt-0.5">Probability, Optimization &amp; Linear Algebra</h3>
-              <p className="text-sm text-zinc-300 mt-1 leading-relaxed">
+              <span className="text-xs text-zinc-400 uppercase tracking-wider font-semibold">Academic Foundation</span>
+              <h3 className="font-display text-xl text-white font-semibold mt-0.5 tracking-wide">Probability, Optimization &amp; Linear Algebra</h3>
+              <p className="text-sm sm:text-[15px] text-zinc-200 mt-1 leading-relaxed">
                 Rigorous coursework and problem sets in multivariate calculus, convex optimization, and statistical inference.
               </p>
             </div>
@@ -415,28 +425,28 @@ export default function App() {
       {/* Quiet, refined footer status bar */}
       <footer
         aria-label="Portfolio coordinates and node navigation"
-        className="absolute bottom-3 inset-x-4 sm:inset-x-8 z-20 pointer-events-none flex items-center justify-between text-xs font-tech text-zinc-500"
+        className="absolute bottom-3 inset-x-4 sm:inset-x-8 z-20 pointer-events-none flex items-center justify-between text-xs font-body text-zinc-400 select-none"
       >
         <div className="flex items-center gap-3">
-          <span className="text-zinc-300 font-medium">Shubham Sharma</span>
+          <span className="text-zinc-200 font-semibold font-display tracking-wider uppercase">Shubham Sharma</span>
           <span>/</span>
-          <span className="text-rose-400">AI &amp; Data Science</span>
+          <span className="text-rose-400 font-medium">AI &amp; Data Science</span>
         </div>
 
-        <div className="hidden md:flex items-center gap-4 text-[11px]">
+        <div className="hidden md:flex items-center gap-4 text-xs text-zinc-400">
           <span>Controlled Network Composition</span>
           <span>•</span>
-          <span>Protected Hero Typography</span>
+          <span>Tactile Neumorphic System</span>
           <span>•</span>
           <span>Interactive Latent Space</span>
         </div>
 
-        <div className="flex items-center gap-2 text-zinc-400 font-tech text-[11px]">
+        <div className="flex items-center gap-2 text-zinc-300 font-medium text-xs">
           <span>{filteredNodes.length} NODES</span>
           <span>/</span>
           <span>{filteredConnections.length} ACTIVE SPLINES</span>
           <span>•</span>
-          <span className="text-rose-500">LIVE</span>
+          <span className="text-rose-500 font-bold">LIVE</span>
         </div>
       </footer>
 

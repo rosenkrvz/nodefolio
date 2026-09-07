@@ -12,8 +12,8 @@ export const CertificatesNodeContent: React.FC<CertificatesNodeContentProps> = (
   onSelectCertificate,
 }) => {
   return (
-    <div className="space-y-3 pt-0.5 text-zinc-300">
-      <div className="text-[10px] font-tech text-rose-500/90 tracking-widest uppercase">
+    <div className="space-y-3 pt-0.5 text-zinc-200">
+      <div className="text-[11px] font-body font-bold text-rose-400 tracking-wider uppercase">
         Academic & Theoretical Foundation
       </div>
 
@@ -22,24 +22,24 @@ export const CertificatesNodeContent: React.FC<CertificatesNodeContentProps> = (
           <div
             key={cert.id}
             onClick={() => onSelectCertificate(cert)}
-            className="p-2.5 rounded-lg bg-white/[0.02] hover:bg-white/[0.05] border border-white/[0.05] hover:border-rose-500/30 transition-all cursor-pointer group"
+            className="p-2.5 rounded-lg bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.06] hover:border-rose-500/40 transition-all cursor-pointer group"
           >
-            <div className="font-body text-xs font-semibold text-zinc-100 group-hover:text-rose-200 transition-colors">
+            <div className="font-body text-xs sm:text-[13px] font-semibold text-zinc-100 group-hover:text-rose-200 transition-colors">
               {cert.title}
             </div>
-            <div className="flex items-center justify-between text-[11px] font-body text-zinc-400 mt-1">
+            <div className="flex items-center justify-between text-xs font-body text-zinc-300 mt-1">
               <span>{cert.issuer}</span>
-              <span className="font-tech text-[10px] text-zinc-500">{cert.issueDate}</span>
+              <span className="font-body text-xs text-zinc-400 font-medium">{cert.issueDate}</span>
             </div>
           </div>
         ))}
       </div>
 
-      <div className="pt-1.5 flex items-center justify-between border-t border-white/[0.06]">
+      <div className="pt-2 flex items-center justify-between border-t border-white/[0.08]">
         <button
           type="button"
           onClick={() => certificates[0] && onSelectCertificate(certificates[0])}
-          className="group inline-flex items-center gap-1.5 text-xs font-body text-rose-400 hover:text-rose-300 transition-colors"
+          className="group inline-flex items-center gap-1.5 text-xs font-body font-semibold text-rose-400 hover:text-rose-300 transition-colors"
         >
           <span>Inspect Academic Background</span>
           <ArrowUpRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />

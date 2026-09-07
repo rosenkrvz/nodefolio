@@ -44,8 +44,8 @@ export const PinPort: React.FC<PinPortProps> = ({
         <div className="absolute w-1 h-1 rounded-full bg-black/80 pointer-events-none" />
       </div>
 
-      {/* Label Text - JetBrains Mono for small technical labels */}
-      <span className="text-[10px] font-tech text-zinc-400 group-hover:text-zinc-200 transition-colors tracking-tight">
+      {/* Label Text - Satoshi for clean computational interface */}
+      <span className="text-[11px] font-body font-medium text-zinc-300 group-hover:text-white transition-colors tracking-normal">
         {pin.label}
       </span>
     </div>

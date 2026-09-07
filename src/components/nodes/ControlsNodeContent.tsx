@@ -30,58 +30,57 @@ export const ControlsNodeContent: React.FC<ControlsNodeContentProps> = ({
   };
 
   return (
-    <div className="space-y-2.5 pt-1 text-slate-200">
+    <div className="space-y-2.5 pt-1 text-zinc-200">
       {/* Model Selector Bar */}
       <div className="space-y-1">
-        <label className="text-[10px] font-mono uppercase tracking-wider text-slate-400 flex items-center justify-between">
+        <label className="text-xs font-body font-semibold uppercase tracking-wider text-zinc-400 flex items-center justify-between">
           <span className="flex items-center gap-1">
-            <Cpu className="w-3 h-3 text-cyan-400" />
+            <Cpu className="w-3.5 h-3.5 text-rose-400" />
             <span>Target Runtime Engine</span>
           </span>
-          <span className="text-emerald-400 text-[10px] font-mono">Ready</span>
+          <span className="text-emerald-400 text-xs font-body font-medium">Ready</span>
         </label>
         <div className="relative">
           <select
             value={model}
             onChange={(e) => setModel(e.target.value)}
-            className="w-full px-2.5 py-1.5 text-xs rounded-lg bg-black/40 border border-white/10 text-white focus:border-cyan-500 focus:outline-none appearance-none cursor-pointer pr-8 font-mono"
+            className="w-full px-2.5 py-1.5 text-xs rounded-lg bg-black/40 border border-white/10 text-white focus:border-rose-500 focus:outline-none appearance-none cursor-pointer pr-8 font-body font-medium"
           >
             <option value="DreamShaper 8 (SDXL + VAE)">Architecture v3.2 (Production)</option>
             <option value="Gemini 2.5 Flash Live Pipeline">Gemini 2.5 Flash Live Pipeline</option>
             <option value="WebGL Shaders Low-Latency">WebGL Shaders Low-Latency</option>
             <option value="Kubernetes Zero-Downtime Mesh">Kubernetes Zero-Downtime Mesh</option>
           </select>
-          <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+          <ChevronDown className="w-3.5 h-3.5 text-zinc-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
         </div>
       </div>
 
       {/* Grid of Sliders and Control Mode */}
       <div className="space-y-2">
-        {/* Randomness with Kate collaborator badge */}
+        {/* Randomness */}
         <div className="flex items-center justify-between text-xs py-0.5">
-          <span className="text-[11px] text-slate-400">Randomness</span>
+          <span className="text-xs font-body text-zinc-300 font-medium">Randomness</span>
           <div className="relative flex items-center">
             <input
               type="number"
               value={randomness}
               onChange={(e) => setRandomness(Number(e.target.value))}
-              className="w-20 px-2 py-1 text-xs text-right rounded bg-black/40 border border-white/10 text-white focus:border-cyan-400 focus:outline-none font-mono"
+              className="w-20 px-2 py-1 text-xs text-right rounded bg-black/40 border border-white/10 text-white focus:border-rose-400 focus:outline-none font-body font-medium"
             />
-            {/* Collaborator Cursor Pointer (Kate) exactly as in screenshot */}
-            <div className="absolute -left-12 -top-3 flex items-center gap-1 px-1.5 py-0.5 rounded bg-sky-400 text-black text-[9px] font-bold shadow-md shadow-sky-500/30 pointer-events-none z-10">
+            <div className="absolute -left-12 -top-3 flex items-center gap-1 px-1.5 py-0.5 rounded bg-rose-500 text-white text-[10px] font-body font-bold shadow-md shadow-rose-500/30 pointer-events-none z-10">
               <span>Kate</span>
-              <div className="w-1.5 h-1.5 border-t-2 border-r-2 border-black rotate-45 transform" />
+              <div className="w-1.5 h-1.5 border-t-2 border-r-2 border-rose-500 rotate-45 transform" />
             </div>
           </div>
         </div>
 
         {/* Control Mode */}
         <div className="flex items-center justify-between text-xs py-0.5">
-          <span className="text-[11px] text-slate-400">Control mode</span>
+          <span className="text-xs font-body text-zinc-300 font-medium">Control mode</span>
           <select
             value={controlMode}
             onChange={(e) => setControlMode(e.target.value)}
-            className="w-28 px-2 py-1 text-xs text-right rounded bg-black/40 border border-white/10 text-white focus:border-cyan-400 focus:outline-none font-mono cursor-pointer"
+            className="w-28 px-2 py-1 text-xs text-right rounded bg-black/40 border border-white/10 text-white focus:border-rose-400 focus:outline-none font-body font-medium cursor-pointer"
           >
             <option value="Fixed">Fixed</option>
             <option value="Adaptive">Adaptive</option>
@@ -89,24 +88,24 @@ export const ControlsNodeContent: React.FC<ControlsNodeContentProps> = ({
           </select>
         </div>
 
-        {/* Quality Steps with < 30 > steppers matching screenshot */}
+        {/* Quality Steps with < 30 > steppers */}
         <div className="flex items-center justify-between text-xs py-0.5">
-          <span className="text-[11px] text-slate-400">Quality steps</span>
+          <span className="text-xs font-body text-zinc-300 font-medium">Quality steps</span>
           <div className="flex items-center gap-1.5 bg-black/40 border border-white/10 rounded px-1.5 py-0.5">
             <button
               type="button"
               onClick={() => handleStepChange(-5)}
-              className="p-0.5 text-slate-400 hover:text-white transition-colors"
+              className="p-0.5 text-zinc-400 hover:text-white transition-colors"
             >
               <ChevronLeft className="w-3 h-3" />
             </button>
-            <span className="w-8 text-center text-xs font-mono font-bold text-white">
+            <span className="w-8 text-center text-xs font-body font-bold text-white">
               {qualitySteps}
             </span>
             <button
               type="button"
               onClick={() => handleStepChange(5)}
-              className="p-0.5 text-slate-400 hover:text-white transition-colors"
+              className="p-0.5 text-zinc-400 hover:text-white transition-colors"
             >
               <ChevronRight className="w-3 h-3" />
             </button>
@@ -115,7 +114,7 @@ export const ControlsNodeContent: React.FC<ControlsNodeContentProps> = ({
 
         {/* Prompt Strength */}
         <div className="flex items-center justify-between text-xs py-0.5">
-          <span className="text-[11px] text-slate-400">Prompt strength</span>
+          <span className="text-xs font-body text-zinc-300 font-medium">Prompt strength</span>
           <div className="flex items-center gap-1">
             <input
               type="range"
@@ -124,9 +123,9 @@ export const ControlsNodeContent: React.FC<ControlsNodeContentProps> = ({
               step="0.5"
               value={promptStrength}
               onChange={(e) => setPromptStrength(parseFloat(e.target.value))}
-              className="w-16 h-1 accent-cyan-400 bg-white/10 rounded cursor-pointer"
+              className="w-16 h-1 accent-rose-500 bg-white/10 rounded cursor-pointer"
             />
-            <span className="w-8 text-right text-xs font-mono text-cyan-300">
+            <span className="w-8 text-right text-xs font-body font-semibold text-rose-300">
               {promptStrength.toFixed(1)}
             </span>
           </div>
@@ -134,11 +133,11 @@ export const ControlsNodeContent: React.FC<ControlsNodeContentProps> = ({
 
         {/* Sampling Method */}
         <div className="flex items-center justify-between text-xs py-0.5">
-          <span className="text-[11px] text-slate-400">Sampling method</span>
+          <span className="text-xs font-body text-zinc-300 font-medium">Sampling method</span>
           <select
             value={samplingMethod}
             onChange={(e) => setSamplingMethod(e.target.value)}
-            className="w-32 px-2 py-1 text-xs text-right rounded bg-black/40 border border-white/10 text-white focus:border-cyan-400 focus:outline-none font-mono cursor-pointer"
+            className="w-32 px-2 py-1 text-xs text-right rounded bg-black/40 border border-white/10 text-white focus:border-rose-400 focus:outline-none font-body font-medium cursor-pointer"
           >
             <option value="dpm++ 2M Karras">dpm++ 2M Karras</option>
             <option value="Euler Ancestral">Euler Ancestral</option>

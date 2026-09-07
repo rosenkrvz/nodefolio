@@ -44,24 +44,24 @@ export const ClockNodeContent: React.FC = () => {
       </div>
 
       {/* Digital Real-Time Readout */}
-      <div className="w-full mt-3 pt-3 border-t border-white/[0.06] text-center">
-        <div className="font-tech text-base font-semibold text-white tracking-wider">
+      <div className="w-full mt-3 pt-3 border-t border-white/[0.08] text-center">
+        <div className="font-display text-xl font-bold text-white tracking-wider uppercase">
           {timeStr || '12:00:00 PM'}
         </div>
-        <div className="font-tech text-[10px] text-zinc-400 mt-0.5">
+        <div className="font-body text-xs text-zinc-300 font-medium mt-0.5">
           {dateStr}
         </div>
       </div>
 
       {/* System Timezone & Telemetry */}
-      <div className="w-full grid grid-cols-2 gap-1.5 mt-3 pt-2 border-t border-white/[0.04] text-[9px] font-tech text-zinc-500">
-        <div className="p-1.5 rounded-lg bg-white/[0.02] border border-white/[0.04] flex items-center gap-1.5 justify-center">
+      <div className="w-full grid grid-cols-2 gap-1.5 mt-3 pt-2 border-t border-white/[0.06] text-xs font-body text-zinc-400">
+        <div className="p-1.5 rounded-lg bg-white/[0.03] border border-white/[0.06] flex items-center gap-1.5 justify-center">
           <Globe className="w-3 h-3 text-rose-400" />
-          <span className="truncate">{timeZone}</span>
+          <span className="truncate font-medium">{timeZone}</span>
         </div>
-        <div className="p-1.5 rounded-lg bg-white/[0.02] border border-white/[0.04] flex items-center gap-1.5 justify-center text-zinc-400">
+        <div className="p-1.5 rounded-lg bg-white/[0.03] border border-white/[0.06] flex items-center gap-1.5 justify-center text-zinc-300">
           <Activity className="w-3 h-3 text-rose-500 animate-pulse" />
-          <span>Real-time Sync</span>
+          <span className="font-medium">Real-time Sync</span>
         </div>
       </div>
     </div>

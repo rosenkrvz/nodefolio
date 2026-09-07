@@ -30,15 +30,15 @@ export const ResumeModal: React.FC<ResumeModalProps> = ({ isOpen, onClose, nodes
         onClick={(e) => e.stopPropagation()}
       >
         {/* Top bar actions */}
-        <div className="flex items-center justify-between pb-4 mb-6 border-b border-white/[0.06]">
-          <div className="text-[10px] font-tech text-rose-500/90 tracking-widest uppercase">
+        <div className="flex items-center justify-between pb-4 mb-6 border-b border-white/[0.08]">
+          <div className="text-xs font-body font-bold text-rose-400 tracking-wider uppercase">
             Curriculum Vitae / Specification
           </div>
           <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={handlePrint}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/[0.05] hover:bg-white/[0.1] text-zinc-200 text-xs font-body transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/[0.06] hover:bg-white/[0.12] text-zinc-200 text-xs font-body font-semibold transition-colors border border-white/[0.08]"
             >
               <Printer className="w-3.5 h-3.5" />
               <span>Print / PDF</span>
@@ -54,31 +54,31 @@ export const ResumeModal: React.FC<ResumeModalProps> = ({ isOpen, onClose, nodes
         </div>
 
         {/* Profile Header */}
-        <div className="mb-6 pb-6 border-b border-white/[0.06]">
-          <h2 className="font-display text-3xl text-white tracking-wide">{profileNode?.name}</h2>
-          <p className="font-body text-sm text-rose-400 font-medium mt-1">{profileNode?.role}</p>
-          <p className="font-tech text-xs text-zinc-500 mt-1">
+        <div className="mb-6 pb-6 border-b border-white/[0.08]">
+          <h2 className="font-display text-3xl sm:text-4xl text-white font-bold tracking-wide uppercase">{profileNode?.name}</h2>
+          <p className="font-body text-base text-rose-400 font-semibold mt-1">{profileNode?.role}</p>
+          <p className="font-body text-xs text-zinc-400 font-medium mt-1">
             {profileNode?.location} • {profileNode?.email}
           </p>
-          <p className="font-body text-xs text-zinc-300 mt-3 max-w-2xl leading-relaxed">
+          <p className="font-body text-sm sm:text-base text-zinc-200 mt-3 max-w-2xl leading-relaxed">
             {profileNode?.bio}
           </p>
         </div>
 
         {/* Academic & Theoretical Foundation */}
         <div className="mb-6">
-          <div className="flex items-center gap-2 text-xs font-tech text-rose-400 uppercase tracking-widest mb-3">
-            <BookOpen className="w-4 h-4" />
-            <span>Academic & Theoretical Foundation</span>
+          <div className="flex items-center gap-2 text-sm font-display text-white font-bold uppercase tracking-wider mb-3">
+            <BookOpen className="w-4 h-4 text-rose-400" />
+            <span>Academic &amp; Theoretical Foundation</span>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {credNode.map((c) => (
-              <div key={c.id} className="p-3 rounded-lg bg-white/[0.02] border border-white/[0.05]">
-                <div className="font-body text-xs font-semibold text-zinc-100">{c.title}</div>
-                <div className="font-body text-[11px] text-zinc-400 mt-0.5">
+              <div key={c.id} className="p-3.5 rounded-xl bg-white/[0.03] border border-white/[0.06]">
+                <div className="font-body text-sm font-semibold text-zinc-100">{c.title}</div>
+                <div className="font-body text-xs text-zinc-400 mt-0.5 font-medium">
                   {c.issuer} • {c.issueDate}
                 </div>
-                <p className="font-body text-xs text-zinc-400 mt-2 leading-relaxed">
+                <p className="font-body text-xs sm:text-[13px] text-zinc-300 mt-2 leading-relaxed">
                   {c.description}
                 </p>
               </div>
@@ -88,15 +88,15 @@ export const ResumeModal: React.FC<ResumeModalProps> = ({ isOpen, onClose, nodes
 
         {/* Core Capabilities */}
         <div className="mb-6">
-          <div className="flex items-center gap-2 text-xs font-tech text-zinc-400 uppercase tracking-widest mb-3">
-            <Layers className="w-4 h-4" />
+          <div className="flex items-center gap-2 text-sm font-display text-white font-bold uppercase tracking-wider mb-3">
+            <Layers className="w-4 h-4 text-rose-400" />
             <span>Technical Capabilities</span>
           </div>
           <div className="flex flex-wrap gap-1.5">
             {[...modelsSkills, ...systemsSkills].map((s) => (
               <span
                 key={s.name}
-                className="px-2.5 py-1 rounded text-xs font-tech bg-white/[0.03] text-zinc-300 border border-white/[0.06]"
+                className="px-2.5 py-1 rounded-lg text-xs font-body font-semibold bg-white/[0.04] text-zinc-200 border border-white/[0.08]"
               >
                 {s.name}
               </span>

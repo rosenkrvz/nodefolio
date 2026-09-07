@@ -46,7 +46,7 @@ export const CanvasControlsDock: React.FC<CanvasControlsDockProps> = ({
       </button>
 
       {/* Current Scale Display */}
-      <div className="text-[10px] font-tech text-center text-zinc-500 py-0.5 select-none">
+      <div className="text-xs font-body font-semibold text-center text-zinc-300 py-0.5 select-none">
         {Math.round(scale * 100)}%
       </div>
 

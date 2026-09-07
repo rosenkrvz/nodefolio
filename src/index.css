@@ -1,9 +1,10 @@
 @import "tailwindcss";
 
 :root {
-  --font-display: 'Instrument Serif', Georgia, serif;
-  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-tech: 'JetBrains Mono', monospace;
+  --font-display: 'Josefin Sans', sans-serif;
+  --font-body: 'Satoshi', sans-serif;
+  --font-accent: 'Dongle', sans-serif;
+  --font-tech: 'Satoshi', sans-serif;
 }
 
 body {
@@ -22,20 +23,33 @@ body {
   font-family: var(--font-body);
 }
 
-.font-tech {
-  font-family: var(--font-tech);
+.font-accent {
+  font-family: var(--font-accent);
 }
 
-/* Editorial Typography Scales */
+.font-tech {
+  font-family: var(--font-body);
+  letter-spacing: 0.04em;
+}
+
+/* Structural & Editorial Typography Scales */
 .hero-heading {
-  font-size: clamp(4.25rem, 7.5vw, 7.5rem);
-  line-height: 0.95;
-  letter-spacing: -0.025em;
+  font-family: var(--font-display);
+  font-size: clamp(3.5rem, 6.5vw, 6.5rem);
+  line-height: 0.96;
+  letter-spacing: -0.02em;
 }
 
 .hero-subtext {
-  font-size: clamp(1.125rem, 1.4vw, 1.3125rem); /* 18px to 21px */
-  line-height: 1.6;
+  font-family: var(--font-body);
+  font-size: clamp(1.0625rem, 1.35vw, 1.25rem); /* 17px to 20px */
+  line-height: 1.65;
+}
+
+.hero-accent {
+  font-family: var(--font-accent);
+  font-size: clamp(2.5rem, 3.8vw, 3.5rem);
+  line-height: 0.85;
 }
 
 /* Technical background atmosphere */

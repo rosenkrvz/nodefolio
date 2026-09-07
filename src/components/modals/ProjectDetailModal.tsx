@@ -39,16 +39,21 @@ export const ProjectDetailModal: React.FC<ProjectDetailModalProps> = ({ project,
 
         {/* Header Eyebrow & Title */}
         <div className="mb-6">
-          <div className="flex items-center gap-2 mb-2">
-            <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
-            <span className="font-tech text-xs tracking-widest text-rose-400 uppercase">
-              Research Case Study • Machine Learning &amp; Representation
+          <div className="flex items-center justify-between gap-2 mb-2">
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
+              <span className="font-body text-xs font-bold tracking-wider text-rose-400 uppercase">
+                Research Case Study • Machine Learning &amp; Representation
+              </span>
+            </div>
+            <span className="font-accent text-3xl text-rose-300/80 leading-none hidden sm:inline">
+              topology • manifold
             </span>
           </div>
-          <h2 className="font-display text-3xl sm:text-4xl text-white font-normal tracking-tight">
+          <h2 className="font-display text-3xl sm:text-4xl text-white font-bold tracking-wide uppercase">
             {project.title}
           </h2>
-          <p className="font-body text-sm sm:text-base text-zinc-300 mt-1.5 leading-relaxed">
+          <p className="font-body text-base sm:text-lg text-zinc-300 mt-2 leading-relaxed max-w-2xl">
             {project.tagline}
           </p>
         </div>
@@ -64,10 +69,10 @@ export const ProjectDetailModal: React.FC<ProjectDetailModalProps> = ({ project,
           <div className="absolute inset-0 bg-gradient-to-t from-[#111419] via-black/20 to-transparent" />
           
           <div className="absolute bottom-3 left-4 right-4 flex items-center justify-between">
-            <div className="px-2.5 py-1 rounded bg-black/70 backdrop-blur-sm border border-white/10 text-[11px] font-tech text-zinc-300">
+            <div className="px-2.5 py-1 rounded bg-black/70 backdrop-blur-sm border border-white/10 text-xs font-body font-medium text-zinc-300">
               Artifact: Latent Space Traversal Map
             </div>
-            <div className="px-2.5 py-1 rounded bg-rose-950/70 backdrop-blur-sm border border-rose-500/30 text-[11px] font-tech text-rose-300">
+            <div className="px-2.5 py-1 rounded bg-rose-950/80 backdrop-blur-sm border border-rose-500/40 text-xs font-body font-semibold text-rose-300">
               Interactive WebGL Accelerated
             </div>
           </div>
@@ -78,65 +83,65 @@ export const ProjectDetailModal: React.FC<ProjectDetailModalProps> = ({ project,
           {project.metrics.map((m, idx) => (
             <div
               key={idx}
-              className="p-3.5 rounded-xl bg-white/[0.02] border border-white/[0.06] text-center"
+              className="p-3.5 rounded-xl bg-white/[0.03] border border-white/[0.06] text-center"
             >
-              <div className="text-[10px] font-tech text-zinc-500 uppercase tracking-wider">{m.label}</div>
-              <div className="text-sm font-tech font-semibold text-zinc-100 mt-1">{m.value}</div>
+              <div className="text-xs font-body font-semibold text-zinc-400 uppercase tracking-wider">{m.label}</div>
+              <div className="text-base sm:text-lg font-display font-bold text-white mt-1">{m.value}</div>
             </div>
           ))}
         </div>
 
         {/* Structured Case Study Sections */}
-        <div className="space-y-7 border-t border-white/[0.06] pt-6 text-xs sm:text-sm font-body">
+        <div className="space-y-8 border-t border-white/[0.08] pt-6 text-sm sm:text-base font-body">
           {/* 1. THE PROBLEM */}
           <div>
-            <div className="flex items-center gap-2 mb-2">
+            <div className="flex items-center gap-2 mb-2.5">
               <Binary className="w-4 h-4 text-rose-400" />
-              <h3 className="font-tech text-xs uppercase tracking-widest text-zinc-400">
+              <h3 className="font-display text-sm sm:text-base uppercase tracking-wider text-white font-bold">
                 1. The Problem
               </h3>
             </div>
-            <p className="text-zinc-300 leading-relaxed">
+            <p className="text-zinc-200 leading-relaxed font-normal">
               High-dimensional neural representations (such as 512-D and 1024-D latent vectors from diffusion and transformer architectures) are fundamentally opaque. Researchers and engineers struggle to inspect topological cluster collapse, mode entanglement, or evaluate how continuous trajectory shifts alter generation semantics without brute-force inference passes.
             </p>
           </div>
 
           {/* 2. WHAT I BUILT */}
           <div>
-            <div className="flex items-center gap-2 mb-2">
+            <div className="flex items-center gap-2 mb-2.5">
               <Layers className="w-4 h-4 text-rose-400" />
-              <h3 className="font-tech text-xs uppercase tracking-widest text-zinc-400">
+              <h3 className="font-display text-sm sm:text-base uppercase tracking-wider text-white font-bold">
                 2. What I Built
               </h3>
             </div>
-            <p className="text-zinc-300 leading-relaxed">
+            <p className="text-zinc-200 leading-relaxed font-normal">
               An interactive computational research interface that projects continuous high-dimensional manifolds down to an interpretable 3D topological workspace in real time. It enables interactive parametric exploration, manifold curve interpolation, and semantic cluster inspection with zero latency.
             </p>
           </div>
 
           {/* 3. HOW IT WORKS & ARCHITECTURE */}
           <div>
-            <div className="flex items-center gap-2 mb-2">
+            <div className="flex items-center gap-2 mb-2.5">
               <Activity className="w-4 h-4 text-rose-400" />
-              <h3 className="font-tech text-xs uppercase tracking-widest text-zinc-400">
+              <h3 className="font-display text-sm sm:text-base uppercase tracking-wider text-white font-bold">
                 3. How It Works
               </h3>
             </div>
-            <div className="p-4 rounded-xl bg-black/40 border border-white/[0.06] space-y-3 font-tech text-xs text-zinc-300">
-              <div className="flex items-center justify-between border-b border-white/[0.04] pb-2 text-zinc-400">
-                <span>STAGE 01</span>
+            <div className="p-4 rounded-xl bg-black/40 border border-white/[0.08] space-y-3 font-body text-xs sm:text-sm text-zinc-300">
+              <div className="flex items-center justify-between border-b border-white/[0.06] pb-2 text-zinc-300 font-medium">
+                <span className="font-bold text-rose-400">STAGE 01</span>
                 <span>Extract High-D Tensor Embeddings (PyTorch)</span>
               </div>
-              <div className="flex items-center justify-between border-b border-white/[0.04] pb-2 text-zinc-400">
-                <span>STAGE 02</span>
+              <div className="flex items-center justify-between border-b border-white/[0.06] pb-2 text-zinc-300 font-medium">
+                <span className="font-bold text-rose-400">STAGE 02</span>
                 <span>Dimensional Reduction via UMAP / t-SNE Optimization</span>
               </div>
-              <div className="flex items-center justify-between border-b border-white/[0.04] pb-2 text-zinc-400">
-                <span>STAGE 03</span>
+              <div className="flex items-center justify-between border-b border-white/[0.06] pb-2 text-zinc-300 font-medium">
+                <span className="font-bold text-rose-400">STAGE 03</span>
                 <span>Construct Neighborhood Topology &amp; Riemannian Geodesics</span>
               </div>
-              <div className="flex items-center justify-between text-zinc-400">
-                <span>STAGE 04</span>
+              <div className="flex items-center justify-between text-zinc-300 font-medium">
+                <span className="font-bold text-rose-400">STAGE 04</span>
                 <span>Interactive Shader Projection &amp; Spherical Interpolation</span>
               </div>
             </div>
@@ -144,71 +149,71 @@ export const ProjectDetailModal: React.FC<ProjectDetailModalProps> = ({ project,
 
           {/* 4. DATA / MODEL */}
           <div>
-            <div className="flex items-center gap-2 mb-2">
+            <div className="flex items-center gap-2 mb-2.5">
               <Cpu className="w-4 h-4 text-rose-400" />
-              <h3 className="font-tech text-xs uppercase tracking-widest text-zinc-400">
+              <h3 className="font-display text-sm sm:text-base uppercase tracking-wider text-white font-bold">
                 4. Data &amp; Model Specifications
               </h3>
             </div>
-            <ul className="space-y-2 text-zinc-300">
-              <li className="flex items-start gap-2">
+            <ul className="space-y-2.5 text-zinc-200">
+              <li className="flex items-start gap-2.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-rose-500 mt-2 shrink-0" />
-                <span><strong>Representation Source:</strong> 512-dimensional bottleneck latent tensors derived from conditional diffusion models.</span>
+                <span><strong className="text-white">Representation Source:</strong> 512-dimensional bottleneck latent tensors derived from conditional diffusion models.</span>
               </li>
-              <li className="flex items-start gap-2">
+              <li className="flex items-start gap-2.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-rose-500 mt-2 shrink-0" />
-                <span><strong>Mathematical Objectives:</strong> Minimization of cross-entropy fuzzy simplicial set divergence (UMAP objective function) alongside Kullback-Leibler divergence calibration.</span>
+                <span><strong className="text-white">Mathematical Objectives:</strong> Minimization of cross-entropy fuzzy simplicial set divergence (UMAP objective function) alongside Kullback-Leibler divergence calibration.</span>
               </li>
-              <li className="flex items-start gap-2">
+              <li className="flex items-start gap-2.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-rose-500 mt-2 shrink-0" />
-                <span><strong>Clustering Metric:</strong> Cosine similarity and Euclidean geodesic distance across continuous cluster centroids.</span>
+                <span><strong className="text-white">Clustering Metric:</strong> Cosine similarity and Euclidean geodesic distance across continuous cluster centroids.</span>
               </li>
             </ul>
           </div>
 
           {/* 5. RESULTS & TELEMETRY */}
           <div>
-            <div className="flex items-center gap-2 mb-2">
+            <div className="flex items-center gap-2 mb-2.5">
               <BarChart2 className="w-4 h-4 text-rose-400" />
-              <h3 className="font-tech text-xs uppercase tracking-widest text-zinc-400">
+              <h3 className="font-display text-sm sm:text-base uppercase tracking-wider text-white font-bold">
                 5. Results &amp; Telemetry
               </h3>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-              <div className="p-3.5 rounded-xl bg-white/[0.02] border border-white/[0.06]">
-                <div className="font-semibold text-white mb-1">Convergence &amp; Stability</div>
-                <p className="text-zinc-400">Achieved steady gradient descent convergence with 0.0142 loss across 1,200 sample embedding checkpoints.</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs sm:text-sm">
+              <div className="p-3.5 rounded-xl bg-white/[0.03] border border-white/[0.06]">
+                <div className="font-bold text-white mb-1 font-body">Convergence &amp; Stability</div>
+                <p className="text-zinc-300 leading-relaxed">Achieved steady gradient descent convergence with 0.0142 loss across 1,200 sample embedding checkpoints.</p>
               </div>
-              <div className="p-3.5 rounded-xl bg-white/[0.02] border border-white/[0.06]">
-                <div className="font-semibold text-white mb-1">Real-Time Fluidity</div>
-                <p className="text-zinc-400">Maintained locked 60 FPS viewport orbit and parametric traversal using instanced buffer geometries.</p>
+              <div className="p-3.5 rounded-xl bg-white/[0.03] border border-white/[0.06]">
+                <div className="font-bold text-white mb-1 font-body">Real-Time Fluidity</div>
+                <p className="text-zinc-300 leading-relaxed">Maintained locked 60 FPS viewport orbit and parametric traversal using instanced buffer geometries.</p>
               </div>
             </div>
           </div>
 
           {/* 6. WHAT I LEARNED */}
           <div>
-            <div className="flex items-center gap-2 mb-2">
+            <div className="flex items-center gap-2 mb-2.5">
               <CheckCircle2 className="w-4 h-4 text-rose-400" />
-              <h3 className="font-tech text-xs uppercase tracking-widest text-zinc-400">
+              <h3 className="font-display text-sm sm:text-base uppercase tracking-wider text-white font-bold">
                 6. What I Learned
               </h3>
             </div>
-            <p className="text-zinc-300 leading-relaxed">
+            <p className="text-zinc-200 leading-relaxed font-normal">
               Learned the critical trade-offs between local fidelity and global structure preservation in non-linear dimensionality reduction. Discovered how high-dimensional space sparsity often leads to false clustering if perplexity hyper-parameters are not regularized against geometric manifold curvature.
             </p>
           </div>
 
           {/* 7. TECHNOLOGIES */}
           <div>
-            <h3 className="font-tech text-xs uppercase tracking-widest text-zinc-500 mb-2.5">
+            <h3 className="font-display text-sm sm:text-base uppercase tracking-wider text-white font-bold mb-3">
               Technologies &amp; Frameworks
             </h3>
             <div className="flex flex-wrap gap-2">
               {project.tags.map((tag) => (
                 <span
                   key={tag}
-                  className="px-3 py-1 rounded-lg text-xs font-tech bg-white/[0.04] text-zinc-300 border border-white/[0.07]"
+                  className="px-3 py-1 rounded-lg text-xs font-body font-semibold bg-white/[0.04] text-zinc-200 border border-white/[0.08]"
                 >
                   {tag}
                 </span>
@@ -224,7 +229,7 @@ export const ProjectDetailModal: React.FC<ProjectDetailModalProps> = ({ project,
               href={project.liveUrl}
               target="_blank"
               rel="noreferrer"
-              className="flex-1 py-2.5 px-4 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-medium text-xs transition-all text-center flex items-center justify-center gap-2"
+              className="flex-1 py-2.5 px-4 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-body font-semibold text-xs sm:text-sm transition-all text-center flex items-center justify-center gap-2"
             >
               <span>Explore Code Repository</span>
               <ExternalLink className="w-3.5 h-3.5" />
@@ -235,7 +240,7 @@ export const ProjectDetailModal: React.FC<ProjectDetailModalProps> = ({ project,
               href={project.githubUrl}
               target="_blank"
               rel="noreferrer"
-              className="py-2.5 px-4 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] text-zinc-300 text-xs transition-colors flex items-center gap-2"
+              className="py-2.5 px-4 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] text-zinc-200 text-xs sm:text-sm font-body font-semibold transition-colors flex items-center gap-2 border border-white/[0.08]"
             >
               <Github className="w-3.5 h-3.5" />
               <span>GitHub</span>
@@ -244,7 +249,7 @@ export const ProjectDetailModal: React.FC<ProjectDetailModalProps> = ({ project,
           <button
             type="button"
             onClick={onClose}
-            className="py-2.5 px-5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-zinc-400 text-xs transition-colors"
+            className="py-2.5 px-5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-zinc-300 text-xs sm:text-sm font-body font-semibold transition-colors border border-white/[0.06]"
           >
             Close
           </button>

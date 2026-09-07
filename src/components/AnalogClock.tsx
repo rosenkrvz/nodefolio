@@ -29,8 +29,8 @@ export const AnalogClock: React.FC<AnalogClockProps> = ({ scale = 1, className =
       style={{ transform: scale !== 1 ? `scale(${scale})` : undefined }}
     >
       <div className="face">
-        <p className="v-index font-tech">II</p>
-        <p className="h-index font-tech">II</p>
+        <p className="v-index font-display font-bold">II</p>
+        <p className="h-index font-display font-bold">II</p>
         <div className="hand">
           <div className="hand">
             <div
