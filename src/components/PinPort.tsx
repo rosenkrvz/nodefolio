@@ -5,6 +5,8 @@ interface PinPortProps {
   pin: Pin;
   isConnected?: boolean;
   isActive?: boolean;
+  onStartDragWire?: (pin: Pin, e: React.MouseEvent) => void;
+  onEndDragWire?: (pin: Pin) => void;
 }
 
 const PIN_COLOR_MAP: Record<string, { bg: string; border: string; glow: string }> = {
@@ -23,6 +25,8 @@ export const PinPort: React.FC<PinPortProps> = ({
   pin,
   isConnected = false,
   isActive = false,
+  onStartDragWire,
+  onEndDragWire,
 }) => {
   const colors = PIN_COLOR_MAP[pin.color] || PIN_COLOR_MAP.crimson;
   const isInput = pin.type === 'input';
@@ -30,25 +34,32 @@ export const PinPort: React.FC<PinPortProps> = ({
   return (
     <div
       id={`pin-${pin.id}`}
-      className={`group flex items-center gap-2 py-0.5 select-none transition-colors ${
+      onMouseUp={() => onEndDragWire && onEndDragWire(pin)}
+      className={`group flex items-center gap-2 py-0.5 select-none transition-colors cursor-pointer ${
         isInput ? 'flex-row' : 'flex-row-reverse text-right'
       }`}
     >
-      {/* Physical Pin Dot */}
-      <div className="relative flex items-center justify-center">
+      {/* Physical Pin Dot with Interactive Dragging */}
+      <div
+        className="relative flex items-center justify-center p-1"
+        onMouseDown={(e) => {
+          e.stopPropagation();
+          onStartDragWire && onStartDragWire(pin, e);
+        }}
+      >
         <div
-          className={`w-3 h-3 rounded-full border transition-all duration-200 cursor-pointer ${colors.bg} ${colors.border} ${
+          className={`w-3 h-3 rounded-full border transition-all duration-200 cursor-crosshair ${colors.bg} ${colors.border} ${
             isConnected ? colors.glow : 'opacity-50 hover:opacity-100'
-          } ${isActive ? 'scale-125 ring-2 ring-rose-400/50' : 'hover:scale-110'}`}
+          } ${isActive ? 'scale-125 ring-2 ring-rose-400/50' : 'hover:scale-125'}`}
+          title={`${pin.label} (${pin.type}) - Drag to connect`}
         />
         <div className="absolute w-1 h-1 rounded-full bg-black/80 pointer-events-none" />
       </div>
 
-      {/* Label Text - Satoshi for clean computational interface */}
-      <span className="text-[11px] font-body font-medium text-zinc-300 group-hover:text-white transition-colors tracking-normal">
+      {/* Label Text */}
+      <span className="text-[11px] font-body font-medium text-zinc-300 group-hover:text-white transition-colors tracking-normal pointer-events-none">
         {pin.label}
       </span>
     </div>
   );
 };
-
