@@ -12,7 +12,7 @@ import {
   ChevronDown,
   ChevronUp,
   Maximize2,
-  Sparkles,
+  Activity,
   Layers,
   Award,
   Sliders,
@@ -38,7 +38,7 @@ const CATEGORY_ICON_MAP: Record<string, React.ReactNode> = {
   certificates: <Award className="w-3.5 h-3.5 text-rose-400" />,
   controls: <Sliders className="w-3.5 h-3.5 text-rose-400" />,
   project: <Eye className="w-3.5 h-3.5 text-rose-400" />,
-  experience: <Sparkles className="w-3.5 h-3.5 text-rose-400" />,
+  experience: <Activity className="w-3.5 h-3.5 text-rose-400" />,
 };
 
 export const GraphNode: React.FC<GraphNodeProps> = ({
@@ -164,15 +164,15 @@ export const GraphNode: React.FC<GraphNodeProps> = ({
           <div className="flex items-center gap-2.5 min-w-0">
             {/* Category Indicator Dot / Icon */}
             <div className="flex items-center justify-center w-5 h-5 rounded-md bg-white/[0.06] border border-white/10 shrink-0">
-              {CATEGORY_ICON_MAP[node.category] || <Sparkles className="w-3.5 h-3.5 text-white" />}
+              {CATEGORY_ICON_MAP[node.category] || <Layers className="w-3.5 h-3.5 text-white" />}
             </div>
 
             <div className="min-w-0">
-              <h3 className="text-xs font-semibold text-zinc-100 tracking-tight truncate font-body">
+              <h3 className="text-[13px] sm:text-sm font-semibold text-zinc-100 tracking-tight truncate font-body">
                 {node.title}
               </h3>
               {node.subtitle && (
-                <p className="text-[10px] font-tech text-zinc-400 truncate tracking-tight">
+                <p className="text-[11px] font-tech text-zinc-400 truncate tracking-tight">
                   {node.subtitle}
                 </p>
               )}

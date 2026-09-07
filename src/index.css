@@ -1,15 +1,17 @@
 @import "tailwindcss";
 
 :root {
-  --font-display: 'DM Serif Display', 'Instrument Serif', Georgia, serif;
-  --font-body: 'Satoshi', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-display: 'Instrument Serif', Georgia, serif;
+  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-tech: 'JetBrains Mono', monospace;
 }
 
 body {
   font-family: var(--font-body);
-  background-color: #181c21;
+  background-color: #14171c;
   color: #ededed;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 .font-display {
@@ -24,21 +26,29 @@ body {
   font-family: var(--font-tech);
 }
 
-/* From Uiverse.io by chase2k25 */
-.bg-uiverse-container {
-  background: #181c21;
+/* Editorial Typography Scales */
+.hero-heading {
+  font-size: clamp(4.25rem, 7.5vw, 7.5rem);
+  line-height: 0.95;
+  letter-spacing: -0.025em;
 }
 
+.hero-subtext {
+  font-size: clamp(1.125rem, 1.4vw, 1.3125rem); /* 18px to 21px */
+  line-height: 1.6;
+}
+
+/* Technical background atmosphere */
 .pattern-bg {
   width: 100%;
   height: 100%;
   overflow: hidden;
   background: repeating-linear-gradient(
     135deg,
-    #232526 0px,
-    #232526 60px,
-    #23252699 70px,
-    #414345 130px
+    #181b20 0px,
+    #181b20 60px,
+    #1c1f25 70px,
+    #242930 130px
   );
 }
 
@@ -52,13 +62,13 @@ body {
     135deg,
     transparent 0px,
     transparent 60px,
-    rgba(65, 67, 69, 0.22) 70px,
+    rgba(65, 75, 85, 0.16) 70px,
     transparent 130px
   );
-  opacity: 0.7;
+  opacity: 0.65;
   z-index: 1;
   pointer-events: none;
-  animation: cubeMove 18s linear infinite alternate;
+  animation: cubeMove 24s linear infinite alternate;
 }
 
 @keyframes cubeMove {
@@ -66,55 +76,53 @@ body {
     transform: translateY(0) scale(1);
   }
   to {
-    transform: translateY(-20%) scale(1.02) rotate(1deg);
+    transform: translateY(-15%) scale(1.015) rotate(0.5deg);
   }
 }
 
-/* Faint quiet coordinate grid overlay on top of pattern */
+/* Subtle coordinate grid overlay */
 .bg-canvas-dots-overlay {
-  background-image: radial-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 1px);
-  background-size: 28px 28px;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+  background-size: 32px 32px;
 }
 
-/* Refined, quiet computational card styling */
+/* Controlled computational card styling */
 .node-card {
-  background: rgba(18, 21, 26, 0.92);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(18, 21, 26, 0.94);
+  border: 1px solid rgba(255, 255, 255, 0.09);
   box-shadow: 0 16px 36px -12px rgba(0, 0, 0, 0.85), 0 0 0 1px rgba(255, 255, 255, 0.02);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
 }
 
 .node-card:hover {
-  border-color: rgba(225, 29, 72, 0.3);
-  box-shadow: 0 20px 44px -10px rgba(0, 0, 0, 0.9), 0 0 24px -6px rgba(225, 29, 72, 0.12);
+  border-color: rgba(225, 29, 72, 0.4);
+  box-shadow: 0 24px 48px -10px rgba(0, 0, 0, 0.92), 0 0 24px -6px rgba(225, 29, 72, 0.14);
 }
 
 .node-card-active {
-  border-color: rgba(225, 29, 72, 0.55) !important;
-  box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.95), 0 0 32px -4px rgba(225, 29, 72, 0.22) !important;
+  border-color: rgba(225, 29, 72, 0.6) !important;
+  box-shadow: 0 24px 52px -10px rgba(0, 0, 0, 0.95), 0 0 32px -4px rgba(225, 29, 72, 0.25) !important;
 }
 
-/* Subtle wire path styling */
+/* Spline wire path styling */
 .wire-path {
   transition: stroke 0.2s ease, stroke-width 0.2s ease;
 }
 
-/* Custom quiet scrollbars */
+/* Custom scrollbars */
 ::-webkit-scrollbar {
   width: 5px;
   height: 5px;
 }
 ::-webkit-scrollbar-track {
-  background: #050507;
+  background: #0d0f12;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.14);
   border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(225, 29, 72, 0.35);
+  background: rgba(225, 29, 72, 0.45);
 }
-
-
