@@ -1,5 +1,6 @@
 import React from 'react';
 import { ArrowLeft, ArrowUpRight, Activity, Cpu, GitCommit, Sparkles, Terminal, CheckCircle2 } from 'lucide-react';
+import { LabNoteSection } from './LabNoteSection';
 
 interface ChronicleMilestone {
   id: string;
@@ -270,6 +271,9 @@ export const ChronicleView: React.FC<ChronicleViewProps> = ({
             );
           })}
         </div>
+
+        {/* LAB NOTE / INTERACTIVE EXPERIMENTAL ARTIFACT SECTION */}
+        <LabNoteSection />
 
         {/* Closing Editorial Colophon */}
         <div className="mt-16 pt-10 border-t border-white/[0.08] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 font-tech text-xs tracking-widest uppercase text-zinc-500">
