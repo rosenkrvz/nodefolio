@@ -263,9 +263,9 @@ export default function App() {
 
         // Release programmatic scroll lock when arrival is achieved
         if (isProgrammaticScrollRef.current) {
-          if (activeNavTabRef.current === 'home' && currentProgressRef.current <= 0.03) {
+          if (activeNavTabRef.current === 'home' && currentProgressRef.current <= 0.05) {
             isProgrammaticScrollRef.current = false;
-          } else if (activeNavTabRef.current !== 'home' && currentProgressRef.current >= 0.97) {
+          } else if (activeNavTabRef.current !== 'home' && currentProgressRef.current >= 0.85) {
             isProgrammaticScrollRef.current = false;
           }
         }
@@ -578,6 +578,10 @@ export default function App() {
       if (preset === 'network') {
         return ['node-profile', 'node-models', 'node-credentials', 'node-systems', 'node-project', 'node-clock'].includes(n.id);
       }
+      if (preset === 'project') {
+        // Research tab: Zoom in on the primary 4-node focal gateway (Data Pipeline, Computer Vision, Profile, Academic & Foundation)
+        return ['node-pipeline', 'node-profile', 'node-vision', 'node-credentials'].includes(n.id);
+      }
       if (preset === 'skills') {
         return [
           'node-profile',
@@ -592,7 +596,7 @@ export default function App() {
       if (preset === 'certificates') {
         return ['node-profile', 'node-credentials', 'node-inference', 'node-eval'].includes(n.id);
       }
-      // 'project' or 'all': full research workspace ecosystem
+      // 'all': full research workspace ecosystem
       return true;
     });
 
@@ -627,8 +631,8 @@ export default function App() {
     const availH = Math.max(300, vh - (vw < 640 ? 100 : 140));
     const maxFitScale = Math.min(availW / groupW, availH / groupH);
 
-    // Scale default: 0.60 for network tab, or scaled to frame all nodes neatly (capped at 0.48) for research
-    const defaultScale = preset === 'network' ? 0.60 : Math.min(0.48, Number((maxFitScale * 0.94).toFixed(2)));
+    // Scale default: 0.60 for network tab and research focal gateway, or fitted neatly (capped at 0.48) for other views
+    const defaultScale = (preset === 'network' || preset === 'project') ? 0.60 : Math.min(0.48, Number((maxFitScale * 0.94).toFixed(2)));
     const targetDesired = desiredScale !== undefined ? desiredScale : defaultScale;
     const minScaleFloor = vw < 640 ? 0.22 : 0.32;
     const targetScale = Math.min(targetDesired, Math.max(minScaleFloor, Number(maxFitScale.toFixed(2))));
@@ -696,14 +700,8 @@ export default function App() {
       // If a modal dialog is open, allow native scrolling within modal
       if (document.querySelector('[role="dialog"]')) return;
 
-      // If a programmatic scroll transition is in flight, prevent wheel interruptions
-      if (isProgrammaticScrollRef.current) {
-        e.preventDefault();
-        return;
-      }
-
       // Check if user is currently inside the computational node space UI
-      const inNodeSpace = scrollProgressRef.current >= 0.95;
+      const inNodeSpace = activeNavTabRef.current !== 'home' || scrollProgressRef.current >= 0.80;
 
       if (!inNodeSpace) {
         // User is on cover page or transitioning down into node space:
@@ -728,26 +726,27 @@ export default function App() {
         return;
       }
 
-      // Mouse is in the node space anywhere (not in upper tab bar):
-      // NEVER trigger cover page animation! Strictly zoom in and zoom out the cards.
+      // Mouse is inside node space: release any scroll animation lock immediately
+      isProgrammaticScrollRef.current = false;
+
+      // Prevent page scrolling so workspace zooms smoothly
       e.preventDefault();
       e.stopPropagation();
 
       const container = canvasContainerRef.current;
       if (!container) return;
 
-      // Normalize wheel delta across mice and trackpads:
-      // Standard wheel notch is ~100 delta. Clamp to [-50, 50] to eliminate wild skips.
-      const clampedDelta = Math.max(-50, Math.min(50, -e.deltaY));
+      // Standardize wheel delta across mice, trackpads, and line scrolling
+      const rawDelta = e.deltaMode === 1 ? e.deltaY * 20 : (e.deltaMode === 2 ? e.deltaY * 400 : e.deltaY);
+      const clampedDelta = Math.max(-120, Math.min(120, rawDelta));
       
-      // Fine-grained multiplier: ~1% to 1.25% change per notch
-      const zoomStep = clampedDelta * 0.00025;
-      const zoomFactor = 1 + zoomStep;
+      // Smooth continuous exponential zoom (~4.5% per wheel notch, buttery smooth on trackpads)
+      const zoomFactor = Math.exp(-clampedDelta * 0.0012);
 
       setTransform((prev) => {
-        // Increment smoothly in 1% increments (0.70 -> 0.71 -> 0.72)
         const rawScale = prev.scale * zoomFactor;
-        const nextScale = Math.max(0.35, Math.min(1.80, Math.round(rawScale * 100) / 100));
+        // Keep between 0.25 and 2.20 with 3-decimal precision to support smooth trackpads
+        const nextScale = Math.max(0.25, Math.min(2.20, Math.round(rawScale * 1000) / 1000));
 
         if (nextScale === prev.scale) return prev;
 
@@ -861,6 +860,7 @@ export default function App() {
       setSelectedNodeId(null);
       centerViewForPreset('network', 0.60);
       isProgrammaticScrollRef.current = true;
+      setTimeout(() => { isProgrammaticScrollRef.current = false; }, 500);
 
       if (wasOnTimeline) {
         // Coming from Chronicle — skip scroll animation, land instantly in workspace
@@ -881,6 +881,7 @@ export default function App() {
       setSelectedNodeId(null);
       centerViewForPreset('project');
       isProgrammaticScrollRef.current = true;
+      setTimeout(() => { isProgrammaticScrollRef.current = false; }, 500);
 
       if (wasOnTimeline) {
         // Coming from Chronicle — skip scroll animation, land instantly in workspace
@@ -898,6 +899,7 @@ export default function App() {
       const wasOnTimeline = activeViewRef.current === 'timeline';
       setActiveView('canvas');
       isProgrammaticScrollRef.current = true;
+      setTimeout(() => { isProgrammaticScrollRef.current = false; }, 500);
 
       if (wasOnTimeline) {
         targetProgressRef.current = 1;
@@ -991,8 +993,8 @@ export default function App() {
               <ArchitecturalReveal scrollProgress={scrollProgress}>
                 <div
                   style={{
-                    opacity: scrollProgress >= 0.10 ? Math.min(1, Math.pow((scrollProgress - 0.10) / 0.40, 1.2)) : 0,
-                    pointerEvents: scrollProgress >= 0.84 ? 'auto' : 'none',
+                    opacity: activeNavTab !== 'home' ? 1 : (scrollProgress >= 0.10 ? Math.min(1, Math.pow((scrollProgress - 0.10) / 0.40, 1.2)) : 0),
+                    pointerEvents: (activeNavTab !== 'home' || scrollProgress >= 0.80) ? 'auto' : 'none',
                   }}
                   className="absolute inset-0 w-full h-screen pt-16 transition-opacity duration-150 ease-out z-10"
                 >

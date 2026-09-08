@@ -2,7 +2,7 @@ import { NodeData, Connection } from '../types';
 
 export const EXPANDED_RESEARCH_NODES: NodeData[] = [
   // -------------------------------------------------------------
-  // NODE 01 — STATISTICAL INFERENCE (Column 2, Tier 3)
+  // NODE 01 — STATISTICAL INFERENCE (Col 2, Tier 3 - Foundations)
   // -------------------------------------------------------------
   {
     id: 'node-inference',
@@ -10,8 +10,8 @@ export const EXPANDED_RESEARCH_NODES: NodeData[] = [
     subtitle: 'Probability & Decision Systems',
     category: 'statistics',
     shape: 'square',
-    x: 560,
-    y: 1000,
+    x: 580,
+    y: 1140,
     width: 340,
     inputs: [
       { id: 'pin-inf-in', label: 'mathematical.core', color: 'crimson', type: 'input', nodeId: 'node-inference' },
@@ -46,7 +46,7 @@ export const EXPANDED_RESEARCH_NODES: NodeData[] = [
   },
 
   // -------------------------------------------------------------
-  // NODE 02 — OPTIMIZATION ENGINE (Column 2, Tier 4)
+  // NODE 02 — OPTIMIZATION ENGINE (Col 3, Tier 3 - Dynamics)
   // -------------------------------------------------------------
   {
     id: 'node-optimization',
@@ -54,8 +54,8 @@ export const EXPANDED_RESEARCH_NODES: NodeData[] = [
     subtitle: 'Learning Through Objective Functions',
     category: 'optimization',
     shape: 'square',
-    x: 560,
-    y: 1460,
+    x: 1040,
+    y: 1140,
     width: 340,
     inputs: [
       { id: 'pin-opt-in', label: 'loss.gradient', color: 'crimson', type: 'input', nodeId: 'node-optimization' },
@@ -90,7 +90,7 @@ export const EXPANDED_RESEARCH_NODES: NodeData[] = [
   },
 
   // -------------------------------------------------------------
-  // NODE 03 — DATA PIPELINE (Column 1, Tier 1)
+  // NODE 03 — DATA PIPELINE (Col 1, Tier 1 - Focal Gateway Top-Left)
   // -------------------------------------------------------------
   {
     id: 'node-pipeline',
@@ -98,8 +98,8 @@ export const EXPANDED_RESEARCH_NODES: NodeData[] = [
     subtitle: 'From Raw Signals to Features',
     category: 'pipeline',
     shape: 'square',
-    x: 100,
-    y: 80,
+    x: 120,
+    y: 160,
     width: 340,
     inputs: [],
     outputs: [
@@ -133,7 +133,7 @@ export const EXPANDED_RESEARCH_NODES: NodeData[] = [
   },
 
   // -------------------------------------------------------------
-  // NODE 04 — MODEL EVALUATION (Column 3, Tier 3)
+  // NODE 04 — MODEL EVALUATION (Col 4, Tier 2 - Representation & Metrics)
   // -------------------------------------------------------------
   {
     id: 'node-eval',
@@ -141,8 +141,8 @@ export const EXPANDED_RESEARCH_NODES: NodeData[] = [
     subtitle: 'Measurement, Error & Generalization',
     category: 'evaluation',
     shape: 'square',
-    x: 1020,
-    y: 1000,
+    x: 1500,
+    y: 640,
     width: 340,
     inputs: [
       { id: 'pin-eval-in', label: 'hypothesis.dist', color: 'rose', type: 'input', nodeId: 'node-eval' },
@@ -177,7 +177,7 @@ export const EXPANDED_RESEARCH_NODES: NodeData[] = [
   },
 
   // -------------------------------------------------------------
-  // NODE 05 — VECTOR SYSTEMS (Column 4, Tier 1)
+  // NODE 05 — VECTOR SYSTEMS (Col 4, Tier 1 - High-Dim Embedding)
   // -------------------------------------------------------------
   {
     id: 'node-vector',
@@ -185,8 +185,8 @@ export const EXPANDED_RESEARCH_NODES: NodeData[] = [
     subtitle: 'Embeddings & Similarity',
     category: 'vectors',
     shape: 'square',
-    x: 1480,
-    y: 80,
+    x: 1500,
+    y: 160,
     width: 340,
     inputs: [
       { id: 'pin-vec-in', label: 'latent.projection', color: 'crimson', type: 'input', nodeId: 'node-vector' },
@@ -221,7 +221,7 @@ export const EXPANDED_RESEARCH_NODES: NodeData[] = [
   },
 
   // -------------------------------------------------------------
-  // NODE 06 — COMPUTER VISION (Column 2, Tier 1)
+  // NODE 06 — COMPUTER VISION (Col 2, Tier 1 - Focal Gateway Top-Right)
   // -------------------------------------------------------------
   {
     id: 'node-vision',
@@ -229,8 +229,8 @@ export const EXPANDED_RESEARCH_NODES: NodeData[] = [
     subtitle: 'Signals, Features & Visual Reps',
     category: 'vision',
     shape: 'square',
-    x: 560,
-    y: 80,
+    x: 580,
+    y: 160,
     width: 340,
     inputs: [
       { id: 'pin-vis-in', label: 'raw.stream', color: 'rose', type: 'input', nodeId: 'node-vision' },
@@ -265,7 +265,7 @@ export const EXPANDED_RESEARCH_NODES: NodeData[] = [
   },
 
   // -------------------------------------------------------------
-  // NODE 07 — GENERATIVE SYSTEMS (Column 3, Tier 4)
+  // NODE 07 — GENERATIVE SYSTEMS (Col 4, Tier 3 - Foundations)
   // -------------------------------------------------------------
   {
     id: 'node-generative',
@@ -273,8 +273,8 @@ export const EXPANDED_RESEARCH_NODES: NodeData[] = [
     subtitle: 'Learning Distributions & Structure',
     category: 'generative',
     shape: 'square',
-    x: 1020,
-    y: 1460,
+    x: 1500,
+    y: 1140,
     width: 340,
     inputs: [
       { id: 'pin-gen-in', label: 'param.trajectory', color: 'crimson', type: 'input', nodeId: 'node-generative' },
@@ -310,7 +310,7 @@ export const EXPANDED_RESEARCH_NODES: NodeData[] = [
   },
 
   // -------------------------------------------------------------
-  // NODE 08 — SOFTWARE SYSTEMS (Column 5, Tier 3)
+  // NODE 08 — SOFTWARE SYSTEMS (Col 6, Tier 2 - Production Architecture)
   // -------------------------------------------------------------
   {
     id: 'node-software',
@@ -318,8 +318,8 @@ export const EXPANDED_RESEARCH_NODES: NodeData[] = [
     subtitle: 'Turning Models Into Software',
     category: 'software',
     shape: 'square',
-    x: 2040,
-    y: 1120,
+    x: 2520,
+    y: 640,
     width: 340,
     inputs: [
       { id: 'pin-soft-in', label: 'cuda.kernels', color: 'crimson', type: 'input', nodeId: 'node-software' },
@@ -354,7 +354,7 @@ export const EXPANDED_RESEARCH_NODES: NodeData[] = [
   },
 
   // -------------------------------------------------------------
-  // NODE 09 — EXPERIMENT LAB (Column 4, Tier 4)
+  // NODE 09 — EXPERIMENT LAB (Col 5, Tier 3 - Stress Testing)
   // -------------------------------------------------------------
   {
     id: 'node-lab',
@@ -362,8 +362,8 @@ export const EXPANDED_RESEARCH_NODES: NodeData[] = [
     subtitle: 'Ideas Under Computational Stress',
     category: 'experiment',
     shape: 'square',
-    x: 1480,
-    y: 1460,
+    x: 1960,
+    y: 1140,
     width: 340,
     inputs: [
       { id: 'pin-lab-in', label: 'latent.stress', color: 'crimson', type: 'input', nodeId: 'node-lab' },
@@ -398,7 +398,7 @@ export const EXPANDED_RESEARCH_NODES: NodeData[] = [
   },
 
   // -------------------------------------------------------------
-  // NODE 10 — COMPUTATIONAL SYSTEMS (Column 5, Tier 1)
+  // NODE 10 — COMPUTATIONAL SYSTEMS (Col 6, Tier 1 - Hardware Acceleration)
   // -------------------------------------------------------------
   {
     id: 'node-computational',
@@ -406,8 +406,8 @@ export const EXPANDED_RESEARCH_NODES: NodeData[] = [
     subtitle: 'Where Math Becomes Software',
     category: 'computational',
     shape: 'square',
-    x: 2040,
-    y: 80,
+    x: 2520,
+    y: 160,
     width: 340,
     inputs: [],
     outputs: [

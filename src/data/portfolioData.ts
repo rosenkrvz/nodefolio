@@ -1,14 +1,14 @@
 import { NodeData, Connection } from '../types';
 
 export const INITIAL_NODES: NodeData[] = [
-  // 1. Identity & Researcher Profile Node (Input Anchor - Column 1, Tier 2)
+  // 1. Identity & Researcher Profile Node (Focal Quadrant - Bottom-Left)
   {
     id: 'node-profile',
     title: 'Shubham Sharma',
     subtitle: 'AI & Data Science',
     category: 'profile',
-    x: 100,
-    y: 520,
+    x: 120,
+    y: 640,
     width: 340,
     inputs: [],
     outputs: [
@@ -35,14 +35,14 @@ export const INITIAL_NODES: NodeData[] = [
     },
   },
 
-  // 2. Generative Models & Representation Learning (Column 2, Tier 2)
+  // 2. Generative Models & Representation Learning (Neural Core Cluster - Top)
   {
     id: 'node-models',
     title: 'Generative Architectures',
     subtitle: 'Representation & Learning',
     category: 'skills',
-    x: 560,
-    y: 520,
+    x: 1040,
+    y: 160,
     width: 340,
     inputs: [
       { id: 'pin-in-models', label: 'representation.manifold', color: 'crimson', type: 'input', nodeId: 'node-models' },
@@ -60,14 +60,14 @@ export const INITIAL_NODES: NodeData[] = [
     ],
   },
 
-  // 3. Academic & Technical Foundation (Column 1, Tier 3)
+  // 3. Academic & Technical Foundation (Focal Quadrant - Bottom-Right)
   {
     id: 'node-credentials',
     title: 'Academic & Foundation',
     subtitle: 'Mathematics & Computation',
     category: 'certificates',
-    x: 100,
-    y: 1000,
+    x: 580,
+    y: 640,
     width: 340,
     inputs: [
       { id: 'pin-in-cred', label: 'mathematical.core', color: 'crimson', type: 'input', nodeId: 'node-credentials' },
@@ -103,14 +103,14 @@ export const INITIAL_NODES: NodeData[] = [
     ],
   },
 
-  // 4. Neural Systems & Data Infrastructure (Column 3, Tier 2)
+  // 4. Neural Systems & Data Infrastructure (Neural Core Cluster - Bottom)
   {
     id: 'node-systems',
     title: 'Neural Systems & Data',
     subtitle: 'Learning Infrastructure',
     category: 'skills',
-    x: 1020,
-    y: 520,
+    x: 1040,
+    y: 640,
     width: 340,
     inputs: [
       { id: 'pin-in-systems', label: 'tensor.pipeline', color: 'crimson', type: 'input', nodeId: 'node-systems' },
@@ -128,14 +128,14 @@ export const INITIAL_NODES: NodeData[] = [
     ],
   },
 
-  // 5. Featured Hero Visual Anchor: Latent Graph Visualizer (Column 4, Tier 2-3 Hero Stage)
+  // 5. Featured Hero Visual Anchor: Latent Graph Visualizer (Hero Cluster)
   {
     id: 'node-project',
     title: 'Latent Graph Visualizer',
     subtitle: 'Interactive Research Artifact',
     category: 'project',
-    x: 1480,
-    y: 520,
+    x: 1960,
+    y: 160,
     width: 440,
     inputs: [
       { id: 'pin-in-project', label: 'latent.projection', color: 'crimson', type: 'input', nodeId: 'node-project' },
@@ -162,14 +162,14 @@ export const INITIAL_NODES: NodeData[] = [
     },
   },
 
-  // 6. System Chronometer Node (Column 5, Tier 2)
+  // 6. System Chronometer Node (Terminal Sync)
   {
     id: 'node-clock',
     title: 'System Chronometer',
     subtitle: 'Temporal Coordinates • Live Sync',
     category: 'clock',
-    x: 2040,
-    y: 520,
+    x: 2980,
+    y: 360,
     width: 260,
     inputs: [
       { id: 'pin-in-clock', label: 'temporal.sync', color: 'crimson', type: 'input', nodeId: 'node-clock' },
