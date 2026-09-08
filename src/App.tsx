@@ -573,7 +573,8 @@ export default function App() {
     const vw = typeof window !== 'undefined' ? window.innerWidth : 1200;
     const vh = typeof window !== 'undefined' ? window.innerHeight : 800;
 
-    const targetNodes = nodes.filter((n) => {
+    // Use canonical baseline nodes for calculating structural center (prevents distortion from dragged cards)
+    const targetNodes = ALL_INITIAL_NODES.filter((n) => {
       if (preset === 'network') {
         return ['node-profile', 'node-models', 'node-credentials', 'node-systems', 'node-project', 'node-clock'].includes(n.id);
       }
@@ -591,7 +592,7 @@ export default function App() {
       if (preset === 'certificates') {
         return ['node-profile', 'node-credentials', 'node-inference', 'node-eval'].includes(n.id);
       }
-      // 'project' or 'all': full research workspace ecosystem including visitor notes
+      // 'project' or 'all': full research workspace ecosystem
       return true;
     });
 
@@ -640,17 +641,33 @@ export default function App() {
     const y = Math.round(viewCenterY - groupCenterY * targetScale);
 
     setTransform({ x, y, scale: targetScale });
-  }, [nodes, getNodeEstimatedHeight]);
+  }, [getNodeEstimatedHeight]);
 
   // Fit screen handler
   const handleFitScreen = useCallback(() => {
     centerViewForPreset(activePreset);
   }, [centerViewForPreset, activePreset]);
 
-  // Initial auto-centering on load and resize
+  // Center strictly ONLY on initial mount and when activePreset explicitly changes (NOT on node drags or zooms)
   useEffect(() => {
     centerViewForPreset(activePreset);
-  }, [centerViewForPreset, activePreset]);
+  }, [activePreset, centerViewForPreset]);
+
+  // Debounced window resize auto-centering
+  useEffect(() => {
+    let resizeTimer: ReturnType<typeof setTimeout> | null = null;
+    const handleResize = () => {
+      if (resizeTimer) clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        centerViewForPreset(activePreset);
+      }, 150);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => {
+      if (resizeTimer) clearTimeout(resizeTimer);
+      window.removeEventListener('resize', handleResize);
+    };
+  }, [activePreset, centerViewForPreset]);
 
   // Return to cover with smooth, single-pass upward transition (no ricochet)
   const handleReturnToCover = useCallback(() => {

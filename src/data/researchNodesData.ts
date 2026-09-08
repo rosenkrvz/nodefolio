@@ -398,7 +398,7 @@ export const EXPANDED_RESEARCH_NODES: NodeData[] = [
   },
 
   // -------------------------------------------------------------
-  // NODE 10 — COMPUTATIONAL SYSTEMS (Column 5, Tier 2)
+  // NODE 10 — COMPUTATIONAL SYSTEMS (Column 5, Tier 1)
   // -------------------------------------------------------------
   {
     id: 'node-computational',
@@ -407,7 +407,7 @@ export const EXPANDED_RESEARCH_NODES: NodeData[] = [
     category: 'computational',
     shape: 'square',
     x: 2040,
-    y: 680,
+    y: 80,
     width: 340,
     inputs: [],
     outputs: [

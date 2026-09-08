@@ -162,14 +162,14 @@ export const INITIAL_NODES: NodeData[] = [
     },
   },
 
-  // 6. System Chronometer Node (Column 5, Tier 1)
+  // 6. System Chronometer Node (Column 5, Tier 2)
   {
     id: 'node-clock',
     title: 'System Chronometer',
     subtitle: 'Temporal Coordinates • Live Sync',
     category: 'clock',
     x: 2040,
-    y: 80,
+    y: 520,
     width: 260,
     inputs: [
       { id: 'pin-in-clock', label: 'temporal.sync', color: 'crimson', type: 'input', nodeId: 'node-clock' },
