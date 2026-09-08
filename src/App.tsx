@@ -76,6 +76,8 @@ export default function App() {
   // Active nav tab ref for event listeners
   const activeNavTabRef = useRef(activeNavTab);
   activeNavTabRef.current = activeNavTab;
+  const activeViewRef = useRef(activeView);
+  activeViewRef.current = activeView;
 
   // Damped, interruptible scroll progress tracking (0.0 to 1.0)
   const targetProgressRef = useRef<number>(0);
@@ -148,6 +150,7 @@ export default function App() {
   // Smooth interruptible scroll progress tracking via weighted damping
   useEffect(() => {
     const updateTargetProgress = () => {
+      if (activeViewRef.current !== 'canvas') return;
       const docEl = document.documentElement;
       const totalHeight = docEl.scrollHeight - window.innerHeight;
       if (totalHeight > 0) {
@@ -159,25 +162,27 @@ export default function App() {
 
     let animId: number;
     const tick = () => {
-      const target = targetProgressRef.current;
-      const current = currentProgressRef.current;
-      const diff = target - current;
+      if (activeViewRef.current === 'canvas') {
+        const target = targetProgressRef.current;
+        const current = currentProgressRef.current;
+        const diff = target - current;
 
-      if (Math.abs(diff) > 0.001) {
-        // Weighted damping factor (0.16) for smooth momentum without overshooting
-        const next = current + diff * 0.16;
-        currentProgressRef.current = next;
-        setScrollProgress(Math.round(next * 1000) / 1000);
-      } else if (current !== target) {
-        currentProgressRef.current = target;
-        setScrollProgress(target);
-      }
+        if (Math.abs(diff) > 0.001) {
+          // Weighted damping factor (0.16) for smooth momentum without overshooting
+          const next = current + diff * 0.16;
+          currentProgressRef.current = next;
+          setScrollProgress(Math.round(next * 1000) / 1000);
+        } else if (current !== target) {
+          currentProgressRef.current = target;
+          setScrollProgress(target);
+        }
 
-      // Automatically sync active tab indicator to scroll position
-      if (currentProgressRef.current >= 0.50 && activeNavTabRef.current === 'home') {
-        setActiveNavTab('network');
-      } else if (currentProgressRef.current < 0.40 && activeNavTabRef.current === 'network') {
-        setActiveNavTab('home');
+        // Automatically sync active tab indicator to scroll position
+        if (currentProgressRef.current >= 0.50 && activeNavTabRef.current === 'home') {
+          setActiveNavTab('network');
+        } else if (currentProgressRef.current < 0.40 && activeNavTabRef.current === 'network') {
+          setActiveNavTab('home');
+        }
       }
 
       animId = window.requestAnimationFrame(tick);
@@ -523,6 +528,10 @@ export default function App() {
   // Return to cover
   const handleReturnToCover = useCallback(() => {
     setActiveNavTab('home');
+    setActiveView('canvas');
+    targetProgressRef.current = 0;
+    currentProgressRef.current = 0;
+    setScrollProgress(0);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
 
@@ -533,8 +542,13 @@ export default function App() {
     setActivePreset('all');
     setSelectedNodeId(null);
     centerViewForPreset('all', 0.70);
-    const maxScroll = typeof document !== 'undefined' ? document.documentElement.scrollHeight - window.innerHeight : 1000;
-    window.scrollTo({ top: maxScroll, behavior: 'smooth' });
+    targetProgressRef.current = 1;
+    currentProgressRef.current = 1;
+    setScrollProgress(1);
+    setTimeout(() => {
+      const maxScroll = typeof document !== 'undefined' ? document.documentElement.scrollHeight - window.innerHeight : 1000;
+      window.scrollTo({ top: maxScroll, behavior: 'smooth' });
+    }, 50);
   }, [centerViewForPreset]);
 
   // Focus specific node on canvas with smooth centered pan
@@ -542,9 +556,11 @@ export default function App() {
     const target = nodes.find((n) => n.id === nodeId);
     if (!target) return;
 
+    setActiveView('canvas');
     setSelectedNodeId(nodeId);
-    const maxScroll = typeof document !== 'undefined' ? document.documentElement.scrollHeight - window.innerHeight : 1000;
-    window.scrollTo({ top: maxScroll, behavior: 'smooth' });
+    targetProgressRef.current = 1;
+    currentProgressRef.current = 1;
+    setScrollProgress(1);
 
     if (nodeId === 'node-project') {
       setActiveNavTab('projects');
@@ -568,6 +584,11 @@ export default function App() {
       y: Math.round(viewCenterY - (target.y + nodeHalfHeight) * targetScale),
       scale: targetScale,
     });
+
+    setTimeout(() => {
+      const maxScroll = typeof document !== 'undefined' ? document.documentElement.scrollHeight - window.innerHeight : 1000;
+      window.scrollTo({ top: maxScroll, behavior: 'smooth' });
+    }, 50);
   }, [nodes]);
 
   // Top Nav Tab Selection - Centered layouts for Network and Research tabs
@@ -581,22 +602,38 @@ export default function App() {
       setActivePreset('all');
       setSelectedNodeId(null);
       centerViewForPreset('all', 0.70);
-      const maxScroll = typeof document !== 'undefined' ? document.documentElement.scrollHeight - window.innerHeight : 1000;
-      window.scrollTo({ top: maxScroll, behavior: 'smooth' });
+      targetProgressRef.current = 1;
+      currentProgressRef.current = 1;
+      setScrollProgress(1);
+      setTimeout(() => {
+        const maxScroll = typeof document !== 'undefined' ? document.documentElement.scrollHeight - window.innerHeight : 1000;
+        window.scrollTo({ top: maxScroll, behavior: 'smooth' });
+      }, 50);
     } else if (tab === 'projects') {
       setActiveView('canvas');
       setActivePreset('project');
       setSelectedNodeId(null);
       centerViewForPreset('project', 0.70);
-      const maxScroll = typeof document !== 'undefined' ? document.documentElement.scrollHeight - window.innerHeight : 1000;
-      window.scrollTo({ top: maxScroll, behavior: 'smooth' });
+      targetProgressRef.current = 1;
+      currentProgressRef.current = 1;
+      setScrollProgress(1);
+      setTimeout(() => {
+        const maxScroll = typeof document !== 'undefined' ? document.documentElement.scrollHeight - window.innerHeight : 1000;
+        window.scrollTo({ top: maxScroll, behavior: 'smooth' });
+      }, 50);
     } else if (tab === 'lab') {
       setActiveView('canvas');
-      const maxScroll = typeof document !== 'undefined' ? document.documentElement.scrollHeight - window.innerHeight : 1000;
-      window.scrollTo({ top: maxScroll, behavior: 'smooth' });
-      handleFocusNode('node-controls');
+      targetProgressRef.current = 1;
+      currentProgressRef.current = 1;
+      setScrollProgress(1);
+      setTimeout(() => {
+        const maxScroll = typeof document !== 'undefined' ? document.documentElement.scrollHeight - window.innerHeight : 1000;
+        window.scrollTo({ top: maxScroll, behavior: 'smooth' });
+        handleFocusNode('node-controls');
+      }, 50);
     } else if (tab === 'notebook') {
       setActiveView('timeline');
+      window.scrollTo({ top: 0, behavior: 'instant' });
     } else if (tab === 'about') {
       setIsResumeOpen(true);
     }
@@ -638,23 +675,55 @@ export default function App() {
 
       {/* CONTINUOUS SCROLL-DRIVEN ARCHITECTURE */}
       <main className="relative w-full max-w-full overflow-x-clip">
-        {/* Continuous vertical scroll track when on canvas view, dynamic for inspector/timeline */}
-        <div
-          ref={scrollContainerRef}
-          className={`relative w-full ${activeView === 'canvas' ? 'h-[250vh]' : 'min-h-screen'}`}
-        >
-          {/* Sticky 100vh Viewport Stage */}
-          <div className="sticky top-0 w-full h-screen overflow-hidden">
-            {/* SECTION 02: Computational Neural Workspace (Base Layer) */}
-            <ArchitecturalReveal scrollProgress={effectiveProgress}>
-              <div
-                style={{
-                  opacity: effectiveProgress >= 0.16 ? Math.min(1, (effectiveProgress - 0.16) / 0.45) : 0,
-                  pointerEvents: effectiveProgress >= 0.82 ? 'auto' : 'none',
-                }}
-                className="absolute inset-0 w-full h-screen pt-16 transition-opacity duration-150 ease-out z-10"
-              >
-                {activeView === 'canvas' ? (
+        {activeView === 'timeline' ? (
+          /* Editorial Chronicle Journal View */
+          <div className="relative w-full min-h-screen z-20 pointer-events-auto">
+            <ChronicleView
+              onBackToCanvas={() => {
+                setActiveView('canvas');
+                setActiveNavTab('network');
+                targetProgressRef.current = 1;
+                currentProgressRef.current = 1;
+                setScrollProgress(1);
+                setTimeout(() => {
+                  const maxScroll = typeof document !== 'undefined' ? document.documentElement.scrollHeight - window.innerHeight : 1000;
+                  window.scrollTo({ top: maxScroll, behavior: 'instant' });
+                }, 40);
+              }}
+              onFocusNodeOnCanvas={(nodeId) => {
+                handleFocusNode(nodeId);
+              }}
+            />
+          </div>
+        ) : activeView === 'list' ? (
+          /* Inspector Catalog View */
+          <div className="relative w-full min-h-screen z-20 pointer-events-auto pt-16">
+            <InspectorListView
+              nodes={nodes}
+              connections={connections}
+              onFocusNodeOnCanvas={handleFocusNode}
+              onOpenCertificateModal={(cert) => setSelectedCertificate(cert)}
+              onOpenProjectModal={(proj) => setSelectedProject(proj)}
+              onOpenContact={() => setIsContactOpen(true)}
+            />
+          </div>
+        ) : (
+          /* SECTION 01 + 02: Canvas Viewport (Cover + Neural Workspace) */
+          <div
+            ref={scrollContainerRef}
+            className="relative w-full h-[250vh]"
+          >
+            {/* Sticky 100vh Viewport Stage */}
+            <div className="sticky top-0 w-full h-screen overflow-hidden">
+              {/* SECTION 02: Computational Neural Workspace (Base Layer) */}
+              <ArchitecturalReveal scrollProgress={scrollProgress}>
+                <div
+                  style={{
+                    opacity: scrollProgress >= 0.16 ? Math.min(1, (scrollProgress - 0.16) / 0.45) : 0,
+                    pointerEvents: scrollProgress >= 0.82 ? 'auto' : 'none',
+                  }}
+                  className="absolute inset-0 w-full h-screen pt-16 transition-opacity duration-150 ease-out z-10"
+                >
                   <div
                     id="graph-workspace"
                     aria-label="Interactive computational graph canvas"
@@ -750,82 +819,54 @@ export default function App() {
                       onReturnToCover={handleReturnToCover}
                     />
                   </div>
-                ) : activeView === 'list' ? (
-                  /* Inspector Catalog View */
-                  <InspectorListView
-                    nodes={nodes}
-                    connections={connections}
-                    onFocusNodeOnCanvas={handleFocusNode}
-                    onOpenCertificateModal={(cert) => setSelectedCertificate(cert)}
-                    onOpenProjectModal={(proj) => setSelectedProject(proj)}
-                    onOpenContact={() => setIsContactOpen(true)}
-                  />
-                ) : (
-                  /* Editorial Chronicle Journal View */
-                  <div className="absolute inset-0 z-30 pointer-events-auto overflow-y-auto">
-                    <ChronicleView
-                      onBackToCanvas={() => {
-                        setActiveView('canvas');
-                        setActiveNavTab('network');
-                      }}
-                      onFocusNodeOnCanvas={(nodeId) => {
-                        setActiveView('canvas');
-                        handleFocusNode(nodeId);
-                      }}
-                    />
-                  </div>
-                )}
 
-                {/* Unified Precision Workspace Footer Bar (Only shown on spatial canvas to prevent overlap on Chronicle) */}
-                {activeView === 'canvas' && (
+                  {/* Unified Precision Workspace Footer Bar */}
                   <footer
                     aria-label="Portfolio coordinates and workspace navigation"
                     className="absolute bottom-3 inset-x-4 sm:inset-x-8 z-20 pointer-events-none flex items-center justify-between text-[11px] sm:text-xs font-body text-zinc-400 select-none px-4 py-2 rounded-2xl bg-black/80 border border-white/10 backdrop-blur-md shadow-[0_4px_24px_rgba(0,0,0,0.65)]"
                   >
-                  <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
-                    <span className="px-2 py-0.5 rounded bg-white/[0.08] border border-white/10 font-semibold text-white uppercase text-[10px] tracking-wider shrink-0">
-                      SPATIAL WORKSPACE
-                    </span>
-                    <span className="text-zinc-200 font-semibold font-display tracking-wider uppercase truncate hidden sm:inline">
-                      Shubham Sharma
-                    </span>
-                    <span className="text-zinc-600 hidden sm:inline">&bull;</span>
-                    <span className="text-rose-400 font-medium truncate">AI &amp; Data Science</span>
-                  </div>
+                    <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+                      <span className="px-2 py-0.5 rounded bg-white/[0.08] border border-white/10 font-semibold text-white uppercase text-[10px] tracking-wider shrink-0">
+                        SPATIAL WORKSPACE
+                      </span>
+                      <span className="text-zinc-200 font-semibold font-display tracking-wider uppercase truncate hidden sm:inline">
+                        Shubham Sharma
+                      </span>
+                      <span className="text-zinc-600 hidden sm:inline">&bull;</span>
+                      <span className="text-rose-400 font-medium truncate">AI &amp; Data Science</span>
+                    </div>
 
-                  <div className="hidden lg:flex items-center gap-3 text-zinc-400 text-[11px]">
-                    <span>Drag background to pan</span>
-                    <span>&bull;</span>
-                    <span>Scroll wheel to zoom</span>
-                    <span>&bull;</span>
-                    <span>Drag nodes to arrange</span>
-                  </div>
+                    <div className="hidden lg:flex items-center gap-3 text-zinc-400 text-[11px]">
+                      <span>Drag background to pan</span>
+                      <span>&bull;</span>
+                      <span>Scroll wheel to zoom</span>
+                      <span>&bull;</span>
+                      <span>Drag nodes to arrange</span>
+                    </div>
 
-                  <div className="flex items-center gap-2 text-zinc-300 font-medium text-[11px] shrink-0">
-                    <span>{filteredNodes.length} NODES</span>
-                    <span>/</span>
-                    <span>{filteredConnections.length} ACTIVE SPLINES</span>
-                    <span>&bull;</span>
-                    <span className="text-rose-500 font-bold flex items-center gap-1.5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
-                      LIVE
-                    </span>
-                  </div>
-                </footer>
-              )}
-            </div>
-            </ArchitecturalReveal>
+                    <div className="flex items-center gap-2 text-zinc-300 font-medium text-[11px] shrink-0">
+                      <span>{filteredNodes.length} NODES</span>
+                      <span>/</span>
+                      <span>{filteredConnections.length} ACTIVE SPLINES</span>
+                      <span>&bull;</span>
+                      <span className="text-rose-500 font-bold flex items-center gap-1.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
+                        LIVE
+                      </span>
+                    </div>
+                  </footer>
+                </div>
+              </ArchitecturalReveal>
 
-            {/* SECTION 01: Solid Editorial Portfolio Cover (Surface Layer, sits on top and physically lifts on scroll) */}
-            {isCoverActive && (
+              {/* SECTION 01: Solid Editorial Portfolio Cover (Surface Layer, sits on top and physically lifts on scroll) */}
               <EditorialCover
                 scrollProgress={scrollProgress}
                 onExplore={handleExplore}
                 onViewWork={() => handleSelectNavTab('projects')}
               />
-            )}
+            </div>
           </div>
-        </div>
+        )}
       </main>
 
       {/* Modals */}
