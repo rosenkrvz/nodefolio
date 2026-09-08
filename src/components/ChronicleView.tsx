@@ -19,12 +19,18 @@ export interface ChronicleMilestone {
   statusLabel: string;
   linkedNodeId?: string;
   metrics?: { label: string; value: string }[];
+  displayYear?: string;
+  shortTopic?: string;
+  subTopic?: string;
 }
 
 const MILESTONES: ChronicleMilestone[] = [
   {
     id: 'm1',
     period: '2025 — PRESENT',
+    displayYear: '2025',
+    shortTopic: 'Latent Manifolds',
+    subTopic: 'Diffusion Geodesics',
     phase: 'PHASE 05',
     category: 'GENERATIVE ARCHITECTURES & LATENT DYNAMICS',
     title: 'High-Dimensional Latent Manifold Traversal & Geodesics',
@@ -44,6 +50,9 @@ const MILESTONES: ChronicleMilestone[] = [
   {
     id: 'm2',
     period: 'Q4 2024 — Q1 2025',
+    displayYear: '2024–25',
+    shortTopic: 'Attention Kernels',
+    subTopic: 'KV-Cache Dynamics',
     phase: 'PHASE 04',
     category: 'ATTENTION MECHANISMS & COMPUTE KERNELS',
     title: 'Self-Attention Kernel Optimization & KV-Cache Dynamics',
@@ -63,6 +72,9 @@ const MILESTONES: ChronicleMilestone[] = [
   {
     id: 'm3',
     period: 'MID — LATE 2024',
+    displayYear: '2024',
+    shortTopic: 'Metric Spaces',
+    subTopic: 'Contrastive Uniformity',
     phase: 'PHASE 03',
     category: 'REPRESENTATION LEARNING & EMBEDDING GEOMETRY',
     title: 'Hyperspherical Uniformity & Contrastive Representation Spaces',
@@ -82,6 +94,9 @@ const MILESTONES: ChronicleMilestone[] = [
   {
     id: 'm4',
     period: '2023 — 2024',
+    displayYear: '2023–24',
+    shortTopic: 'Convex Optimization',
+    subTopic: 'Statistical Theory',
     phase: 'PHASE 02',
     category: 'MATHEMATICAL & PROBABILISTIC FOUNDATIONS',
     title: 'Convex Optimization, Probability & Statistical Machine Learning',
@@ -101,6 +116,9 @@ const MILESTONES: ChronicleMilestone[] = [
   {
     id: 'm5',
     period: 'EARLY 2023',
+    displayYear: '2023',
+    shortTopic: 'Autograd Engine',
+    subTopic: 'Reverse-Mode Autodiff',
     phase: 'PHASE 01',
     category: 'SYSTEMS ARCHITECTURE & AUTOGRAD ENGINE',
     title: 'First Principles: Computational Graphs & Reverse-Mode Autodiff',
@@ -356,8 +374,9 @@ export const ChronicleView: React.FC<ChronicleViewProps> = ({
     return MILESTONES.map((m) => ({
       id: m.id,
       phase: m.phase,
-      year: m.period.split('—')[0].trim(),
-      shortTitle: m.title.split(' ')[0] + ' ' + (m.title.split(' ')[1] || ''),
+      year: m.displayYear || m.period.split('—')[0].trim(),
+      shortTitle: m.shortTopic || m.title.split(' ')[0] + ' ' + (m.title.split(' ')[1] || ''),
+      subTopic: m.subTopic,
       status: m.status,
     }));
   }, []);

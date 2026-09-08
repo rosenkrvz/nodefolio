@@ -6,6 +6,7 @@ export interface TimelinePhase {
   phase: string;
   year: string;
   shortTitle: string;
+  subTopic?: string;
   status: 'active' | 'verified' | 'deployed' | 'foundation';
 }
 
@@ -22,28 +23,40 @@ export const ChronicleTimelineAxis: React.FC<ChronicleTimelineAxisProps> = ({
   onSelectPhase,
   className = '',
 }) => {
+  const activePhase = phases.find((p) => p.id === activePhaseId) || phases[0];
+
   return (
     <div
-      className={`relative w-full border-y border-white/[0.08] bg-[#090b10]/95 backdrop-blur-md select-none ${className}`}
+      className={`relative w-full border-y border-white/[0.08] bg-[#090b10]/95 backdrop-blur-md select-none transition-all ${className}`}
       aria-label="Chronological Research Axis"
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-8 py-3.5 flex flex-col md:flex-row md:items-center justify-between gap-4">
-        {/* Axis Label & Metadata */}
-        <div className="flex items-center gap-3 shrink-0">
-          <div className="flex items-center gap-1.5 font-tech text-[10px] uppercase tracking-[0.25em] text-zinc-400">
-            <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
-            <span className="text-zinc-200 font-semibold">TEMPORAL AXIS</span>
-            <span className="text-zinc-600">&bull;</span>
-            <span className="text-zinc-400 font-mono">2023 — 2026</span>
+      <div className="max-w-7xl mx-auto px-4 sm:px-8 py-3.5">
+        {/* Top Header Row: System Beacon & Navigation Metadata */}
+        <div className="flex items-center justify-between gap-4 pb-2.5 mb-2.5 border-b border-white/[0.06]">
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <div className="flex items-center gap-2 font-tech text-[10px] uppercase tracking-[0.22em] text-zinc-400">
+              <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse shadow-[0_0_8px_#f43f5e]" />
+              <span className="text-zinc-100 font-bold">TEMPORAL AXIS</span>
+              <span className="text-zinc-600">&bull;</span>
+              <span className="text-zinc-400 font-mono">2023 — 2026 ROADMAP</span>
+            </div>
+
+            <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded text-[10px] font-mono text-zinc-400 bg-white/[0.04] border border-white/[0.07]">
+              {phases.length} PHASES
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2 font-tech text-[10px] tracking-wider uppercase text-zinc-400">
+            <span className="hidden md:inline text-zinc-500">SELECTED:</span>
+            <span className="font-semibold text-rose-400">
+              {activePhase ? `${activePhase.phase} • ${activePhase.shortTitle}` : 'RESEARCH LOG'}
+            </span>
           </div>
         </div>
 
-        {/* Chronological Track & Nodes */}
-        <div className="relative flex-1 max-w-3xl flex items-center justify-between gap-2 overflow-x-auto no-scrollbar py-1">
-          {/* Continuous architectural baseline wire */}
-          <div className="absolute top-1/2 left-4 right-4 h-[1px] bg-white/[0.12] -translate-y-1/2 pointer-events-none hidden sm:block" />
-
-          {phases.map((p, idx) => {
+        {/* Responsive 5-Card Stepper Deck */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-2.5 w-full">
+          {phases.map((p) => {
             const isSelected = p.id === activePhaseId;
             const isCurrent = p.status === 'active';
 
@@ -55,54 +68,67 @@ export const ChronicleTimelineAxis: React.FC<ChronicleTimelineAxisProps> = ({
                   playSound('select');
                   onSelectPhase(p.id);
                 }}
-                className={`relative z-10 group flex items-center gap-2 sm:flex-col sm:items-center px-2.5 py-1.5 rounded-lg transition-all duration-200 cursor-pointer focus:outline-none ${
+                className={`relative group flex flex-col justify-between p-2.5 sm:p-3 rounded-xl text-left transition-all duration-200 cursor-pointer overflow-hidden focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/60 ${
                   isSelected
-                    ? 'bg-white/[0.08] border border-rose-500/50 shadow-[0_0_15px_rgba(244,63,94,0.15)]'
-                    : 'bg-[#090b10] border border-white/[0.06] hover:border-white/[0.20] hover:bg-white/[0.04]'
+                    ? 'bg-[#151922] border border-rose-500/60 shadow-[0_4px_20px_rgba(244,63,94,0.18)] -translate-y-0.5'
+                    : 'bg-[#0c0e15]/90 border border-white/[0.07] hover:border-white/[0.22] hover:bg-[#121620] hover:-translate-y-0.5'
                 }`}
               >
-                {/* Year Tick & Phase Pill */}
-                <div className="flex items-center gap-1.5">
-                  <span
-                    className={`w-2 h-2 rounded-full transition-all duration-200 ${
-                      isCurrent
-                        ? 'bg-rose-500 shadow-[0_0_8px_#f43f5e]'
-                        : isSelected
-                        ? 'bg-white shadow-[0_0_6px_#ffffff]'
-                        : 'bg-zinc-600 group-hover:bg-zinc-400'
-                    }`}
-                  />
-                  <span
-                    className={`font-tech text-[10px] tracking-wider uppercase font-semibold ${
-                      isSelected ? 'text-white' : 'text-zinc-400 group-hover:text-zinc-200'
-                    }`}
-                  >
-                    {p.phase}
+                {/* Active Glowing Top Seam */}
+                {isSelected && (
+                  <div className="absolute top-0 inset-x-0 h-[2px] bg-gradient-to-r from-rose-500 via-rose-400 to-rose-500 shadow-[0_0_10px_#f43f5e]" />
+                )}
+
+                {/* Subtle Ambient Radial Glow on Active */}
+                {isSelected && (
+                  <div className="absolute -right-6 -bottom-6 w-20 h-20 rounded-full bg-rose-500/10 blur-xl pointer-events-none" />
+                )}
+
+                {/* Card Top Row: Phase + Status Dot + Year Badge */}
+                <div className="flex items-center justify-between w-full gap-1.5">
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <span
+                      className={`w-1.5 h-1.5 rounded-full shrink-0 transition-all ${
+                        isCurrent
+                          ? 'bg-rose-500 shadow-[0_0_6px_#f43f5e]'
+                          : isSelected
+                          ? 'bg-white shadow-[0_0_6px_#ffffff]'
+                          : 'bg-zinc-600 group-hover:bg-zinc-400'
+                      }`}
+                    />
+                    <span
+                      className={`font-tech text-[10px] tracking-wider uppercase font-bold truncate ${
+                        isSelected ? 'text-rose-400' : 'text-zinc-400 group-hover:text-zinc-200'
+                      }`}
+                    >
+                      {p.phase}
+                    </span>
+                  </div>
+
+                  <span className="font-mono text-[10px] text-zinc-400 font-semibold px-1.5 py-0.5 rounded bg-white/[0.04] border border-white/[0.06] shrink-0">
+                    {p.year}
                   </span>
                 </div>
 
-                <div className="flex items-center gap-1.5 sm:text-center">
-                  <span
-                    className={`font-body text-[11px] font-bold ${
-                      isCurrent ? 'text-rose-400' : isSelected ? 'text-zinc-200' : 'text-zinc-400'
+                {/* Card Body: Primary Topic */}
+                <div className="mt-2 w-full">
+                  <h4
+                    className={`font-display text-[12px] sm:text-[13px] font-bold tracking-tight leading-snug truncate transition-colors ${
+                      isSelected ? 'text-white' : 'text-zinc-300 group-hover:text-white'
                     }`}
                   >
-                    {p.year}
-                  </span>
-                  <span className="hidden lg:inline text-zinc-600 text-[9px]">&bull;</span>
-                  <span className="hidden lg:inline font-body text-[10px] text-zinc-400 tracking-wider uppercase truncate max-w-[120px]">
                     {p.shortTitle}
-                  </span>
+                  </h4>
+
+                  {p.subTopic && (
+                    <p className="mt-0.5 font-mono text-[10px] text-zinc-500 group-hover:text-zinc-400 truncate">
+                      {p.subTopic}
+                    </p>
+                  )}
                 </div>
               </button>
             );
           })}
-        </div>
-
-        {/* Legend / Status Flag */}
-        <div className="hidden xl:flex items-center gap-2 font-tech text-[10px] tracking-widest text-zinc-400 uppercase shrink-0">
-          <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
-          <span className="text-zinc-300 font-semibold">TENSOR PROGRESSION</span>
         </div>
       </div>
     </div>
