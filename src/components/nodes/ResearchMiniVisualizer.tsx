@@ -74,7 +74,7 @@ const ResearchMiniVisualizerComponent: React.FC<ResearchMiniVisualizerProps> = (
               RAW
             </div>
             <div className="h-[1px] flex-1 bg-gradient-to-r from-zinc-700 via-rose-500 to-zinc-700 relative">
-              <span className="w-1.5 h-1.5 rounded-full bg-rose-400 absolute -top-[2.5px] left-1/2 -translate-x-1/2 animate-ping" />
+              <span className="w-1.5 h-1.5 rounded-full bg-rose-400 absolute -top-[2.5px] left-1/2 -translate-x-1/2 shadow-[0_0_6px_#f43f5e]" />
             </div>
             <div className="px-2 py-1 rounded bg-white/[0.04] border border-white/[0.08] text-[9px] text-zinc-300">
               ARROW

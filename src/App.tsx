@@ -38,12 +38,23 @@ const loadSavedVisitorNodes = (): NodeData[] => {
   return [];
 };
 
+const RESEARCH_NODE_IDS = new Set([
+  'node-pipeline',
+  'node-inference',
+  'node-profile',
+  'node-models',
+  'node-systems',
+  'node-project',
+]);
+
 const ALL_NETWORK_NODES: NodeData[] = [...INITIAL_NODES];
 const ALL_RESEARCH_NODES: NodeData[] = [
-  ...INITIAL_NODES.map((n) =>
-    RESEARCH_CORE_COORDINATES[n.id] ? { ...n, ...RESEARCH_CORE_COORDINATES[n.id] } : n
-  ),
-  ...EXPANDED_RESEARCH_NODES,
+  ...INITIAL_NODES
+    .filter((n) => RESEARCH_NODE_IDS.has(n.id))
+    .map((n) =>
+      RESEARCH_CORE_COORDINATES[n.id] ? { ...n, ...RESEARCH_CORE_COORDINATES[n.id] } : n
+    ),
+  ...EXPANDED_RESEARCH_NODES.filter((n) => RESEARCH_NODE_IDS.has(n.id)),
 ];
 const ALL_INITIAL_NODES: NodeData[] = ALL_RESEARCH_NODES;
 const ALL_INITIAL_CONNECTIONS: Connection[] = [...INITIAL_CONNECTIONS, ...RESEARCH_CONNECTIONS];
@@ -251,6 +262,11 @@ export default function App() {
   const [, setDriftTick] = useState(0);
 
   useEffect(() => {
+    if (!isSimulating) {
+      setDriftOffsets({});
+      return;
+    }
+
     let animId: number;
     const prefersReducedMotion =
       typeof window !== 'undefined' &&
@@ -717,8 +733,8 @@ export default function App() {
         return ['node-profile', 'node-models', 'node-credentials', 'node-systems', 'node-project', 'node-clock'].includes(n.id);
       }
       if (preset === 'project') {
-        // Research tab: Center directly on the central anchor node (Shubham Sharma) at the center of the circular structure
-        return ['node-profile'].includes(n.id);
+        // Research tab: Center symmetrically on the 6-node 2x3 organized layout
+        return ['node-pipeline', 'node-inference', 'node-profile', 'node-models', 'node-systems', 'node-project'].includes(n.id);
       }
       if (preset === 'skills') {
         return [

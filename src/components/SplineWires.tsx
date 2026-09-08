@@ -14,25 +14,16 @@ interface SplineWiresProps {
 const SplineWiresComponent: React.FC<SplineWiresProps> = ({
   connections,
   pinPositions,
-  isSimulating,
   wireStyle,
   activeConnectionId,
   onSelectConnection,
   selectedNodeId,
 }) => {
-  const prefersReducedMotion =
-    typeof window !== 'undefined' &&
-    window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
   return (
     <svg
       className="absolute top-0 left-0 w-full h-full pointer-events-none z-0"
       style={{ overflow: 'visible' }}
     >
-      <defs>
-        {/* Soft gradient accent definitions if needed */}
-      </defs>
-
       {connections.map((conn) => {
         const fromPos = pinPositions[conn.fromPinId];
         const toPos = pinPositions[conn.toPinId];
@@ -46,8 +37,7 @@ const SplineWiresComponent: React.FC<SplineWiresProps> = ({
         const x2 = toPos.x;
         const y2 = toPos.y;
 
-        // Adaptive natural Hermite spline curvature
-        // Pure straight vector trajectory — completely straight at all times, zero twist or curl
+        // 100% straight linear vector trajectory — zero twisting, zero curve distortion
         const pathData = `M ${x1} ${y1} L ${x2} ${y2}`;
         const baseColor = conn.color || '#e11d48';
         const isSelected = activeConnectionId === conn.id;
@@ -60,80 +50,44 @@ const SplineWiresComponent: React.FC<SplineWiresProps> = ({
           <g
             key={conn.id}
             style={{ opacity: groupOpacity }}
-            className="cursor-pointer pointer-events-auto transition-opacity duration-200"
+            className="cursor-pointer pointer-events-auto transition-opacity duration-150"
             onClick={() => onSelectConnection && onSelectConnection(conn.id)}
           >
-            {/* Wider transparent hit zone for effortless clicking/hovering */}
+            {/* Transparent wide interactive hit zone */}
             <path
               d={pathData}
               fill="none"
               stroke="transparent"
-              strokeWidth={22}
+              strokeWidth={20}
               className="pointer-events-stroke"
             />
 
-            {/* 1. Ambient depth drop shadow for 3D realism on carbon fiber (Pure GPU vector, zero cache rasterization) */}
-            <path
-              d={pathData}
-              fill="none"
-              stroke="rgba(0, 0, 0, 0.55)"
-              strokeWidth={isSelected ? 6 : 4}
-              strokeLinecap="round"
-              transform="translate(0, 3)"
-            />
-
-            {/* 2. Layered radiant energy glow tube (ultra-fast zero-cache vector rasterization) */}
+            {/* Ambient vector glow */}
             {wireStyle === 'glow' && (
-              <>
-                <path
-                  d={pathData}
-                  fill="none"
-                  stroke={baseColor}
-                  strokeWidth={isSelected ? 11 : 7}
-                  strokeOpacity={isSelected ? 0.35 : 0.12}
-                  strokeLinecap="round"
-                />
-                <path
-                  d={pathData}
-                  fill="none"
-                  stroke={baseColor}
-                  strokeWidth={isSelected ? 5 : 3.5}
-                  strokeOpacity={isSelected ? 0.65 : 0.28}
-                  strokeLinecap="round"
-                />
-              </>
+              <path
+                d={pathData}
+                fill="none"
+                stroke={baseColor}
+                strokeWidth={isSelected ? 8 : 4.5}
+                strokeOpacity={isSelected ? 0.45 : 0.2}
+                strokeLinecap="round"
+              />
             )}
 
-            {/* 3. Primary superconductor spline core */}
+            {/* Crisp superconductor core spline */}
             <path
               d={pathData}
               fill="none"
               stroke={isSelected ? '#ffffff' : baseColor}
-              strokeWidth={isSelected ? 2.2 : 1.6}
-              strokeOpacity={isSelected ? 0.98 : 0.75}
+              strokeWidth={isSelected ? 2.5 : 1.8}
+              strokeOpacity={isSelected ? 1 : 0.85}
               strokeDasharray={wireStyle === 'cyber' ? '6, 6' : undefined}
               strokeLinecap="round"
-              className="transition-all duration-150"
             />
 
-            {/* 4. Hyper-luminous white central filament */}
-            <path
-              d={pathData}
-              fill="none"
-              stroke="#ffffff"
-              strokeWidth={0.8}
-              strokeOpacity={isSelected ? 0.85 : 0.45}
-              strokeLinecap="round"
-            />
-
-            {/* Hardware Socket Terminals at Pins */}
-            {/* Origin Socket */}
-            <circle cx={x1} cy={y1} r={4.5} fill="none" stroke={baseColor} strokeWidth={1.2} strokeOpacity={0.6} />
-            <circle cx={x1} cy={y1} r={2.2} fill="#ffffff" />
-
-            {/* Target Socket */}
-            <circle cx={x2} cy={y2} r={4.5} fill="none" stroke={baseColor} strokeWidth={1.2} strokeOpacity={0.6} />
-            <circle cx={x2} cy={y2} r={2.2} fill="#ffffff" />
+            {/* Precision socket terminals */}
+            <circle cx={x1} cy={y1} r={3} fill="#ffffff" stroke={baseColor} strokeWidth={1.5} />
+            <circle cx={x2} cy={y2} r={3} fill="#ffffff" stroke={baseColor} strokeWidth={1.5} />
           </g>
         );
       })}
