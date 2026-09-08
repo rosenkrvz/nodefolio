@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { NodeData, ProjectItem, CertificateItem } from '../types';
-import { X, ExternalLink, Activity, Layers, Award, Sliders, Eye, User, Clock, ArrowRight } from 'lucide-react';
+import { Close, ExternalLink, Activity, Layers, Award, Sliders, Eye, User, Clock, ArrowRight } from './icons';
 
 interface FocusedNodeModalProps {
   node: NodeData | null;
@@ -67,7 +67,7 @@ export const FocusedNodeModal: React.FC<FocusedNodeModalProps> = ({
             className="p-2 rounded-xl bg-white/5 hover:bg-white/15 text-zinc-400 hover:text-white border border-white/10 transition-colors cursor-pointer"
             title="Close inspection"
           >
-            <X className="w-5 h-5" />
+            <Close className="w-5 h-5" />
           </button>
         </div>
 

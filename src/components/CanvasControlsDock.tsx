@@ -5,9 +5,9 @@ import {
   Maximize,
   Grid,
   Activity,
-  SlidersHorizontal,
+  Sliders,
   ArrowUp,
-} from 'lucide-react';
+} from './icons';
 
 interface CanvasControlsDockProps {
   scale: number;
@@ -94,7 +94,7 @@ const CanvasControlsDockComponent: React.FC<CanvasControlsDockProps> = ({
         className="w-8 h-8 rounded-lg flex items-center justify-center text-zinc-400 hover:text-white hover:bg-white/[0.08] transition-colors cursor-pointer"
         title={`Spline Cable Style: ${wireStyle}`}
       >
-        <SlidersHorizontal className="w-3.5 h-3.5 text-rose-400/80" />
+        <Sliders className="w-3.5 h-3.5 text-rose-400/80" />
       </button>
 
       {/* Signal Flow Toggle */}

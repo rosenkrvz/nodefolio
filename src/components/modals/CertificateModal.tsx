@@ -1,15 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { CertificateItem } from '../../types';
 import {
-  X,
+  Close,
   ShieldCheck,
   Award,
   ExternalLink,
-  Copy,
-  Check,
   Calendar,
   Building,
-} from 'lucide-react';
+} from '../icons';
 
 interface CertificateModalProps {
   certificate: CertificateItem | null;
@@ -57,7 +55,7 @@ export const CertificateModal: React.FC<CertificateModalProps> = ({ certificate,
           aria-label="Close modal"
           className="absolute top-4 right-4 p-2 rounded-lg text-zinc-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
         >
-          <X className="w-5 h-5" />
+          <Close className="w-5 h-5" />
         </button>
 
         {/* Header Banner */}

@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowRight, ChevronDown, Compass } from 'lucide-react';
+import { ArrowRight, ChevronDown, Compass } from './icons';
 
 interface EditorialCoverProps {
   scrollProgress: number; // 0 to 1

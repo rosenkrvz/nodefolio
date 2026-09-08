@@ -1,5 +1,5 @@
 import React from 'react';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown } from './icons';
 
 interface ArchitecturalRevealProps {
   scrollProgress: number; // 0 to 1

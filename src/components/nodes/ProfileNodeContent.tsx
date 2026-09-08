@@ -1,6 +1,6 @@
 import React from 'react';
 import { NodeData } from '../../types';
-import { ArrowUpRight, Mail } from 'lucide-react';
+import { ArrowUpRight, Mail } from '../icons';
 
 interface ProfileNodeContentProps {
   data: NonNullable<NodeData['profile']>;

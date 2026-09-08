@@ -1,6 +1,6 @@
 import React from 'react';
 import { SkillItem } from '../../types';
-import { ArrowUpRight } from 'lucide-react';
+import { ArrowUpRight } from '../icons';
 
 interface SkillsNodeContentProps {
   skills: SkillItem[];

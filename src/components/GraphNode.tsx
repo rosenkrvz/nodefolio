@@ -9,18 +9,18 @@ import { ProjectNodeContent } from './nodes/ProjectNodeContent';
 import { ExperienceNodeContent } from './nodes/ExperienceNodeContent';
 import { ClockNodeContent } from './nodes/ClockNodeContent';
 import {
-  GripHorizontal,
+  Grip,
   ChevronDown,
   ChevronUp,
-  Maximize2,
+  Maximize,
   Activity,
   Layers,
   Award,
   Sliders,
   Eye,
   User,
-  Clock as ClockIcon,
-} from 'lucide-react';
+  Clock,
+} from './icons';
 
 interface GraphNodeProps {
   node: NodeData;
@@ -44,7 +44,7 @@ const CATEGORY_ICON_MAP: Record<string, React.ReactNode> = {
   controls: <Sliders className="w-3.5 h-3.5 text-rose-400" />,
   project: <Eye className="w-3.5 h-3.5 text-rose-400" />,
   experience: <Activity className="w-3.5 h-3.5 text-rose-400" />,
-  clock: <ClockIcon className="w-3.5 h-3.5 text-rose-400" />,
+  clock: <Clock className="w-3.5 h-3.5 text-rose-400" />,
 };
 
 const GraphNodeComponent: React.FC<GraphNodeProps> = ({
@@ -219,7 +219,7 @@ const GraphNodeComponent: React.FC<GraphNodeProps> = ({
                 className="p-1 rounded-md text-zinc-400 hover:text-white hover:bg-white/10 transition-colors"
                 title="Inspect detailed artifact"
               >
-                <Maximize2 className="w-3.5 h-3.5 text-rose-400" />
+                <Maximize className="w-3.5 h-3.5 text-rose-400" />
               </button>
             )}
 
@@ -231,7 +231,7 @@ const GraphNodeComponent: React.FC<GraphNodeProps> = ({
             >
               {isCollapsed ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronUp className="w-3.5 h-3.5" />}
             </button>
-            <GripHorizontal className="w-4 h-4 text-zinc-500 hover:text-zinc-300 transition-colors cursor-grab" />
+            <Grip className="w-4 h-4 text-zinc-500 hover:text-zinc-300 transition-colors cursor-grab" />
           </div>
         </div>
 

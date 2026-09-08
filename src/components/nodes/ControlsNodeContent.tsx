@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronDown, ChevronLeft, ChevronRight, Sliders, Cpu } from 'lucide-react';
+import { ChevronDown, ChevronLeft, ChevronRight, Sliders, Cpu } from '../icons';
 
 interface ControlsNodeContentProps {
   initialData?: {

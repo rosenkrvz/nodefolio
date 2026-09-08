@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { AnalogClock } from '../AnalogClock';
-import { Clock as ClockIcon, Activity, Globe } from 'lucide-react';
+import { Activity, Globe } from '../icons';
 
 export const ClockNodeContent: React.FC = () => {
   const [timeStr, setTimeStr] = useState('');

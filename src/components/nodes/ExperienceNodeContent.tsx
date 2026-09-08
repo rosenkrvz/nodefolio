@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { ExperienceItem } from '../../types';
-import { Briefcase, Calendar, ChevronRight } from 'lucide-react';
+import { Briefcase, Calendar, ChevronRight } from '../icons';
 
 interface ExperienceNodeContentProps {
   experience: ExperienceItem[];

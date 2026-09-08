@@ -1,9 +1,6 @@
 import React, { useState } from 'react';
 import { NodeData, Connection, CertificateItem, ProjectItem } from '../types';
-import {
-  Search,
-  ArrowRight,
-} from 'lucide-react';
+import { Search, ArrowRight } from './icons';
 
 interface InspectorListViewProps {
   nodes: NodeData[];

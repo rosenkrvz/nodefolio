@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Mail, Send, CheckCircle2, Copy, Check, ShieldCheck, Sparkles } from 'lucide-react';
+import { Close, Mail, Send, CheckCircle, Copy, Check, ShieldCheck } from '../icons';
 
 interface ContactModalProps {
   isOpen: boolean;
@@ -70,7 +70,7 @@ export const ContactModal: React.FC<ContactModalProps> = ({ isOpen, onClose, ema
           aria-label="Close contact dialog"
           className="absolute top-5 right-5 p-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.1] text-zinc-400 hover:text-white border border-white/10 transition-colors cursor-pointer"
         >
-          <X className="w-5 h-5" />
+          <Close className="w-5 h-5" />
         </button>
 
         {/* Protocol Header */}
@@ -137,7 +137,7 @@ export const ContactModal: React.FC<ContactModalProps> = ({ isOpen, onClose, ema
         {submitted ? (
           <div className="py-10 text-center space-y-4 animate-in zoom-in-95 duration-200">
             <div className="w-14 h-14 rounded-2xl bg-rose-500/20 text-rose-400 border border-rose-500/40 flex items-center justify-center mx-auto shadow-[0_0_24px_rgba(225,29,72,0.3)]">
-              <CheckCircle2 className="w-7 h-7" />
+              <CheckCircle className="w-7 h-7" />
             </div>
             <div>
               <h4 className="font-display text-2xl text-white font-bold uppercase tracking-wide">

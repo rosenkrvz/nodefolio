@@ -1,16 +1,16 @@
 import React, { useEffect } from 'react';
 import { ProjectItem } from '../../types';
 import {
-  X,
+  Close,
   ExternalLink,
-  Github,
+  GitHub,
   Layers,
   Activity,
   Binary,
   Cpu,
-  BarChart2,
-  CheckCircle2,
-} from 'lucide-react';
+  BarChart,
+  CheckCircle,
+} from '../icons';
 
 interface ProjectDetailModalProps {
   project: ProjectItem | null;
@@ -49,7 +49,7 @@ export const ProjectDetailModal: React.FC<ProjectDetailModalProps> = ({ project,
           aria-label="Close case study"
           className="absolute top-5 right-5 p-2 rounded-lg text-zinc-400 hover:text-white hover:bg-white/10 transition-colors z-10 cursor-pointer"
         >
-          <X className="w-5 h-5" />
+          <Close className="w-5 h-5" />
         </button>
 
         {/* Header Eyebrow & Title */}
@@ -191,7 +191,7 @@ export const ProjectDetailModal: React.FC<ProjectDetailModalProps> = ({ project,
           {/* 5. RESULTS & TELEMETRY */}
           <div>
             <div className="flex items-center gap-2 mb-2.5">
-              <BarChart2 className="w-4 h-4 text-rose-400" />
+              <BarChart className="w-4 h-4 text-rose-400" />
               <h3 className="font-display text-sm sm:text-base uppercase tracking-wider text-white font-bold">
                 5. Results &amp; Telemetry
               </h3>
@@ -211,7 +211,7 @@ export const ProjectDetailModal: React.FC<ProjectDetailModalProps> = ({ project,
           {/* 6. WHAT I LEARNED */}
           <div>
             <div className="flex items-center gap-2 mb-2.5">
-              <CheckCircle2 className="w-4 h-4 text-rose-400" />
+              <CheckCircle className="w-4 h-4 text-rose-400" />
               <h3 className="font-display text-sm sm:text-base uppercase tracking-wider text-white font-bold">
                 6. What I Learned
               </h3>
@@ -259,7 +259,7 @@ export const ProjectDetailModal: React.FC<ProjectDetailModalProps> = ({ project,
               rel="noreferrer"
               className="py-2.5 px-4 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] text-zinc-200 text-xs sm:text-sm font-body font-semibold transition-colors flex items-center gap-2 border border-white/[0.08]"
             >
-              <Github className="w-3.5 h-3.5" />
+              <GitHub className="w-3.5 h-3.5" />
               <span>GitHub</span>
             </a>
           )}

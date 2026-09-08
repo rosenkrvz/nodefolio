@@ -1,14 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import {
-  RotateCcw,
-  Mail,
-  Share2,
-  Check,
-  Activity,
-  SlidersHorizontal,
-  Clock as ClockIcon,
-  FileText,
-} from 'lucide-react';
+import { Clock, Share, Check, Mail, Close, Menu } from './icons';
 
 interface TopNavbarProps {
   activePreset: string;
@@ -179,7 +170,7 @@ const TopNavbarComponent: React.FC<TopNavbarProps> = ({
               className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.08] text-xs text-zinc-300 transition-colors cursor-pointer"
               title="Focus Chronometer"
             >
-              <ClockIcon className="w-3.5 h-3.5 text-rose-400" />
+              <Clock className="w-3.5 h-3.5 text-rose-400" />
               <span>{timeStr || '12:00 PM'}</span>
             </button>
           )}
@@ -192,7 +183,7 @@ const TopNavbarComponent: React.FC<TopNavbarProps> = ({
             className="p-2 rounded-lg bg-white/[0.03] hover:bg-white/[0.06] text-zinc-400 hover:text-white border border-white/[0.08] transition-colors cursor-pointer"
             title="Share URL"
           >
-            {copied ? <Check className="w-3.5 h-3.5 text-rose-400" /> : <Share2 className="w-3.5 h-3.5" />}
+            {copied ? <Check className="w-3.5 h-3.5 text-rose-400" /> : <Share className="w-3.5 h-3.5" />}
           </button>
 
           {/* Contact Action */}
@@ -212,13 +203,11 @@ const TopNavbarComponent: React.FC<TopNavbarProps> = ({
             aria-label={isMobileMenuOpen ? 'Close navigation menu' : 'Open navigation menu'}
             className="md:hidden p-2 rounded-lg bg-white/[0.04] text-zinc-300 hover:text-white border border-white/10 transition-colors cursor-pointer"
           >
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              {isMobileMenuOpen ? (
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              ) : (
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-              )}
-            </svg>
+            {isMobileMenuOpen ? (
+              <Close className="w-5 h-5" />
+            ) : (
+              <Menu className="w-5 h-5" />
+            )}
           </button>
         </div>
       </header>

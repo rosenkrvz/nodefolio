@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { ProjectItem } from '../../types';
-import { ArrowUpRight, RotateCcw, Activity } from 'lucide-react';
+import { ArrowUpRight, RotateCcw } from '../icons';
 
 interface ProjectNodeContentProps {
   project: ProjectItem;

@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowLeft, ArrowUpRight, Activity, Cpu, GitCommit, Sparkles, Terminal, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, ArrowUpRight } from './icons';
 import { LabNoteSection } from './LabNoteSection';
 
 interface ChronicleMilestone {

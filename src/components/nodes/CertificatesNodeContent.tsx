@@ -1,6 +1,6 @@
 import React from 'react';
 import { CertificateItem } from '../../types';
-import { ArrowUpRight } from 'lucide-react';
+import { ArrowUpRight } from '../icons';
 
 interface CertificatesNodeContentProps {
   certificates: CertificateItem[];

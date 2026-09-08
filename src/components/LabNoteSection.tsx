@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { Maximize2, Code, FileText, Check, Copy, X, Sparkles, Terminal, Layers } from 'lucide-react';
+import { Maximize, Terminal, Close, Copy, Check } from './icons';
 
 export interface LabNoteData {
   id: string;
@@ -370,7 +370,7 @@ export const ReflectiveArtifact: React.FC<ReflectiveArtifactProps> = ({
               }`}
             >
               <div className="px-3.5 py-1.5 rounded-full bg-white/[0.08] border border-white/20 backdrop-blur-md font-tech text-[10px] tracking-[0.2em] uppercase font-semibold text-zinc-200 flex items-center gap-1.5 shadow-lg">
-                <Maximize2 className="w-3 h-3 text-rose-400" />
+                <Maximize className="w-3 h-3 text-rose-400" />
                 <span>EXPAND SPECIMEN</span>
               </div>
             </div>
@@ -474,7 +474,7 @@ export const LabNoteSection: React.FC = () => {
               className="text-rose-400 hover:text-rose-300 font-semibold tracking-wider uppercase inline-flex items-center gap-1 cursor-pointer transition-colors"
             >
               <span>Inspect Specimen</span>
-              <Maximize2 className="w-3.5 h-3.5" />
+              <Maximize className="w-3.5 h-3.5" />
             </button>
           </div>
         </div>
@@ -532,7 +532,7 @@ export const LabNoteSection: React.FC = () => {
               onClick={() => setIsModalOpen(true)}
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] border border-white/[0.12] hover:border-white/[0.22] font-tech text-xs tracking-[0.2em] uppercase font-semibold text-white transition-all active:scale-95 cursor-pointer group shadow-sm"
             >
-              <Maximize2 className="w-3.5 h-3.5 text-rose-400 transition-transform group-hover:scale-110" />
+              <Maximize className="w-3.5 h-3.5 text-rose-400 transition-transform group-hover:scale-110" />
               <span>Open Specimen Viewer</span>
             </button>
           </div>
@@ -578,7 +578,7 @@ export const LabNoteSection: React.FC = () => {
                 title="Close modal (Esc)"
               >
                 <span>CLOSE</span>
-                <X className="w-3.5 h-3.5" />
+                <Close className="w-3.5 h-3.5" />
               </button>
             </div>
 

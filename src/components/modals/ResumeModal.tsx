@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { X, Printer, Award, BookOpen, Layers } from 'lucide-react';
+import { Close, Printer, BookOpen, Layers } from '../icons';
 import { NodeData } from '../../types';
 
 interface ResumeModalProps {
@@ -63,7 +63,7 @@ export const ResumeModal: React.FC<ResumeModalProps> = ({ isOpen, onClose, nodes
               aria-label="Close CV modal"
               className="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
             >
-              <X className="w-4 h-4" />
+              <Close className="w-4 h-4" />
             </button>
           </div>
         </div>
