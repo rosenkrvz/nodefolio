@@ -52,6 +52,9 @@ export default function App() {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   // Throttled scroll progress tracking via requestAnimationFrame
+  const activeNavTabRef = useRef(activeNavTab);
+  activeNavTabRef.current = activeNavTab;
+
   useEffect(() => {
     if (typeof window !== 'undefined' && window.innerWidth < 640) {
       setTransform({ x: 20, y: 40, scale: 0.65 });
@@ -61,15 +64,15 @@ export default function App() {
     const handleScroll = () => {
       if (!ticking) {
         window.requestAnimationFrame(() => {
-          const docEl = document.documentElement;
-          const totalHeight = docEl.scrollHeight - window.innerHeight;
-          if (totalHeight > 0) {
-            const progress = Math.max(0, Math.min(1, window.scrollY / totalHeight));
-            setScrollProgress(progress);
-            if (progress < 0.25) {
-              setActiveNavTab('home');
-            } else if (progress > 0.80) {
-              setActiveNavTab('network');
+          if (activeNavTabRef.current === 'home') {
+            const docEl = document.documentElement;
+            const totalHeight = docEl.scrollHeight - window.innerHeight;
+            if (totalHeight > 0) {
+              const progress = Math.max(0, Math.min(1, window.scrollY / totalHeight));
+              setScrollProgress(progress);
+              if (progress > 0.85) {
+                setActiveNavTab('network');
+              }
             }
           }
           ticking = false;
@@ -209,11 +212,21 @@ export default function App() {
     }
   };
 
-  // Smooth scroll down to workspace
+  // Smooth transition down to workspace
   const handleExplore = useCallback(() => {
-    const docEl = document.documentElement;
-    const totalHeight = docEl.scrollHeight - window.innerHeight;
-    window.scrollTo({ top: totalHeight, behavior: 'smooth' });
+    setActiveNavTab('network');
+    setActiveView('canvas');
+    setActivePreset('all');
+    setSelectedNodeId(null);
+    setScrollProgress(1);
+    handleFitScreen();
+  }, [handleFitScreen]);
+
+  // Return to cover
+  const handleReturnToCover = useCallback(() => {
+    setActiveNavTab('home');
+    setScrollProgress(0);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
 
   // Focus specific node on canvas with smooth pan
@@ -222,16 +235,20 @@ export default function App() {
     if (!target) return;
 
     setSelectedNodeId(nodeId);
-    setActiveNavTab('network');
+    setScrollProgress(1);
 
-    // Smoothly scroll down to workspace
-    const docEl = document.documentElement;
-    const totalHeight = docEl.scrollHeight - window.innerHeight;
-    window.scrollTo({ top: totalHeight, behavior: 'smooth' });
+    if (nodeId === 'node-project') {
+      setActiveNavTab('projects');
+      if (target.project) {
+        setSelectedProject(target.project);
+      }
+    } else {
+      setActiveNavTab('network');
+    }
 
-    const viewportWidth = window.innerWidth;
-    const viewportHeight = window.innerHeight;
-    const targetScale = 0.95;
+    const viewportWidth = typeof window !== 'undefined' ? window.innerWidth : 1200;
+    const viewportHeight = typeof window !== 'undefined' ? window.innerHeight : 800;
+    const targetScale = viewportWidth < 640 ? 0.75 : 0.95;
 
     setTransform({
       x: viewportWidth / 2 - (target.x + target.width / 2) * targetScale,
@@ -256,27 +273,45 @@ export default function App() {
     handleFitScreen();
   }, [handleFitScreen]);
 
-  // Top Nav Tab Selection
+  // Top Nav Tab Selection - Instant, reliable loading for all tabs
   const handleSelectNavTab = useCallback((tab: 'home' | 'network' | 'projects' | 'lab' | 'notebook' | 'about') => {
     setActiveNavTab(tab);
 
     if (tab === 'home') {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      handleReturnToCover();
     } else if (tab === 'network') {
+      setActiveView('canvas');
       setActivePreset('all');
-      handleExplore();
+      setSelectedNodeId(null);
+      setScrollProgress(1);
+      handleFitScreen();
     } else if (tab === 'projects') {
+      setActiveView('canvas');
       setActivePreset('project');
-      handleFocusNode('node-project');
+      setSelectedNodeId('node-project');
+      setScrollProgress(1);
+      const target = nodes.find((n) => n.id === 'node-project');
+      if (target) {
+        const viewportWidth = typeof window !== 'undefined' ? window.innerWidth : 1200;
+        const viewportHeight = typeof window !== 'undefined' ? window.innerHeight : 800;
+        const targetScale = viewportWidth < 640 ? 0.75 : 0.95;
+        setTransform({
+          x: viewportWidth / 2 - (target.x + target.width / 2) * targetScale,
+          y: viewportHeight / 2 - (target.y + 160) * targetScale,
+          scale: targetScale,
+        });
+      }
     } else if (tab === 'lab') {
+      setActiveView('canvas');
+      setScrollProgress(1);
       handleFocusNode('node-controls');
     } else if (tab === 'notebook') {
       setActiveView('timeline');
-      handleExplore();
+      setScrollProgress(1);
     } else if (tab === 'about') {
       setIsResumeOpen(true);
     }
-  }, [handleExplore, handleFocusNode]);
+  }, [handleFitScreen, handleFocusNode, handleReturnToCover, nodes]);
 
   // Clear node selection when clicking canvas background
   const handleCanvasBackgroundClick = useCallback(() => {
@@ -284,8 +319,11 @@ export default function App() {
     setActiveConnectionId(null);
   }, []);
 
+  const isCoverActive = activeNavTab === 'home';
+  const effectiveProgress = isCoverActive ? scrollProgress : 1.0;
+
   return (
-    <div className="relative w-full bg-[#090b10] text-[#eaeaea] overflow-x-hidden font-body select-none">
+    <div className="relative w-full bg-[#14171c] text-[#eaeaea] font-body select-none">
       {/* Top Navbar */}
       <TopNavbar
         activePreset={activePreset}
@@ -303,19 +341,19 @@ export default function App() {
       />
 
       {/* CONTINUOUS SCROLL-DRIVEN ARCHITECTURE */}
-      <main className="relative w-full">
-        {/* Real vertical scroll track with deliberate height (350vh) */}
-        <div ref={scrollContainerRef} className="relative w-full h-[350vh]">
+      <main className="relative w-full max-w-full overflow-x-clip">
+        {/* Real vertical scroll track when on cover, clean 100vh when in workspace */}
+        <div ref={scrollContainerRef} className={`relative w-full ${isCoverActive ? 'h-[250vh]' : 'h-screen overflow-hidden'}`}>
           {/* Sticky 100vh Viewport Stage */}
           <div className="sticky top-0 w-full h-screen overflow-hidden">
             {/* SECTION 02: Computational Neural Workspace (Base Layer) */}
-            <ArchitecturalReveal scrollProgress={scrollProgress}>
+            <ArchitecturalReveal scrollProgress={effectiveProgress}>
               <div
                 style={{
-                  opacity: scrollProgress >= 0.25 ? Math.min(1, (scrollProgress - 0.25) / 0.50) : 0,
-                  pointerEvents: scrollProgress >= 0.80 ? 'auto' : 'none',
+                  opacity: !isCoverActive ? 1 : (effectiveProgress >= 0.25 ? Math.min(1, (effectiveProgress - 0.25) / 0.50) : 0),
+                  pointerEvents: !isCoverActive || effectiveProgress >= 0.80 ? 'auto' : 'none',
                 }}
-                className="absolute inset-0 w-full h-screen pt-16 transition-opacity duration-75 ease-out z-10"
+                className="absolute inset-0 w-full h-screen pt-16 transition-opacity duration-150 ease-out z-10"
               >
                 {activeView === 'canvas' ? (
                   <div
@@ -386,7 +424,7 @@ export default function App() {
                       }}
                       isSimulating={isSimulating}
                       onToggleSimulate={() => setIsSimulating(!isSimulating)}
-                      onReturnToCover={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                      onReturnToCover={handleReturnToCover}
                     />
 
                     {/* Clean Workspace Navigation Hint */}
@@ -497,11 +535,13 @@ export default function App() {
             </ArchitecturalReveal>
 
             {/* SECTION 01: Solid Editorial Portfolio Cover (Surface Layer, sits on top and physically lifts on scroll) */}
-            <EditorialCover
-              scrollProgress={scrollProgress}
-              onExplore={handleExplore}
-              onViewWork={() => handleFocusNode('node-project')}
-            />
+            {isCoverActive && (
+              <EditorialCover
+                scrollProgress={scrollProgress}
+                onExplore={handleExplore}
+                onViewWork={() => handleSelectNavTab('projects')}
+              />
+            )}
           </div>
         </div>
       </main>

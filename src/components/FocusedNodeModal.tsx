@@ -148,7 +148,7 @@ export const FocusedNodeModal: React.FC<FocusedNodeModalProps> = ({
                   <div key={sk.name} className="p-3.5 rounded-2xl bg-black/40 border border-white/10">
                     <div className="flex items-center justify-between text-xs font-semibold text-white mb-1">
                       <span>{sk.name}</span>
-                      <span className="text-rose-400 font-mono text-[11px]">{sk.level}%</span>
+                      <span className="text-rose-400 font-tech text-[11px]">{sk.level}%</span>
                     </div>
                     <div className="w-full h-1.5 rounded-full bg-white/10 overflow-hidden mb-2">
                       <div

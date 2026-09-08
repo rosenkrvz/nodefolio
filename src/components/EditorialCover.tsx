@@ -67,30 +67,22 @@ export const EditorialCover: React.FC<EditorialCoverProps> = ({
         transform: `translateY(${translateYPercent}%) scale(${scale})`,
         pointerEvents: scrollProgress >= 0.80 ? 'none' : 'auto',
       }}
-      className={`absolute inset-0 w-full h-screen flex flex-col justify-between px-6 sm:px-12 md:px-16 pt-24 pb-10 transition-transform duration-75 ease-out select-none overflow-hidden z-20 bg-[#090b10] ${
+      className={`absolute inset-0 w-full h-screen flex flex-col justify-between px-6 sm:px-12 md:px-16 pt-24 pb-10 transition-transform duration-75 ease-out select-none overflow-hidden z-20 bg-[#14171c] ${
         isLifting ? 'border-b border-rose-500/50 shadow-[0_30px_70px_rgba(0,0,0,0.95)]' : ''
       }`}
     >
-      {/* Background Editorial Atmosphere */}
-      <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
-        {/* Editorial Background Image with Matte Shadow Gradient */}
-        <div
-          className="absolute inset-0 bg-cover bg-right sm:bg-center opacity-65 scale-105 transition-transform duration-1000 ease-out"
-          style={{
-            backgroundImage: `url('/assets/editorial_cover_bg.jpg')`,
-          }}
-        />
-
-        {/* Deep Monochromatic Gradient Overlays for Maximum Typographic Contrast */}
-        <div className="absolute inset-0 bg-gradient-to-r from-[#090b10] via-[#090b10]/90 to-[#090b10]/40" />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#090b10] via-transparent to-[#090b10]/60" />
-
-        {/* Subtle Crimson Horizon Atmosphere Flare */}
-        <div className="absolute bottom-1/4 left-1/3 w-[600px] h-[180px] bg-rose-950/20 blur-3xl rounded-full opacity-50 pointer-events-none" />
-
-        {/* Minimal fine grain grid */}
-        <div className="absolute inset-0 bg-[radial-gradient(#ffffff0a_1px,transparent_1px)] [background-size:36px_36px] opacity-30" />
+      {/* Restored Authentic Technical Background Atmosphere */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden z-0" aria-hidden="true">
+        <div className="pattern-bg">
+          <div className="cube-svg" />
+        </div>
       </div>
+
+      {/* Subtle Coordinate Grid Overlay */}
+      <div className="absolute inset-0 pointer-events-none bg-canvas-dots-overlay opacity-60 z-0" aria-hidden="true" />
+
+      {/* Subtle Crimson Ambient Glow */}
+      <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(ellipse_at_80%_25%,rgba(225,29,72,0.14),transparent_55%)] z-0" aria-hidden="true" />
 
       {/* Crimson Seam Glow Indicator when lifting */}
       {isLifting && (
