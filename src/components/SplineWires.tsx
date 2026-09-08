@@ -147,53 +147,6 @@ const SplineWiresComponent: React.FC<SplineWiresProps> = ({
               strokeLinecap="round"
             />
 
-            {/* 5. Restrained, staggered quantum signal pulses flowing along spline */}
-            {(conn.animated || isSimulating) && !prefersReducedMotion && (
-              (() => {
-                const STAGGER_PROFILES = [
-                  { dur: '5.2s', begin: '0.0s', packetSize: 3.0 },
-                  { dur: '6.6s', begin: '1.8s', packetSize: 2.7 },
-                  { dur: '5.8s', begin: '3.4s', packetSize: 2.9 },
-                  { dur: '7.2s', begin: '0.9s', packetSize: 2.6 },
-                  { dur: '6.2s', begin: '2.5s', packetSize: 3.1 },
-                ];
-                const profile = STAGGER_PROFILES[idx % STAGGER_PROFILES.length];
-                const photonSize = isSelected ? 4.2 : profile.packetSize;
-
-                return (
-                  <>
-                    {/* Primary traveling signal packet */}
-                    <circle
-                      r={photonSize}
-                      fill="#ffffff"
-                      filter={isSelected ? 'url(#intense-pulse)' : 'url(#wire-glow-filter)'}
-                    >
-                      <animateMotion
-                        path={pathData}
-                        dur={isSelected ? '3.8s' : profile.dur}
-                        begin={profile.begin}
-                        repeatCount="indefinite"
-                        rotate="auto"
-                      />
-                    </circle>
-
-                    {/* Secondary trailing energy packet on selected / active conduit */}
-                    {isSelected && (
-                      <circle r={2.4} fill={baseColor} filter="url(#wire-glow-filter)">
-                        <animateMotion
-                          path={pathData}
-                          dur="3.8s"
-                          begin="1.2s"
-                          repeatCount="indefinite"
-                          rotate="auto"
-                        />
-                      </circle>
-                    )}
-                  </>
-                );
-              })()
-            )}
-
             {/* Hardware Socket Terminals at Pins */}
             {/* Origin Socket */}
             <circle cx={x1} cy={y1} r={4.5} fill="none" stroke={baseColor} strokeWidth={1.2} strokeOpacity={0.6} />
