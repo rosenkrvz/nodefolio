@@ -17,6 +17,7 @@ export const ArchitecturalReveal: React.FC<ArchitecturalRevealProps> = ({
   // Step 4 Reveal phase: continuous smoothstep (0.08 -> 0.88)
   const rawT = Math.max(0, Math.min(1, (scrollProgress - 0.08) / 0.80));
   const smoothReveal = rawT * rawT * (3 - 2 * rawT);
+  const revealProgress = smoothReveal;
 
   // Workspace container scale: expands smoothly to 100% viewport
   const frameScale = prefersReducedMotion ? 1 : 0.95 + smoothReveal * 0.05;
