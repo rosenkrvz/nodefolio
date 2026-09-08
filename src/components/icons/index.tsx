@@ -49,6 +49,8 @@ import {
   Database01 as UntitledDatabase01,
   BookOpen01 as UntitledBookOpen01,
   Menu01 as UntitledMenu01,
+  VolumeMax as UntitledVolumeMax,
+  VolumeX as UntitledVolumeX,
 } from '@untitledui/icons';
 
 export interface IconProps extends SVGProps<SVGSVGElement> {
@@ -104,6 +106,8 @@ export const Sliders = createIcon(UntitledSliders01);
 export const Grid = createIcon(UntitledGrid01);
 export const Grip = createIcon(UntitledDotsGrid);
 export const Menu = createIcon(UntitledMenu01);
+export const VolumeMax = createIcon(UntitledVolumeMax);
+export const VolumeX = createIcon(UntitledVolumeX);
 
 // Semantic Domain & Workspace
 export const Activity = createIcon(UntitledActivity);
@@ -202,6 +206,8 @@ export const Icon = {
   Grid,
   Grip,
   Menu,
+  VolumeMax,
+  VolumeX,
   Activity,
   Clock,
   Cpu,

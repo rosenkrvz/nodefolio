@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ArrowLeft, ArrowUpRight, ChevronDown } from './icons';
 import { LabNoteSection } from './LabNoteSection';
+import { playSound } from '../lib/sound';
 
 interface ChronicleMilestone {
   id: string;
@@ -168,6 +169,7 @@ const MilestoneCard: React.FC<{
     >
       {/* Phase card: glass-morphism dark card with crimson accent seam */}
       <article
+        onMouseEnter={() => playSound('hover')}
         className={`relative group rounded-2xl overflow-hidden transition-all duration-300 ${
           isActive
             ? 'bg-[#12141a]/90 border border-rose-500/30 shadow-[0_0_40px_rgba(225,29,72,0.08),0_20px_50px_rgba(0,0,0,0.6)]'
@@ -269,7 +271,10 @@ const MilestoneCard: React.FC<{
             {item.linkedNodeId && onFocusNodeOnCanvas && (
               <button
                 type="button"
-                onClick={() => onFocusNodeOnCanvas(item.linkedNodeId!)}
+                onClick={() => {
+                  playSound('select');
+                  onFocusNodeOnCanvas(item.linkedNodeId!);
+                }}
                 className="inline-flex items-center gap-1.5 font-body text-xs tracking-wider uppercase text-rose-400 hover:text-rose-300 font-semibold group/link cursor-pointer focus:outline-none transition-colors"
               >
                 <span>Inspect Node</span>
@@ -375,7 +380,10 @@ export const ChronicleView: React.FC<ChronicleViewProps> = ({
               <div className="flex flex-wrap items-center gap-4 font-body">
                 <button
                   type="button"
-                  onClick={onBackToCanvas}
+                  onClick={() => {
+                    playSound('click');
+                    onBackToCanvas();
+                  }}
                   className="px-6 py-3.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-zinc-200 hover:text-white border border-white/[0.12] hover:border-white/[0.25] font-semibold text-xs sm:text-sm tracking-wider uppercase transition-all active:scale-95 cursor-pointer flex items-center gap-2 group"
                 >
                   <ArrowLeft className="w-4 h-4 text-rose-400 transition-transform group-hover:-translate-x-1" />
@@ -384,6 +392,7 @@ export const ChronicleView: React.FC<ChronicleViewProps> = ({
 
                 <a
                   href="#chronicle-entries"
+                  onClick={() => playSound('secondaryClick')}
                   className="px-6 py-3.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-semibold text-xs sm:text-sm tracking-wider uppercase transition-all shadow-[0_0_24px_rgba(225,29,72,0.4)] hover:shadow-[0_0_32px_rgba(225,29,72,0.6)] flex items-center gap-2 group active:scale-95 cursor-pointer"
                 >
                   <span>VIEW ENTRIES</span>

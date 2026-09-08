@@ -1,5 +1,6 @@
 import React from 'react';
 import { ArrowRight, ChevronDown, Compass } from './icons';
+import { playSound } from '../lib/sound';
 
 interface EditorialCoverProps {
   scrollProgress: number; // 0 to 1
@@ -190,7 +191,10 @@ const EditorialCoverComponent: React.FC<EditorialCoverProps> = ({
           <div className="flex flex-wrap items-center gap-4 font-body">
             <button
               type="button"
-              onClick={onExplore}
+              onClick={() => {
+                playSound('open');
+                onExplore();
+              }}
               className="px-6 py-3.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-semibold text-xs sm:text-sm tracking-wider uppercase transition-all shadow-[0_0_24px_rgba(225,29,72,0.4)] hover:shadow-[0_0_32px_rgba(225,29,72,0.6)] flex items-center gap-2 group active:scale-95 cursor-pointer"
             >
               <span>ENTER SYSTEM</span>
@@ -199,7 +203,10 @@ const EditorialCoverComponent: React.FC<EditorialCoverProps> = ({
 
             <button
               type="button"
-              onClick={onViewWork}
+              onClick={() => {
+                playSound('secondaryClick');
+                onViewWork();
+              }}
               className="px-6 py-3.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-zinc-200 hover:text-white border border-white/[0.12] hover:border-white/[0.25] font-semibold text-xs sm:text-sm tracking-wider uppercase transition-all active:scale-95 cursor-pointer flex items-center gap-2"
             >
               <Compass className="w-4 h-4 text-rose-400" />

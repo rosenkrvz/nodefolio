@@ -19,6 +19,7 @@ import { ContactModal } from './components/modals/ContactModal';
 import { ResumeModal } from './components/modals/ResumeModal';
 import { InspectorListView } from './components/InspectorListView';
 import { ChronicleView } from './components/ChronicleView';
+import { playSound } from './lib/sound';
 
 export default function App() {
   // Navigation & Scroll State
@@ -53,6 +54,10 @@ export default function App() {
 
   // Scroll Container Ref
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  // Audio interaction refs
+  const hasPlayedCoverTransitionRef = useRef<boolean>(false);
+  const lastZoomBracketRef = useRef<number>(Math.round(0.70 / 0.25));
 
   // Deterministic harmonic drift personality configs for organic, controlled workspace life
   const NODE_DRIFT_PROFILES: Record<
@@ -194,6 +199,14 @@ export default function App() {
           } else if (currentProgressRef.current < 0.40 && activeNavTabRef.current === 'network') {
             setActiveNavTab('home');
           }
+        }
+
+        // Tactile transition audio: trigger ONE subtle activation sound upon crossing into the neural workspace
+        if (currentProgressRef.current >= 0.50 && !hasPlayedCoverTransitionRef.current) {
+          hasPlayedCoverTransitionRef.current = true;
+          playSound('open');
+        } else if (currentProgressRef.current < 0.35 && hasPlayedCoverTransitionRef.current) {
+          hasPlayedCoverTransitionRef.current = false;
         }
       }
 
@@ -480,6 +493,7 @@ export default function App() {
 
   // Return to cover with smooth, single-pass upward transition (no ricochet)
   const handleReturnToCover = useCallback(() => {
+    playSound('close');
     setActiveNavTab('home');
     if (activeViewRef.current !== 'canvas') {
       setActiveView('canvas');
@@ -559,6 +573,13 @@ export default function App() {
 
         if (nextScale === prev.scale) return prev;
 
+        // Tactile detent feedback when crossing 25% scale thresholds (e.g. 50%, 75%, 100%, 125%, 150%)
+        const newBracket = Math.round(nextScale / 0.25);
+        if (newBracket !== lastZoomBracketRef.current) {
+          lastZoomBracketRef.current = newBracket;
+          playSound('zoom');
+        }
+
         const rect = container.getBoundingClientRect();
         const mouseX = e.clientX - rect.left;
         const mouseY = e.clientY - rect.top;
@@ -578,6 +599,7 @@ export default function App() {
 
   // Reset Graph
   const handleResetGraph = useCallback(() => {
+    playSound('secondaryClick');
     setNodes(INITIAL_NODES);
     setConnections(INITIAL_CONNECTIONS);
     setActivePreset('all');
@@ -587,6 +609,7 @@ export default function App() {
 
   // Smooth single-pass transition down to workspace
   const handleExplore = useCallback(() => {
+    playSound('open');
     setActiveNavTab('network');
     setActiveView('canvas');
     setActivePreset('all');
@@ -599,6 +622,7 @@ export default function App() {
 
   // Focus specific node on canvas with smooth centered pan
   const handleFocusNode = useCallback((nodeId: string) => {
+    playSound('select');
     const target = nodes.find((n) => n.id === nodeId);
     if (!target) return;
 
@@ -716,6 +740,7 @@ export default function App() {
 
   // Preset Selection Handler
   const handleSelectPreset = useCallback((preset: string) => {
+    playSound('secondaryClick');
     setActivePreset(preset);
     setSelectedNodeId(null);
     centerViewForPreset(preset, 0.70);
@@ -821,7 +846,10 @@ export default function App() {
                         wireStyle={wireStyle}
                         activeConnectionId={activeConnectionId}
                         selectedNodeId={selectedNodeId}
-                        onSelectConnection={(id) => setActiveConnectionId(id)}
+                        onSelectConnection={(id) => {
+                          if (id) playSound('connect');
+                          setActiveConnectionId(id);
+                        }}
                       />
 
                       {/* Connected Graph Nodes (#0b0d12 carbon fiber) */}
@@ -840,14 +868,32 @@ export default function App() {
                             scale={transform.scale}
                             isSelected={selectedNodeId === node.id}
                             isDimmed={selectedNodeId !== null && selectedNodeId !== node.id}
-                            onSelectNode={(id) => setSelectedNodeId(id)}
+                            onSelectNode={(id) => {
+                              playSound('select');
+                              setSelectedNodeId(id);
+                            }}
                             onNodeDrag={handleNodeDrag}
                             onDragStateChange={handleDragStateChange}
-                            onOpenCertificateModal={(cert) => setSelectedCertificate(cert)}
-                            onOpenProjectModal={(proj) => setSelectedProject(proj)}
-                            onOpenContactModal={() => setIsContactOpen(true)}
-                            onOpenResumeModal={() => setIsResumeOpen(true)}
-                            onOpenFocusedNode={(n) => setFocusedNode(n)}
+                            onOpenCertificateModal={(cert) => {
+                              playSound('open');
+                              setSelectedCertificate(cert);
+                            }}
+                            onOpenProjectModal={(proj) => {
+                              playSound('open');
+                              setSelectedProject(proj);
+                            }}
+                            onOpenContactModal={() => {
+                              playSound('open');
+                              setIsContactOpen(true);
+                            }}
+                            onOpenResumeModal={() => {
+                              playSound('open');
+                              setIsResumeOpen(true);
+                            }}
+                            onOpenFocusedNode={(n) => {
+                              playSound('open');
+                              setFocusedNode(n);
+                            }}
                           />
                         );
                       })}
@@ -856,33 +902,49 @@ export default function App() {
                     {/* Floating Dock Controls */}
                     <CanvasControlsDock
                       scale={transform.scale}
-                      onZoomIn={() => setTransform((p) => {
-                        const nextScale = Math.min(1.80, Math.round((p.scale + 0.05) * 100) / 100);
-                        const vw = typeof window !== 'undefined' ? window.innerWidth : 1200;
-                        const vh = typeof window !== 'undefined' ? window.innerHeight : 800;
-                        const newX = Math.round((vw / 2) - ((vw / 2) - p.x) * (nextScale / p.scale));
-                        const newY = Math.round(((vh + 28) / 2) - (((vh + 28) / 2) - p.y) * (nextScale / p.scale));
-                        return { x: newX, y: newY, scale: nextScale };
-                      })}
-                      onZoomOut={() => setTransform((p) => {
-                        const nextScale = Math.max(0.35, Math.round((p.scale - 0.05) * 100) / 100);
-                        const vw = typeof window !== 'undefined' ? window.innerWidth : 1200;
-                        const vh = typeof window !== 'undefined' ? window.innerHeight : 800;
-                        const newX = Math.round((vw / 2) - ((vw / 2) - p.x) * (nextScale / p.scale));
-                        const newY = Math.round(((vh + 28) / 2) - (((vh + 28) / 2) - p.y) * (nextScale / p.scale));
-                        return { x: newX, y: newY, scale: nextScale };
-                      })}
-                      onFitScreen={handleFitScreen}
+                      onZoomIn={() => {
+                        playSound('zoom');
+                        setTransform((p) => {
+                          const nextScale = Math.min(1.80, Math.round((p.scale + 0.05) * 100) / 100);
+                          const vw = typeof window !== 'undefined' ? window.innerWidth : 1200;
+                          const vh = typeof window !== 'undefined' ? window.innerHeight : 800;
+                          const newX = Math.round((vw / 2) - ((vw / 2) - p.x) * (nextScale / p.scale));
+                          const newY = Math.round(((vh + 28) / 2) - (((vh + 28) / 2) - p.y) * (nextScale / p.scale));
+                          return { x: newX, y: newY, scale: nextScale };
+                        });
+                      }}
+                      onZoomOut={() => {
+                        playSound('zoom');
+                        setTransform((p) => {
+                          const nextScale = Math.max(0.35, Math.round((p.scale - 0.05) * 100) / 100);
+                          const vw = typeof window !== 'undefined' ? window.innerWidth : 1200;
+                          const vh = typeof window !== 'undefined' ? window.innerHeight : 800;
+                          const newX = Math.round((vw / 2) - ((vw / 2) - p.x) * (nextScale / p.scale));
+                          const newY = Math.round(((vh + 28) / 2) - (((vh + 28) / 2) - p.y) * (nextScale / p.scale));
+                          return { x: newX, y: newY, scale: nextScale };
+                        });
+                      }}
+                      onFitScreen={() => {
+                        playSound('secondaryClick');
+                        handleFitScreen();
+                      }}
                       showGrid={showGrid}
-                      onToggleGrid={() => setShowGrid(!showGrid)}
+                      onToggleGrid={() => {
+                        playSound('secondaryClick');
+                        setShowGrid(!showGrid);
+                      }}
                       wireStyle={wireStyle}
                       onCycleWireStyle={() => {
+                        playSound('secondaryClick');
                         const styles: ('glow' | 'minimal' | 'cyber')[] = ['glow', 'minimal', 'cyber'];
                         const next = styles[(styles.indexOf(wireStyle) + 1) % styles.length];
                         setWireStyle(next);
                       }}
                       isSimulating={isSimulating}
-                      onToggleSimulate={() => setIsSimulating(!isSimulating)}
+                      onToggleSimulate={() => {
+                        playSound('connect');
+                        setIsSimulating(!isSimulating);
+                      }}
                       onReturnToCover={handleReturnToCover}
                     />
                   </div>
@@ -939,12 +1001,17 @@ export default function App() {
       {/* Modals */}
       <FocusedNodeModal
         node={focusedNode}
-        onClose={() => setFocusedNode(null)}
+        onClose={() => {
+          playSound('close');
+          setFocusedNode(null);
+        }}
         onOpenProjectDetail={(p) => {
+          playSound('open');
           setFocusedNode(null);
           setSelectedProject(p);
         }}
         onOpenCertificateDetail={(c) => {
+          playSound('open');
           setFocusedNode(null);
           setSelectedCertificate(c);
         }}
@@ -952,23 +1019,35 @@ export default function App() {
 
       <CertificateModal
         certificate={selectedCertificate}
-        onClose={() => setSelectedCertificate(null)}
+        onClose={() => {
+          playSound('close');
+          setSelectedCertificate(null);
+        }}
       />
 
       <ProjectDetailModal
         project={selectedProject}
-        onClose={() => setSelectedProject(null)}
+        onClose={() => {
+          playSound('close');
+          setSelectedProject(null);
+        }}
       />
 
       <ContactModal
         isOpen={isContactOpen}
-        onClose={() => setIsContactOpen(false)}
+        onClose={() => {
+          playSound('close');
+          setIsContactOpen(false);
+        }}
         email="marksrv047@gmail.com"
       />
 
       <ResumeModal
         isOpen={isResumeOpen}
-        onClose={() => setIsResumeOpen(false)}
+        onClose={() => {
+          playSound('close');
+          setIsResumeOpen(false);
+        }}
         nodes={nodes}
       />
     </div>

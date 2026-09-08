@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Clock, Share, Check, Mail, Close, Menu } from './icons';
+import { Clock, Share, Check, Mail, Close, Menu, VolumeMax, VolumeX } from './icons';
+import { useSound } from '../lib/sound';
 
 interface TopNavbarProps {
   activePreset: string;
@@ -32,6 +33,7 @@ const TopNavbarComponent: React.FC<TopNavbarProps> = ({
 }) => {
   const [copied, setCopied] = useState(false);
   const [timeStr, setTimeStr] = useState('');
+  const { isMuted, toggleMute, playSound } = useSound();
 
   useEffect(() => {
     const update = () => {
@@ -51,12 +53,14 @@ const TopNavbarComponent: React.FC<TopNavbarProps> = ({
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const handleShare = () => {
+    playSound('secondaryClick');
     navigator.clipboard?.writeText(window.location.href);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
 
   const handleMobileSelect = (tab: 'home' | 'network' | 'projects' | 'notebook') => {
+    playSound('click');
     setIsMobileMenuOpen(false);
     onSelectNavTab?.(tab);
   };
@@ -69,6 +73,7 @@ const TopNavbarComponent: React.FC<TopNavbarProps> = ({
           <button
             type="button"
             onClick={() => {
+              playSound('secondaryClick');
               setIsMobileMenuOpen(false);
               onSelectNavTab?.('home');
             }}
@@ -108,7 +113,10 @@ const TopNavbarComponent: React.FC<TopNavbarProps> = ({
           <nav className="hidden md:flex items-center gap-1 text-xs text-zinc-400 uppercase tracking-widest font-semibold ml-4">
             <button
               type="button"
-              onClick={() => onSelectNavTab?.('home')}
+              onClick={() => {
+                playSound('click');
+                onSelectNavTab?.('home');
+              }}
               className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
                 activeNavTab === 'home'
                   ? 'text-white bg-white/[0.08]'
@@ -119,7 +127,10 @@ const TopNavbarComponent: React.FC<TopNavbarProps> = ({
             </button>
             <button
               type="button"
-              onClick={() => onSelectNavTab?.('network')}
+              onClick={() => {
+                playSound('click');
+                onSelectNavTab?.('network');
+              }}
               className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
                 activeNavTab === 'network'
                   ? 'text-white bg-white/[0.08]'
@@ -130,7 +141,10 @@ const TopNavbarComponent: React.FC<TopNavbarProps> = ({
             </button>
             <button
               type="button"
-              onClick={() => onSelectNavTab?.('projects')}
+              onClick={() => {
+                playSound('click');
+                onSelectNavTab?.('projects');
+              }}
               className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
                 activeNavTab === 'projects'
                   ? 'text-white bg-white/[0.08]'
@@ -141,7 +155,10 @@ const TopNavbarComponent: React.FC<TopNavbarProps> = ({
             </button>
             <button
               type="button"
-              onClick={() => onSelectNavTab?.('notebook')}
+              onClick={() => {
+                playSound('click');
+                onSelectNavTab?.('notebook');
+              }}
               className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
                 activeNavTab === 'notebook'
                   ? 'text-white bg-white/[0.08]'
@@ -152,7 +169,10 @@ const TopNavbarComponent: React.FC<TopNavbarProps> = ({
             </button>
             <button
               type="button"
-              onClick={onOpenResume}
+              onClick={() => {
+                playSound('secondaryClick');
+                onOpenResume?.();
+              }}
               className="px-3 py-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-white/[0.04] transition-colors cursor-pointer"
             >
               CV
@@ -166,7 +186,10 @@ const TopNavbarComponent: React.FC<TopNavbarProps> = ({
           {onFocusClock && (
             <button
               type="button"
-              onClick={onFocusClock}
+              onClick={() => {
+                playSound('secondaryClick');
+                onFocusClock();
+              }}
               className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.08] text-xs text-zinc-300 transition-colors cursor-pointer"
               title="Focus Chronometer"
             >
@@ -174,6 +197,25 @@ const TopNavbarComponent: React.FC<TopNavbarProps> = ({
               <span>{timeStr || '12:00 PM'}</span>
             </button>
           )}
+
+          {/* Global Audio Mute Toggle Button */}
+          <button
+            type="button"
+            onClick={toggleMute}
+            aria-label={isMuted ? 'Unmute interface sound' : 'Mute interface sound'}
+            className={`p-2 rounded-lg border transition-colors cursor-pointer ${
+              isMuted
+                ? 'bg-white/[0.02] text-zinc-500 border-white/[0.06] hover:text-zinc-300'
+                : 'bg-white/[0.03] hover:bg-white/[0.06] text-zinc-300 hover:text-white border-white/[0.08]'
+            }`}
+            title={isMuted ? 'Unmute Sound' : 'Mute Sound'}
+          >
+            {isMuted ? (
+              <VolumeX className="w-3.5 h-3.5 text-zinc-500" />
+            ) : (
+              <VolumeMax className="w-3.5 h-3.5 text-rose-400" />
+            )}
+          </button>
 
           {/* Share Button */}
           <button
@@ -189,7 +231,10 @@ const TopNavbarComponent: React.FC<TopNavbarProps> = ({
           {/* Contact Action */}
           <button
             type="button"
-            onClick={onOpenContact}
+            onClick={() => {
+              playSound('click');
+              onOpenContact();
+            }}
             className="flex items-center gap-1.5 px-3.5 sm:px-4 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold uppercase tracking-wider transition-all shadow-[0_0_16px_rgba(225,29,72,0.35)] active:scale-95 cursor-pointer"
           >
             <Mail className="w-3.5 h-3.5" />
