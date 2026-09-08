@@ -48,11 +48,47 @@ const ALL_RESEARCH_NODES: NodeData[] = [
 const ALL_INITIAL_NODES: NodeData[] = ALL_RESEARCH_NODES;
 const ALL_INITIAL_CONNECTIONS: Connection[] = [...INITIAL_CONNECTIONS, ...EXPANDED_CONNECTIONS];
 
+// ─── URL Hash Routing ─────────────────────────────────────────────────────────
+// Maps internal nav tabs to clean URL hash fragments for shareable, bookmarkable links.
+const TAB_TO_HASH: Record<string, string> = {
+  home: '#cover',
+  network: '#network',
+  projects: '#research',
+  notebook: '#chronicle_entries',
+  lab: '#lab',
+  about: '#about',
+};
+
+const HASH_TO_TAB: Record<string, 'home' | 'network' | 'projects' | 'lab' | 'notebook' | 'about'> = {
+  '#cover': 'home',
+  '#network': 'network',
+  '#research': 'projects',
+  '#chronicle_entries': 'notebook',
+  '#lab': 'lab',
+  '#about': 'about',
+  '': 'home',
+};
+
+const getTabFromHash = (): 'home' | 'network' | 'projects' | 'lab' | 'notebook' | 'about' => {
+  if (typeof window === 'undefined') return 'home';
+  const hash = window.location.hash.toLowerCase();
+  return HASH_TO_TAB[hash] || 'home';
+};
+
+const updateHash = (tab: string) => {
+  if (typeof window === 'undefined') return;
+  const hash = TAB_TO_HASH[tab] || '#cover';
+  if (window.location.hash !== hash) {
+    window.history.replaceState(null, '', hash);
+  }
+};
+
 export default function App() {
-  // Navigation & Scroll State
-  const [activeNavTab, setActiveNavTab] = useState<'home' | 'network' | 'projects' | 'lab' | 'notebook' | 'about'>('home');
+  // Navigation & Scroll State — initialize from URL hash for deep linking
+  const initialTab = useMemo(() => getTabFromHash(), []);
+  const [activeNavTab, setActiveNavTab] = useState<'home' | 'network' | 'projects' | 'lab' | 'notebook' | 'about'>(initialTab);
   const [scrollProgress, setScrollProgress] = useState<number>(0);
-  const [activePreset, setActivePreset] = useState<string>('network');
+  const [activePreset, setActivePreset] = useState<string>(initialTab === 'projects' ? 'project' : 'network');
   const [connections, setConnections] = useState<Connection[]>(ALL_INITIAL_CONNECTIONS);
   const [isAddNodeOpen, setIsAddNodeOpen] = useState<boolean>(false);
 
@@ -82,7 +118,7 @@ export default function App() {
     },
     [currentTabKey]
   );
-  const [activeView, setActiveView] = useState<'canvas' | 'list' | 'timeline'>('canvas');
+  const [activeView, setActiveView] = useState<'canvas' | 'list' | 'timeline'>(initialTab === 'notebook' ? 'timeline' : 'canvas');
   const [isSimulating, setIsSimulating] = useState<boolean>(true);
   const [wireStyle, setWireStyle] = useState<'glow' | 'minimal' | 'cyber'>('glow');
   const [showGrid, setShowGrid] = useState<boolean>(true);
@@ -152,6 +188,42 @@ export default function App() {
   const activeViewRef = useRef(activeView);
   activeViewRef.current = activeView;
   const isProgrammaticScrollRef = useRef(false);
+  const handleSelectNavTabRef = useRef<((tab: 'home' | 'network' | 'projects' | 'lab' | 'notebook' | 'about') => void) | null>(null);
+
+  // ─── URL Hash Routing Effects ──────────────────────────────────────────────
+  // 1. Sync URL hash bar whenever the active nav tab changes
+  useEffect(() => {
+    updateHash(activeNavTab);
+  }, [activeNavTab]);
+
+  // 2. Deep-link mount: if the URL hash points to a workspace tab, scroll down to it on initial load
+  useEffect(() => {
+    if (initialTab === 'home' || initialTab === 'notebook') return; // Cover stays at top; Chronicle already handles its own view
+    // For network, projects (research), lab — scroll down to workspace after a brief layout settle
+    const timer = setTimeout(() => {
+      isProgrammaticScrollRef.current = true;
+      const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+      window.scrollTo({ top: maxScroll, behavior: 'instant' });
+      targetProgressRef.current = 1;
+      currentProgressRef.current = 1;
+      setScrollProgress(1);
+      setTimeout(() => { isProgrammaticScrollRef.current = false; }, 300);
+    }, 100);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // 3. Browser back/forward navigation via hashchange
+  useEffect(() => {
+    const onHashChange = () => {
+      const newTab = getTabFromHash();
+      if (newTab === activeNavTabRef.current) return;
+      // Delegate to the same handler as navbar clicks for consistent behavior
+      handleSelectNavTabRef.current?.(newTab);
+    };
+    window.addEventListener('hashchange', onHashChange);
+    return () => window.removeEventListener('hashchange', onHashChange);
+  }, []);
 
   // Damped, interruptible scroll progress tracking (0.0 to 1.0)
   const targetProgressRef = useRef<number>(0);
@@ -959,6 +1031,7 @@ export default function App() {
       setIsResumeOpen(true);
     }
   }, [centerViewForPreset, handleFocusNode, handleReturnToCover]);
+  handleSelectNavTabRef.current = handleSelectNavTab;
 
   // Preset Selection Handler
   const handleSelectPreset = useCallback((preset: string) => {
