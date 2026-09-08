@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { NodeData, ProjectItem, CertificateItem, Connection } from '../types';
 import { AnalogClock } from './AnalogClock';
+import { ResearchMiniVisualizer } from './nodes/ResearchMiniVisualizer';
 import {
   Close,
   ArrowRight,
@@ -22,6 +23,10 @@ import {
   Mail,
   FileText,
   Terminal,
+  Sliders,
+  Compass,
+  Sparkles,
+  BarChart,
 } from './icons';
 
 interface FocusedNodeModalProps {
@@ -32,6 +37,7 @@ interface FocusedNodeModalProps {
   onOpenCertificateDetail?: (cert: CertificateItem) => void;
   onOpenContact?: () => void;
   onOpenResume?: () => void;
+  onFocusNode?: (nodeId: string) => void;
 }
 
 export const FocusedNodeModal: React.FC<FocusedNodeModalProps> = ({
@@ -42,6 +48,7 @@ export const FocusedNodeModal: React.FC<FocusedNodeModalProps> = ({
   onOpenCertificateDetail,
   onOpenContact,
   onOpenResume,
+  onFocusNode,
 }) => {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [clockTime, setClockTime] = useState('');
@@ -112,6 +119,28 @@ export const FocusedNodeModal: React.FC<FocusedNodeModalProps> = ({
         return { label: 'FORMAL RIGOR', state: 'VERIFIED', pulse: false };
       case 'clock':
         return { label: 'QUARTZ REF', state: '60 HZ SYNC', pulse: true };
+      case 'statistics':
+        return { label: 'PROBABILISTIC INFERENCE', state: 'CALIBRATED', pulse: true };
+      case 'optimization':
+        return { label: 'OBJECTIVE DYNAMICS', state: 'CONVERGING', pulse: true };
+      case 'pipeline':
+        return { label: 'STREAM INGESTION', state: '420 MB/S', pulse: true };
+      case 'evaluation':
+        return { label: 'MODEL BENCHMARKS', state: 'AUDITED', pulse: false };
+      case 'vectors':
+        return { label: 'HNSW MANIFOLD', state: '1536-D', pulse: true };
+      case 'vision':
+        return { label: 'SPATIAL EXTRACTION', state: 'ViT-B/16', pulse: false };
+      case 'generative':
+        return { label: 'SCORE DIFFUSION', state: 'SDE ACTIVE', pulse: true };
+      case 'software':
+        return { label: 'SYSTEM RUNTIME', state: 'p99 14MS', pulse: true };
+      case 'experiment':
+        return { label: 'STRESS LAB', state: 'CONTINUOUS', pulse: true };
+      case 'computational':
+        return { label: 'ROOFLINE ACCEL', state: 'BF16 TENSORS', pulse: true };
+      case 'visitor':
+        return { label: 'VISITOR CONTRIBUTION', state: 'SAVED', pulse: false };
       default:
         return { label: 'SYSTEM COMPONENT', state: 'ACTIVE', pulse: false };
     }
@@ -619,6 +648,167 @@ export const FocusedNodeModal: React.FC<FocusedNodeModalProps> = ({
                   <p className="font-body text-xs text-zinc-400 leading-relaxed">
                     Provides continuous deterministic timestamp coordination across interactive graph splines, simulated neural pulses, and temporal journal records.
                   </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* -------------------------------------------------------------
+              6. EXPANDED FIRST-CLASS RESEARCH ARTIFACT VIEW
+             ------------------------------------------------------------- */}
+          {node.researchData && (
+            <div className="space-y-6">
+              {/* Abstract Thesis Statement */}
+              <div className="relative pl-5 border-l-2 border-rose-500/60 bg-white/[0.015] py-3 pr-4 rounded-r-xl">
+                <div className="font-tech text-[10px] font-bold text-rose-400 uppercase tracking-widest mb-1">
+                  ARCHITECTURAL ABSTRACT // {node.researchData.domain}
+                </div>
+                <p className="font-body text-sm sm:text-base text-zinc-200 leading-relaxed font-normal">
+                  {node.researchData.overview}
+                </p>
+              </div>
+
+              {/* Technical System Specification Matrix */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 font-tech">
+                <div className="p-3 rounded-xl bg-black/40 border border-white/[0.08]">
+                  <div className="text-[10px] text-zinc-400 uppercase tracking-wider">DOMAIN</div>
+                  <div className="text-xs font-bold text-zinc-200 mt-1 uppercase">{node.researchData.domain}</div>
+                </div>
+                <div className="p-3 rounded-xl bg-black/40 border border-white/[0.08]">
+                  <div className="text-[10px] text-zinc-400 uppercase tracking-wider">METHOD</div>
+                  <div className="text-xs font-bold text-rose-400 mt-1 uppercase">{node.researchData.method}</div>
+                </div>
+                <div className="p-3 rounded-xl bg-black/40 border border-white/[0.08]">
+                  <div className="text-[10px] text-zinc-400 uppercase tracking-wider">STATE</div>
+                  <div className="text-xs font-bold text-emerald-400 mt-1 uppercase">{node.researchData.state}</div>
+                </div>
+                <div className="p-3 rounded-xl bg-black/40 border border-white/[0.08]">
+                  <div className="text-[10px] text-zinc-400 uppercase tracking-wider">COMPUTE</div>
+                  <div className="text-xs font-bold text-zinc-200 mt-1 uppercase">{node.researchData.compute}</div>
+                </div>
+              </div>
+
+              {/* Embedded Visualization Viewport */}
+              <div className="p-4 rounded-2xl bg-black/50 border border-white/[0.10] space-y-2.5">
+                <div className="flex items-center justify-between font-tech text-[10px] text-zinc-400 uppercase tracking-widest border-b border-white/[0.06] pb-2">
+                  <span className="flex items-center gap-1.5 text-rose-400 font-bold">
+                    <Activity className="w-3.5 h-3.5" />
+                    LIVE PARAMETRIC MONITOR
+                  </span>
+                  <span>SIMULATION ACTIVE</span>
+                </div>
+                <div className="py-2">
+                  <ResearchMiniVisualizer
+                    type={node.researchData.visualizationType || 'distribution'}
+                    accentColor={node.accentColor}
+                  />
+                </div>
+              </div>
+
+              {/* Empirical Metrics Ledger (if defined) */}
+              {node.researchData.metrics && node.researchData.metrics.length > 0 && (
+                <div>
+                  <div className="font-body text-[10px] font-semibold tracking-[0.25em] text-zinc-400 uppercase mb-2.5 flex items-center gap-2">
+                    <BarChart className="w-3.5 h-3.5 text-rose-400" />
+                    <span>EMPIRICAL BENCHMARKS &amp; TELEMETRY</span>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    {node.researchData.metrics.map((m, i) => (
+                      <div key={i} className="p-3.5 rounded-xl bg-black/40 border border-white/[0.08]">
+                        <div className="font-tech text-[10px] text-rose-400 font-semibold uppercase tracking-wider">
+                          {m.label}
+                        </div>
+                        <div className="font-display text-base sm:text-lg font-bold text-white mt-1 uppercase">
+                          {m.value}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Internal Computational Details Stages */}
+              <div>
+                <div className="font-body text-[10px] font-semibold tracking-[0.25em] text-zinc-400 uppercase mb-3 flex items-center gap-2">
+                  <Cpu className="w-3.5 h-3.5 text-rose-400" />
+                  <span>COMPUTATIONAL MECHANISMS &amp; ALGORITHMIC STAGES</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 font-body">
+                  {node.researchData.computationalDetails.map((detail, idx) => (
+                    <div
+                      key={idx}
+                      className="p-3.5 rounded-xl bg-black/35 border border-white/[0.08] hover:border-white/[0.16] transition-colors flex gap-3"
+                    >
+                      <span className="font-tech text-xs font-bold text-rose-400 shrink-0 mt-0.5">
+                        0{idx + 1}
+                      </span>
+                      <p className="text-xs sm:text-[13px] text-zinc-300 leading-relaxed font-normal">
+                        {detail}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Related Connected Nodes */}
+              {node.researchData.relatedNodeIds && node.researchData.relatedNodeIds.length > 0 && (
+                <div className="pt-2 border-t border-white/[0.06]">
+                  <div className="font-tech text-[10px] text-zinc-400 uppercase tracking-widest mb-2.5">
+                    TOPOLOGICAL CONNECTIONS // RELATED RESEARCH NODES
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {node.researchData.relatedNodeIds.map((relId) => (
+                      <button
+                        key={relId}
+                        type="button"
+                        onClick={() => {
+                          onClose();
+                          onFocusNode?.(relId);
+                        }}
+                        className="px-3 py-1.5 rounded-lg bg-white/[0.04] hover:bg-rose-500/20 hover:border-rose-500/40 border border-white/[0.08] text-xs font-tech text-zinc-300 hover:text-white transition-all flex items-center gap-1.5 cursor-pointer"
+                      >
+                        <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+                        <span className="uppercase">{relId.replace('node-', '').replace('-', ' ')}</span>
+                        <ArrowUpRight className="w-3 h-3 text-rose-400" />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* -------------------------------------------------------------
+              7. VISITOR CONTRIBUTED NODE ARTIFACT VIEW
+             ------------------------------------------------------------- */}
+          {node.category === 'visitor' && node.visitorData && (
+            <div className="space-y-6">
+              <div className="p-6 rounded-2xl bg-black/50 border border-white/[0.12] space-y-4 font-body">
+                <div className="flex items-center justify-between border-b border-white/[0.08] pb-3">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-rose-500" />
+                    <span className="font-tech text-xs font-bold text-rose-400 uppercase tracking-widest">
+                      COMMUNITY OBSERVATION &bull; {node.visitorData.category.toUpperCase()}
+                    </span>
+                  </div>
+                  <span className="font-tech text-xs text-zinc-400">
+                    {new Date(node.visitorData.createdAt).toLocaleDateString('en-US', {
+                      month: 'long',
+                      day: 'numeric',
+                      year: 'numeric',
+                    })}
+                  </span>
+                </div>
+
+                <blockquote className="text-base sm:text-lg text-white font-normal leading-relaxed italic pl-3 border-l-2 border-rose-500">
+                  &ldquo;{node.visitorData.message}&rdquo;
+                </blockquote>
+
+                <div className="flex items-center justify-between pt-3 border-t border-white/[0.06] text-xs font-tech text-zinc-400">
+                  <span>CONTRIBUTED BY</span>
+                  <span className="text-white font-bold text-sm tracking-wide">
+                    {node.visitorData.name}
+                  </span>
                 </div>
               </div>
             </div>

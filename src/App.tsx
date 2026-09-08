@@ -6,6 +6,7 @@
 import React, { useState, useRef, useCallback, useMemo, useEffect } from 'react';
 import { NodeData, Connection, CertificateItem, ProjectItem, CanvasTransform, Pin } from './types';
 import { INITIAL_NODES, INITIAL_CONNECTIONS } from './data/portfolioData';
+import { EXPANDED_RESEARCH_NODES, EXPANDED_CONNECTIONS } from './data/researchNodesData';
 import { SplineWires } from './components/SplineWires';
 import { GraphNode } from './components/GraphNode';
 import { TopNavbar } from './components/TopNavbar';
@@ -17,18 +18,41 @@ import { CertificateModal } from './components/modals/CertificateModal';
 import { ProjectDetailModal } from './components/modals/ProjectDetailModal';
 import { ContactModal } from './components/modals/ContactModal';
 import { ResumeModal } from './components/modals/ResumeModal';
+import { AddVisitorNodeModal } from './components/modals/AddVisitorNodeModal';
 import { InspectorListView } from './components/InspectorListView';
 import { ChronicleView } from './components/ChronicleView';
 import { playSound } from './lib/sound';
+
+const VISITOR_STORAGE_KEY = 'nodefolio_visitor_notes';
+
+const loadSavedVisitorNodes = (): NodeData[] => {
+  if (typeof window === 'undefined') return [];
+  try {
+    const raw = localStorage.getItem(VISITOR_STORAGE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) return parsed;
+  } catch (e) {
+    console.error('Failed to parse saved visitor nodes', e);
+  }
+  return [];
+};
+
+const ALL_INITIAL_NODES: NodeData[] = [...INITIAL_NODES, ...EXPANDED_RESEARCH_NODES];
+const ALL_INITIAL_CONNECTIONS: Connection[] = [...INITIAL_CONNECTIONS, ...EXPANDED_CONNECTIONS];
 
 export default function App() {
   // Navigation & Scroll State
   const [activeNavTab, setActiveNavTab] = useState<'home' | 'network' | 'projects' | 'lab' | 'notebook' | 'about'>('home');
   const [scrollProgress, setScrollProgress] = useState<number>(0);
 
-  // Graph Data State
-  const [nodes, setNodes] = useState<NodeData[]>(INITIAL_NODES);
-  const [connections, setConnections] = useState<Connection[]>(INITIAL_CONNECTIONS);
+  // Graph Data State (combines official nodes and locally stored visitor notes)
+  const [nodes, setNodes] = useState<NodeData[]>(() => [
+    ...ALL_INITIAL_NODES,
+    ...loadSavedVisitorNodes(),
+  ]);
+  const [connections, setConnections] = useState<Connection[]>(ALL_INITIAL_CONNECTIONS);
+  const [isAddNodeOpen, setIsAddNodeOpen] = useState<boolean>(false);
   const [activePreset, setActivePreset] = useState<string>('all');
   const [activeView, setActiveView] = useState<'canvas' | 'list' | 'timeline'>('canvas');
   const [isSimulating, setIsSimulating] = useState<boolean>(true);
@@ -70,6 +94,16 @@ export default function App() {
     'node-systems': { ampX: 6, ampY: 6, periodX: 16.4, periodY: 11.8, phaseX: 4.2, phaseY: 2.9 },
     'node-project': { ampX: 3.5, ampY: 4, periodX: 18.0, periodY: 15.2, phaseX: 5.0, phaseY: 3.8 },
     'node-clock': { ampX: 5, ampY: 3, periodX: 11.4, periodY: 9.6, phaseX: 0.9, phaseY: 4.5 },
+    'node-inference': { ampX: 5, ampY: 4, periodX: 14.2, periodY: 11.5, phaseX: 2.1, phaseY: 1.7 },
+    'node-optimization': { ampX: 4, ampY: 6, periodX: 16.0, periodY: 13.1, phaseX: 3.8, phaseY: 0.9 },
+    'node-pipeline': { ampX: 6, ampY: 4, periodX: 12.8, periodY: 15.4, phaseX: 1.2, phaseY: 3.4 },
+    'node-eval': { ampX: 4.5, ampY: 5.5, periodX: 15.1, periodY: 12.2, phaseX: 4.6, phaseY: 2.1 },
+    'node-vector': { ampX: 5.5, ampY: 4.5, periodX: 17.2, periodY: 14.0, phaseX: 0.8, phaseY: 4.1 },
+    'node-vision': { ampX: 4, ampY: 5, periodX: 13.6, periodY: 10.8, phaseX: 2.9, phaseY: 1.5 },
+    'node-generative': { ampX: 5, ampY: 6, periodX: 18.4, periodY: 13.8, phaseX: 5.2, phaseY: 3.1 },
+    'node-software': { ampX: 4.5, ampY: 4, periodX: 14.8, periodY: 16.2, phaseX: 1.9, phaseY: 0.6 },
+    'node-lab': { ampX: 6, ampY: 5, periodX: 15.5, periodY: 12.0, phaseX: 3.3, phaseY: 4.8 },
+    'node-computational': { ampX: 4, ampY: 4.5, periodX: 13.0, periodY: 14.6, phaseX: 4.1, phaseY: 2.7 },
   }), []);
 
   // Subtle harmonic drift state
@@ -331,18 +365,61 @@ export default function App() {
     );
   }, []);
 
+  // Visitor node creation with local persistence
+  const handleAddVisitorNode = useCallback((newNode: NodeData) => {
+    setNodes((prev) => {
+      const next = [...prev, newNode];
+      try {
+        const visitorOnly = next.filter((n) => n.category === 'visitor');
+        localStorage.setItem(VISITOR_STORAGE_KEY, JSON.stringify(visitorOnly));
+      } catch (e) {
+        console.error('Failed to persist visitor node', e);
+      }
+      return next;
+    });
+  }, []);
+
+  // Visitor node removal with storage sync
+  const handleDeleteVisitorNode = useCallback((nodeId: string) => {
+    playSound('close');
+    setNodes((prev) => {
+      const next = prev.filter((n) => n.id !== nodeId);
+      try {
+        const visitorOnly = next.filter((n) => n.category === 'visitor');
+        localStorage.setItem(VISITOR_STORAGE_KEY, JSON.stringify(visitorOnly));
+      } catch (e) {
+        console.error('Failed to update visitor nodes in storage', e);
+      }
+      return next;
+    });
+  }, []);
+
   // Filter nodes & connections based on active preset
   const filteredNodes = useMemo(() => {
     return nodes.filter((n) => {
       if (activePreset === 'all') return true;
       if (activePreset === 'skills') {
-        return ['node-profile', 'node-models', 'node-systems'].includes(n.id);
+        return (
+          [
+            'node-profile',
+            'node-models',
+            'node-systems',
+            'node-pipeline',
+            'node-vision',
+            'node-computational',
+            'node-software',
+          ].includes(n.id) || n.category === 'visitor'
+        );
       }
       if (activePreset === 'certificates') {
-        return ['node-profile', 'node-credentials'].includes(n.id);
+        return (
+          ['node-profile', 'node-credentials', 'node-inference', 'node-eval'].includes(n.id) ||
+          n.category === 'visitor'
+        );
       }
       if (activePreset === 'project') {
-        return ['node-models', 'node-systems', 'node-project'].includes(n.id);
+        // Research tab: showcases the comprehensive computational ecosystem
+        return true;
       }
       return true;
     });
@@ -435,30 +512,24 @@ export default function App() {
     const vw = typeof window !== 'undefined' ? window.innerWidth : 1200;
     const vh = typeof window !== 'undefined' ? window.innerHeight : 800;
 
-    // Accurate node bounding boxes per preset:
-    // 'all': node-profile [60..400, 260..680] to node-clock [1840..2100, 120..640] & node-credentials [480..820, 550..930]
-    // 'project' (Research Tab): node-models [480..820, 100..500], node-systems [900..1240, 100..500], node-project [1320..1760, 80..760]
-    // 'skills': node-profile [60..400], node-models [480..820], node-systems [900..1240]
-    // 'certificates': node-profile [60..400], node-credentials [480..820]
-
     let minX = 60;
-    let maxX = 2100;
-    let minY = 80;
-    let maxY = 930;
+    let maxX = 2450;
+    let minY = -260;
+    let maxY = 1350;
 
     if (preset === 'project') {
-      minX = 480;
-      maxX = 1760; // 1320 + 440
-      minY = 80;
-      maxY = 760;  // 80 + 680
+      minX = 450;
+      maxX = 2450;
+      minY = -260;
+      maxY = 1350;
     } else if (preset === 'skills') {
       minX = 60;
-      maxX = 1240;
-      minY = 100;
-      maxY = 680;
+      maxX = 2100;
+      minY = -260;
+      maxY = 900;
     } else if (preset === 'certificates') {
       minX = 60;
-      maxX = 820;
+      maxX = 1300;
       minY = 260;
       maxY = 930;
     }
@@ -607,8 +678,9 @@ export default function App() {
   // Reset Graph
   const handleResetGraph = useCallback(() => {
     playSound('secondaryClick');
-    setNodes(INITIAL_NODES);
-    setConnections(INITIAL_CONNECTIONS);
+    const savedVisitors = loadSavedVisitorNodes();
+    setNodes([...ALL_INITIAL_NODES, ...savedVisitors]);
+    setConnections(ALL_INITIAL_CONNECTIONS);
     setActivePreset('all');
     setSelectedNodeId(null);
     centerViewForPreset('all', 0.70);
@@ -843,7 +915,7 @@ export default function App() {
                         transform: `translate(${transform.x}px, ${transform.y}px) scale(${transform.scale})`,
                         transformOrigin: '0 0',
                       }}
-                      className="w-full h-full min-w-[2600px] min-h-[1700px] relative pointer-events-auto overflow-visible"
+                      className="w-full h-full min-w-[3800px] min-h-[2200px] relative pointer-events-auto overflow-visible"
                     >
                       {/* Spline Connections Layer with Focus/Depth Dimming */}
                       <SplineWires
@@ -882,6 +954,7 @@ export default function App() {
                             onNodeDrag={handleNodeDrag}
                             onNodeResize={handleNodeResize}
                             onDragStateChange={handleDragStateChange}
+                            onDeleteVisitorNode={handleDeleteVisitorNode}
                             onOpenCertificateModal={(cert) => {
                               playSound('open');
                               setSelectedCertificate(cert);
@@ -954,6 +1027,7 @@ export default function App() {
                         setIsSimulating(!isSimulating);
                       }}
                       onReturnToCover={handleReturnToCover}
+                      onOpenAddNode={() => setIsAddNodeOpen(true)}
                     />
                   </div>
 
@@ -983,16 +1057,28 @@ export default function App() {
                       <span className="text-zinc-300 font-medium">Resize edges to adjust node sizes</span>
                     </div>
 
-                    <div className="flex items-center gap-2 text-zinc-300 font-medium text-[11px] shrink-0">
-                      <span>{filteredNodes.length} NODES</span>
-                      <span>/</span>
-                      <span>{filteredConnections.length} ACTIVE SPLINES</span>
-                      <span>&bull;</span>
-                      <span className="text-rose-500 font-bold flex items-center gap-1.5">
-                        <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
-                        LIVE
-                      </span>
-                    </div>
+                    {(() => {
+                      const visitorCount = filteredNodes.filter((n) => n.category === 'visitor').length;
+                      const officialCount = filteredNodes.length - visitorCount;
+                      return (
+                        <div className="flex items-center gap-2 text-zinc-300 font-medium text-[11px] shrink-0">
+                          <span>{officialCount} RESEARCH NODES</span>
+                          {visitorCount > 0 && (
+                            <>
+                              <span>+</span>
+                              <span className="text-rose-400 font-semibold">{visitorCount} VISITOR NOTE{visitorCount > 1 ? 'S' : ''}</span>
+                            </>
+                          )}
+                          <span>/</span>
+                          <span>{filteredConnections.length} ACTIVE SPLINES</span>
+                          <span>&bull;</span>
+                          <span className="text-rose-500 font-bold flex items-center gap-1.5">
+                            <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
+                            LIVE
+                          </span>
+                        </div>
+                      );
+                    })()}
                   </footer>
                 </div>
               </ArchitecturalReveal>
@@ -1016,6 +1102,7 @@ export default function App() {
           playSound('close');
           setFocusedNode(null);
         }}
+        onFocusNode={handleFocusNode}
         onOpenProjectDetail={(p) => {
           playSound('open');
           setFocusedNode(null);
@@ -1070,6 +1157,13 @@ export default function App() {
           setIsResumeOpen(false);
         }}
         nodes={nodes}
+      />
+
+      <AddVisitorNodeModal
+        isOpen={isAddNodeOpen}
+        onClose={() => setIsAddNodeOpen(false)}
+        onAddNode={handleAddVisitorNode}
+        existingVisitorCount={nodes.filter((n) => n.category === 'visitor').length}
       />
     </div>
   );

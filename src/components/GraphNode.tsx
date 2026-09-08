@@ -8,6 +8,8 @@ import { ControlsNodeContent } from './nodes/ControlsNodeContent';
 import { ProjectNodeContent } from './nodes/ProjectNodeContent';
 import { ExperienceNodeContent } from './nodes/ExperienceNodeContent';
 import { ClockNodeContent } from './nodes/ClockNodeContent';
+import { ResearchMiniVisualizer } from './nodes/ResearchMiniVisualizer';
+import { VisitorNodeContent } from './nodes/VisitorNodeContent';
 import {
   Grip,
   ChevronDown,
@@ -20,6 +22,14 @@ import {
   Eye,
   User,
   Clock,
+  BarChart,
+  Binary,
+  Database,
+  Sparkles,
+  Terminal,
+  Compass,
+  Cpu,
+  FileText,
 } from './icons';
 
 interface GraphNodeProps {
@@ -36,6 +46,7 @@ interface GraphNodeProps {
   onOpenResumeModal: () => void;
   onOpenFocusedNode?: (node: NodeData) => void;
   onDragStateChange?: (nodeId: string, isDragging: boolean) => void;
+  onDeleteVisitorNode?: (id: string) => void;
 }
 
 const CATEGORY_ICON_MAP: Record<string, React.ReactNode> = {
@@ -46,6 +57,17 @@ const CATEGORY_ICON_MAP: Record<string, React.ReactNode> = {
   project: <Eye className="w-3.5 h-3.5 text-rose-400" />,
   experience: <Activity className="w-3.5 h-3.5 text-rose-400" />,
   clock: <Clock className="w-3.5 h-3.5 text-rose-400" />,
+  statistics: <BarChart className="w-3.5 h-3.5 text-rose-400" />,
+  optimization: <Sliders className="w-3.5 h-3.5 text-rose-400" />,
+  pipeline: <Binary className="w-3.5 h-3.5 text-rose-400" />,
+  evaluation: <Activity className="w-3.5 h-3.5 text-rose-400" />,
+  vectors: <Database className="w-3.5 h-3.5 text-rose-400" />,
+  vision: <Eye className="w-3.5 h-3.5 text-rose-400" />,
+  generative: <Sparkles className="w-3.5 h-3.5 text-rose-400" />,
+  software: <Terminal className="w-3.5 h-3.5 text-rose-400" />,
+  experiment: <Compass className="w-3.5 h-3.5 text-rose-400" />,
+  computational: <Cpu className="w-3.5 h-3.5 text-rose-400" />,
+  visitor: <FileText className="w-3.5 h-3.5 text-rose-400" />,
 };
 
 const GraphNodeComponent: React.FC<GraphNodeProps> = ({
@@ -62,6 +84,7 @@ const GraphNodeComponent: React.FC<GraphNodeProps> = ({
   onOpenResumeModal,
   onOpenFocusedNode,
   onDragStateChange,
+  onDeleteVisitorNode,
 }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
@@ -238,7 +261,13 @@ const GraphNodeComponent: React.FC<GraphNodeProps> = ({
         style={{
           transition: isDragging ? 'none' : undefined,
         }}
-        className={`rounded-[30px] node-card transition-all duration-200 ${
+        className={`${
+          node.shape === 'capsule'
+            ? 'rounded-[36px]'
+            : node.shape === 'sticky'
+            ? 'rounded-2xl rotate-[-1deg]'
+            : 'rounded-[30px]'
+        } node-card transition-all duration-200 ${
           isSelected ? 'node-card-active ring-1 ring-rose-500/40 shadow-[0_0_30px_rgba(225,29,72,0.25)]' : 'hover:border-white/10'
         }`}
       >
@@ -247,7 +276,13 @@ const GraphNodeComponent: React.FC<GraphNodeProps> = ({
           onMouseDown={handleMouseDown}
           onTouchStart={handleTouchStart}
           onDoubleClick={() => onOpenFocusedNode?.(node)}
-          className="flex items-center justify-between px-4 py-3 rounded-t-[30px] bg-white/[0.03] border-b border-white/[0.06] cursor-grab active:cursor-grabbing hover:bg-white/[0.06] transition-colors"
+          className={`flex items-center justify-between px-4 py-3 ${
+            node.shape === 'capsule'
+              ? 'rounded-t-[36px]'
+              : node.shape === 'sticky'
+              ? 'rounded-t-2xl'
+              : 'rounded-t-[30px]'
+          } bg-white/[0.03] border-b border-white/[0.06] cursor-grab active:cursor-grabbing hover:bg-white/[0.06] transition-colors`}
         >
           <div className="flex items-center gap-2.5 min-w-0">
             {/* Category Indicator Dot / Icon */}
@@ -366,6 +401,65 @@ const GraphNodeComponent: React.FC<GraphNodeProps> = ({
 
             {node.category === 'clock' && (
               <ClockNodeContent />
+            )}
+
+            {node.category === 'visitor' && node.visitorData && (
+              <VisitorNodeContent
+                visitorData={node.visitorData}
+                onDelete={onDeleteVisitorNode}
+              />
+            )}
+
+            {node.researchData && (
+              <div className="p-4 space-y-3 font-body">
+                {/* Domain & State Header Badge */}
+                <div className="flex items-center justify-between text-[10px] font-tech text-zinc-400 uppercase tracking-widest border-b border-white/[0.06] pb-2">
+                  <span className="text-rose-400 font-bold truncate max-w-[170px]">
+                    {node.researchData.domain}
+                  </span>
+                  <span className="px-1.5 py-0.5 rounded bg-white/[0.04] border border-white/[0.06] text-zinc-300 font-medium shrink-0">
+                    {node.researchData.state}
+                  </span>
+                </div>
+
+                {/* Dedicated Lightweight Mini-Visualization */}
+                <ResearchMiniVisualizer
+                  type={node.researchData.visualizationType || 'distribution'}
+                  accentColor={node.accentColor}
+                />
+
+                {/* Abstract Preview */}
+                <p className="text-xs text-zinc-300 line-clamp-2 leading-relaxed font-normal">
+                  {node.researchData.overview}
+                </p>
+
+                {/* Tags */}
+                <div className="flex flex-wrap gap-1 pt-0.5">
+                  {node.researchData.tags.slice(0, 3).map((tag) => (
+                    <span
+                      key={tag}
+                      className="px-2 py-0.5 rounded bg-white/[0.03] border border-white/[0.06] text-[9px] font-tech text-zinc-400"
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+
+                {/* View Technical Specification Trigger */}
+                {onOpenFocusedNode && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onOpenFocusedNode(node);
+                    }}
+                    className="w-full pt-1 text-left text-[11px] font-tech font-semibold text-rose-400 hover:text-rose-300 transition-colors uppercase tracking-wider flex items-center justify-between group/link cursor-pointer"
+                  >
+                    <span>View Technical Specification</span>
+                    <span className="group-hover/link:translate-x-0.5 transition-transform">↗</span>
+                  </button>
+                )}
+              </div>
             )}
           </div>
         )}

@@ -21,6 +21,7 @@ interface CanvasControlsDockProps {
   isSimulating: boolean;
   onToggleSimulate: () => void;
   onReturnToCover?: () => void;
+  onOpenAddNode?: () => void;
 }
 
 const CanvasControlsDockComponent: React.FC<CanvasControlsDockProps> = ({
@@ -35,9 +36,25 @@ const CanvasControlsDockComponent: React.FC<CanvasControlsDockProps> = ({
   isSimulating,
   onToggleSimulate,
   onReturnToCover,
+  onOpenAddNode,
 }) => {
   return (
     <aside aria-label="Canvas view and zoom controls" className="absolute right-4 top-1/2 -translate-y-1/2 z-30 flex flex-col gap-1 p-1 rounded-xl bg-[#0e1015]/90 backdrop-blur-md border border-white/[0.08] shadow-2xl font-body">
+      {/* Add Your Own Node Button */}
+      {onOpenAddNode && (
+        <>
+          <button
+            type="button"
+            onClick={onOpenAddNode}
+            className="w-8 h-8 rounded-lg flex items-center justify-center text-rose-400 hover:text-white bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/40 transition-colors cursor-pointer"
+            title="Add Your Own Research Note"
+          >
+            <Plus className="w-4 h-4" />
+          </button>
+          <div className="w-full h-px bg-white/[0.06] my-0.5" />
+        </>
+      )}
+
       {/* Zoom In */}
       <button
         type="button"
