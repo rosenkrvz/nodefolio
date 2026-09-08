@@ -147,7 +147,7 @@ export default function App() {
       if (timestamp - lastDriftFrameTimeRef.current >= 33) {
         lastDriftFrameTimeRef.current = timestamp;
 
-        const isVisible = scrollProgress >= 0.20 || activeNavTab !== 'home';
+        const isVisible = scrollProgressRef.current >= 0.20 || activeNavTabRef.current !== 'home';
         const canSimulate =
           isSimulating &&
           !prefersReducedMotion &&
@@ -185,10 +185,12 @@ export default function App() {
     return () => {
       window.cancelAnimationFrame(animId);
     };
-  }, [isSimulating, scrollProgress, activeNavTab, NODE_DRIFT_PROFILES]);
+  }, [isSimulating, NODE_DRIFT_PROFILES]);
 
-  // Smooth interruptible scroll progress tracking via weighted damping
+  // Smooth interruptible scroll progress tracking via weighted damping with magnetic settle
   useEffect(() => {
+    let settleTimeoutId: ReturnType<typeof setTimeout> | null = null;
+
     const updateTargetProgress = () => {
       if (activeViewRef.current !== 'canvas') return;
       const docEl = document.documentElement;
@@ -197,6 +199,42 @@ export default function App() {
         targetProgressRef.current = Math.max(0, Math.min(1, window.scrollY / totalHeight));
       } else {
         targetProgressRef.current = 0;
+      }
+    };
+
+    const onScroll = () => {
+      updateTargetProgress();
+
+      // Clear any pending settle timer while user is actively scrolling
+      if (settleTimeoutId) {
+        clearTimeout(settleTimeoutId);
+        settleTimeoutId = null;
+      }
+
+      // Magnetic settle: when user stops scrolling in the transition zone between Cover and Workspace
+      if (!isProgrammaticScrollRef.current && activeViewRef.current === 'canvas') {
+        settleTimeoutId = setTimeout(() => {
+          if (isProgrammaticScrollRef.current || activeViewRef.current !== 'canvas') return;
+          const docEl = document.documentElement;
+          const totalHeight = docEl.scrollHeight - window.innerHeight;
+          if (totalHeight <= 0) return;
+
+          const progress = window.scrollY / totalHeight;
+          if (progress > 0.08 && progress < 0.92) {
+            if (progress >= 0.35) {
+              // Complete glide down to Network workspace
+              isProgrammaticScrollRef.current = true;
+              setActiveNavTab('network');
+              setActivePreset('network');
+              window.scrollTo({ top: totalHeight, behavior: 'smooth' });
+            } else {
+              // Return cleanly to Cover
+              isProgrammaticScrollRef.current = true;
+              setActiveNavTab('home');
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+          }
+        }, 180);
       }
     };
 
@@ -228,18 +266,19 @@ export default function App() {
 
         // Automatically sync active tab indicator to scroll position only when manually scrolling
         if (!isProgrammaticScrollRef.current) {
-          if (currentProgressRef.current >= 0.50 && activeNavTabRef.current === 'home') {
+          if (currentProgressRef.current >= 0.70 && activeNavTabRef.current === 'home') {
             setActiveNavTab('network');
-          } else if (currentProgressRef.current < 0.40 && activeNavTabRef.current === 'network') {
+            setActivePreset('network');
+          } else if (currentProgressRef.current < 0.30 && activeNavTabRef.current !== 'home') {
             setActiveNavTab('home');
           }
         }
 
         // Tactile transition audio: trigger ONE subtle activation sound upon crossing into the neural workspace
-        if (currentProgressRef.current >= 0.50 && !hasPlayedCoverTransitionRef.current) {
+        if (currentProgressRef.current >= 0.70 && !hasPlayedCoverTransitionRef.current) {
           hasPlayedCoverTransitionRef.current = true;
           playSound('open');
-        } else if (currentProgressRef.current < 0.35 && hasPlayedCoverTransitionRef.current) {
+        } else if (currentProgressRef.current < 0.30 && hasPlayedCoverTransitionRef.current) {
           hasPlayedCoverTransitionRef.current = false;
         }
       }
@@ -247,7 +286,7 @@ export default function App() {
       animId = window.requestAnimationFrame(tick);
     };
 
-    window.addEventListener('scroll', updateTargetProgress, { passive: true });
+    window.addEventListener('scroll', onScroll, { passive: true });
     window.addEventListener('resize', updateTargetProgress, { passive: true });
     updateTargetProgress();
     currentProgressRef.current = targetProgressRef.current;
@@ -255,7 +294,8 @@ export default function App() {
     animId = window.requestAnimationFrame(tick);
 
     return () => {
-      window.removeEventListener('scroll', updateTargetProgress);
+      if (settleTimeoutId) clearTimeout(settleTimeoutId);
+      window.removeEventListener('scroll', onScroll);
       window.removeEventListener('resize', updateTargetProgress);
       window.cancelAnimationFrame(animId);
     };
@@ -646,7 +686,7 @@ export default function App() {
       }
 
       // Check if user is currently inside the computational node space UI
-      const inNodeSpace = scrollProgressRef.current >= 0.80;
+      const inNodeSpace = scrollProgressRef.current >= 0.95;
 
       if (!inNodeSpace) {
         // User is on cover page or transitioning down into node space:
@@ -925,7 +965,7 @@ export default function App() {
           /* SECTION 01 + 02: Canvas Viewport (Cover + Neural Workspace) */
           <div
             ref={scrollContainerRef}
-            className="relative w-full h-[320vh]"
+            className="relative w-full h-[220vh]"
           >
             {/* Sticky 100vh Viewport Stage */}
             <div className="sticky top-0 w-full h-screen overflow-hidden">
