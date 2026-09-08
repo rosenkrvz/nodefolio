@@ -78,6 +78,7 @@ export default function App() {
   activeNavTabRef.current = activeNavTab;
   const activeViewRef = useRef(activeView);
   activeViewRef.current = activeView;
+  const isProgrammaticScrollRef = useRef(false);
 
   // Damped, interruptible scroll progress tracking (0.0 to 1.0)
   const targetProgressRef = useRef<number>(0);
@@ -177,11 +178,22 @@ export default function App() {
           setScrollProgress(target);
         }
 
-        // Automatically sync active tab indicator to scroll position
-        if (currentProgressRef.current >= 0.50 && activeNavTabRef.current === 'home') {
-          setActiveNavTab('network');
-        } else if (currentProgressRef.current < 0.40 && activeNavTabRef.current === 'network') {
-          setActiveNavTab('home');
+        // Release programmatic scroll lock when arrival is achieved
+        if (isProgrammaticScrollRef.current) {
+          if (activeNavTabRef.current === 'home' && currentProgressRef.current <= 0.03) {
+            isProgrammaticScrollRef.current = false;
+          } else if (activeNavTabRef.current !== 'home' && currentProgressRef.current >= 0.97) {
+            isProgrammaticScrollRef.current = false;
+          }
+        }
+
+        // Automatically sync active tab indicator to scroll position only when manually scrolling
+        if (!isProgrammaticScrollRef.current) {
+          if (currentProgressRef.current >= 0.50 && activeNavTabRef.current === 'home') {
+            setActiveNavTab('network');
+          } else if (currentProgressRef.current < 0.40 && activeNavTabRef.current === 'network') {
+            setActiveNavTab('home');
+          }
         }
       }
 
@@ -525,30 +537,33 @@ export default function App() {
     centerViewForPreset('all', 0.70);
   }, [centerViewForPreset]);
 
-  // Return to cover
+  // Return to cover with smooth, single-pass upward transition (no ricochet)
   const handleReturnToCover = useCallback(() => {
     setActiveNavTab('home');
-    setActiveView('canvas');
-    targetProgressRef.current = 0;
-    currentProgressRef.current = 0;
-    setScrollProgress(0);
+    if (activeViewRef.current !== 'canvas') {
+      setActiveView('canvas');
+      targetProgressRef.current = 0;
+      currentProgressRef.current = 0;
+      setScrollProgress(0);
+      window.scrollTo({ top: 0, behavior: 'instant' });
+      return;
+    }
+
+    // On canvas view: smoothly scroll window to top in one natural, continuous glide
+    isProgrammaticScrollRef.current = true;
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
 
-  // Smooth transition down to workspace
+  // Smooth single-pass transition down to workspace
   const handleExplore = useCallback(() => {
     setActiveNavTab('network');
     setActiveView('canvas');
     setActivePreset('all');
     setSelectedNodeId(null);
     centerViewForPreset('all', 0.70);
-    targetProgressRef.current = 1;
-    currentProgressRef.current = 1;
-    setScrollProgress(1);
-    setTimeout(() => {
-      const maxScroll = typeof document !== 'undefined' ? document.documentElement.scrollHeight - window.innerHeight : 1000;
-      window.scrollTo({ top: maxScroll, behavior: 'smooth' });
-    }, 50);
+    isProgrammaticScrollRef.current = true;
+    const maxScroll = typeof document !== 'undefined' ? document.documentElement.scrollHeight - window.innerHeight : 1000;
+    window.scrollTo({ top: maxScroll, behavior: 'smooth' });
   }, [centerViewForPreset]);
 
   // Focus specific node on canvas with smooth centered pan
@@ -558,9 +573,7 @@ export default function App() {
 
     setActiveView('canvas');
     setSelectedNodeId(nodeId);
-    targetProgressRef.current = 1;
-    currentProgressRef.current = 1;
-    setScrollProgress(1);
+    isProgrammaticScrollRef.current = true;
 
     if (nodeId === 'node-project') {
       setActiveNavTab('projects');
@@ -585,10 +598,8 @@ export default function App() {
       scale: targetScale,
     });
 
-    setTimeout(() => {
-      const maxScroll = typeof document !== 'undefined' ? document.documentElement.scrollHeight - window.innerHeight : 1000;
-      window.scrollTo({ top: maxScroll, behavior: 'smooth' });
-    }, 50);
+    const maxScroll = typeof document !== 'undefined' ? document.documentElement.scrollHeight - window.innerHeight : 1000;
+    window.scrollTo({ top: maxScroll, behavior: 'smooth' });
   }, [nodes]);
 
   // Top Nav Tab Selection - Centered layouts for Network and Research tabs
@@ -602,35 +613,23 @@ export default function App() {
       setActivePreset('all');
       setSelectedNodeId(null);
       centerViewForPreset('all', 0.70);
-      targetProgressRef.current = 1;
-      currentProgressRef.current = 1;
-      setScrollProgress(1);
-      setTimeout(() => {
-        const maxScroll = typeof document !== 'undefined' ? document.documentElement.scrollHeight - window.innerHeight : 1000;
-        window.scrollTo({ top: maxScroll, behavior: 'smooth' });
-      }, 50);
+      isProgrammaticScrollRef.current = true;
+      const maxScroll = typeof document !== 'undefined' ? document.documentElement.scrollHeight - window.innerHeight : 1000;
+      window.scrollTo({ top: maxScroll, behavior: 'smooth' });
     } else if (tab === 'projects') {
       setActiveView('canvas');
       setActivePreset('project');
       setSelectedNodeId(null);
       centerViewForPreset('project', 0.70);
-      targetProgressRef.current = 1;
-      currentProgressRef.current = 1;
-      setScrollProgress(1);
-      setTimeout(() => {
-        const maxScroll = typeof document !== 'undefined' ? document.documentElement.scrollHeight - window.innerHeight : 1000;
-        window.scrollTo({ top: maxScroll, behavior: 'smooth' });
-      }, 50);
+      isProgrammaticScrollRef.current = true;
+      const maxScroll = typeof document !== 'undefined' ? document.documentElement.scrollHeight - window.innerHeight : 1000;
+      window.scrollTo({ top: maxScroll, behavior: 'smooth' });
     } else if (tab === 'lab') {
       setActiveView('canvas');
-      targetProgressRef.current = 1;
-      currentProgressRef.current = 1;
-      setScrollProgress(1);
-      setTimeout(() => {
-        const maxScroll = typeof document !== 'undefined' ? document.documentElement.scrollHeight - window.innerHeight : 1000;
-        window.scrollTo({ top: maxScroll, behavior: 'smooth' });
-        handleFocusNode('node-controls');
-      }, 50);
+      isProgrammaticScrollRef.current = true;
+      const maxScroll = typeof document !== 'undefined' ? document.documentElement.scrollHeight - window.innerHeight : 1000;
+      window.scrollTo({ top: maxScroll, behavior: 'smooth' });
+      handleFocusNode('node-controls');
     } else if (tab === 'notebook') {
       setActiveView('timeline');
       window.scrollTo({ top: 0, behavior: 'instant' });
