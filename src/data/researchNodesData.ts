@@ -1,12 +1,18 @@
 import { NodeData, Connection } from '../types';
 
 export const RESEARCH_CORE_COORDINATES: Record<string, { x: number; y: number }> = {
-  'node-profile': { x: 120, y: 640 },
-  'node-credentials': { x: 580, y: 640 },
-  'node-models': { x: 1040, y: 160 },
-  'node-systems': { x: 1040, y: 640 },
-  'node-project': { x: 1960, y: 160 },
-  'node-clock': { x: 2980, y: 360 },
+  // Center Node: Core Identity Anchor
+  'node-profile': { x: 1830, y: 1820 },
+  // Inner Orbit (South-West)
+  'node-credentials': { x: 1240, y: 2160 },
+  // Inner Orbit (South-East)
+  'node-models': { x: 2420, y: 2160 },
+  // Inner Orbit (South)
+  'node-systems': { x: 1830, y: 2500 },
+  // Outer Orbit (East)
+  'node-project': { x: 3200, y: 1900 },
+  // Outer Orbit (South)
+  'node-clock': { x: 1840, y: 3170 },
 };
 
 export const EXPANDED_RESEARCH_NODES: NodeData[] = [
@@ -19,8 +25,8 @@ export const EXPANDED_RESEARCH_NODES: NodeData[] = [
     subtitle: 'Probability & Decision Systems',
     category: 'statistics',
     shape: 'square',
-    x: 580,
-    y: 1140,
+    x: 600,
+    y: 1110,
     width: 340,
     inputs: [
       { id: 'pin-inf-in', label: 'mathematical.core', color: 'crimson', type: 'input', nodeId: 'node-inference' },
@@ -63,8 +69,8 @@ export const EXPANDED_RESEARCH_NODES: NodeData[] = [
     subtitle: 'Learning Through Objective Functions',
     category: 'optimization',
     shape: 'square',
-    x: 1040,
-    y: 1140,
+    x: 1340,
+    y: 480,
     width: 340,
     inputs: [
       { id: 'pin-opt-in', label: 'loss.gradient', color: 'crimson', type: 'input', nodeId: 'node-optimization' },
@@ -107,8 +113,8 @@ export const EXPANDED_RESEARCH_NODES: NodeData[] = [
     subtitle: 'From Raw Signals to Features',
     category: 'pipeline',
     shape: 'square',
-    x: 120,
-    y: 160,
+    x: 1830,
+    y: 1140,
     width: 340,
     inputs: [],
     outputs: [
@@ -150,8 +156,8 @@ export const EXPANDED_RESEARCH_NODES: NodeData[] = [
     subtitle: 'Measurement, Error & Generalization',
     category: 'evaluation',
     shape: 'square',
-    x: 1500,
-    y: 640,
+    x: 1240,
+    y: 1480,
     width: 340,
     inputs: [
       { id: 'pin-eval-in', label: 'hypothesis.dist', color: 'rose', type: 'input', nodeId: 'node-eval' },
@@ -194,8 +200,8 @@ export const EXPANDED_RESEARCH_NODES: NodeData[] = [
     subtitle: 'Embeddings & Similarity',
     category: 'vectors',
     shape: 'square',
-    x: 1500,
-    y: 160,
+    x: 2310,
+    y: 480,
     width: 340,
     inputs: [
       { id: 'pin-vec-in', label: 'latent.projection', color: 'crimson', type: 'input', nodeId: 'node-vector' },
@@ -238,8 +244,8 @@ export const EXPANDED_RESEARCH_NODES: NodeData[] = [
     subtitle: 'Signals, Features & Visual Reps',
     category: 'vision',
     shape: 'square',
-    x: 580,
-    y: 160,
+    x: 2420,
+    y: 1480,
     width: 340,
     inputs: [
       { id: 'pin-vis-in', label: 'raw.stream', color: 'rose', type: 'input', nodeId: 'node-vision' },
@@ -282,8 +288,8 @@ export const EXPANDED_RESEARCH_NODES: NodeData[] = [
     subtitle: 'Learning Distributions & Structure',
     category: 'generative',
     shape: 'square',
-    x: 1500,
-    y: 1140,
+    x: 430,
+    y: 2060,
     width: 340,
     inputs: [
       { id: 'pin-gen-in', label: 'param.trajectory', color: 'crimson', type: 'input', nodeId: 'node-generative' },
@@ -327,8 +333,8 @@ export const EXPANDED_RESEARCH_NODES: NodeData[] = [
     subtitle: 'Turning Models Into Software',
     category: 'software',
     shape: 'square',
-    x: 2520,
-    y: 640,
+    x: 2740,
+    y: 2900,
     width: 340,
     inputs: [
       { id: 'pin-soft-in', label: 'cuda.kernels', color: 'crimson', type: 'input', nodeId: 'node-software' },
@@ -371,8 +377,8 @@ export const EXPANDED_RESEARCH_NODES: NodeData[] = [
     subtitle: 'Ideas Under Computational Stress',
     category: 'experiment',
     shape: 'square',
-    x: 1960,
-    y: 1140,
+    x: 920,
+    y: 2900,
     width: 340,
     inputs: [
       { id: 'pin-lab-in', label: 'latent.stress', color: 'crimson', type: 'input', nodeId: 'node-lab' },
@@ -415,8 +421,8 @@ export const EXPANDED_RESEARCH_NODES: NodeData[] = [
     subtitle: 'Where Math Becomes Software',
     category: 'computational',
     shape: 'square',
-    x: 2520,
-    y: 160,
+    x: 3060,
+    y: 1110,
     width: 340,
     inputs: [],
     outputs: [

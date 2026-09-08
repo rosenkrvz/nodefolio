@@ -616,8 +616,8 @@ export default function App() {
         return ['node-profile', 'node-models', 'node-credentials', 'node-systems', 'node-project', 'node-clock'].includes(n.id);
       }
       if (preset === 'project') {
-        // Research tab: Zoom in on the primary 4-node focal gateway (Data Pipeline, Computer Vision, Profile, Academic & Foundation)
-        return ['node-pipeline', 'node-profile', 'node-vision', 'node-credentials'].includes(n.id);
+        // Research tab: Center directly on the central anchor node (Shubham Sharma) at the center of the circular structure
+        return ['node-profile'].includes(n.id);
       }
       if (preset === 'skills') {
         return [
@@ -919,7 +919,7 @@ export default function App() {
       setActiveView('canvas');
       setActivePreset('project');
       setSelectedNodeId(null);
-      centerViewForPreset('project');
+      centerViewForPreset('project', 0.60);
       isProgrammaticScrollRef.current = true;
       setTimeout(() => { isProgrammaticScrollRef.current = false; }, 500);
 
@@ -1058,7 +1058,7 @@ export default function App() {
                         transform: `translate(${transform.x}px, ${transform.y}px) scale(${transform.scale})`,
                         transformOrigin: '0 0',
                       }}
-                      className="w-full h-full min-w-[3800px] min-h-[2200px] relative pointer-events-auto overflow-visible"
+                      className="w-full h-full min-w-[4400px] min-h-[4400px] relative pointer-events-auto overflow-visible"
                     >
                       {/* Spline Connections Layer with Focus/Depth Dimming */}
                       <SplineWires
