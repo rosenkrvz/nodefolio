@@ -26,12 +26,14 @@ interface GraphNodeProps {
   node: NodeData;
   scale: number;
   isSelected?: boolean;
+  isDimmed?: boolean;
   onSelectNode?: (nodeId: string) => void;
   onNodeDrag: (nodeId: string, deltaX: number, deltaY: number) => void;
   onOpenCertificateModal: (cert: CertificateItem) => void;
   onOpenProjectModal: (proj: ProjectItem) => void;
   onOpenContactModal: () => void;
   onOpenResumeModal: () => void;
+  onOpenFocusedNode?: (node: NodeData) => void;
 }
 
 const CATEGORY_ICON_MAP: Record<string, React.ReactNode> = {
@@ -48,12 +50,14 @@ export const GraphNode: React.FC<GraphNodeProps> = ({
   node,
   scale,
   isSelected = false,
+  isDimmed = false,
   onSelectNode,
   onNodeDrag,
   onOpenCertificateModal,
   onOpenProjectModal,
   onOpenContactModal,
   onOpenResumeModal,
+  onOpenFocusedNode,
 }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const isDraggingRef = useRef(false);
@@ -138,9 +142,10 @@ export const GraphNode: React.FC<GraphNodeProps> = ({
       style={{
         transform: `translate(${node.x}px, ${node.y}px)`,
         width: `${node.width}px`,
+        opacity: isDimmed ? 0.38 : 1,
       }}
-      className={`absolute select-none z-10 transition-shadow duration-200 ${
-        isSelected ? 'z-30' : 'hover:z-20'
+      className={`absolute select-none z-10 transition-all duration-200 ${
+        isSelected ? 'z-30' : 'hover:z-20 hover:opacity-100'
       }`}
       onClick={(e) => {
         e.stopPropagation();
@@ -150,13 +155,14 @@ export const GraphNode: React.FC<GraphNodeProps> = ({
       {/* Node Container Card with Dark Neumorphic Aesthetic */}
       <div
         className={`rounded-[30px] node-card transition-all duration-200 ${
-          isSelected ? 'node-card-active ring-1 ring-rose-500/40' : 'hover:border-white/10'
+          isSelected ? 'node-card-active ring-1 ring-rose-500/40 shadow-[0_0_30px_rgba(225,29,72,0.25)]' : 'hover:border-white/10'
         }`}
       >
         {/* Node Top Header (Draggable Bar) */}
         <div
           onMouseDown={handleMouseDown}
           onTouchStart={handleTouchStart}
+          onDoubleClick={() => onOpenFocusedNode?.(node)}
           className="flex items-center justify-between px-4 py-3 rounded-t-[30px] bg-white/[0.03] border-b border-white/[0.06] cursor-grab active:cursor-grabbing hover:bg-white/[0.06] transition-colors"
         >
           <div className="flex items-center gap-2.5 min-w-0">
@@ -178,15 +184,30 @@ export const GraphNode: React.FC<GraphNodeProps> = ({
           </div>
 
           <div className="flex items-center gap-1 shrink-0">
+            {/* Open Focused Artifact Modal */}
+            {onOpenFocusedNode && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onOpenFocusedNode(node);
+                }}
+                className="p-1 rounded-md text-zinc-400 hover:text-white hover:bg-white/10 transition-colors"
+                title="Inspect detailed artifact"
+              >
+                <Maximize2 className="w-3.5 h-3.5 text-rose-400" />
+              </button>
+            )}
+
             <button
               type="button"
               onClick={() => setIsCollapsed(!isCollapsed)}
-              className="p-1 rounded-md text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
+              className="p-1 rounded-md text-zinc-400 hover:text-white hover:bg-white/10 transition-colors"
               title={isCollapsed ? 'Expand node' : 'Collapse node'}
             >
               {isCollapsed ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronUp className="w-3.5 h-3.5" />}
             </button>
-            <GripHorizontal className="w-4 h-4 text-slate-500 hover:text-slate-300 transition-colors cursor-grab" />
+            <GripHorizontal className="w-4 h-4 text-zinc-500 hover:text-zinc-300 transition-colors cursor-grab" />
           </div>
         </div>
 
@@ -219,7 +240,7 @@ export const GraphNode: React.FC<GraphNodeProps> = ({
 
         {/* Node Body Content */}
         {!isCollapsed && (
-          <div className="p-4 pb-5">
+          <div className="p-4 sm:p-5 pb-6">
             {node.category === 'profile' && node.profile && (
               <ProfileNodeContent
                 data={node.profile}

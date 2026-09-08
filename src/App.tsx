@@ -4,23 +4,29 @@
  */
 
 import React, { useState, useRef, useCallback, useMemo, useEffect } from 'react';
-import { NodeData, Connection, CertificateItem, ProjectItem, CanvasTransform } from './types';
+import { NodeData, Connection, CertificateItem, ProjectItem, CanvasTransform, Pin } from './types';
 import { INITIAL_NODES, INITIAL_CONNECTIONS } from './data/portfolioData';
 import { SplineWires } from './components/SplineWires';
 import { GraphNode } from './components/GraphNode';
 import { TopNavbar } from './components/TopNavbar';
 import { CanvasControlsDock } from './components/CanvasControlsDock';
+import { EditorialCover } from './components/EditorialCover';
+import { ArchitecturalReveal } from './components/ArchitecturalReveal';
+import { FocusedNodeModal } from './components/FocusedNodeModal';
 import { CertificateModal } from './components/modals/CertificateModal';
 import { ProjectDetailModal } from './components/modals/ProjectDetailModal';
 import { ContactModal } from './components/modals/ContactModal';
 import { ResumeModal } from './components/modals/ResumeModal';
 import { InspectorListView } from './components/InspectorListView';
-import { ArrowDown, ArrowUpRight, Binary, Layers, Activity } from 'lucide-react';
 
 export default function App() {
-  // State
+  // Navigation & Scroll State
+  const [activeNavTab, setActiveNavTab] = useState<'home' | 'network' | 'projects' | 'lab' | 'notebook' | 'about'>('home');
+  const [scrollProgress, setScrollProgress] = useState<number>(0);
+
+  // Graph Data State
   const [nodes, setNodes] = useState<NodeData[]>(INITIAL_NODES);
-  const [connections] = useState<Connection[]>(INITIAL_CONNECTIONS);
+  const [connections, setConnections] = useState<Connection[]>(INITIAL_CONNECTIONS);
   const [activePreset, setActivePreset] = useState<string>('all');
   const [activeView, setActiveView] = useState<'canvas' | 'list' | 'timeline'>('canvas');
   const [isSimulating, setIsSimulating] = useState<boolean>(true);
@@ -29,8 +35,8 @@ export default function App() {
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [activeConnectionId, setActiveConnectionId] = useState<string | null>(null);
 
-  // Canvas pan & zoom transform - calculated for balanced initial viewport centering hero and visualizer
-  const [transform, setTransform] = useState<CanvasTransform>({ x: 40, y: 30, scale: 0.88 });
+  // Canvas pan & zoom transform
+  const [transform, setTransform] = useState<CanvasTransform>({ x: 80, y: 70, scale: 0.86 });
   const isPanningRef = useRef(false);
   const panStartRef = useRef({ x: 0, y: 0 });
   const canvasContainerRef = useRef<HTMLDivElement>(null);
@@ -38,8 +44,40 @@ export default function App() {
   // Modals state
   const [selectedCertificate, setSelectedCertificate] = useState<CertificateItem | null>(null);
   const [selectedProject, setSelectedProject] = useState<ProjectItem | null>(null);
+  const [focusedNode, setFocusedNode] = useState<NodeData | null>(null);
   const [isContactOpen, setIsContactOpen] = useState(false);
   const [isResumeOpen, setIsResumeOpen] = useState(false);
+
+  // Scroll Container Ref
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  // Throttled scroll progress tracking via requestAnimationFrame
+  useEffect(() => {
+    let ticking = false;
+    const handleScroll = () => {
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          const docEl = document.documentElement;
+          const totalHeight = docEl.scrollHeight - window.innerHeight;
+          if (totalHeight > 0) {
+            const progress = Math.max(0, Math.min(1, window.scrollY / totalHeight));
+            setScrollProgress(progress);
+            if (progress < 0.28) {
+              setActiveNavTab('home');
+            } else if (progress > 0.85) {
+              setActiveNavTab('network');
+            }
+          }
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    handleScroll();
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   // Pure deterministic pin coordinate calculation directly from nodes
   const pinPositions = useMemo(() => {
@@ -65,41 +103,14 @@ export default function App() {
     return map;
   }, [nodes]);
 
-  // Spatial constraints / protected zone enforcement
-  // Cards must NEVER enter or obscure the hero text rectangle: [0..660] x [0..490]
+  // Node Dragging Handler
   const handleNodeDrag = useCallback((nodeId: string, deltaX: number, deltaY: number) => {
     setNodes((prevNodes) =>
       prevNodes.map((n) => {
         if (n.id === nodeId) {
-          let nextX = Math.round(n.x + deltaX);
-          let nextY = Math.round(n.y + deltaY);
-
-          if (nodeId === 'node-project' || nodeId === 'node-clock') {
-            // Upper hero row nodes stay anchored to the right of the hero heading
-            if (nextX < 670) nextX = 670;
-            if (nextY < 40) nextY = 40;
-          } else {
-            // Other nodes must stay below the hero zone or to the right
-            if (nextY < 490 && nextX < 670) {
-              if (n.y >= 490) {
-                nextY = 490;
-              } else if (n.x >= 670) {
-                nextX = 670;
-              } else {
-                nextY = Math.max(490, nextY);
-              }
-            }
-          }
-
-          // Global canvas boundaries
-          nextX = Math.max(30, Math.min(2200, nextX));
-          nextY = Math.max(30, Math.min(1400, nextY));
-
-          return {
-            ...n,
-            x: nextX,
-            y: nextY,
-          };
+          const nextX = Math.max(20, Math.min(2300, Math.round(n.x + deltaX)));
+          const nextY = Math.max(20, Math.min(1500, Math.round(n.y + deltaY)));
+          return { ...n, x: nextX, y: nextY };
         }
         return n;
       })
@@ -131,19 +142,20 @@ export default function App() {
     );
   }, [connections, activeNodeIds]);
 
-  // Canvas panning handlers
+  // Canvas Panning Handlers
   const handleCanvasMouseDown = (e: React.MouseEvent) => {
+    const target = e.target as HTMLElement;
     if (
-      (e.target as HTMLElement).closest('.node-card') ||
-      (e.target as HTMLElement).closest('button') ||
-      (e.target as HTMLElement).closest('a')
+      target.closest('.node-card') ||
+      target.closest('button') ||
+      target.closest('.port-pin') ||
+      target.closest('aside')
     ) {
       return;
     }
+
     isPanningRef.current = true;
     panStartRef.current = { x: e.clientX - transform.x, y: e.clientY - transform.y };
-    setSelectedNodeId(null);
-    setActiveConnectionId(null);
 
     const handleMouseMove = (moveEvent: MouseEvent) => {
       if (!isPanningRef.current) return;
@@ -164,68 +176,105 @@ export default function App() {
     window.addEventListener('mouseup', handleMouseUp);
   };
 
-  // Wheel zoom
+  // Zoom Handler:
+  // If user holds Ctrl/Meta or pinch-to-zoom, zoom canvas!
+  // Otherwise, let wheel event bubble naturally to scroll the window.
   const handleWheel = (e: React.WheelEvent) => {
-    e.preventDefault();
-    const zoomFactor = e.deltaY < 0 ? 1.05 : 0.95;
-    setTransform((prev) => {
-      const newScale = Math.min(1.35, Math.max(0.48, prev.scale * zoomFactor));
-      return {
-        ...prev,
-        scale: newScale,
-      };
-    });
+    if (e.ctrlKey || e.metaKey) {
+      e.preventDefault();
+      const zoomFactor = e.deltaY < 0 ? 1.08 : 0.92;
+      const nextScale = Math.max(0.4, Math.min(1.8, transform.scale * zoomFactor));
+
+      if (!canvasContainerRef.current) return;
+      const rect = canvasContainerRef.current.getBoundingClientRect();
+      const mouseX = e.clientX - rect.left;
+      const mouseY = e.clientY - rect.top;
+
+      const newX = mouseX - (mouseX - transform.x) * (nextScale / transform.scale);
+      const newY = mouseY - (mouseY - transform.y) * (nextScale / transform.scale);
+
+      setTransform({
+        x: newX,
+        y: newY,
+        scale: nextScale,
+      });
+    }
   };
 
-  // Zoom controls
-  const handleZoomIn = () => {
-    setTransform((prev) => ({ ...prev, scale: Math.min(1.35, prev.scale + 0.1) }));
-  };
-  const handleZoomOut = () => {
-    setTransform((prev) => ({ ...prev, scale: Math.max(0.48, prev.scale - 0.1) }));
-  };
-  const handleFitScreen = () => {
-    setTransform({ x: 40, y: 30, scale: 0.88 });
-  };
-  const handleResetGraph = () => {
-    setNodes(INITIAL_NODES);
-    setTransform({ x: 40, y: 30, scale: 0.88 });
-  };
+  // Smooth scroll down to workspace
+  const handleExplore = useCallback(() => {
+    const docEl = document.documentElement;
+    const totalHeight = docEl.scrollHeight - window.innerHeight;
+    window.scrollTo({ top: totalHeight, behavior: 'smooth' });
+  }, []);
 
-  // Focus specific node on canvas
-  const handleFocusNode = (nodeId: string) => {
-    const targetNode = nodes.find((n) => n.id === nodeId);
-    if (!targetNode) return;
-    setActiveView('canvas');
+  // Focus specific node on canvas with smooth pan
+  const handleFocusNode = useCallback((nodeId: string) => {
+    const target = nodes.find((n) => n.id === nodeId);
+    if (!target) return;
+
     setSelectedNodeId(nodeId);
-    setTransform({
-      x: -targetNode.x * 0.88 + window.innerWidth / 2 - 200,
-      y: -targetNode.y * 0.88 + window.innerHeight / 2 - 160,
-      scale: 0.92,
-    });
-  };
+    setActiveNavTab('network');
 
-  const handleCycleWireStyle = () => {
-    if (wireStyle === 'glow') setWireStyle('cyber');
-    else if (wireStyle === 'cyber') setWireStyle('minimal');
-    else setWireStyle('glow');
-  };
+    // Smoothly scroll down to workspace
+    const docEl = document.documentElement;
+    const totalHeight = docEl.scrollHeight - window.innerHeight;
+    window.scrollTo({ top: totalHeight, behavior: 'smooth' });
+
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    const targetScale = 0.95;
+
+    setTransform({
+      x: viewportWidth / 2 - (target.x + target.width / 2) * targetScale,
+      y: viewportHeight / 2 - (target.y + 160) * targetScale,
+      scale: targetScale,
+    });
+  }, [nodes]);
+
+  // Fit view
+  const handleFitScreen = useCallback(() => {
+    setTransform({ x: 60, y: 60, scale: 0.85 });
+  }, []);
+
+  // Reset Graph
+  const handleResetGraph = useCallback(() => {
+    setNodes(INITIAL_NODES);
+    setConnections(INITIAL_CONNECTIONS);
+    handleFitScreen();
+  }, [handleFitScreen]);
+
+  // Top Nav Tab Selection
+  const handleSelectNavTab = useCallback((tab: 'home' | 'network' | 'projects' | 'lab' | 'notebook' | 'about') => {
+    setActiveNavTab(tab);
+
+    if (tab === 'home') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else if (tab === 'network') {
+      setActivePreset('all');
+      handleExplore();
+    } else if (tab === 'projects') {
+      setActivePreset('project');
+      handleFocusNode('node-project');
+    } else if (tab === 'lab') {
+      handleFocusNode('node-controls');
+    } else if (tab === 'notebook') {
+      setActiveView('timeline');
+      handleExplore();
+    } else if (tab === 'about') {
+      setIsResumeOpen(true);
+    }
+  }, [handleExplore, handleFocusNode]);
+
+  // Clear node selection when clicking canvas background
+  const handleCanvasBackgroundClick = useCallback(() => {
+    setSelectedNodeId(null);
+    setActiveConnectionId(null);
+  }, []);
 
   return (
-    <div className="relative w-screen h-screen overflow-hidden bg-[#14171c] text-zinc-100 select-none">
-      {/* Technical Background Atmosphere */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden z-0" aria-hidden="true">
-        <div className="pattern-bg">
-          <div className="cube-svg" />
-        </div>
-      </div>
-
-      {/* Subtle Coordinate Grid Overlay */}
-      {showGrid && (
-        <div className="absolute inset-0 pointer-events-none bg-canvas-dots-overlay opacity-60 z-0" aria-hidden="true" />
-      )}
-
-      {/* Top Navigation Header */}
+    <div className="relative w-full bg-[#090b10] text-[#eaeaea] overflow-x-hidden font-body select-none">
+      {/* Top Navbar */}
       <TopNavbar
         activePreset={activePreset}
         onSelectPreset={setActivePreset}
@@ -233,224 +282,232 @@ export default function App() {
         onToggleSimulate={() => setIsSimulating(!isSimulating)}
         onResetGraph={handleResetGraph}
         onOpenContact={() => setIsContactOpen(true)}
+        onOpenResume={() => setIsResumeOpen(true)}
         onFocusClock={() => handleFocusNode('node-clock')}
         activeView={activeView}
         onToggleView={setActiveView}
+        activeNavTab={activeNavTab}
+        onSelectNavTab={handleSelectNavTab}
       />
 
-      {/* Floating Canvas Controls Dock (Right side) */}
-      {activeView === 'canvas' && (
-        <CanvasControlsDock
-          scale={transform.scale}
-          onZoomIn={handleZoomIn}
-          onZoomOut={handleZoomOut}
-          onFitScreen={handleFitScreen}
-          showGrid={showGrid}
-          onToggleGrid={() => setShowGrid(!showGrid)}
-          wireStyle={wireStyle}
-          onCycleWireStyle={handleCycleWireStyle}
-          isSimulating={isSimulating}
-          onToggleSimulate={() => setIsSimulating(!isSimulating)}
-        />
-      )}
-
-      {/* Main Content Area Based on Active View */}
-      {activeView === 'canvas' ? (
-        <main
-          aria-label="Interactive computational graph canvas"
-          ref={canvasContainerRef}
-          onMouseDown={handleCanvasMouseDown}
-          onWheel={handleWheel}
-          className="w-full h-full cursor-grab active:cursor-grabbing relative overflow-hidden z-10"
-        >
-          {/* Transformed Stage with Controlled Two-Zone Hero Composition */}
-          <div
-            style={{
-              transform: `translate(${transform.x}px, ${transform.y}px) scale(${transform.scale})`,
-              transformOrigin: '0 0',
-            }}
-            className="w-[2600px] h-[1600px] relative pointer-events-auto"
-          >
-            {/* HERO ZONE (LEFT / CENTER-LEFT): Protected Hero Typography & Identity */}
-            <div className="absolute top-[50px] left-[60px] w-[580px] z-10 pointer-events-auto select-text">
-              {/* Eyebrow in Satoshi */}
-              <div className="flex items-center gap-2 mb-2">
-                <span className="w-2 h-2 rounded-full bg-rose-500 shadow-[0_0_8px_#f43f5e]" />
-                <span className="font-body text-xs tracking-[0.2em] uppercase text-rose-400 font-bold">
-                  AI &amp; DATA SCIENCE • RESEARCH INTERFACE
-                </span>
-              </div>
-
-              {/* Main Headline in Josefin Sans */}
-              <h1 className="hero-heading text-white font-normal tracking-tight mb-2 select-none">
-                <span className="block font-display font-light text-zinc-300 uppercase tracking-widest text-lg sm:text-xl mb-0.5">
-                  SHUBHAM SHARMA
-                </span>
-                <span className="block font-display font-bold text-white tracking-[-0.02em] uppercase">
-                  BUILDING WITH
-                </span>
-                <span className="block font-display font-bold text-white tracking-[-0.02em] uppercase">
-                  DATA &amp; MODELS<span className="text-rose-500">.</span>
-                </span>
-              </h1>
-
-              {/* Artistic Accent in Dongle */}
-              <div className="font-accent text-3xl sm:text-4xl text-rose-400/90 leading-none -mt-1 mb-3.5 select-none flex items-center gap-2">
-                <span>compute / reason / discover</span>
-                <span className="text-zinc-600 text-sm font-body">•</span>
-                <span className="text-zinc-400 text-2xl font-accent">ideas → systems</span>
-              </div>
-
-              {/* Supporting Editorial Paragraph in Satoshi */}
-              <p className="hero-subtext font-body text-zinc-200 font-normal leading-relaxed max-w-lg mb-6 select-text">
-                I study how data, mathematics and machine learning become useful systems — from statistical reasoning to intelligent software.
-              </p>
-
-              {/* Action Buttons & Quick Anchors in Satoshi */}
-              <div className="flex items-center gap-3 font-body">
-                <button
-                  type="button"
-                  onClick={() => handleFocusNode('node-project')}
-                  className="px-4 py-2.5 rounded-xl bg-white/[0.08] hover:bg-white/[0.14] border border-white/[0.12] text-xs font-semibold text-white tracking-wide transition-all flex items-center gap-2 shadow-sm"
-                >
-                  <span>Explore Latent Visualizer</span>
-                  <ArrowUpRight className="w-3.5 h-3.5 text-rose-400" />
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => handleFocusNode('node-models')}
-                  className="px-4 py-2.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.07] text-xs font-semibold text-zinc-200 tracking-wide transition-all flex items-center gap-1.5"
-                >
-                  <span>Model Architecture</span>
-                  <ArrowDown className="w-3.5 h-3.5 text-zinc-400" />
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setIsContactOpen(true)}
-                  className="px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 border border-rose-500/40 text-xs font-semibold text-white tracking-wide transition-all shadow-sm"
-                >
-                  Contact
-                </button>
-              </div>
-            </div>
-
-            {/* Bezier Spline Wires Layer */}
-            <SplineWires
-              connections={filteredConnections}
-              pinPositions={pinPositions}
-              isSimulating={isSimulating}
-              wireStyle={wireStyle}
-              activeConnectionId={activeConnectionId}
-              onSelectConnection={(id) => setActiveConnectionId(id)}
+      {/* CONTINUOUS SCROLL-DRIVEN ARCHITECTURE */}
+      <main className="relative w-full">
+        {/* Real vertical scroll track with deliberate height (350vh) */}
+        <div ref={scrollContainerRef} className="relative w-full h-[350vh]">
+          {/* Sticky 100vh Viewport Stage */}
+          <div className="sticky top-0 w-full h-screen overflow-hidden">
+            {/* SECTION 01: Solid Editorial Portfolio Cover (0 to ~65% scroll) */}
+            <EditorialCover
+              scrollProgress={scrollProgress}
+              onExplore={handleExplore}
+              onViewWork={() => handleFocusNode('node-project')}
             />
 
-            {/* Controlled Graph Nodes */}
-            {filteredNodes.map((node) => (
-              <GraphNode
-                key={node.id}
-                node={node}
-                scale={transform.scale}
-                isSelected={selectedNodeId === node.id}
-                onSelectNode={(id) => setSelectedNodeId(id)}
-                onNodeDrag={handleNodeDrag}
-                onOpenCertificateModal={(cert) => setSelectedCertificate(cert)}
-                onOpenProjectModal={(proj) => setSelectedProject(proj)}
-                onOpenContactModal={() => setIsContactOpen(true)}
-                onOpenResumeModal={() => setIsResumeOpen(true)}
-              />
-            ))}
+            {/* PHYSICAL REVEAL EFFECT & SECTION 02: Computational Neural Workspace */}
+            <ArchitecturalReveal scrollProgress={scrollProgress}>
+              <div
+                style={{
+                  opacity: scrollProgress >= 0.28 ? Math.min(1, (scrollProgress - 0.28) / 0.40) : 0,
+                  pointerEvents: scrollProgress >= 0.88 ? 'auto' : 'none',
+                }}
+                className="absolute inset-0 w-full h-screen pt-16 transition-opacity duration-75 ease-out z-10"
+              >
+                {activeView === 'canvas' ? (
+                  <div
+                    id="graph-workspace"
+                    aria-label="Interactive computational graph canvas"
+                    ref={canvasContainerRef}
+                    onMouseDown={handleCanvasMouseDown}
+                    onWheel={handleWheel}
+                    onClick={handleCanvasBackgroundClick}
+                    className="w-full h-full cursor-grab active:cursor-grabbing relative overflow-hidden"
+                  >
+                    {/* Subtle architectural background texture */}
+                    {showGrid && (
+                      <div className="absolute inset-0 pattern-bg pointer-events-none opacity-35" />
+                    )}
+
+                    {/* Spatial Transformed Canvas */}
+                    <div
+                      style={{
+                        transform: `translate(${transform.x}px, ${transform.y}px) scale(${transform.scale})`,
+                        transformOrigin: '0 0',
+                      }}
+                      className="w-[2600px] h-[1700px] relative pointer-events-auto"
+                    >
+                      {/* Spline Connections Layer with Focus/Depth Dimming */}
+                      <SplineWires
+                        connections={filteredConnections}
+                        pinPositions={pinPositions}
+                        isSimulating={isSimulating}
+                        wireStyle={wireStyle}
+                        activeConnectionId={activeConnectionId}
+                        selectedNodeId={selectedNodeId}
+                        onSelectConnection={(id) => setActiveConnectionId(id)}
+                      />
+
+                      {/* Connected Graph Nodes (#212121) */}
+                      {filteredNodes.map((node) => (
+                        <GraphNode
+                          key={node.id}
+                          node={node}
+                          scale={transform.scale}
+                          isSelected={selectedNodeId === node.id}
+                          isDimmed={selectedNodeId !== null && selectedNodeId !== node.id}
+                          onSelectNode={(id) => setSelectedNodeId(id)}
+                          onNodeDrag={handleNodeDrag}
+                          onOpenCertificateModal={(cert) => setSelectedCertificate(cert)}
+                          onOpenProjectModal={(proj) => setSelectedProject(proj)}
+                          onOpenContactModal={() => setIsContactOpen(true)}
+                          onOpenResumeModal={() => setIsResumeOpen(true)}
+                          onOpenFocusedNode={(n) => setFocusedNode(n)}
+                        />
+                      ))}
+                    </div>
+
+                    {/* Floating Dock Controls */}
+                    <CanvasControlsDock
+                      scale={transform.scale}
+                      onZoomIn={() => setTransform((p) => ({ ...p, scale: Math.min(1.8, p.scale * 1.15) }))}
+                      onZoomOut={() => setTransform((p) => ({ ...p, scale: Math.max(0.4, p.scale * 0.85) }))}
+                      onFitScreen={handleFitScreen}
+                      showGrid={showGrid}
+                      onToggleGrid={() => setShowGrid(!showGrid)}
+                      wireStyle={wireStyle}
+                      onCycleWireStyle={() => {
+                        const styles: ('glow' | 'minimal' | 'cyber')[] = ['glow', 'minimal', 'cyber'];
+                        const next = styles[(styles.indexOf(wireStyle) + 1) % styles.length];
+                        setWireStyle(next);
+                      }}
+                      isSimulating={isSimulating}
+                      onToggleSimulate={() => setIsSimulating(!isSimulating)}
+                      onReturnToCover={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                    />
+
+                    {/* Clean Workspace Navigation Hint */}
+                    <div className="absolute bottom-4 left-6 z-20 pointer-events-none hidden sm:flex items-center gap-3 text-xs font-body text-zinc-400">
+                      <span className="px-2 py-1 rounded bg-black/60 border border-white/10 font-semibold text-white">
+                        SPATIAL WORKSPACE
+                      </span>
+                      <span>Drag background to pan &bull; Ctrl+Scroll to zoom &bull; Double click node to inspect &bull; Scroll up for cover</span>
+                    </div>
+                  </div>
+                ) : activeView === 'list' ? (
+                  /* Inspector Catalog View */
+                  <InspectorListView
+                    nodes={nodes}
+                    connections={connections}
+                    onFocusNodeOnCanvas={handleFocusNode}
+                    onOpenCertificateModal={(cert) => setSelectedCertificate(cert)}
+                    onOpenProjectModal={(proj) => setSelectedProject(proj)}
+                    onOpenContact={() => setIsContactOpen(true)}
+                  />
+                ) : (
+                  /* Timeline Chronicle View */
+                  <div className="absolute inset-0 pt-24 pb-16 px-4 sm:px-8 max-w-4xl mx-auto overflow-y-auto z-30 pointer-events-auto font-body">
+                    <div className="mb-8 flex items-center justify-between">
+                      <div>
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="w-2 h-2 rounded-full bg-rose-500" />
+                          <span className="font-body text-xs tracking-widest uppercase text-rose-400 font-bold">
+                            Research &amp; Exploration Chronicle
+                          </span>
+                        </div>
+                        <h2 className="font-display text-3xl sm:text-4xl text-white font-bold uppercase tracking-tight">
+                          Computational Milestones
+                        </h2>
+                        <p className="font-body text-zinc-300 text-sm sm:text-base mt-1.5 leading-relaxed">
+                          Key trajectories in statistical learning, generative models, and mathematical research.
+                        </p>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => setActiveView('canvas')}
+                        className="px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-xs uppercase tracking-wider font-semibold transition-colors cursor-pointer"
+                      >
+                        Back to Canvas
+                      </button>
+                    </div>
+
+                    <div className="relative border-l border-white/10 pl-6 ml-3 space-y-8 font-body">
+                      <div className="relative">
+                        <div className="absolute -left-[31px] top-1.5 w-3 h-3 rounded-full bg-rose-500 border-2 border-[#14171c]" />
+                        <span className="text-xs text-rose-400 uppercase tracking-wider font-semibold">Present • Active Focus</span>
+                        <h3 className="font-display text-xl text-white font-semibold mt-0.5 tracking-wide">High-Dimensional Latent Manifold Traversal</h3>
+                        <p className="text-sm sm:text-[15px] text-zinc-200 mt-1 leading-relaxed">
+                          Investigating continuous trajectory interpolation in diffusion latent representations with WebGL manifold projection.
+                        </p>
+                      </div>
+
+                      <div className="relative">
+                        <div className="absolute -left-[31px] top-1.5 w-3 h-3 rounded-full bg-zinc-600 border-2 border-[#14171c]" />
+                        <span className="text-xs text-zinc-400 uppercase tracking-wider font-semibold">Research Study</span>
+                        <h3 className="font-display text-xl text-white font-semibold mt-0.5 tracking-wide">Transformers &amp; Self-Attention Dynamics</h3>
+                        <p className="text-sm sm:text-[15px] text-zinc-200 mt-1 leading-relaxed">
+                          Implementation of FlashAttention kernels, KV cache optimization, and sequence representations for multimodal inference.
+                        </p>
+                      </div>
+
+                      <div className="relative">
+                        <div className="absolute -left-[31px] top-1.5 w-3 h-3 rounded-full bg-zinc-600 border-2 border-[#14171c]" />
+                        <span className="text-xs text-zinc-400 uppercase tracking-wider font-semibold">Academic Foundation</span>
+                        <h3 className="font-display text-xl text-white font-semibold mt-0.5 tracking-wide">Probability, Optimization &amp; Linear Algebra</h3>
+                        <p className="text-sm sm:text-[15px] text-zinc-200 mt-1 leading-relaxed">
+                          Rigorous coursework and problem sets in multivariate calculus, convex optimization, and statistical inference.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Quiet Status Bar */}
+                <footer
+                  aria-label="Portfolio coordinates and node navigation"
+                  className="absolute bottom-3 inset-x-4 sm:inset-x-8 z-20 pointer-events-none flex items-center justify-between text-xs font-body text-zinc-400 select-none"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="text-zinc-200 font-semibold font-display tracking-wider uppercase">Shubham Sharma</span>
+                    <span>/</span>
+                    <span className="text-rose-400 font-medium">AI &amp; Data Science</span>
+                  </div>
+
+                  <div className="hidden md:flex items-center gap-4 text-xs text-zinc-400">
+                    <span>Spatial Network System</span>
+                    <span>&bull;</span>
+                    <span>Tactile #212121 Nodes</span>
+                    <span>&bull;</span>
+                    <span>Active Latent Topology</span>
+                  </div>
+
+                  <div className="flex items-center gap-2 text-zinc-300 font-medium text-xs">
+                    <span>{filteredNodes.length} NODES</span>
+                    <span>/</span>
+                    <span>{filteredConnections.length} ACTIVE SPLINES</span>
+                    <span>&bull;</span>
+                    <span className="text-rose-500 font-bold">LIVE</span>
+                  </div>
+                </footer>
+              </div>
+            </ArchitecturalReveal>
           </div>
-        </main>
-      ) : activeView === 'list' ? (
-        /* Inspector / Catalog View */
-        <InspectorListView
-          nodes={nodes}
-          connections={connections}
-          onFocusNodeOnCanvas={handleFocusNode}
-          onOpenCertificateModal={(cert) => setSelectedCertificate(cert)}
-          onOpenProjectModal={(proj) => setSelectedProject(proj)}
-          onOpenContact={() => setIsContactOpen(true)}
-        />
-      ) : (
-        /* Timeline View: Milestones & Research Checkpoints */
-        <div className="absolute inset-0 pt-20 pb-12 px-4 sm:px-8 max-w-4xl mx-auto overflow-y-auto z-30 pointer-events-auto font-body">
-          <div className="mb-8">
-            <div className="flex items-center gap-2 mb-2">
-              <span className="w-2 h-2 rounded-full bg-rose-500" />
-              <span className="font-body text-xs tracking-widest uppercase text-rose-400 font-bold">
-                Research &amp; Exploration Chronicle
-              </span>
-            </div>
-            <h2 className="font-display text-3xl sm:text-4xl text-white font-bold uppercase tracking-tight">
-              Computational Milestones
-            </h2>
-            <p className="font-body text-zinc-300 text-sm sm:text-base mt-1.5 leading-relaxed">
-              Key trajectories in statistical learning, generative models, and mathematical research.
-            </p>
-          </div>
-
-          <div className="relative border-l border-white/10 pl-6 ml-3 space-y-8 font-body">
-            <div className="relative">
-              <div className="absolute -left-[31px] top-1.5 w-3 h-3 rounded-full bg-rose-500 border-2 border-[#14171c]" />
-              <span className="text-xs text-rose-400 uppercase tracking-wider font-semibold">Present • Active Focus</span>
-              <h3 className="font-display text-xl text-white font-semibold mt-0.5 tracking-wide">High-Dimensional Latent Manifold Traversal</h3>
-              <p className="text-sm sm:text-[15px] text-zinc-200 mt-1 leading-relaxed">
-                Investigating continuous trajectory interpolation in diffusion latent representations with WebGL manifold projection.
-              </p>
-            </div>
-
-            <div className="relative">
-              <div className="absolute -left-[31px] top-1.5 w-3 h-3 rounded-full bg-zinc-600 border-2 border-[#14171c]" />
-              <span className="text-xs text-zinc-400 uppercase tracking-wider font-semibold">Research Study</span>
-              <h3 className="font-display text-xl text-white font-semibold mt-0.5 tracking-wide">Transformers &amp; Self-Attention Dynamics</h3>
-              <p className="text-sm sm:text-[15px] text-zinc-200 mt-1 leading-relaxed">
-                Implementation of FlashAttention kernels, KV cache optimization, and sequence representations for multimodal inference.
-              </p>
-            </div>
-
-            <div className="relative">
-              <div className="absolute -left-[31px] top-1.5 w-3 h-3 rounded-full bg-zinc-600 border-2 border-[#14171c]" />
-              <span className="text-xs text-zinc-400 uppercase tracking-wider font-semibold">Academic Foundation</span>
-              <h3 className="font-display text-xl text-white font-semibold mt-0.5 tracking-wide">Probability, Optimization &amp; Linear Algebra</h3>
-              <p className="text-sm sm:text-[15px] text-zinc-200 mt-1 leading-relaxed">
-                Rigorous coursework and problem sets in multivariate calculus, convex optimization, and statistical inference.
-              </p>
-            </div>
-          </div>
         </div>
-      )}
-
-      {/* Quiet, refined footer status bar */}
-      <footer
-        aria-label="Portfolio coordinates and node navigation"
-        className="absolute bottom-3 inset-x-4 sm:inset-x-8 z-20 pointer-events-none flex items-center justify-between text-xs font-body text-zinc-400 select-none"
-      >
-        <div className="flex items-center gap-3">
-          <span className="text-zinc-200 font-semibold font-display tracking-wider uppercase">Shubham Sharma</span>
-          <span>/</span>
-          <span className="text-rose-400 font-medium">AI &amp; Data Science</span>
-        </div>
-
-        <div className="hidden md:flex items-center gap-4 text-xs text-zinc-400">
-          <span>Controlled Network Composition</span>
-          <span>•</span>
-          <span>Tactile Neumorphic System</span>
-          <span>•</span>
-          <span>Interactive Latent Space</span>
-        </div>
-
-        <div className="flex items-center gap-2 text-zinc-300 font-medium text-xs">
-          <span>{filteredNodes.length} NODES</span>
-          <span>/</span>
-          <span>{filteredConnections.length} ACTIVE SPLINES</span>
-          <span>•</span>
-          <span className="text-rose-500 font-bold">LIVE</span>
-        </div>
-      </footer>
+      </main>
 
       {/* Modals */}
+      <FocusedNodeModal
+        node={focusedNode}
+        onClose={() => setFocusedNode(null)}
+        onOpenProjectDetail={(p) => {
+          setFocusedNode(null);
+          setSelectedProject(p);
+        }}
+        onOpenCertificateDetail={(c) => {
+          setFocusedNode(null);
+          setSelectedCertificate(c);
+        }}
+      />
+
       <CertificateModal
         certificate={selectedCertificate}
         onClose={() => setSelectedCertificate(null)}

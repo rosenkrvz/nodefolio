@@ -8,6 +8,7 @@ interface SplineWiresProps {
   wireStyle: 'glow' | 'minimal' | 'cyber';
   activeConnectionId: string | null;
   onSelectConnection?: (id: string | null) => void;
+  selectedNodeId?: string | null;
 }
 
 export const SplineWires: React.FC<SplineWiresProps> = ({
@@ -17,6 +18,7 @@ export const SplineWires: React.FC<SplineWiresProps> = ({
   wireStyle,
   activeConnectionId,
   onSelectConnection,
+  selectedNodeId,
 }) => {
   return (
     <svg
@@ -67,11 +69,16 @@ export const SplineWires: React.FC<SplineWiresProps> = ({
         const pathData = `M ${x1} ${y1} C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${x2} ${y2}`;
         const baseColor = conn.color || '#e11d48';
         const isSelected = activeConnectionId === conn.id;
+        const isRelated = selectedNodeId
+          ? conn.fromNodeId === selectedNodeId || conn.toNodeId === selectedNodeId
+          : true;
+        const groupOpacity = selectedNodeId ? (isRelated ? 1 : 0.2) : 1;
 
         return (
           <g
             key={conn.id}
-            className="cursor-pointer pointer-events-auto transition-all duration-200"
+            style={{ opacity: groupOpacity }}
+            className="cursor-pointer pointer-events-auto transition-opacity duration-200"
             onClick={() => onSelectConnection && onSelectConnection(conn.id)}
           >
             {/* Wider transparent hit zone for effortless clicking/hovering */}

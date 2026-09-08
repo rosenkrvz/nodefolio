@@ -1,16 +1,22 @@
 @import "tailwindcss";
 
 :root {
-  --font-display: 'Josefin Sans', sans-serif;
-  --font-body: 'Satoshi', sans-serif;
+  --font-display: 'Satoshi', sans-serif;
+  --font-body: 'Josefin Sans', sans-serif;
   --font-accent: 'Dongle', sans-serif;
-  --font-tech: 'Satoshi', sans-serif;
+  --font-tech: 'Josefin Sans', sans-serif;
+}
+
+html {
+  overflow-x: hidden;
+  scroll-behavior: smooth;
 }
 
 body {
   font-family: var(--font-body);
-  background-color: #14171c;
+  background-color: #090b10;
   color: #ededed;
+  overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
