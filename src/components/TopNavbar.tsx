@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Clock, Share, Check, Mail, Close, Menu, VolumeMax, VolumeX } from './icons';
 import { useSound } from '../lib/sound';
+import { BrandLogo } from './ui/BrandLogo';
 
 interface TopNavbarProps {
   activePreset: string;
@@ -79,22 +80,8 @@ const TopNavbarComponent: React.FC<TopNavbarProps> = ({
             }}
             className="flex items-center gap-3 text-left group cursor-pointer focus:outline-none"
           >
-            {/* Geometric Monogram Mark */}
-            <div className="w-8 h-8 rounded-lg bg-white/[0.04] border border-white/10 group-hover:border-rose-500/50 flex items-center justify-center shadow-inner transition-colors shrink-0">
-              <svg
-                className="w-4 h-4 text-zinc-200 group-hover:text-rose-400 transition-colors"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                {/* Double-S geometric architectural mark */}
-                <path d="M7 6h3a2 2 0 0 1 2 2v0a2 2 0 0 1-2 2H8a2 2 0 0 0-2 2v0a2 2 0 0 0 2 2h3" />
-                <path d="M14 10h3a2 2 0 0 1 2 2v0a2 2 0 0 1-2 2h-2a2 2 0 0 0-2 2v0a2 2 0 0 0 2 2h3" />
-              </svg>
-            </div>
+            {/* Distinctive Geometric Monogram Badge */}
+            <BrandLogo variant="navbar" active={activeNavTab === 'home'} />
 
             <div>
               <div className="flex items-center gap-1.5 leading-none">

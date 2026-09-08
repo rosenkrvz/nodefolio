@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { ArrowLeft, ArrowUpRight, ChevronDown } from './icons';
 import { LabNoteSection } from './LabNoteSection';
 import { playSound } from '../lib/sound';
+import { BrandLogo } from './ui/BrandLogo';
 
 interface ChronicleMilestone {
   id: string;
@@ -335,7 +336,7 @@ export const ChronicleView: React.FC<ChronicleViewProps> = ({
           {/* Top editorial eyebrow (matches Cover layout) */}
           <div className="flex items-center justify-between mb-12">
             <div className="flex items-center gap-2.5 font-body text-xs tracking-[0.25em] text-zinc-400 uppercase">
-              <span className="w-2 h-2 rounded-full bg-rose-500 shadow-[0_0_8px_#f43f5e]" />
+              <BrandLogo variant="icon" size={15} className="text-rose-400 shrink-0" />
               <span className="font-semibold text-zinc-300">CHRONICLE / 03</span>
               <span className="text-zinc-600">&bull;</span>
               <span className="text-zinc-400 hidden sm:inline">RESEARCH & BUILD LOG</span>
@@ -472,7 +473,7 @@ export const ChronicleView: React.FC<ChronicleViewProps> = ({
       <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-8 md:px-12 mt-16 pb-20">
         <div className="pt-10 border-t border-white/[0.08] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
           <div className="flex items-center gap-3 font-body text-xs tracking-[0.25em] uppercase text-zinc-500">
-            <span className="w-2 h-2 rounded-full bg-rose-500 shadow-[0_0_6px_#f43f5e]" />
+            <BrandLogo variant="icon" size={14} className="text-rose-400 shrink-0" />
             <span className="font-semibold text-zinc-300">CHRONICLE ARCHIVE</span>
             <span className="text-zinc-600">&bull;</span>
             <span>VOL. 2026</span>

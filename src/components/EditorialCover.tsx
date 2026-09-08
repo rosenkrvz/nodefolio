@@ -1,6 +1,7 @@
 import React from 'react';
 import { ArrowRight, ChevronDown, Compass } from './icons';
 import { playSound } from '../lib/sound';
+import { BrandLogo } from './ui/BrandLogo';
 
 interface EditorialCoverProps {
   scrollProgress: number; // 0 to 1
@@ -137,8 +138,8 @@ const EditorialCoverComponent: React.FC<EditorialCoverProps> = ({
         className="relative z-10 w-full max-w-7xl mx-auto flex items-center justify-between text-xs font-body text-zinc-400 uppercase tracking-[0.25em] transition-opacity duration-100"
       >
         <div className="flex items-center gap-2.5">
-          <span className="w-2 h-2 rounded-full bg-rose-500 shadow-[0_0_8px_#f43f5e]" />
-          <span className="font-semibold text-zinc-300">PORTFOLIO / 01</span>
+          <BrandLogo variant="icon" size={15} className="text-rose-400 shrink-0" />
+          <span className="font-semibold text-zinc-200">PORTFOLIO / 01</span>
           <span className="text-zinc-600">&bull;</span>
           <span className="text-zinc-400 hidden sm:inline">COMPUTATION &amp; RESEARCH</span>
         </div>
