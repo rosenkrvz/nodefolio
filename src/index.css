@@ -1,16 +1,16 @@
 @import "tailwindcss";
 @theme {
-  --font-display: 'Satoshi', sans-serif;
+  --font-display: 'Josefin Sans', sans-serif;
   --font-body: 'Satoshi', sans-serif;
-  --font-tech: 'Josefin Sans', sans-serif;
   --font-accent: 'Dongle', sans-serif;
+  --font-tech: 'Satoshi', sans-serif;
 }
 
 :root {
-  --font-display: 'Satoshi', sans-serif;
+  --font-display: 'Josefin Sans', sans-serif;
   --font-body: 'Satoshi', sans-serif;
-  --font-tech: 'Josefin Sans', sans-serif;
   --font-accent: 'Dongle', sans-serif;
+  --font-tech: 'Satoshi', sans-serif;
 }
 
 html {
@@ -19,7 +19,7 @@ html {
 
 body {
   font-family: var(--font-body);
-  background-color: #0c0e12;
+  background-color: #14171c;
   color: #ededed;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -33,25 +33,26 @@ body {
   font-family: var(--font-body);
 }
 
-.font-tech {
-  font-family: var(--font-tech);
-}
-
 .font-accent {
   font-family: var(--font-accent);
+}
+
+.font-tech {
+  font-family: var(--font-body);
+  letter-spacing: 0.04em;
 }
 
 /* Structural & Editorial Typography Scales */
 .hero-heading {
   font-family: var(--font-display);
   font-size: clamp(3.5rem, 6.5vw, 6.5rem);
-  line-height: 0.90;
-  letter-spacing: -0.03em;
+  line-height: 0.96;
+  letter-spacing: -0.02em;
 }
 
 .hero-subtext {
   font-family: var(--font-body);
-  font-size: clamp(1.0625rem, 1.35vw, 1.25rem);
+  font-size: clamp(1.0625rem, 1.35vw, 1.25rem); /* 17px to 20px */
   line-height: 1.65;
 }
 
@@ -61,27 +62,18 @@ body {
   line-height: 0.85;
 }
 
-/* Editorial Technical Atmospheric Background */
+/* Technical background atmosphere */
 .pattern-bg {
   width: 100%;
   height: 100%;
   overflow: hidden;
-  background-color: #0c0e12;
-  background-image: 
-    repeating-linear-gradient(
-      135deg,
-      rgba(255, 255, 255, 0.015) 0px,
-      rgba(255, 255, 255, 0.015) 1px,
-      transparent 1px,
-      transparent 48px
-    ),
-    repeating-linear-gradient(
-      135deg,
-      #0d0f14 0px,
-      #0d0f14 90px,
-      #11141a 90px,
-      #11141a 180px
-    );
+  background: repeating-linear-gradient(
+    135deg,
+    #181b20 0px,
+    #181b20 60px,
+    #1c1f25 70px,
+    #242930 130px
+  );
 }
 
 .cube-svg {
@@ -93,16 +85,14 @@ body {
   background: repeating-linear-gradient(
     135deg,
     transparent 0px,
-    transparent 90px,
-    rgba(255, 255, 255, 0.02) 90px,
-    rgba(255, 255, 255, 0.02) 91px,
-    transparent 91px,
-    transparent 180px
+    transparent 60px,
+    rgba(65, 75, 85, 0.16) 70px,
+    transparent 130px
   );
-  opacity: 0.5;
+  opacity: 0.65;
   z-index: 1;
   pointer-events: none;
-  animation: cubeMove 32s linear infinite alternate;
+  animation: cubeMove 24s linear infinite alternate;
 }
 
 @keyframes cubeMove {
@@ -110,7 +100,7 @@ body {
     transform: translateY(0) scale(1);
   }
   to {
-    transform: translateY(-12%) scale(1.01) rotate(0.4deg);
+    transform: translateY(-15%) scale(1.015) rotate(0.5deg);
   }
 }
 
