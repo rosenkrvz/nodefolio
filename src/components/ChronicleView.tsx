@@ -1,10 +1,12 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { ArrowLeft, ArrowUpRight, ChevronDown } from './icons';
 import { LabNoteSection } from './LabNoteSection';
 import { playSound } from '../lib/sound';
 import { BrandLogo } from './ui/BrandLogo';
+import { ChronicleMilestoneArtifact } from './chronicle/ChronicleArtifacts';
+import { ChronicleTimelineAxis, TimelinePhase } from './chronicle/ChronicleTimelineAxis';
 
-interface ChronicleMilestone {
+export interface ChronicleMilestone {
   id: string;
   period: string;
   phase: string;
@@ -123,152 +125,171 @@ interface ChronicleViewProps {
 }
 
 /**
- * Fade-in on scroll observer hook
+ * Editorial Research Entry Component
+ * High-end architectural layout with asymmetric columns, bespoke visual artifact,
+ * and prominent typography.
  */
-function useScrollReveal() {
-  const ref = useRef<HTMLDivElement>(null);
+const EditorialResearchEntry: React.FC<{
+  item: ChronicleMilestone;
+  index: number;
+  reducedMotion: boolean;
+  onFocusNodeOnCanvas?: (nodeId: string) => void;
+  onInView?: (id: string) => void;
+}> = ({ item, index, reducedMotion, onFocusNodeOnCanvas, onInView }) => {
+  const containerRef = useRef<HTMLDivElement>(null);
   const [isVisible, setIsVisible] = useState(false);
+  const isActive = item.status === 'active';
 
   useEffect(() => {
-    const el = ref.current;
+    const el = containerRef.current;
     if (!el) return;
+
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
           setIsVisible(true);
-          observer.unobserve(el);
+          onInView?.(item.id);
         }
       },
-      { threshold: 0.12 }
+      { threshold: 0.15 }
     );
     observer.observe(el);
     return () => observer.disconnect();
-  }, []);
-
-  return { ref, isVisible };
-}
-
-/**
- * Single milestone card component with scroll-driven reveal animation
- */
-const MilestoneCard: React.FC<{
-  item: ChronicleMilestone;
-  index: number;
-  onFocusNodeOnCanvas?: (nodeId: string) => void;
-}> = ({ item, index, onFocusNodeOnCanvas }) => {
-  const { ref, isVisible } = useScrollReveal();
-  const isActive = item.status === 'active';
+  }, [item.id, onInView]);
 
   return (
-    <div
-      ref={ref}
+    <article
+      id={`milestone-${item.id}`}
+      ref={containerRef}
+      onMouseEnter={() => playSound('hover')}
       style={{
-        opacity: isVisible ? 1 : 0,
-        transform: isVisible ? 'translateY(0)' : 'translateY(32px)',
-        transition: `opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1) ${index * 0.06}s, transform 0.7s cubic-bezier(0.22, 1, 0.36, 1) ${index * 0.06}s`,
+        opacity: reducedMotion ? 1 : isVisible ? 1 : 0,
+        transform: reducedMotion ? 'none' : isVisible ? 'translateY(0)' : 'translateY(28px)',
+        transition: reducedMotion
+          ? 'none'
+          : `opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1) ${index * 0.05}s, transform 0.7s cubic-bezier(0.22, 1, 0.36, 1) ${index * 0.05}s`,
       }}
+      className={`relative group scroll-mt-28 pb-16 pt-10 border-b border-white/[0.08] transition-colors duration-300 ${
+        isActive ? 'bg-gradient-to-b from-rose-500/[0.03] to-transparent' : ''
+      }`}
     >
-      {/* Phase card: glass-morphism dark card with crimson accent seam */}
-      <article
-        onMouseEnter={() => playSound('hover')}
-        className={`relative group rounded-2xl overflow-hidden transition-all duration-300 ${
-          isActive
-            ? 'bg-[#12141a]/90 border border-rose-500/30 shadow-[0_0_40px_rgba(225,29,72,0.08),0_20px_50px_rgba(0,0,0,0.6)]'
-            : 'bg-[#12141a]/70 border border-white/[0.06] hover:border-white/[0.14] shadow-[0_16px_40px_rgba(0,0,0,0.5)]'
-        }`}
-      >
-        {/* Active investigation crimson top seam */}
-        {isActive && (
-          <div className="absolute top-0 inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-rose-500 to-transparent shadow-[0_0_12px_#f43f5e]" />
-        )}
+      {/* Active Phase Crimson Laser Accent Top Rule */}
+      {isActive && (
+        <div className="absolute top-0 inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-rose-500 to-transparent shadow-[0_0_12px_#f43f5e]" />
+      )}
 
-        <div className="p-6 sm:p-8 md:p-10">
-          {/* Top row: Phase + Period + Status */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
-            <div className="flex items-center gap-3">
-              {/* Phase index number */}
-              <div className="w-10 h-10 rounded-xl bg-white/[0.04] border border-white/[0.08] flex items-center justify-center shrink-0">
-                <span className="font-display text-sm font-bold text-zinc-300">
-                  {String(5 - index).padStart(2, '0')}
-                </span>
-              </div>
-
-              <div className="flex flex-col">
-                <span className="font-body text-[10px] font-semibold tracking-[0.25em] uppercase text-zinc-500">
-                  {item.phase}
-                </span>
-                <span className={`font-body text-xs font-bold tracking-wider uppercase ${isActive ? 'text-rose-400' : 'text-zinc-300'}`}>
-                  {item.period}
-                </span>
-              </div>
-            </div>
-
-            {/* Status badge */}
-            <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full self-start sm:self-auto ${
-              isActive
-                ? 'bg-rose-500/10 border border-rose-500/25'
-                : 'bg-white/[0.03] border border-white/[0.08]'
-            }`}>
+      {/* Grid: 3-column asymmetric editorial layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        {/* Left Column: Temporal Spine & Status (col-span-3) */}
+        <div className="lg:col-span-3 flex flex-col items-start space-y-4">
+          {/* Phase Numeral & Classification */}
+          <div className="flex items-baseline gap-3">
+            <span
+              className={`font-display text-4xl sm:text-5xl font-black tracking-tight leading-none ${
+                isActive ? 'text-white' : 'text-zinc-500 group-hover:text-zinc-300'
+              } transition-colors`}
+            >
+              {String(5 - index).padStart(2, '0')}
+            </span>
+            <div className="flex flex-col">
+              <span className="font-tech text-[10px] tracking-[0.25em] uppercase text-zinc-400 font-semibold">
+                {item.phase}
+              </span>
               <span
-                className={`w-1.5 h-1.5 rounded-full ${
-                  isActive ? 'bg-rose-500 animate-pulse shadow-[0_0_6px_#f43f5e]' : 'bg-zinc-500'
+                className={`font-body text-xs font-bold tracking-wider uppercase ${
+                  isActive ? 'text-rose-400' : 'text-zinc-300'
                 }`}
-              />
-              <span className={`font-body text-[10px] font-bold tracking-[0.2em] uppercase ${isActive ? 'text-rose-300' : 'text-zinc-400'}`}>
-                {item.statusLabel}
+              >
+                {item.period}
               </span>
             </div>
           </div>
 
-          {/* Category eyebrow */}
-          <div className="font-body text-[10px] font-semibold tracking-[0.3em] uppercase text-zinc-500 mb-3">
-            {item.category}
+          {/* Status Badge */}
+          <div
+            className={`inline-flex items-center gap-2 px-2.5 py-1 rounded-md text-[10px] font-tech tracking-[0.2em] uppercase font-bold ${
+              isActive
+                ? 'bg-rose-500/10 text-rose-300 border border-rose-500/30 shadow-[0_0_10px_rgba(244,63,94,0.15)]'
+                : 'bg-white/[0.03] text-zinc-400 border border-white/[0.08]'
+            }`}
+          >
+            <span
+              className={`w-1.5 h-1.5 rounded-full ${
+                isActive ? 'bg-rose-500 animate-pulse shadow-[0_0_6px_#f43f5e]' : 'bg-zinc-600'
+              }`}
+            />
+            <span>{item.statusLabel}</span>
           </div>
 
+          {/* Category Pillar */}
+          <div className="pt-2 font-tech text-[9px] uppercase tracking-[0.25em] text-zinc-400 max-w-[200px] leading-relaxed">
+            {item.category}
+          </div>
+        </div>
+
+        {/* Center Column: Monumental Headline & Narrative (col-span-5) */}
+        <div className="lg:col-span-5 space-y-5">
           {/* Title */}
-          <h2 className="font-display text-xl sm:text-2xl md:text-3xl font-bold text-white tracking-tight uppercase leading-tight mb-4">
+          <h2
+            className={`font-display text-2xl sm:text-3xl font-bold tracking-tight uppercase leading-[1.12] transition-colors duration-200 ${
+              isActive ? 'text-white' : 'text-zinc-200 group-hover:text-white'
+            }`}
+          >
             {item.title}
           </h2>
 
-          {/* Thesis quote */}
-          <div className="relative pl-4 border-l-2 border-rose-500/40 mb-5">
+          {/* Thesis quote with surgical accent rule */}
+          <div className="relative pl-4 border-l-2 border-rose-500/50">
             <p className="font-body text-sm sm:text-[15px] text-zinc-200 font-medium leading-relaxed italic">
               "{item.thesis}"
             </p>
           </div>
 
-          {/* Description */}
-          <p className="font-body text-sm text-zinc-400 leading-relaxed mb-6 max-w-3xl">
+          {/* Deep Narrative Description */}
+          <p className="font-body text-sm text-zinc-400 leading-relaxed font-normal">
             {item.description}
           </p>
 
-          {/* Tags row */}
-          <div className="flex flex-wrap items-center gap-2 mb-6">
+          {/* Tech stack pills */}
+          <div className="flex flex-wrap items-center gap-1.5 pt-2">
             {item.tags.map((tag) => (
               <span
                 key={tag}
-                className="px-3 py-1 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] font-body text-[11px] tracking-wider text-zinc-300 transition-colors uppercase font-medium"
+                className="px-2.5 py-1 rounded bg-white/[0.03] hover:bg-white/[0.08] border border-white/[0.08] font-tech text-[10px] tracking-wider text-zinc-300 transition-colors uppercase"
               >
                 {tag}
               </span>
             ))}
           </div>
+        </div>
 
-          {/* Bottom: Metrics + Canvas link */}
-          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pt-5 border-t border-white/[0.06]">
-            {/* Metrics grid */}
+        {/* Right Column: Visual Artifact & Telemetry Specs (col-span-4) */}
+        <div className="lg:col-span-4 space-y-4">
+          {/* Custom Computational Visual Artifact */}
+          <ChronicleMilestoneArtifact
+            milestoneId={item.id}
+            active={isActive}
+            className="w-full shadow-lg"
+          />
+
+          {/* Telemetry Metrics & Canvas Link */}
+          <div className="p-3.5 rounded-xl bg-white/[0.02] border border-white/[0.06] space-y-3">
             {item.metrics && item.metrics.length > 0 && (
-              <div className="flex items-center gap-6">
+              <div className="grid grid-cols-3 gap-2 pb-3 border-b border-white/[0.06]">
                 {item.metrics.map((m, mIdx) => (
                   <div key={mIdx} className="space-y-0.5">
-                    <span className="block font-body text-[9px] font-semibold tracking-[0.2em] text-zinc-500 uppercase">{m.label}</span>
-                    <span className="block font-body text-xs font-bold text-zinc-200">{m.value}</span>
+                    <span className="block font-tech text-[8px] uppercase tracking-wider text-zinc-400">
+                      {m.label}
+                    </span>
+                    <span className="block font-tech text-xs font-semibold text-zinc-200 truncate">
+                      {m.value}
+                    </span>
                   </div>
                 ))}
               </div>
             )}
 
-            {/* Canvas link */}
+            {/* Inspect Node Interaction */}
             {item.linkedNodeId && onFocusNodeOnCanvas && (
               <button
                 type="button"
@@ -276,109 +297,207 @@ const MilestoneCard: React.FC<{
                   playSound('select');
                   onFocusNodeOnCanvas(item.linkedNodeId!);
                 }}
-                className="inline-flex items-center gap-1.5 font-body text-xs tracking-wider uppercase text-rose-400 hover:text-rose-300 font-semibold group/link cursor-pointer focus:outline-none transition-colors"
+                className="w-full py-2 px-3 rounded-lg bg-white/[0.03] hover:bg-rose-500/10 border border-white/[0.08] hover:border-rose-500/40 font-body text-xs tracking-wider uppercase text-zinc-300 hover:text-rose-300 font-semibold group/link cursor-pointer focus:outline-none transition-all flex items-center justify-between"
               >
-                <span>Inspect Node</span>
-                <ArrowUpRight className="w-3.5 h-3.5 transition-transform group-hover/link:translate-x-0.5 group-hover/link:-translate-y-0.5" />
+                <div className="flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+                  <span>INSPECT NODE ON CANVAS</span>
+                </div>
+                <ArrowUpRight className="w-3.5 h-3.5 text-rose-400 transition-transform group-hover/link:translate-x-0.5 group-hover/link:-translate-y-0.5" />
               </button>
             )}
           </div>
         </div>
-      </article>
-    </div>
+      </div>
+    </article>
   );
 };
-
 
 export const ChronicleView: React.FC<ChronicleViewProps> = ({
   onBackToCanvas,
   onFocusNodeOnCanvas,
 }) => {
-  const heroRef = useRef<HTMLDivElement>(null);
-  const [heroVisible, setHeroVisible] = useState(false);
+  const [entryStage, setEntryStage] = useState(0);
+  const [activePhaseId, setActivePhaseId] = useState<string>('m1');
+  const [reducedMotion, setReducedMotion] = useState(false);
 
+  // Check prefers-reduced-motion
   useEffect(() => {
-    // Trigger hero entrance after mount
-    const timer = setTimeout(() => setHeroVisible(true), 80);
-    return () => clearTimeout(timer);
+    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    setReducedMotion(mediaQuery.matches);
+
+    const handler = (e: MediaQueryListEvent) => setReducedMotion(e.matches);
+    mediaQuery.addEventListener('change', handler);
+    return () => mediaQuery.removeEventListener('change', handler);
   }, []);
 
+  // Coordinated Page Entry Reveal Sequence (~800ms total)
+  useEffect(() => {
+    if (reducedMotion) {
+      setEntryStage(4);
+      return;
+    }
+
+    const t1 = setTimeout(() => setEntryStage(1), 50);   // Background + Eyebrow
+    const t2 = setTimeout(() => setEntryStage(2), 200);  // Title Mask Reveal
+    const t3 = setTimeout(() => setEntryStage(3), 450);  // Subtitle + Buttons
+    const t4 = setTimeout(() => setEntryStage(4), 750);  // Axis & Entries settle
+
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(t3);
+      clearTimeout(t4);
+    };
+  }, [reducedMotion]);
+
+  // Build timeline phases for the interactive axis
+  const timelinePhases: TimelinePhase[] = useMemo(() => {
+    return MILESTONES.map((m) => ({
+      id: m.id,
+      phase: m.phase,
+      year: m.period.split('—')[0].trim(),
+      shortTitle: m.title.split(' ')[0] + ' ' + (m.title.split(' ')[1] || ''),
+      status: m.status,
+    }));
+  }, []);
+
+  // Scroll to selected milestone from axis
+  const handleSelectPhase = (phaseId: string) => {
+    setActivePhaseId(phaseId);
+    const targetEl = document.getElementById(`milestone-${phaseId}`);
+    if (targetEl) {
+      targetEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
   return (
-    <div className="relative w-full min-h-screen bg-[#0c0e12] text-[#ededed] font-body select-text overflow-hidden">
-      {/* ═══════════ ATMOSPHERIC LAYERS ═══════════ */}
+    <div className="relative w-full min-h-screen bg-[#07090e] text-[#ededed] font-body select-text overflow-x-hidden">
+      {/* ═══════════ LOW-CONTRAST ATMOSPHERIC BACKDROP ═══════════ */}
 
-      {/* Background diagonal stripe grid (same as Cover page) */}
-      <div className="fixed inset-0 pointer-events-none z-0 pattern-bg opacity-40" aria-hidden="true">
-        <div className="cube-svg" />
-      </div>
+      {/* Subtle architectural coordinate grid */}
+      <div
+        className="fixed inset-0 pointer-events-none z-0 opacity-25"
+        style={{
+          backgroundImage:
+            'radial-gradient(circle at 1px 1px, rgba(255,255,255,0.12) 1px, transparent 0)',
+          backgroundSize: '32px 32px',
+        }}
+        aria-hidden="true"
+      />
 
-      {/* Coordinate dot overlay */}
-      <div className="fixed inset-0 pointer-events-none bg-canvas-dots-overlay opacity-25 z-0" aria-hidden="true" />
+      {/* Faint mathematical construction lines */}
+      <div
+        className="fixed inset-0 pointer-events-none z-0 opacity-15"
+        style={{
+          backgroundImage:
+            'linear-gradient(to right, rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.05) 1px, transparent 1px)',
+          backgroundSize: '128px 128px',
+        }}
+        aria-hidden="true"
+      />
 
-      {/* Rose ambient glow — upper right (mirrors Cover) */}
-      <div className="fixed inset-0 pointer-events-none bg-[radial-gradient(ellipse_at_75%_15%,rgba(225,29,72,0.12),transparent_55%)] z-0" aria-hidden="true" />
+      {/* Subtle restrained crimson atmospheric wash */}
+      <div
+        className="fixed inset-0 pointer-events-none bg-[radial-gradient(ellipse_at_80%_10%,rgba(244,63,94,0.08),transparent_60%)] z-0"
+        aria-hidden="true"
+      />
+      <div
+        className="fixed inset-0 pointer-events-none bg-[radial-gradient(ellipse_at_10%_80%,rgba(244,63,94,0.04),transparent_50%)] z-0"
+        aria-hidden="true"
+      />
 
-      {/* Secondary deep ambient — lower left */}
-      <div className="fixed inset-0 pointer-events-none bg-[radial-gradient(ellipse_at_15%_85%,rgba(225,29,72,0.06),transparent_50%)] z-0" aria-hidden="true" />
-
-
-      {/* ═══════════ HERO SECTION ═══════════ */}
-      <div className="relative z-10 w-full pt-24 pb-0 px-6 sm:px-12 md:px-16">
-        <div
-          ref={heroRef}
-          style={{
-            opacity: heroVisible ? 1 : 0,
-            transform: heroVisible ? 'translateY(0)' : 'translateY(24px)',
-            transition: 'opacity 0.8s cubic-bezier(0.22, 1, 0.36, 1), transform 0.8s cubic-bezier(0.22, 1, 0.36, 1)',
-          }}
-          className="max-w-7xl mx-auto"
-        >
-          {/* Top editorial eyebrow (matches Cover layout) */}
-          <div className="flex items-center justify-between mb-12">
-            <div className="flex items-center gap-2.5 font-body text-xs tracking-[0.25em] text-zinc-400 uppercase">
+      {/* ═══════════ CINEMATIC EDITORIAL HERO SECTION ═══════════ */}
+      <header className="relative z-10 w-full pt-28 pb-12 px-6 sm:px-12 md:px-16 border-b border-white/[0.08]">
+        <div className="max-w-7xl mx-auto">
+          {/* Top Eyebrow & Brand Anchor */}
+          <div
+            style={{
+              opacity: entryStage >= 1 ? 1 : 0,
+              transform: reducedMotion || entryStage >= 1 ? 'none' : 'translateY(-12px)',
+              transition: 'opacity 0.6s ease-out, transform 0.6s ease-out',
+            }}
+            className="flex items-center justify-between mb-10 pb-4 border-b border-white/[0.06]"
+          >
+            <div className="flex items-center gap-3 font-tech text-xs tracking-[0.25em] text-zinc-400 uppercase">
               <BrandLogo variant="icon" size={15} className="text-rose-400 shrink-0" />
-              <span className="font-semibold text-zinc-300">CHRONICLE / 03</span>
+              <span className="font-semibold text-zinc-200">CHRONICLE / 03</span>
               <span className="text-zinc-600">&bull;</span>
-              <span className="text-zinc-400 hidden sm:inline">RESEARCH & BUILD LOG</span>
+              <span className="hidden sm:inline text-zinc-400 font-mono">COMPUTATIONAL RESEARCH JOURNAL</span>
             </div>
 
             <div className="flex items-center gap-3">
-              <span className="font-accent text-3xl leading-none text-rose-400/90 font-bold -mb-1 hidden sm:inline">
+              <span className="font-accent text-3xl leading-none text-rose-400/90 font-bold -mb-1">
                 2023 — 2026
+              </span>
+              <span className="text-zinc-600 hidden sm:inline">&bull;</span>
+              <span className="hidden sm:inline font-tech text-[10px] tracking-widest text-zinc-400 uppercase">
+                VOL. IV
               </span>
             </div>
           </div>
 
-          {/* Grid: Hero title left + specs right (mirrors Cover asymmetric layout) */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-end pb-16 border-b border-white/[0.06]">
-            {/* Left: Big editorial title */}
+          {/* Main Asymmetric Title Block */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-end">
+            {/* Left: Directionally Masked Title & Pitch (col-span-8) */}
             <div className="lg:col-span-8 flex flex-col items-start">
-              {/* Category pillar */}
-              <div className="font-body text-xs sm:text-sm font-semibold tracking-[0.35em] uppercase text-rose-400 mb-4 flex items-center gap-2">
-                <span>MILESTONES</span>
+              {/* Category Breadcrumb */}
+              <div
+                style={{
+                  opacity: entryStage >= 2 ? 1 : 0,
+                  transition: 'opacity 0.5s ease-out',
+                }}
+                className="font-tech text-xs font-semibold tracking-[0.35em] uppercase text-rose-400 mb-3 flex items-center gap-2"
+              >
+                <span>RESEARCH MILESTONES</span>
                 <span className="text-zinc-600">/</span>
-                <span>EXPERIMENTS</span>
+                <span>SYSTEMS KERNELS</span>
                 <span className="text-zinc-600">/</span>
-                <span>FOUNDATIONS</span>
+                <span>LATENT GEODESICS</span>
               </div>
 
-              {/* Monumental display title — Josefin Sans */}
-              <h1 className="leading-[0.92] mb-6 select-none tracking-tight">
-                <span className="block font-display text-5xl sm:text-7xl md:text-8xl font-black text-white tracking-[-0.03em] uppercase">
-                  COMPUTATIONAL
-                </span>
-                <span className="block font-display text-5xl sm:text-7xl md:text-8xl font-light text-zinc-400/90 tracking-[-0.02em] uppercase mt-1">
-                  CHRONICLE
-                </span>
-              </h1>
+              {/* Directionally Masked Monumental Display Title */}
+              <div className="overflow-hidden mb-5">
+                <h1
+                  style={{
+                    transform:
+                      reducedMotion || entryStage >= 2 ? 'translateY(0)' : 'translateY(100%)',
+                    opacity: reducedMotion || entryStage >= 2 ? 1 : 0,
+                    transition:
+                      'transform 0.8s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.8s ease-out',
+                  }}
+                  className="leading-[0.9] select-none tracking-tight"
+                >
+                  <span className="block font-display text-5xl sm:text-7xl md:text-8xl font-black text-white tracking-[-0.03em] uppercase">
+                    COMPUTATIONAL
+                  </span>
+                  <span className="block font-display text-5xl sm:text-7xl md:text-8xl font-light text-zinc-400/90 tracking-[-0.02em] uppercase mt-1">
+                    CHRONICLE
+                  </span>
+                </h1>
+              </div>
 
-              {/* Supporting copy */}
-              <p className="font-body text-base sm:text-lg text-zinc-300 font-normal leading-relaxed mb-8 max-w-xl">
-                A chronological record of what I am investigating, testing, and building across statistical learning, generative representations, and computational systems.
+              {/* Supporting Editorial Statement */}
+              <p
+                style={{
+                  opacity: entryStage >= 3 ? 1 : 0,
+                  transform: reducedMotion || entryStage >= 3 ? 'none' : 'translateY(16px)',
+                  transition: 'opacity 0.7s ease-out, transform 0.7s ease-out',
+                }}
+                className="font-body text-base sm:text-lg text-zinc-300 font-normal leading-relaxed mb-8 max-w-2xl"
+              >
+                An art-directed experimental journal logging investigations in Riemannian latent representations, hardware-aware attention kernels, contrastive metric geometry, and first-principles autodiff engines.
               </p>
 
-              {/* Action buttons */}
-              <div className="flex flex-wrap items-center gap-4 font-body">
+              {/* Tactile Navigation Buttons */}
+              <div
+                style={{
+                  opacity: entryStage >= 3 ? 1 : 0,
+                  transform: reducedMotion || entryStage >= 3 ? 'none' : 'translateY(12px)',
+                  transition: 'opacity 0.6s ease-out 0.1s, transform 0.6s ease-out 0.1s',
+                }}
+                className="flex flex-wrap items-center gap-4 font-body"
+              >
                 <button
                   type="button"
                   onClick={() => {
@@ -392,89 +511,122 @@ export const ChronicleView: React.FC<ChronicleViewProps> = ({
                 </button>
 
                 <a
-                  href="#chronicle-entries"
+                  href="#chronicle-ledger"
                   onClick={() => playSound('secondaryClick')}
-                  className="px-6 py-3.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-semibold text-xs sm:text-sm tracking-wider uppercase transition-all shadow-[0_0_24px_rgba(225,29,72,0.4)] hover:shadow-[0_0_32px_rgba(225,29,72,0.6)] flex items-center gap-2 group active:scale-95 cursor-pointer"
+                  className="px-6 py-3.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-semibold text-xs sm:text-sm tracking-wider uppercase transition-all shadow-[0_0_24px_rgba(244,63,94,0.35)] hover:shadow-[0_0_32px_rgba(244,63,94,0.55)] flex items-center gap-2 group active:scale-95 cursor-pointer"
                 >
-                  <span>VIEW ENTRIES</span>
+                  <span>EXPLORE CHRONICLE</span>
                   <ChevronDown className="w-4 h-4 transition-transform group-hover:translate-y-0.5" />
                 </a>
               </div>
             </div>
 
-            {/* Right column: Research stats (mirrors Cover's spec column) */}
-            <div className="hidden lg:flex lg:col-span-4 flex-col items-end text-right space-y-8 pl-8">
-              <div className="space-y-2.5">
-                <span className="font-accent text-3xl leading-none text-rose-400/80 block">
-                  RESEARCH PHASES
-                </span>
+            {/* Right: Technical Index Specs (col-span-4) */}
+            <div
+              style={{
+                opacity: entryStage >= 3 ? 1 : 0,
+                transition: 'opacity 0.7s ease-out',
+              }}
+              className="hidden lg:flex lg:col-span-4 flex-col items-end text-right space-y-6 pl-8"
+            >
+              <div className="space-y-3 w-full max-w-[280px]">
+                <div className="font-tech text-xs tracking-[0.25em] text-rose-400 uppercase font-semibold pb-2 border-b border-white/[0.08]">
+                  JOURNAL SPECIFICATION
+                </div>
                 {[
-                  { label: 'ACTIVE INVESTIGATIONS', value: '01' },
-                  { label: 'VERIFIED EXPERIMENTS', value: '02' },
-                  { label: 'SYSTEMS DEPLOYED', value: '01' },
-                  { label: 'FORMAL FOUNDATIONS', value: '01' },
+                  { label: 'ACTIVE INVESTIGATION', value: 'PHASE 05' },
+                  { label: 'VERIFIED BENCHMARKS', value: '02 MODULES' },
+                  { label: 'SYSTEMS COMPLETED', value: '02 ENGINES' },
+                  { label: 'FORMAL RIGOR', value: 'KKT DUALITY' },
                 ].map((stat) => (
-                  <div
-                    key={stat.label}
-                    className="flex items-center justify-end gap-3"
-                  >
-                    <span className="font-body text-xs text-zinc-400 font-medium tracking-[0.2em] uppercase">
+                  <div key={stat.label} className="flex items-center justify-between text-xs">
+                    <span className="font-tech text-zinc-400 uppercase tracking-wider text-[10px]">
                       {stat.label}
                     </span>
-                    <span className="font-display text-lg font-bold text-white w-8 text-right">
+                    <span className="font-tech font-bold text-zinc-200">
                       {stat.value}
                     </span>
                   </div>
                 ))}
               </div>
 
-              <div className="pt-6 border-t border-white/[0.08] max-w-[220px]">
-                <p className="font-body text-xs text-zinc-400 leading-relaxed uppercase tracking-wider">
-                  5 phases of research spanning systems architecture to generative models.
+              <div className="p-3 rounded-lg bg-white/[0.02] border border-white/[0.06] text-right max-w-[280px]">
+                <p className="font-tech text-[10px] text-zinc-400 uppercase tracking-widest leading-normal">
+                  All mathematical diagrams and kernel schematics are verified against working computational codebases.
                 </p>
-                <div className="w-8 h-0.5 bg-rose-500 mt-3 ml-auto" />
+                <div className="w-6 h-0.5 bg-rose-500 mt-2 ml-auto" />
               </div>
             </div>
           </div>
         </div>
-      </div>
+      </header>
 
+      {/* ═══════════ INTERACTIVE CHRONOLOGICAL AXIS ═══════════ */}
+      <nav
+        style={{
+          opacity: entryStage >= 4 ? 1 : 0,
+          transition: 'opacity 0.6s ease-out',
+        }}
+        className="sticky top-16 z-30 shadow-2xl"
+      >
+        <ChronicleTimelineAxis
+          phases={timelinePhases}
+          activePhaseId={activePhaseId}
+          onSelectPhase={handleSelectPhase}
+        />
+      </nav>
 
-      {/* ═══════════ MILESTONE ENTRIES ═══════════ */}
-      <div id="chronicle-entries" className="relative z-10 max-w-5xl mx-auto px-4 sm:px-8 md:px-12 pt-12 pb-8">
-        {/* Section label */}
-        <div className="flex items-center gap-3 mb-10">
-          <div className="w-6 h-[1px] bg-rose-500" />
-          <span className="font-body text-[10px] font-bold tracking-[0.3em] uppercase text-zinc-400">
-            PHASE LEDGER • {MILESTONES.length} ENTRIES
+      {/* ═══════════ EDITORIAL RESEARCH LEDGER ═══════════ */}
+      <main id="chronicle-ledger" className="relative z-10 max-w-7xl mx-auto px-4 sm:px-8 md:px-12 pt-10 pb-16">
+        {/* Section Title Header */}
+        <div className="flex items-center justify-between gap-4 mb-8 pb-3 border-b border-white/[0.06]">
+          <div className="flex items-center gap-3">
+            <span className="w-2 h-2 rounded-full bg-rose-500 shadow-[0_0_8px_#f43f5e]" />
+            <span className="font-tech text-xs font-bold tracking-[0.25em] uppercase text-zinc-300">
+              DISCOVERY &amp; IMPLEMENTATION CHRONICLE ({MILESTONES.length} PHASES)
+            </span>
+          </div>
+
+          <span className="font-tech text-[10px] tracking-widest text-zinc-400 uppercase hidden sm:inline">
+            ASYMMETRIC RESEARCH ARTIFACTS
           </span>
-          <div className="flex-1 h-[1px] bg-white/[0.06]" />
         </div>
 
-        {/* Milestone cards */}
-        <div className="space-y-6">
+        {/* Milestone Entries */}
+        <div className="space-y-4">
           {MILESTONES.map((item, idx) => (
-            <MilestoneCard
+            <EditorialResearchEntry
               key={item.id}
               item={item}
               index={idx}
+              reducedMotion={reducedMotion}
               onFocusNodeOnCanvas={onFocusNodeOnCanvas}
+              onInView={(id) => setActivePhaseId(id)}
             />
           ))}
         </div>
-      </div>
+      </main>
 
-      {/* ═══════════ LAB NOTE SECTION ═══════════ */}
-      <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-8 md:px-12">
+      {/* ═══════════ LAB NOTE SPECIMEN SECTION ═══════════ */}
+      <section className="relative z-10 max-w-7xl mx-auto px-4 sm:px-8 md:px-12 py-12 border-t border-white/[0.08]">
+        <div className="mb-8 flex items-center justify-between">
+          <div className="flex items-center gap-2.5 font-tech text-xs tracking-[0.25em] text-zinc-400 uppercase">
+            <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
+            <span className="font-semibold text-zinc-200">LAB NOTE SPECIMEN ARCHIVE</span>
+          </div>
+          <span className="font-tech text-[10px] text-zinc-400 uppercase tracking-widest">
+            SPECIMEN // 001
+          </span>
+        </div>
         <LabNoteSection />
-      </div>
+      </section>
 
-      {/* ═══════════ CLOSING COLOPHON ═══════════ */}
-      <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-8 md:px-12 mt-16 pb-20">
+      {/* ═══════════ CLOSING COLOPHON & ARCHIVE STAMP ═══════════ */}
+      <footer className="relative z-10 max-w-7xl mx-auto px-4 sm:px-8 md:px-12 mt-8 pb-24">
         <div className="pt-10 border-t border-white/[0.08] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
-          <div className="flex items-center gap-3 font-body text-xs tracking-[0.25em] uppercase text-zinc-500">
+          <div className="flex items-center gap-3 font-body text-xs tracking-[0.25em] uppercase text-zinc-400">
             <BrandLogo variant="icon" size={14} className="text-rose-400 shrink-0" />
-            <span className="font-semibold text-zinc-300">CHRONICLE ARCHIVE</span>
+            <span className="font-semibold text-zinc-200">CHRONICLE ARCHIVE</span>
             <span className="text-zinc-600">&bull;</span>
             <span>VOL. 2026</span>
           </div>
@@ -483,7 +635,7 @@ export const ChronicleView: React.FC<ChronicleViewProps> = ({
             Open for Select Research &amp; Engineering Collaborations
           </div>
         </div>
-      </div>
+      </footer>
     </div>
   );
 };
