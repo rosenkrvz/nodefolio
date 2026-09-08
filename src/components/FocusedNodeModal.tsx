@@ -28,6 +28,7 @@ import {
   Compass,
   Sparkles,
   BarChart,
+  Trash,
 } from './icons';
 
 interface FocusedNodeModalProps {
@@ -40,6 +41,7 @@ interface FocusedNodeModalProps {
   onOpenContact?: () => void;
   onOpenResume?: () => void;
   onFocusNode?: (nodeId: string) => void;
+  onDeleteVisitorNode?: (id: string) => void;
 }
 
 export const FocusedNodeModal: React.FC<FocusedNodeModalProps> = ({
@@ -52,6 +54,7 @@ export const FocusedNodeModal: React.FC<FocusedNodeModalProps> = ({
   onOpenContact,
   onOpenResume,
   onFocusNode,
+  onDeleteVisitorNode,
 }) => {
   const chassisRef = useRef<HTMLDivElement>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -996,6 +999,21 @@ export const FocusedNodeModal: React.FC<FocusedNodeModalProps> = ({
                     {node.visitorData.name}
                   </span>
                 </div>
+
+                {onDeleteVisitorNode && (
+                  <div className="flex justify-end pt-3 border-t border-white/[0.04]">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        handleClose(() => onDeleteVisitorNode(node.id));
+                      }}
+                      className="px-3.5 py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/25 border border-rose-500/30 hover:border-rose-500/60 text-xs font-tech text-rose-300 hover:text-white transition-all flex items-center gap-2 cursor-pointer shadow-sm active:scale-95"
+                    >
+                      <Trash className="w-3.5 h-3.5 text-rose-400" />
+                      <span>REMOVE THIS NOTE</span>
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           )}

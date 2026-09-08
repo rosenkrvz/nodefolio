@@ -1,6 +1,6 @@
 import React from 'react';
 import { VisitorNodeData } from '../../types';
-import { Close } from '../icons';
+import { Close, Trash } from '../icons';
 
 interface VisitorNodeContentProps {
   visitorData: VisitorNodeData;
@@ -55,10 +55,12 @@ export const VisitorNodeContent: React.FC<VisitorNodeContentProps> = ({
                 e.stopPropagation();
                 onDelete(visitorData.id);
               }}
-              title="Remove this visitor note"
-              className="opacity-0 group-hover:opacity-100 p-0.5 rounded text-zinc-500 hover:text-rose-400 hover:bg-white/[0.06] transition-all cursor-pointer"
+              title="Remove personal note"
+              aria-label="Remove personal note"
+              className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-rose-500/10 hover:bg-rose-500/25 border border-rose-500/20 hover:border-rose-500/40 text-[9px] font-tech text-rose-300 hover:text-white transition-all cursor-pointer shadow-sm"
             >
-              <Close className="w-3 h-3" />
+              <Trash className="w-2.5 h-2.5 text-rose-400" />
+              <span>REMOVE</span>
             </button>
           )}
         </div>

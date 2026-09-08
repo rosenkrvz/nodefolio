@@ -30,6 +30,7 @@ import {
   Compass,
   Cpu,
   FileText,
+  Trash,
 } from './icons';
 
 interface GraphNodeProps {
@@ -328,6 +329,22 @@ const GraphNodeComponent: React.FC<GraphNodeProps> = ({
                 title="Inspect detailed artifact"
               >
                 <Maximize className="w-3.5 h-3.5 text-rose-400" />
+              </button>
+            )}
+
+            {/* Remove option for personal notes */}
+            {node.category === 'visitor' && onDeleteVisitorNode && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDeleteVisitorNode(node.id);
+                }}
+                className="p-1 rounded-md text-zinc-400 hover:text-rose-400 hover:bg-rose-500/20 transition-all cursor-pointer group/del"
+                title="Remove personal note"
+                aria-label="Remove personal note"
+              >
+                <Trash className="w-3.5 h-3.5 text-rose-400/80 group-hover/del:text-rose-400 transition-colors" />
               </button>
             )}
 

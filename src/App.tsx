@@ -1247,6 +1247,7 @@ export default function App() {
         node={focusedNode}
         originRect={nodeOriginRect}
         connections={connections}
+        onDeleteVisitorNode={handleDeleteVisitorNode}
         onClose={() => {
           setFocusedNode(null);
           setNodeOriginRect(null);
