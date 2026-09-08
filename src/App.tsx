@@ -53,7 +53,7 @@ export default function App() {
   ]);
   const [connections, setConnections] = useState<Connection[]>(ALL_INITIAL_CONNECTIONS);
   const [isAddNodeOpen, setIsAddNodeOpen] = useState<boolean>(false);
-  const [activePreset, setActivePreset] = useState<string>('all');
+  const [activePreset, setActivePreset] = useState<string>('network');
   const [activeView, setActiveView] = useState<'canvas' | 'list' | 'timeline'>('canvas');
   const [isSimulating, setIsSimulating] = useState<boolean>(true);
   const [wireStyle, setWireStyle] = useState<'glow' | 'minimal' | 'cyber'>('glow');
@@ -61,8 +61,8 @@ export default function App() {
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [activeConnectionId, setActiveConnectionId] = useState<string | null>(null);
 
-  // Canvas pan & zoom transform (centered at 70% scale by default)
-  const [transform, setTransform] = useState<CanvasTransform>({ x: 0, y: 0, scale: 0.70 });
+  // Canvas pan & zoom transform (centered at 60% scale by default)
+  const [transform, setTransform] = useState<CanvasTransform>({ x: 0, y: 0, scale: 0.60 });
   const transformRef = useRef(transform);
   transformRef.current = transform;
   const isPanningRef = useRef(false);
@@ -81,7 +81,7 @@ export default function App() {
 
   // Audio interaction refs
   const hasPlayedCoverTransitionRef = useRef<boolean>(false);
-  const lastZoomBracketRef = useRef<number>(Math.round(0.70 / 0.25));
+  const lastZoomBracketRef = useRef<number>(Math.round(0.60 / 0.25));
 
   // Deterministic harmonic drift personality configs for organic, controlled workspace life
   const NODE_DRIFT_PROFILES: Record<
@@ -398,6 +398,18 @@ export default function App() {
   const filteredNodes = useMemo(() => {
     return nodes.filter((n) => {
       if (activePreset === 'all') return true;
+      if (activePreset === 'network') {
+        return (
+          [
+            'node-profile',
+            'node-models',
+            'node-credentials',
+            'node-systems',
+            'node-project',
+            'node-clock',
+          ].includes(n.id) || n.category === 'visitor'
+        );
+      }
       if (activePreset === 'skills') {
         return (
           [
@@ -507,66 +519,97 @@ export default function App() {
     window.addEventListener('touchend', handleTouchEnd);
   };
 
-  // Unified, mathematical centering calculation for presets & screen sizes
-  const centerViewForPreset = useCallback((preset: string = 'all', desiredScale: number = 0.70) => {
+  // Helper for computing estimated vertical height per node type
+  const getNodeEstimatedHeight = useCallback((node: NodeData): number => {
+    if (node.id === 'node-project') return 680;
+    if (node.id === 'node-clock') return 520;
+    if (node.id === 'node-models' || node.id === 'node-systems') return 390;
+    if (node.category === 'visitor') return 280;
+    if (node.researchData) return 330;
+    return 340;
+  }, []);
+
+  // Precision mathematical centering calculation for presets & screen sizes
+  const centerViewForPreset = useCallback((preset: string = 'network', desiredScale: number = 0.60) => {
     const vw = typeof window !== 'undefined' ? window.innerWidth : 1200;
     const vh = typeof window !== 'undefined' ? window.innerHeight : 800;
 
-    let minX = 60;
-    let maxX = 2450;
-    let minY = -260;
-    let maxY = 1350;
+    const targetNodes = nodes.filter((n) => {
+      if (preset === 'network') {
+        return (
+          ['node-profile', 'node-models', 'node-credentials', 'node-systems', 'node-project', 'node-clock'].includes(n.id) ||
+          n.category === 'visitor'
+        );
+      }
+      if (preset === 'skills') {
+        return (
+          ['node-profile', 'node-models', 'node-systems', 'node-pipeline', 'node-vision', 'node-computational', 'node-software'].includes(n.id) ||
+          n.category === 'visitor'
+        );
+      }
+      if (preset === 'certificates') {
+        return (
+          ['node-profile', 'node-credentials', 'node-inference', 'node-eval'].includes(n.id) ||
+          n.category === 'visitor'
+        );
+      }
+      // 'project' or 'all': full research workspace ecosystem
+      return true;
+    });
 
-    if (preset === 'project') {
-      minX = 450;
-      maxX = 2450;
-      minY = -260;
-      maxY = 1350;
-    } else if (preset === 'skills') {
+    let minX = Infinity;
+    let maxX = -Infinity;
+    let minY = Infinity;
+    let maxY = -Infinity;
+
+    if (targetNodes.length > 0) {
+      for (const node of targetNodes) {
+        const h = getNodeEstimatedHeight(node);
+        if (node.x < minX) minX = node.x;
+        if (node.x + node.width > maxX) maxX = node.x + node.width;
+        if (node.y < minY) minY = node.y;
+        if (node.y + h > maxY) maxY = node.y + h;
+      }
+    } else {
       minX = 60;
       maxX = 2100;
-      minY = -260;
-      maxY = 900;
-    } else if (preset === 'certificates') {
-      minX = 60;
-      maxX = 1300;
-      minY = 260;
-      maxY = 930;
+      minY = 80;
+      maxY = 940;
     }
 
     const groupCenterX = (minX + maxX) / 2;
     const groupCenterY = (minY + maxY) / 2;
 
-    const groupW = maxX - minX;
-    const groupH = maxY - minY;
+    const groupW = Math.max(100, maxX - minX);
+    const groupH = Math.max(100, maxY - minY);
 
-    // Viewport usable area accounting for top navbar (64px), bottom telemetry bar (36px), and dock (60px)
-    const availW = Math.max(300, vw - (vw < 640 ? 30 : 100));
-    const availH = Math.max(300, vh - (vw < 640 ? 100 : 130));
+    // Viewport usable area accounting for top navbar (64px), bottom telemetry bar (44px), and dock controls (60px)
+    const availW = Math.max(300, vw - (vw < 640 ? 30 : 120));
+    const availH = Math.max(300, vh - (vw < 640 ? 100 : 140));
     const maxFitScale = Math.min(availW / groupW, availH / groupH);
 
-    // Keep requested 0.70 default scale, scaling down gracefully on small mobile screens
-    const minScaleFloor = vw < 640 ? 0.25 : 0.38;
+    // Keep requested 0.60 default scale, scaling down gracefully on small screens
+    const minScaleFloor = vw < 640 ? 0.25 : 0.35;
     const targetScale = Math.min(desiredScale, Math.max(minScaleFloor, Number(maxFitScale.toFixed(2))));
 
-    // Precision viewport center (offsetting 64px top nav and 36px bottom status: (64-36)/2 = +14px)
+    // Precision viewport center (offsetting 64px top nav and ~44px bottom status: (64 + (vh - 52 - 64)/2) = (vh + 12)/2)
     const viewCenterX = vw / 2;
-    const viewCenterY = (vh + 28) / 2;
+    const viewCenterY = (vh + 12) / 2;
 
     const x = Math.round(viewCenterX - groupCenterX * targetScale);
     const y = Math.round(viewCenterY - groupCenterY * targetScale);
 
     setTransform({ x, y, scale: targetScale });
-  }, []);
+  }, [nodes, getNodeEstimatedHeight]);
 
   // Fit screen handler
   const handleFitScreen = useCallback(() => {
-    centerViewForPreset(activePreset, 0.70);
+    centerViewForPreset(activePreset, 0.60);
   }, [centerViewForPreset, activePreset]);
 
   // Initial auto-centering on load and resize
   useEffect(() => {
-    centerViewForPreset(activePreset, 0.70);
+    centerViewForPreset(activePreset, 0.60);
   }, [centerViewForPreset, activePreset]);
 
   // Return to cover with smooth, single-pass upward transition (no ricochet)
@@ -681,9 +724,9 @@ export default function App() {
     const savedVisitors = loadSavedVisitorNodes();
     setNodes([...ALL_INITIAL_NODES, ...savedVisitors]);
     setConnections(ALL_INITIAL_CONNECTIONS);
-    setActivePreset('all');
+    setActivePreset('network');
     setSelectedNodeId(null);
-    centerViewForPreset('all', 0.70);
+    centerViewForPreset('network', 0.60);
   }, [centerViewForPreset]);
 
   // Smooth single-pass transition down to workspace
@@ -691,9 +734,9 @@ export default function App() {
     playSound('open');
     setActiveNavTab('network');
     setActiveView('canvas');
-    setActivePreset('all');
+    setActivePreset('network');
     setSelectedNodeId(null);
-    centerViewForPreset('all', 0.70);
+    centerViewForPreset('network', 0.60);
     isProgrammaticScrollRef.current = true;
     const maxScroll = typeof document !== 'undefined' ? document.documentElement.scrollHeight - window.innerHeight : 1000;
     window.scrollTo({ top: maxScroll, behavior: 'smooth' });
@@ -721,11 +764,11 @@ export default function App() {
 
     const viewportWidth = typeof window !== 'undefined' ? window.innerWidth : 1200;
     const viewportHeight = typeof window !== 'undefined' ? window.innerHeight : 800;
-    const targetScale = viewportWidth < 640 ? 0.65 : 0.75;
-    const nodeHalfHeight = nodeId === 'node-project' ? 340 : (nodeId === 'node-clock' ? 260 : 200);
+    const targetScale = viewportWidth < 640 ? 0.55 : 0.65;
+    const nodeHalfHeight = nodeId === 'node-project' ? 340 : (nodeId === 'node-clock' ? 260 : 170);
 
     const viewCenterX = viewportWidth / 2;
-    const viewCenterY = (viewportHeight + 28) / 2;
+    const viewCenterY = (viewportHeight + 12) / 2;
 
     setTransform({
       x: Math.round(viewCenterX - (target.x + target.width / 2) * targetScale),
@@ -756,9 +799,9 @@ export default function App() {
     } else if (tab === 'network') {
       const wasOnTimeline = activeViewRef.current === 'timeline';
       setActiveView('canvas');
-      setActivePreset('all');
+      setActivePreset('network');
       setSelectedNodeId(null);
-      centerViewForPreset('all', 0.70);
+      centerViewForPreset('network', 0.60);
       isProgrammaticScrollRef.current = true;
 
       if (wasOnTimeline) {
@@ -778,7 +821,7 @@ export default function App() {
       setActiveView('canvas');
       setActivePreset('project');
       setSelectedNodeId(null);
-      centerViewForPreset('project', 0.70);
+      centerViewForPreset('project', 0.60);
       isProgrammaticScrollRef.current = true;
 
       if (wasOnTimeline) {
@@ -822,7 +865,7 @@ export default function App() {
     playSound('secondaryClick');
     setActivePreset(preset);
     setSelectedNodeId(null);
-    centerViewForPreset(preset, 0.70);
+    centerViewForPreset(preset, 0.60);
   }, [centerViewForPreset]);
 
   // Clear node selection when clicking canvas background
@@ -990,7 +1033,7 @@ export default function App() {
                           const vw = typeof window !== 'undefined' ? window.innerWidth : 1200;
                           const vh = typeof window !== 'undefined' ? window.innerHeight : 800;
                           const newX = Math.round((vw / 2) - ((vw / 2) - p.x) * (nextScale / p.scale));
-                          const newY = Math.round(((vh + 28) / 2) - (((vh + 28) / 2) - p.y) * (nextScale / p.scale));
+                          const newY = Math.round(((vh + 12) / 2) - (((vh + 12) / 2) - p.y) * (nextScale / p.scale));
                           return { x: newX, y: newY, scale: nextScale };
                         });
                       }}
@@ -1001,7 +1044,7 @@ export default function App() {
                           const vw = typeof window !== 'undefined' ? window.innerWidth : 1200;
                           const vh = typeof window !== 'undefined' ? window.innerHeight : 800;
                           const newX = Math.round((vw / 2) - ((vw / 2) - p.x) * (nextScale / p.scale));
-                          const newY = Math.round(((vh + 28) / 2) - (((vh + 28) / 2) - p.y) * (nextScale / p.scale));
+                          const newY = Math.round(((vh + 12) / 2) - (((vh + 12) / 2) - p.y) * (nextScale / p.scale));
                           return { x: newX, y: newY, scale: nextScale };
                         });
                       }}
