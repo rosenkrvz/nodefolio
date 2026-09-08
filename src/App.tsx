@@ -212,13 +212,19 @@ export default function App() {
     }
   };
 
-  // Smooth transition down to workspace
-  const handleExplore = useCallback(() => {
-    setActiveNavTab('network');
-    setActiveView('canvas');
-    setActivePreset('all');
-    setSelectedNodeId(null);
-    setScrollProgress(1);
+  // Fit view (responsive to mobile & desktop)
+  const handleFitScreen = useCallback(() => {
+    if (typeof window !== 'undefined' && window.innerWidth < 640) {
+      setTransform({ x: 20, y: 40, scale: 0.65 });
+    } else {
+      setTransform({ x: 60, y: 60, scale: 0.85 });
+    }
+  }, []);
+
+  // Reset Graph
+  const handleResetGraph = useCallback(() => {
+    setNodes(INITIAL_NODES);
+    setConnections(INITIAL_CONNECTIONS);
     handleFitScreen();
   }, [handleFitScreen]);
 
@@ -228,6 +234,16 @@ export default function App() {
     setScrollProgress(0);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
+
+  // Smooth transition down to workspace
+  const handleExplore = useCallback(() => {
+    setActiveNavTab('network');
+    setActiveView('canvas');
+    setActivePreset('all');
+    setSelectedNodeId(null);
+    setScrollProgress(1);
+    handleFitScreen();
+  }, [handleFitScreen]);
 
   // Focus specific node on canvas with smooth pan
   const handleFocusNode = useCallback((nodeId: string) => {
@@ -256,22 +272,6 @@ export default function App() {
       scale: targetScale,
     });
   }, [nodes]);
-
-  // Fit view (responsive to mobile & desktop)
-  const handleFitScreen = useCallback(() => {
-    if (typeof window !== 'undefined' && window.innerWidth < 640) {
-      setTransform({ x: 20, y: 40, scale: 0.65 });
-    } else {
-      setTransform({ x: 60, y: 60, scale: 0.85 });
-    }
-  }, []);
-
-  // Reset Graph
-  const handleResetGraph = useCallback(() => {
-    setNodes(INITIAL_NODES);
-    setConnections(INITIAL_CONNECTIONS);
-    handleFitScreen();
-  }, [handleFitScreen]);
 
   // Top Nav Tab Selection - Instant, reliable loading for all tabs
   const handleSelectNavTab = useCallback((tab: 'home' | 'network' | 'projects' | 'lab' | 'notebook' | 'about') => {
