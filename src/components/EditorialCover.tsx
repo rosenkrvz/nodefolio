@@ -12,28 +12,50 @@ export const EditorialCover: React.FC<EditorialCoverProps> = ({
   onExplore,
   onViewWork,
 }) => {
-  // Motion curve for the cover:
-  // 0% - 15%: Stable, 100% sharp, fully in focus, 0 translateY
-  // 15% - 85%: Physical architectural lift upward (translateY: 0% -> -105%), progressive defocus blur(0px -> 8px)
-  // > 85%: Completely outside viewport, pointer-events: none
+  const prefersReducedMotion =
+    typeof window !== 'undefined' &&
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // Step 4 Transition Curve:
+  // 0% - 22%: Hero completely visible (sharp, 100% opacity, scale: 1, translateY: 0%)
+  // 25% - 50%: Hero begins subtle transformation (blur: 0->6px, scale: 1.0->0.97, translateY: 0->-20%)
+  // 50% - 75%: Hero noticeably blurred/receded (blur: 6->14px, scale: 0.97->0.94, translateY: -20->-105%)
+  // 75% - 100%: Network revealed, Cover lifts completely out of viewport
   let blur = 0;
   let opacity = 1;
+  let scale = 1;
   let translateYPercent = 0;
-  const isLifting = scrollProgress > 0.15;
+  const isLifting = scrollProgress > 0.22;
 
-  if (scrollProgress <= 0.15) {
+  if (prefersReducedMotion) {
+    opacity = scrollProgress < 0.5 ? 1 : Math.max(0, 1 - (scrollProgress - 0.5) / 0.25);
     blur = 0;
-    opacity = 1;
-    translateYPercent = 0;
-  } else if (scrollProgress <= 0.85) {
-    const t = (scrollProgress - 0.15) / 0.70; // 0 to 1
-    blur = t * 8; // 0px to 8px
-    opacity = Math.max(0, 1 - t * 0.45); // Keep substantial opacity as it slides upward
-    translateYPercent = -(t * 105);
+    scale = 1;
+    translateYPercent = scrollProgress >= 0.75 ? -105 : 0;
   } else {
-    blur = 8;
-    opacity = 0;
-    translateYPercent = -105;
+    if (scrollProgress <= 0.22) {
+      blur = 0;
+      opacity = 1;
+      scale = 1;
+      translateYPercent = 0;
+    } else if (scrollProgress <= 0.50) {
+      const t1 = (scrollProgress - 0.22) / 0.28; // 0 to 1
+      blur = t1 * 6; // 0px to 6px
+      scale = 1 - t1 * 0.03; // 1.0 to 0.97
+      translateYPercent = -(t1 * 20); // 0% to -20%
+      opacity = 1;
+    } else if (scrollProgress <= 0.82) {
+      const t2 = (scrollProgress - 0.50) / 0.32; // 0 to 1
+      blur = 6 + t2 * 8; // 6px to 14px
+      scale = 0.97 - t2 * 0.03; // 0.97 to 0.94
+      translateYPercent = -20 - (t2 * 85); // -20% to -105%
+      opacity = Math.max(0, 1 - t2 * 0.65);
+    } else {
+      blur = 14;
+      opacity = 0;
+      scale = 0.94;
+      translateYPercent = -105;
+    }
   }
 
   return (
@@ -42,7 +64,7 @@ export const EditorialCover: React.FC<EditorialCoverProps> = ({
       style={{
         opacity,
         filter: blur > 0 ? `blur(${blur}px)` : 'none',
-        transform: `translateY(${translateYPercent}%)`,
+        transform: `translateY(${translateYPercent}%) scale(${scale})`,
         pointerEvents: scrollProgress >= 0.80 ? 'none' : 'auto',
       }}
       className={`absolute inset-0 w-full h-screen flex flex-col justify-between px-6 sm:px-12 md:px-16 pt-24 pb-10 transition-transform duration-75 ease-out select-none overflow-hidden z-20 bg-[#090b10] ${

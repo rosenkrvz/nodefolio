@@ -53,6 +53,10 @@ export default function App() {
 
   // Throttled scroll progress tracking via requestAnimationFrame
   useEffect(() => {
+    if (typeof window !== 'undefined' && window.innerWidth < 640) {
+      setTransform({ x: 20, y: 40, scale: 0.65 });
+    }
+
     let ticking = false;
     const handleScroll = () => {
       if (!ticking) {
@@ -62,9 +66,9 @@ export default function App() {
           if (totalHeight > 0) {
             const progress = Math.max(0, Math.min(1, window.scrollY / totalHeight));
             setScrollProgress(progress);
-            if (progress < 0.28) {
+            if (progress < 0.25) {
               setActiveNavTab('home');
-            } else if (progress > 0.85) {
+            } else if (progress > 0.80) {
               setActiveNavTab('network');
             }
           }
@@ -75,8 +79,12 @@ export default function App() {
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
+    window.addEventListener('resize', handleScroll, { passive: true });
     handleScroll();
-    return () => window.removeEventListener('scroll', handleScroll);
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('resize', handleScroll);
+    };
   }, []);
 
   // Pure deterministic pin coordinate calculation directly from nodes
@@ -232,9 +240,13 @@ export default function App() {
     });
   }, [nodes]);
 
-  // Fit view
+  // Fit view (responsive to mobile & desktop)
   const handleFitScreen = useCallback(() => {
-    setTransform({ x: 60, y: 60, scale: 0.85 });
+    if (typeof window !== 'undefined' && window.innerWidth < 640) {
+      setTransform({ x: 20, y: 40, scale: 0.65 });
+    } else {
+      setTransform({ x: 60, y: 60, scale: 0.85 });
+    }
   }, []);
 
   // Reset Graph
@@ -300,7 +312,7 @@ export default function App() {
             <ArchitecturalReveal scrollProgress={scrollProgress}>
               <div
                 style={{
-                  opacity: scrollProgress >= 0.15 ? Math.min(1, (scrollProgress - 0.15) / 0.35) : 0,
+                  opacity: scrollProgress >= 0.25 ? Math.min(1, (scrollProgress - 0.25) / 0.50) : 0,
                   pointerEvents: scrollProgress >= 0.80 ? 'auto' : 'none',
                 }}
                 className="absolute inset-0 w-full h-screen pt-16 transition-opacity duration-75 ease-out z-10"

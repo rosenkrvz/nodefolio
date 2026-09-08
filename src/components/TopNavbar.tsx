@@ -57,142 +57,217 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
     return () => clearInterval(timer);
   }, []);
 
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
   const handleShare = () => {
     navigator.clipboard?.writeText(window.location.href);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const handleMobileSelect = (tab: 'home' | 'network' | 'projects' | 'notebook') => {
+    setIsMobileMenuOpen(false);
+    onSelectNavTab?.(tab);
+  };
+
   return (
-    <header className="fixed top-0 inset-x-0 h-16 z-50 flex items-center justify-between px-4 sm:px-8 md:px-12 bg-[#090b10]/90 backdrop-blur-md border-b border-white/[0.08] pointer-events-auto select-none font-body">
-      {/* Brand Identity / Geometric SS Monogram */}
-      <div className="flex items-center gap-4 sm:gap-6">
-        <button
-          type="button"
-          onClick={() => onSelectNavTab?.('home')}
-          className="flex items-center gap-3 text-left group cursor-pointer focus:outline-none"
-        >
-          {/* Geometric Monogram Mark */}
-          <div className="w-8 h-8 rounded-lg bg-white/[0.04] border border-white/10 group-hover:border-rose-500/50 flex items-center justify-center shadow-inner transition-colors shrink-0">
-            <svg
-              className="w-4 h-4 text-zinc-200 group-hover:text-rose-400 transition-colors"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              {/* Double-S geometric architectural mark */}
-              <path d="M7 6h3a2 2 0 0 1 2 2v0a2 2 0 0 1-2 2H8a2 2 0 0 0-2 2v0a2 2 0 0 0 2 2h3" />
-              <path d="M14 10h3a2 2 0 0 1 2 2v0a2 2 0 0 1-2 2h-2a2 2 0 0 0-2 2v0a2 2 0 0 0 2 2h3" />
-            </svg>
-          </div>
-
-          <div>
-            <div className="flex items-center gap-1.5 leading-none">
-              <span className="font-display text-sm font-bold text-white tracking-wider uppercase">
-                SHUBHAM SHARMA
-              </span>
-              <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+    <>
+      <header className="fixed top-0 inset-x-0 h-16 z-50 flex items-center justify-between px-4 sm:px-8 md:px-12 bg-[#090b10]/90 backdrop-blur-md border-b border-white/[0.08] pointer-events-auto select-none font-body">
+        {/* Brand Identity / Geometric SS Monogram */}
+        <div className="flex items-center gap-4 sm:gap-6">
+          <button
+            type="button"
+            onClick={() => {
+              setIsMobileMenuOpen(false);
+              onSelectNavTab?.('home');
+            }}
+            className="flex items-center gap-3 text-left group cursor-pointer focus:outline-none"
+          >
+            {/* Geometric Monogram Mark */}
+            <div className="w-8 h-8 rounded-lg bg-white/[0.04] border border-white/10 group-hover:border-rose-500/50 flex items-center justify-center shadow-inner transition-colors shrink-0">
+              <svg
+                className="w-4 h-4 text-zinc-200 group-hover:text-rose-400 transition-colors"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                {/* Double-S geometric architectural mark */}
+                <path d="M7 6h3a2 2 0 0 1 2 2v0a2 2 0 0 1-2 2H8a2 2 0 0 0-2 2v0a2 2 0 0 0 2 2h3" />
+                <path d="M14 10h3a2 2 0 0 1 2 2v0a2 2 0 0 1-2 2h-2a2 2 0 0 0-2 2v0a2 2 0 0 0 2 2h3" />
+              </svg>
             </div>
-            <span className="font-body text-[10px] font-semibold text-zinc-400 tracking-[0.2em] uppercase block mt-0.5">
-              COMPUTATION &bull; RESEARCH
-            </span>
-          </div>
-        </button>
 
-        {/* Quiet Navigation Tabs */}
-        <nav className="hidden md:flex items-center gap-1 text-xs text-zinc-400 uppercase tracking-widest font-semibold ml-4">
-          <button
-            type="button"
-            onClick={() => onSelectNavTab?.('home')}
-            className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
-              activeNavTab === 'home'
-                ? 'text-white bg-white/[0.08]'
-                : 'hover:text-white hover:bg-white/[0.04]'
-            }`}
-          >
-            COVER
+            <div>
+              <div className="flex items-center gap-1.5 leading-none">
+                <span className="font-display text-sm font-bold text-white tracking-wider uppercase">
+                  SHUBHAM SHARMA
+                </span>
+                <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+              </div>
+              <span className="font-body text-[10px] font-semibold text-zinc-400 tracking-[0.2em] uppercase block mt-0.5">
+                COMPUTATION &bull; RESEARCH
+              </span>
+            </div>
           </button>
-          <button
-            type="button"
-            onClick={() => onSelectNavTab?.('network')}
-            className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
-              activeNavTab === 'network'
-                ? 'text-white bg-white/[0.08]'
-                : 'hover:text-white hover:bg-white/[0.04]'
-            }`}
-          >
-            NETWORK
-          </button>
-          <button
-            type="button"
-            onClick={() => onSelectNavTab?.('projects')}
-            className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
-              activeNavTab === 'projects'
-                ? 'text-white bg-white/[0.08]'
-                : 'hover:text-white hover:bg-white/[0.04]'
-            }`}
-          >
-            RESEARCH
-          </button>
-          <button
-            type="button"
-            onClick={() => onSelectNavTab?.('notebook')}
-            className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
-              activeNavTab === 'notebook'
-                ? 'text-white bg-white/[0.08]'
-                : 'hover:text-white hover:bg-white/[0.04]'
-            }`}
-          >
-            CHRONICLE
-          </button>
-          <button
-            type="button"
-            onClick={onOpenResume}
-            className="px-3 py-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-white/[0.04] transition-colors cursor-pointer"
-          >
-            CV
-          </button>
-        </nav>
-      </div>
 
-      {/* Right Controls: Quiet Telemetry & Primary Contact Action */}
-      <div className="flex items-center gap-2 sm:gap-3 text-xs">
-        {/* Clock Button */}
-        {onFocusClock && (
+          {/* Desktop Quiet Navigation Tabs */}
+          <nav className="hidden md:flex items-center gap-1 text-xs text-zinc-400 uppercase tracking-widest font-semibold ml-4">
+            <button
+              type="button"
+              onClick={() => onSelectNavTab?.('home')}
+              className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
+                activeNavTab === 'home'
+                  ? 'text-white bg-white/[0.08]'
+                  : 'hover:text-white hover:bg-white/[0.04]'
+              }`}
+            >
+              COVER
+            </button>
+            <button
+              type="button"
+              onClick={() => onSelectNavTab?.('network')}
+              className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
+                activeNavTab === 'network'
+                  ? 'text-white bg-white/[0.08]'
+                  : 'hover:text-white hover:bg-white/[0.04]'
+              }`}
+            >
+              NETWORK
+            </button>
+            <button
+              type="button"
+              onClick={() => onSelectNavTab?.('projects')}
+              className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
+                activeNavTab === 'projects'
+                  ? 'text-white bg-white/[0.08]'
+                  : 'hover:text-white hover:bg-white/[0.04]'
+              }`}
+            >
+              RESEARCH
+            </button>
+            <button
+              type="button"
+              onClick={() => onSelectNavTab?.('notebook')}
+              className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
+                activeNavTab === 'notebook'
+                  ? 'text-white bg-white/[0.08]'
+                  : 'hover:text-white hover:bg-white/[0.04]'
+              }`}
+            >
+              CHRONICLE
+            </button>
+            <button
+              type="button"
+              onClick={onOpenResume}
+              className="px-3 py-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-white/[0.04] transition-colors cursor-pointer"
+            >
+              CV
+            </button>
+          </nav>
+        </div>
+
+        {/* Right Controls: Quiet Telemetry & Primary Contact Action */}
+        <div className="flex items-center gap-2 sm:gap-3 text-xs">
+          {/* Clock Button */}
+          {onFocusClock && (
+            <button
+              type="button"
+              onClick={onFocusClock}
+              className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.08] text-xs text-zinc-300 transition-colors cursor-pointer"
+              title="Focus Chronometer"
+            >
+              <ClockIcon className="w-3.5 h-3.5 text-rose-400" />
+              <span>{timeStr || '12:00 PM'}</span>
+            </button>
+          )}
+
+          {/* Share Button */}
           <button
             type="button"
-            onClick={onFocusClock}
-            className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.08] text-xs text-zinc-300 transition-colors cursor-pointer"
-            title="Focus Chronometer"
+            onClick={handleShare}
+            aria-label="Share URL"
+            className="p-2 rounded-lg bg-white/[0.03] hover:bg-white/[0.06] text-zinc-400 hover:text-white border border-white/[0.08] transition-colors cursor-pointer"
+            title="Share URL"
           >
-            <ClockIcon className="w-3.5 h-3.5 text-rose-400" />
-            <span>{timeStr || '12:00 PM'}</span>
+            {copied ? <Check className="w-3.5 h-3.5 text-rose-400" /> : <Share2 className="w-3.5 h-3.5" />}
           </button>
-        )}
 
-        {/* Share Button */}
-        <button
-          type="button"
-          onClick={handleShare}
-          className="p-2 rounded-lg bg-white/[0.03] hover:bg-white/[0.06] text-zinc-400 hover:text-white border border-white/[0.08] transition-colors cursor-pointer"
-          title="Share URL"
-        >
-          {copied ? <Check className="w-3.5 h-3.5 text-rose-400" /> : <Share2 className="w-3.5 h-3.5" />}
-        </button>
+          {/* Contact Action */}
+          <button
+            type="button"
+            onClick={onOpenContact}
+            className="flex items-center gap-1.5 px-3.5 sm:px-4 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold uppercase tracking-wider transition-all shadow-[0_0_16px_rgba(225,29,72,0.35)] active:scale-95 cursor-pointer"
+          >
+            <Mail className="w-3.5 h-3.5" />
+            <span className="hidden xs:inline sm:inline">Contact</span>
+          </button>
 
-        {/* Contact Action */}
-        <button
-          type="button"
-          onClick={onOpenContact}
-          className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold uppercase tracking-wider transition-all shadow-[0_0_16px_rgba(225,29,72,0.35)] active:scale-95 cursor-pointer"
-        >
-          <Mail className="w-3.5 h-3.5" />
-          <span>Contact</span>
-        </button>
-      </div>
-    </header>
+          {/* Mobile Menu Toggle Button */}
+          <button
+            type="button"
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            aria-label={isMobileMenuOpen ? 'Close navigation menu' : 'Open navigation menu'}
+            className="md:hidden p-2 rounded-lg bg-white/[0.04] text-zinc-300 hover:text-white border border-white/10 transition-colors cursor-pointer"
+          >
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              {isMobileMenuOpen ? (
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              ) : (
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              )}
+            </svg>
+          </button>
+        </div>
+      </header>
+
+      {/* Mobile Navigation Drawer */}
+      {isMobileMenuOpen && (
+        <div className="fixed inset-x-0 top-16 z-40 bg-[#090b10]/95 backdrop-blur-xl border-b border-white/10 p-4 md:hidden animate-in slide-in-from-top-2 duration-150 font-body">
+          <nav className="flex flex-col gap-1 text-sm uppercase tracking-widest font-semibold text-zinc-300">
+            <button
+              type="button"
+              onClick={() => handleMobileSelect('home')}
+              className="px-4 py-2.5 rounded-xl text-left hover:bg-white/[0.08] hover:text-white transition-colors"
+            >
+              Cover
+            </button>
+            <button
+              type="button"
+              onClick={() => handleMobileSelect('network')}
+              className="px-4 py-2.5 rounded-xl text-left hover:bg-white/[0.08] hover:text-white transition-colors"
+            >
+              Network
+            </button>
+            <button
+              type="button"
+              onClick={() => handleMobileSelect('projects')}
+              className="px-4 py-2.5 rounded-xl text-left hover:bg-white/[0.08] hover:text-white transition-colors"
+            >
+              Research
+            </button>
+            <button
+              type="button"
+              onClick={() => handleMobileSelect('notebook')}
+              className="px-4 py-2.5 rounded-xl text-left hover:bg-white/[0.08] hover:text-white transition-colors"
+            >
+              Chronicle
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setIsMobileMenuOpen(false);
+                onOpenResume?.();
+              }}
+              className="px-4 py-2.5 rounded-xl text-left hover:bg-white/[0.08] hover:text-white transition-colors"
+            >
+              CV / Resume
+            </button>
+          </nav>
+        </div>
+      )}
+    </>
   );
 };

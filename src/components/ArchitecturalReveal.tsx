@@ -14,15 +14,15 @@ export const ArchitecturalReveal: React.FC<ArchitecturalRevealProps> = ({
     typeof window !== 'undefined' &&
     window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  // Reveal phase (0.15 -> 0.85)
-  // As user scrolls down, the workspace underneath scales smoothly from 0.94 -> 1.0
-  const revealProgress = Math.max(0, Math.min(1, (scrollProgress - 0.15) / 0.70));
+  // Step 4 Reveal phase (0.25 -> 0.85)
+  // Workspace expands smoothly from 0.94 -> 1.0 as the cover blurs and lifts
+  const revealProgress = Math.max(0, Math.min(1, (scrollProgress - 0.25) / 0.60));
 
   // Workspace container scale: expands smoothly to 100% viewport
   const frameScale = prefersReducedMotion ? 1 : 0.94 + revealProgress * 0.06;
 
-  // Status text indicator during separation/transition
-  const isOpening = scrollProgress > 0.20 && scrollProgress < 0.85;
+  // Status text indicator during transition
+  const isOpening = scrollProgress > 0.25 && scrollProgress < 0.85;
   const statusOpacity = isOpening ? Math.min(1, Math.sin(revealProgress * Math.PI)) : 0;
 
   return (

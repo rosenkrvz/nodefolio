@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Mail, Send, CheckCircle2, Copy, Check } from 'lucide-react';
 
 interface ContactModalProps {
@@ -13,6 +13,17 @@ export const ContactModal: React.FC<ContactModalProps> = ({ isOpen, onClose, ema
   const [senderEmail, setSenderEmail] = useState('');
   const [message, setMessage] = useState('');
   const [submitted, setSubmitted] = useState(false);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
@@ -40,7 +51,10 @@ export const ContactModal: React.FC<ContactModalProps> = ({ isOpen, onClose, ema
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-md animate-in fade-in duration-200"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Direct Communication & Inquiry"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-md animate-in fade-in duration-200 select-none font-body"
       onClick={onClose}
     >
       <div
@@ -50,7 +64,8 @@ export const ContactModal: React.FC<ContactModalProps> = ({ isOpen, onClose, ema
         <button
           type="button"
           onClick={onClose}
-          className="absolute top-4 right-4 p-2 rounded-lg text-zinc-400 hover:text-white hover:bg-white/10 transition-colors"
+          aria-label="Close contact dialog"
+          className="absolute top-4 right-4 p-2 rounded-lg text-zinc-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
         >
           <X className="w-5 h-5" />
         </button>

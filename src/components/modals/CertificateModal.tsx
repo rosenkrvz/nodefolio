@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { CertificateItem } from '../../types';
 import {
   X,
@@ -19,6 +19,17 @@ interface CertificateModalProps {
 export const CertificateModal: React.FC<CertificateModalProps> = ({ certificate, onClose }) => {
   const [copied, setCopied] = useState(false);
 
+  useEffect(() => {
+    if (!certificate) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [certificate, onClose]);
+
   if (!certificate) return null;
 
   const handleCopyId = () => {
@@ -29,7 +40,10 @@ export const CertificateModal: React.FC<CertificateModalProps> = ({ certificate,
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-md animate-in fade-in duration-200"
+      role="dialog"
+      aria-modal="true"
+      aria-label={`Certificate Details: ${certificate.title}`}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-md animate-in fade-in duration-200 select-none font-body"
       onClick={onClose}
     >
       <div
@@ -40,7 +54,8 @@ export const CertificateModal: React.FC<CertificateModalProps> = ({ certificate,
         <button
           type="button"
           onClick={onClose}
-          className="absolute top-4 right-4 p-2 rounded-lg text-zinc-400 hover:text-white hover:bg-white/10 transition-colors"
+          aria-label="Close modal"
+          className="absolute top-4 right-4 p-2 rounded-lg text-zinc-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
         >
           <X className="w-5 h-5" />
         </button>

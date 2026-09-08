@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 
 interface AnalogClockProps {
   scale?: number;
@@ -6,8 +6,13 @@ interface AnalogClockProps {
 }
 
 export const AnalogClock: React.FC<AnalogClockProps> = ({ scale = 1, className = '' }) => {
-  // Synchronize initial animation delay to real local time
-  const { hourDelay, minuteDelay, secondDelay } = useMemo(() => {
+  const [delays, setDelays] = useState<{
+    hourDelay?: string;
+    minuteDelay?: string;
+    secondDelay?: string;
+  }>({});
+
+  useEffect(() => {
     const now = new Date();
     const seconds = now.getSeconds();
     const minutes = now.getMinutes();
@@ -16,11 +21,11 @@ export const AnalogClock: React.FC<AnalogClockProps> = ({ scale = 1, className =
     const totalSecondsIn12Hours = hours * 3600 + minutes * 60 + seconds;
     const totalSecondsInHour = minutes * 60 + seconds;
 
-    return {
+    setDelays({
       hourDelay: `-${totalSecondsIn12Hours}s`,
       minuteDelay: `-${totalSecondsInHour}s`,
       secondDelay: `-${seconds}s`,
-    };
+    });
   }, []);
 
   return (
@@ -35,15 +40,15 @@ export const AnalogClock: React.FC<AnalogClockProps> = ({ scale = 1, className =
           <div className="hand">
             <div
               className="hour"
-              style={{ animationDelay: hourDelay }}
+              style={{ animationDelay: delays.hourDelay }}
             />
             <div
               className="minute"
-              style={{ animationDelay: minuteDelay }}
+              style={{ animationDelay: delays.minuteDelay }}
             />
             <div
               className="second"
-              style={{ animationDelay: secondDelay }}
+              style={{ animationDelay: delays.secondDelay }}
             />
           </div>
         </div>
