@@ -16,13 +16,37 @@ const EditorialCoverComponent: React.FC<EditorialCoverProps> = ({
     typeof window !== 'undefined' &&
     window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  // Step 4 Transition Curve:
-  // Continuous smooth Hermite easing curve for liquid cinematic fluidity
+  // Multi-Phase Continuous Hermite Transition Choreography:
+  // Step 1 [0.00 - 0.12]: Grounded Stability & Bottom Cue Retraction
+  // Step 2 [0.12 - 0.35]: Physical Edge Ignition, Horizon Glow & Depth Separation
+  // Step 3 [0.35 - 0.65]: Stratified Layer Parallax, Sub-element Fading & Focal Softening
+  // Step 4 [0.65 - 0.88]: Cinematic Atmosphere Ascent, Bokeh Deepening & Spatial Aperture
+  // Step 5 [0.88 - 1.00]: Terminal Handshake & Clean Clearance
+
+  // 1. Bottom Hint & Instruction Bar (Fades out first so it doesn't clutter during lift)
+  const bottomHintOpacity = Math.max(0, 1 - Math.min(1, scrollProgress / 0.14));
+  const bottomHintTranslateY = Math.min(15, (scrollProgress / 0.14) * 15);
+
+  // 2. Horizon Edge Crimson Seam Glow (Ramps from 0 at 0.06 to full intensity by 0.25)
+  const seamIntensity = scrollProgress < 0.06 ? 0 : Math.min(1, (scrollProgress - 0.06) / 0.18);
+  const isLifting = seamIntensity > 0.01;
+
+  // 3. Sub-layer Parallax (Eyebrow & Research Spec Column)
+  const subLayerT = Math.max(0, Math.min(1, (scrollProgress - 0.10) / 0.65));
+  const subLayerSmooth = subLayerT * subLayerT * (3 - 2 * subLayerT);
+  const eyebrowTranslateY = -(subLayerSmooth * 24);
+  const eyebrowOpacity = Math.max(0, 1 - Math.pow(subLayerSmooth, 1.4));
+  const specsTranslateY = -(subLayerSmooth * 18);
+  const specsOpacity = Math.max(0, 1 - Math.pow(subLayerSmooth, 1.6));
+
+  // 4. Background Pattern Counter-Parallax Drift
+  const bgDriftPercent = -(Math.min(1, scrollProgress / 0.90) * 8);
+
+  // 5. Main Hero Core Lift & Multi-Stage Blur
   let blur = 0;
   let opacity = 1;
   let scale = 1;
   let translateYPercent = 0;
-  const isLifting = scrollProgress > 0.08;
 
   if (prefersReducedMotion) {
     opacity = scrollProgress < 0.5 ? 1 : Math.max(0, 1 - (scrollProgress - 0.5) / 0.3);
@@ -30,22 +54,37 @@ const EditorialCoverComponent: React.FC<EditorialCoverProps> = ({
     scale = 1;
     translateYPercent = scrollProgress >= 0.75 ? -105 : 0;
   } else {
-    // Continuous smooth progression over scroll [0.12, 0.88]
-    // Typography stays readable through the first 50% of the transition
-    const rawT = Math.max(0, Math.min(1, (scrollProgress - 0.12) / 0.76));
-    // Smooth cubic Hermite S-curve
-    const smoothT = rawT * rawT * (3 - 2 * rawT);
+    // Quintic smootherstep: 6t^5 - 15t^4 + 10t^3 (zero jerk, continuous 1st and 2nd derivatives)
+    const rawT = Math.max(0, Math.min(1, (scrollProgress - 0.10) / 0.82));
+    const smoothT = rawT * rawT * rawT * (rawT * (rawT * 6 - 15) + 10);
 
-    // Gradual, GPU-friendly blur progression:
-    // 0% -> 0px, 25% -> 2px, 50% -> 5px, 75% -> 9px, 100% -> 12px
-    blur = smoothT * 12;
-    scale = 1 - smoothT * 0.05; // 1.0 to 0.95
+    // Multi-stage continuous blur progression:
+    if (scrollProgress < 0.12) {
+      blur = 0;
+    } else if (scrollProgress < 0.35) {
+      const t = (scrollProgress - 0.12) / 0.23;
+      blur = t * 2.8; // 0px -> 2.8px
+    } else if (scrollProgress < 0.65) {
+      const t = (scrollProgress - 0.35) / 0.30;
+      blur = 2.8 + t * 4.7; // 2.8px -> 7.5px
+    } else {
+      const t = Math.min(1, (scrollProgress - 0.65) / 0.25);
+      blur = 7.5 + t * 6.5; // 7.5px -> 14.0px
+    }
+
+    scale = 1 - smoothT * 0.055; // 1.00 to 0.945
     translateYPercent = -(smoothT * 105); // 0% to -105%
-    // Maintain strong readability through first half of lift
-    opacity = scrollProgress < 0.35 ? 1 : Math.max(0, 1 - Math.pow(smoothT, 1.8));
+
+    // Opacity: Stays solid through first 38% of scroll travel, then dissolves smoothly
+    if (scrollProgress < 0.38) {
+      opacity = 1;
+    } else {
+      const tFade = Math.min(1, (scrollProgress - 0.38) / 0.52);
+      opacity = Math.max(0, 1 - Math.pow(tFade, 1.6));
+    }
   }
 
-  const isFullyOffscreen = scrollProgress >= 0.98;
+  const isFullyOffscreen = scrollProgress >= 0.96;
 
   return (
     <section
@@ -61,8 +100,14 @@ const EditorialCoverComponent: React.FC<EditorialCoverProps> = ({
         isLifting ? 'border-b border-rose-500/50 shadow-[0_30px_70px_rgba(0,0,0,0.95)]' : ''
       }`}
     >
-      {/* Restored Authentic Technical Background Atmosphere */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden z-0" aria-hidden="true">
+      {/* Restored Authentic Technical Background Atmosphere with subtle parallax */}
+      <div
+        style={{
+          transform: `translate3d(0, ${bgDriftPercent.toFixed(2)}%, 0)`,
+        }}
+        className="absolute inset-0 pointer-events-none overflow-hidden z-0 transition-transform duration-75"
+        aria-hidden="true"
+      >
         <div className="pattern-bg">
           <div className="cube-svg" />
         </div>
@@ -76,11 +121,20 @@ const EditorialCoverComponent: React.FC<EditorialCoverProps> = ({
 
       {/* Crimson Seam Glow Indicator when lifting */}
       {isLifting && (
-        <div className="absolute bottom-0 inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-rose-500 to-transparent shadow-[0_0_16px_#f43f5e] z-30 pointer-events-none" />
+        <div
+          style={{ opacity: seamIntensity }}
+          className="absolute bottom-0 inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-rose-500 to-transparent shadow-[0_0_18px_#f43f5e] z-30 pointer-events-none transition-opacity duration-150"
+        />
       )}
 
-      {/* Top Editorial Eyebrow & Issue Stamp */}
-      <div className="relative z-10 w-full max-w-7xl mx-auto flex items-center justify-between text-xs font-body text-zinc-400 uppercase tracking-[0.25em]">
+      {/* Top Editorial Eyebrow & Issue Stamp (Parallax Sub-layer) */}
+      <div
+        style={{
+          transform: `translate3d(0, ${eyebrowTranslateY.toFixed(1)}px, 0)`,
+          opacity: eyebrowOpacity,
+        }}
+        className="relative z-10 w-full max-w-7xl mx-auto flex items-center justify-between text-xs font-body text-zinc-400 uppercase tracking-[0.25em] transition-opacity duration-100"
+      >
         <div className="flex items-center gap-2.5">
           <span className="w-2 h-2 rounded-full bg-rose-500 shadow-[0_0_8px_#f43f5e]" />
           <span className="font-semibold text-zinc-300">PORTFOLIO / 01</span>
@@ -154,8 +208,14 @@ const EditorialCoverComponent: React.FC<EditorialCoverProps> = ({
           </div>
         </div>
 
-        {/* Right Column: Negative Space & Editorial Spec Column */}
-        <div className="hidden lg:flex lg:col-span-4 flex-col items-end text-right space-y-8 pl-8">
+        {/* Right Column: Negative Space & Editorial Spec Column (Parallax Sub-layer) */}
+        <div
+          style={{
+            transform: `translate3d(0, ${specsTranslateY.toFixed(1)}px, 0)`,
+            opacity: specsOpacity,
+          }}
+          className="hidden lg:flex lg:col-span-4 flex-col items-end text-right space-y-8 pl-8 transition-opacity duration-100"
+        >
           <div className="space-y-2.5">
             <span className="font-accent text-3xl leading-none text-rose-400/80 block">
               RESEARCH DOMAINS
@@ -185,8 +245,15 @@ const EditorialCoverComponent: React.FC<EditorialCoverProps> = ({
         </div>
       </div>
 
-      {/* Bottom Editorial Footer & Scroll Instruction */}
-      <div className="relative z-10 w-full max-w-7xl mx-auto flex items-center justify-between pt-6 border-t border-white/[0.08] text-xs font-body text-zinc-500">
+      {/* Bottom Editorial Footer & Scroll Instruction (Step 1 Micro-Hint Fade) */}
+      <div
+        style={{
+          opacity: bottomHintOpacity,
+          transform: `translate3d(0, ${bottomHintTranslateY.toFixed(1)}px, 0)`,
+          pointerEvents: bottomHintOpacity < 0.1 ? 'none' : 'auto',
+        }}
+        className="relative z-10 w-full max-w-7xl mx-auto flex items-center justify-between pt-6 border-t border-white/[0.08] text-xs font-body text-zinc-500 transition-opacity duration-75"
+      >
         <button
           type="button"
           onClick={onExplore}

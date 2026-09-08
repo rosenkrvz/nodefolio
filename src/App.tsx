@@ -168,8 +168,8 @@ export default function App() {
         const diff = target - current;
 
         if (Math.abs(diff) > 0.001) {
-          // Weighted damping factor (0.16) for smooth momentum without overshooting
-          const next = current + diff * 0.16;
+          // Weighted damping factor (0.12) for smoother liquid momentum without overshooting
+          const next = current + diff * 0.12;
           currentProgressRef.current = next;
           setScrollProgress(Math.round(next * 1000) / 1000);
         } else if (current !== target) {
@@ -711,7 +711,7 @@ export default function App() {
           /* SECTION 01 + 02: Canvas Viewport (Cover + Neural Workspace) */
           <div
             ref={scrollContainerRef}
-            className="relative w-full h-[250vh]"
+            className="relative w-full h-[320vh]"
           >
             {/* Sticky 100vh Viewport Stage */}
             <div className="sticky top-0 w-full h-screen overflow-hidden">
@@ -719,8 +719,8 @@ export default function App() {
               <ArchitecturalReveal scrollProgress={scrollProgress}>
                 <div
                   style={{
-                    opacity: scrollProgress >= 0.16 ? Math.min(1, (scrollProgress - 0.16) / 0.45) : 0,
-                    pointerEvents: scrollProgress >= 0.82 ? 'auto' : 'none',
+                    opacity: scrollProgress >= 0.10 ? Math.min(1, Math.pow((scrollProgress - 0.10) / 0.40, 1.2)) : 0,
+                    pointerEvents: scrollProgress >= 0.84 ? 'auto' : 'none',
                   }}
                   className="absolute inset-0 w-full h-screen pt-16 transition-opacity duration-150 ease-out z-10"
                 >

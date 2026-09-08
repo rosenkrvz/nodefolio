@@ -14,17 +14,26 @@ const ArchitecturalRevealComponent: React.FC<ArchitecturalRevealProps> = ({
     typeof window !== 'undefined' &&
     window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  // Step 4 Reveal phase: continuous smoothstep (0.08 -> 0.88)
-  const rawT = Math.max(0, Math.min(1, (scrollProgress - 0.08) / 0.80));
-  const smoothReveal = rawT * rawT * (3 - 2 * rawT);
+  // Multi-Phase Reveal Choreography:
+  // Continuous quintic smootherstep (0.06 -> 0.88)
+  const rawT = Math.max(0, Math.min(1, (scrollProgress - 0.06) / 0.82));
+  const smoothReveal = rawT * rawT * rawT * (rawT * (rawT * 6 - 15) + 10);
   const revealProgress = smoothReveal;
 
-  // Workspace container scale: expands smoothly to 100% viewport
-  const frameScale = prefersReducedMotion ? 1 : 0.95 + smoothReveal * 0.05;
+  // Workspace container scale: expands smoothly from 0.92 to 1.00
+  const frameScale = prefersReducedMotion ? 1 : 0.92 + smoothReveal * 0.08;
 
   // Status text indicator during transition
-  const isOpening = scrollProgress > 0.15 && scrollProgress < 0.82;
+  const isOpening = scrollProgress > 0.12 && scrollProgress < 0.86;
   const statusOpacity = isOpening ? Math.min(1, Math.sin(smoothReveal * Math.PI)) : 0;
+
+  // Staged Telemetry Status Messages
+  let statusMessage = 'SEPARATING SURFACE';
+  if (revealProgress >= 0.70) {
+    statusMessage = 'WORKSPACE UNLOCKED';
+  } else if (revealProgress >= 0.35) {
+    statusMessage = 'CALIBRATING SPATIAL COORDINATES';
+  }
 
   return (
     <div className="absolute inset-0 w-full h-screen overflow-hidden select-none z-10">
@@ -51,7 +60,7 @@ const ArchitecturalRevealComponent: React.FC<ArchitecturalRevealProps> = ({
           <span className="text-zinc-300 font-semibold">ACCESSING UNDERLYING SYSTEM</span>
         </div>
         <div className="flex items-center gap-1.5 text-rose-400 font-semibold">
-          <span>{revealProgress > 0.7 ? 'WORKSPACE UNLOCKED' : 'SEPARATING SURFACE'}</span>
+          <span>{statusMessage}</span>
           <ChevronDown className="w-3.5 h-3.5 animate-bounce" />
         </div>
       </div>
