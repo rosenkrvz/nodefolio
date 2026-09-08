@@ -37,6 +37,8 @@ export default function App() {
 
   // Canvas pan & zoom transform (centered at 70% scale by default)
   const [transform, setTransform] = useState<CanvasTransform>({ x: 0, y: 0, scale: 0.70 });
+  const transformRef = useRef(transform);
+  transformRef.current = transform;
   const isPanningRef = useRef(false);
   const panStartRef = useRef({ x: 0, y: 0 });
   const canvasContainerRef = useRef<HTMLDivElement>(null);
@@ -56,10 +58,6 @@ export default function App() {
   activeNavTabRef.current = activeNavTab;
 
   useEffect(() => {
-    if (typeof window !== 'undefined' && window.innerWidth < 640) {
-      setTransform({ x: 20, y: 40, scale: 0.65 });
-    }
-
     let ticking = false;
     const handleScroll = () => {
       if (!ticking) {
@@ -114,18 +112,71 @@ export default function App() {
     return map;
   }, [nodes]);
 
-  // Node Dragging Handler
+  // Node Dragging Handler - Free movement across full screen resolution space, bounded by UI bars
   const handleNodeDrag = useCallback((nodeId: string, deltaX: number, deltaY: number) => {
-    setNodes((prevNodes) =>
-      prevNodes.map((n) => {
-        if (n.id === nodeId) {
-          const nextX = Math.max(20, Math.min(2300, Math.round(n.x + deltaX)));
-          const nextY = Math.max(20, Math.min(1500, Math.round(n.y + deltaY)));
-          return { ...n, x: nextX, y: nextY };
-        }
-        return n;
-      })
-    );
+    setNodes((prevNodes) => {
+      const targetNode = prevNodes.find((n) => n.id === nodeId);
+      if (!targetNode) return prevNodes;
+
+      const vw = typeof window !== 'undefined' ? window.innerWidth : 1920;
+      const vh = typeof window !== 'undefined' ? window.innerHeight : 1080;
+
+      // Measure node height if DOM element is available
+      const nodeEl = typeof document !== 'undefined' ? document.getElementById(`graph-node-${nodeId}`) : null;
+      const nodeW = targetNode.width;
+      const nodeH = nodeEl ? nodeEl.offsetHeight : (nodeId === 'node-project' ? 680 : (nodeId === 'node-clock' ? 520 : 420));
+
+      const { scale, x: tx, y: ty } = transformRef.current;
+
+      // Screen boundaries guarding functional bars:
+      // Left: 16px from screen edge
+      const minScreenX = 16;
+      // Right: 80px before screen edge (safeguarding right controls dock)
+      const maxScreenX = vw - 80;
+      // Top: 72px from top (safeguarding 64px header navbar)
+      const minScreenY = 72;
+      // Bottom: 56px from bottom (safeguarding 36px bottom status bar at bottom-3)
+      const maxScreenY = vh - 56;
+
+      const cardScreenW = nodeW * scale;
+      const availScreenW = maxScreenX - minScreenX;
+
+      let minGraphX: number;
+      let maxGraphX: number;
+      if (cardScreenW <= availScreenW) {
+        minGraphX = (minScreenX - tx) / scale;
+        maxGraphX = (maxScreenX - tx) / scale - nodeW;
+      } else {
+        minGraphX = (maxScreenX - cardScreenW - tx) / scale;
+        maxGraphX = (minScreenX - tx) / scale;
+      }
+
+      const cardScreenH = nodeH * scale;
+      const availScreenH = maxScreenY - minScreenY;
+
+      let minGraphY: number;
+      let maxGraphY: number;
+      if (cardScreenH <= availScreenH) {
+        minGraphY = (minScreenY - ty) / scale;
+        maxGraphY = (maxScreenY - ty) / scale - nodeH;
+      } else {
+        minGraphY = (maxScreenY - cardScreenH - ty) / scale;
+        maxGraphY = (minScreenY + 20 - ty) / scale;
+      }
+
+      const proposedX = targetNode.x + deltaX;
+      const proposedY = targetNode.y + deltaY;
+
+      const effectiveMinX = Math.min(minGraphX, maxGraphX);
+      const effectiveMaxX = Math.max(minGraphX, maxGraphX);
+      const effectiveMinY = Math.min(minGraphY, maxGraphY);
+      const effectiveMaxY = Math.max(minGraphY, maxGraphY);
+
+      const nextX = Math.round(Math.max(effectiveMinX, Math.min(effectiveMaxX, proposedX)));
+      const nextY = Math.round(Math.max(effectiveMinY, Math.min(effectiveMaxY, proposedY)));
+
+      return prevNodes.map((n) => (n.id === nodeId ? { ...n, x: nextX, y: nextY } : n));
+    });
   }, []);
 
   // Filter nodes & connections based on active preset
@@ -457,7 +508,7 @@ export default function App() {
                         transform: `translate(${transform.x}px, ${transform.y}px) scale(${transform.scale})`,
                         transformOrigin: '0 0',
                       }}
-                      className="w-[2600px] h-[1700px] relative pointer-events-auto"
+                      className="w-full h-full min-w-[2600px] min-h-[1700px] relative pointer-events-auto overflow-visible"
                     >
                       {/* Spline Connections Layer with Focus/Depth Dimming */}
                       <SplineWires
