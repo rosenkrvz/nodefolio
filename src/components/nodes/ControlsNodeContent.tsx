@@ -9,12 +9,16 @@ interface ControlsNodeContentProps {
     promptStrength: number;
     randomness: number;
   };
+  nodeScale?: number;
   onUpdateParams?: (params: any) => void;
+  onUpdateNodeScale?: (scale: number) => void;
 }
 
 export const ControlsNodeContent: React.FC<ControlsNodeContentProps> = ({
   initialData,
+  nodeScale = 1.0,
   onUpdateParams,
+  onUpdateNodeScale,
 }) => {
   const [model, setModel] = useState(initialData?.model || 'DreamShaper 8 (SDXL + VAE)');
   const [randomness, setRandomness] = useState(initialData?.randomness || 12345);
@@ -144,6 +148,37 @@ export const ControlsNodeContent: React.FC<ControlsNodeContentProps> = ({
             <option value="DDIM Uniform">DDIM Uniform</option>
           </select>
         </div>
+
+        {/* Node Square Size Stepper */}
+        {onUpdateNodeScale && (
+          <div className="flex items-center justify-between text-xs py-1 border-t border-white/[0.08] mt-1 pt-1.5">
+            <span className="text-xs font-body text-zinc-300 font-medium flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+              <span>Node Square Size</span>
+            </span>
+            <div className="flex items-center gap-1.5 bg-black/40 border border-white/10 rounded px-1.5 py-0.5">
+              <button
+                type="button"
+                onClick={() => onUpdateNodeScale(Math.max(0.7, Math.round((nodeScale - 0.1) * 10) / 10))}
+                className="p-0.5 text-zinc-400 hover:text-white transition-colors cursor-pointer"
+                title="Decrease Node Size"
+              >
+                <ChevronLeft className="w-3 h-3" />
+              </button>
+              <span className="w-10 text-center text-xs font-body font-bold text-rose-400">
+                {Math.round(nodeScale * 100)}%
+              </span>
+              <button
+                type="button"
+                onClick={() => onUpdateNodeScale(Math.min(1.5, Math.round((nodeScale + 0.1) * 10) / 10))}
+                className="p-0.5 text-zinc-400 hover:text-white transition-colors cursor-pointer"
+                title="Increase Node Size"
+              >
+                <ChevronRight className="w-3 h-3" />
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

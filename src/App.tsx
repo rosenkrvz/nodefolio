@@ -45,6 +45,9 @@ export default function App() {
   const panStartRef = useRef({ x: 0, y: 0 });
   const canvasContainerRef = useRef<HTMLDivElement>(null);
 
+  // Global Node Square Scale Multiplier (1.0 = 100%)
+  const [nodeScale, setNodeScale] = useState<number>(1.0);
+
   // Modals state
   const [selectedCertificate, setSelectedCertificate] = useState<CertificateItem | null>(null);
   const [selectedProject, setSelectedProject] = useState<ProjectItem | null>(null);
@@ -323,6 +326,86 @@ export default function App() {
       return prevNodes.map((n) => (n.id === nodeId ? { ...n, x: nextX, y: nextY } : n));
     });
   }, []);
+
+  // Global & Individual Node Square Size Handlers
+  const handleIncreaseNodeSize = useCallback(() => {
+    playSound('click');
+    setNodeScale((prev) => {
+      const next = Math.min(1.5, Math.round((prev + 0.1) * 10) / 10);
+      setNodes((prevNodes) =>
+        prevNodes.map((n) => {
+          const base = INITIAL_NODES.find((init) => init.id === n.id)?.width || n.width;
+          return { ...n, width: Math.round(base * next) };
+        })
+      );
+      return next;
+    });
+  }, []);
+
+  const handleDecreaseNodeSize = useCallback(() => {
+    playSound('click');
+    setNodeScale((prev) => {
+      const next = Math.max(0.7, Math.round((prev - 0.1) * 10) / 10);
+      setNodes((prevNodes) =>
+        prevNodes.map((n) => {
+          const base = INITIAL_NODES.find((init) => init.id === n.id)?.width || n.width;
+          return { ...n, width: Math.round(base * next) };
+        })
+      );
+      return next;
+    });
+  }, []);
+
+  const handleResetNodeSize = useCallback(() => {
+    playSound('select');
+    setNodeScale(1.0);
+    setNodes((prevNodes) =>
+      prevNodes.map((n) => {
+        const base = INITIAL_NODES.find((init) => init.id === n.id)?.width || n.width;
+        return { ...n, width: base };
+      })
+    );
+  }, []);
+
+  const handleSetNodeScale = useCallback((targetScale: number) => {
+    playSound('click');
+    const clamped = Math.max(0.7, Math.min(1.5, Math.round(targetScale * 10) / 10));
+    setNodeScale(clamped);
+    setNodes((prevNodes) =>
+      prevNodes.map((n) => {
+        const base = INITIAL_NODES.find((init) => init.id === n.id)?.width || n.width;
+        return { ...n, width: Math.round(base * clamped) };
+      })
+    );
+  }, []);
+
+  const handleNodeResize = useCallback((nodeId: string, newWidth: number) => {
+    setNodes((prevNodes) =>
+      prevNodes.map((n) => (n.id === nodeId ? { ...n, width: newWidth } : n))
+    );
+  }, []);
+
+  // Keyboard shortcuts: '[' to shrink node squares, ']' to expand node squares
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      if (['INPUT', 'TEXTAREA', 'SELECT'].includes(target?.tagName) || target?.isContentEditable) {
+        return;
+      }
+      if (activeNavTabRef.current !== 'network') return;
+
+      if (e.key === '[') {
+        e.preventDefault();
+        handleDecreaseNodeSize();
+      } else if (e.key === ']') {
+        e.preventDefault();
+        handleIncreaseNodeSize();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [handleDecreaseNodeSize, handleIncreaseNodeSize]);
 
   // Filter nodes & connections based on active preset
   const filteredNodes = useMemo(() => {
@@ -866,6 +949,7 @@ export default function App() {
                             key={node.id}
                             node={effectiveNode}
                             scale={transform.scale}
+                            nodeScale={nodeScale}
                             isSelected={selectedNodeId === node.id}
                             isDimmed={selectedNodeId !== null && selectedNodeId !== node.id}
                             onSelectNode={(id) => {
@@ -873,6 +957,8 @@ export default function App() {
                               setSelectedNodeId(id);
                             }}
                             onNodeDrag={handleNodeDrag}
+                            onNodeResize={handleNodeResize}
+                            onUpdateNodeScale={handleSetNodeScale}
                             onDragStateChange={handleDragStateChange}
                             onOpenCertificateModal={(cert) => {
                               playSound('open');
@@ -945,6 +1031,10 @@ export default function App() {
                         playSound('connect');
                         setIsSimulating(!isSimulating);
                       }}
+                      nodeScale={nodeScale}
+                      onIncreaseNodeSize={handleIncreaseNodeSize}
+                      onDecreaseNodeSize={handleDecreaseNodeSize}
+                      onResetNodeSize={handleResetNodeSize}
                       onReturnToCover={handleReturnToCover}
                     />
                   </div>
@@ -971,6 +1061,8 @@ export default function App() {
                       <span>Scroll wheel to zoom</span>
                       <span>&bull;</span>
                       <span>Drag nodes to arrange</span>
+                      <span>&bull;</span>
+                      <span className="text-zinc-300 font-medium">Resize nodes with corner / dock / [ ]</span>
                     </div>
 
                     <div className="flex items-center gap-2 text-zinc-300 font-medium text-[11px] shrink-0">

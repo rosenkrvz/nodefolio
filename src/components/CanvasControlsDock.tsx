@@ -7,6 +7,7 @@ import {
   Activity,
   Sliders,
   ArrowUp,
+  Layers,
 } from './icons';
 
 interface CanvasControlsDockProps {
@@ -21,6 +22,10 @@ interface CanvasControlsDockProps {
   isSimulating: boolean;
   onToggleSimulate: () => void;
   onReturnToCover?: () => void;
+  nodeScale?: number;
+  onIncreaseNodeSize?: () => void;
+  onDecreaseNodeSize?: () => void;
+  onResetNodeSize?: () => void;
 }
 
 const CanvasControlsDockComponent: React.FC<CanvasControlsDockProps> = ({
@@ -35,6 +40,10 @@ const CanvasControlsDockComponent: React.FC<CanvasControlsDockProps> = ({
   isSimulating,
   onToggleSimulate,
   onReturnToCover,
+  nodeScale = 1.0,
+  onIncreaseNodeSize,
+  onDecreaseNodeSize,
+  onResetNodeSize,
 }) => {
   return (
     <aside aria-label="Canvas view and zoom controls" className="absolute right-4 top-1/2 -translate-y-1/2 z-30 flex flex-col gap-1 p-1 rounded-xl bg-[#0e1015]/90 backdrop-blur-md border border-white/[0.08] shadow-2xl font-body">
@@ -62,6 +71,48 @@ const CanvasControlsDockComponent: React.FC<CanvasControlsDockProps> = ({
       >
         <Minus className="w-3.5 h-3.5" />
       </button>
+
+      <div className="w-full h-px bg-white/[0.06] my-0.5" />
+
+      {/* Node Size Adjusters */}
+      {onIncreaseNodeSize && (
+        <button
+          type="button"
+          onClick={onIncreaseNodeSize}
+          className="w-8 h-8 rounded-lg flex items-center justify-center text-zinc-400 hover:text-white hover:bg-white/[0.08] transition-colors cursor-pointer group"
+          title="Increase Node Squares Size (Larger Cards)"
+        >
+          <div className="relative flex items-center justify-center">
+            <Layers className="w-3.5 h-3.5 text-zinc-400 group-hover:text-rose-400 transition-colors" />
+            <span className="absolute -top-1.5 -right-1 text-[9px] font-bold text-rose-400 leading-none">+</span>
+          </div>
+        </button>
+      )}
+
+      {onResetNodeSize && (
+        <button
+          type="button"
+          onClick={onResetNodeSize}
+          className="text-[10px] font-tech font-semibold text-center text-zinc-400 hover:text-rose-400 py-0.5 select-none transition-colors cursor-pointer"
+          title="Reset Node Square Size to 100%"
+        >
+          {Math.round(nodeScale * 100)}%
+        </button>
+      )}
+
+      {onDecreaseNodeSize && (
+        <button
+          type="button"
+          onClick={onDecreaseNodeSize}
+          className="w-8 h-8 rounded-lg flex items-center justify-center text-zinc-400 hover:text-white hover:bg-white/[0.08] transition-colors cursor-pointer group"
+          title="Decrease Node Squares Size (Smaller Cards)"
+        >
+          <div className="relative flex items-center justify-center">
+            <Layers className="w-3.5 h-3.5 text-zinc-400 group-hover:text-rose-400 transition-colors" />
+            <span className="absolute -top-1.5 -right-1 text-[9px] font-bold text-rose-400 leading-none">-</span>
+          </div>
+        </button>
+      )}
 
       <div className="w-full h-px bg-white/[0.06] my-0.5" />
 
