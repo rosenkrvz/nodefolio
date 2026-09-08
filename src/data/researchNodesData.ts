@@ -1,5 +1,14 @@
 import { NodeData, Connection } from '../types';
 
+export const RESEARCH_CORE_COORDINATES: Record<string, { x: number; y: number }> = {
+  'node-profile': { x: 120, y: 640 },
+  'node-credentials': { x: 580, y: 640 },
+  'node-models': { x: 1040, y: 160 },
+  'node-systems': { x: 1040, y: 640 },
+  'node-project': { x: 1960, y: 160 },
+  'node-clock': { x: 2980, y: 360 },
+};
+
 export const EXPANDED_RESEARCH_NODES: NodeData[] = [
   // -------------------------------------------------------------
   // NODE 01 — STATISTICAL INFERENCE (Col 2, Tier 3 - Foundations)

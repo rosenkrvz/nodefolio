@@ -6,7 +6,7 @@
 import React, { useState, useRef, useCallback, useMemo, useEffect } from 'react';
 import { NodeData, Connection, CertificateItem, ProjectItem, CanvasTransform, Pin } from './types';
 import { INITIAL_NODES, INITIAL_CONNECTIONS } from './data/portfolioData';
-import { EXPANDED_RESEARCH_NODES, EXPANDED_CONNECTIONS } from './data/researchNodesData';
+import { EXPANDED_RESEARCH_NODES, EXPANDED_CONNECTIONS, RESEARCH_CORE_COORDINATES } from './data/researchNodesData';
 import { SplineWires } from './components/SplineWires';
 import { GraphNode } from './components/GraphNode';
 import { TopNavbar } from './components/TopNavbar';
@@ -38,22 +38,50 @@ const loadSavedVisitorNodes = (): NodeData[] => {
   return [];
 };
 
-const ALL_INITIAL_NODES: NodeData[] = [...INITIAL_NODES, ...EXPANDED_RESEARCH_NODES];
+const ALL_NETWORK_NODES: NodeData[] = [...INITIAL_NODES];
+const ALL_RESEARCH_NODES: NodeData[] = [
+  ...INITIAL_NODES.map((n) =>
+    RESEARCH_CORE_COORDINATES[n.id] ? { ...n, ...RESEARCH_CORE_COORDINATES[n.id] } : n
+  ),
+  ...EXPANDED_RESEARCH_NODES,
+];
+const ALL_INITIAL_NODES: NodeData[] = ALL_RESEARCH_NODES;
 const ALL_INITIAL_CONNECTIONS: Connection[] = [...INITIAL_CONNECTIONS, ...EXPANDED_CONNECTIONS];
 
 export default function App() {
   // Navigation & Scroll State
   const [activeNavTab, setActiveNavTab] = useState<'home' | 'network' | 'projects' | 'lab' | 'notebook' | 'about'>('home');
   const [scrollProgress, setScrollProgress] = useState<number>(0);
-
-  // Graph Data State (combines official nodes and locally stored visitor notes)
-  const [nodes, setNodes] = useState<NodeData[]>(() => [
-    ...ALL_INITIAL_NODES,
-    ...loadSavedVisitorNodes(),
-  ]);
+  const [activePreset, setActivePreset] = useState<string>('network');
   const [connections, setConnections] = useState<Connection[]>(ALL_INITIAL_CONNECTIONS);
   const [isAddNodeOpen, setIsAddNodeOpen] = useState<boolean>(false);
-  const [activePreset, setActivePreset] = useState<string>('network');
+
+  // Graph Data State partitioned by preset so Network positions remain completely independent of Research positions
+  const [nodesByPreset, setNodesByPreset] = useState<{
+    network: NodeData[];
+    project: NodeData[];
+  }>(() => {
+    const savedVisitors = loadSavedVisitorNodes();
+    return {
+      network: [...ALL_NETWORK_NODES, ...savedVisitors],
+      project: [...ALL_RESEARCH_NODES, ...savedVisitors],
+    };
+  });
+
+  const currentTabKey = activePreset === 'project' || activePreset === 'all' ? 'project' : 'network';
+  const nodes = nodesByPreset[currentTabKey];
+  const setNodes = useCallback(
+    (updater: NodeData[] | ((prev: NodeData[]) => NodeData[])) => {
+      setNodesByPreset((prev) => {
+        const next = typeof updater === 'function' ? updater(prev[currentTabKey]) : updater;
+        return {
+          ...prev,
+          [currentTabKey]: next,
+        };
+      });
+    },
+    [currentTabKey]
+  );
   const [activeView, setActiveView] = useState<'canvas' | 'list' | 'timeline'>('canvas');
   const [isSimulating, setIsSimulating] = useState<boolean>(true);
   const [wireStyle, setWireStyle] = useState<'glow' | 'minimal' | 'cyber'>('glow');
@@ -413,30 +441,38 @@ export default function App() {
 
   // Visitor node creation with local persistence
   const handleAddVisitorNode = useCallback((newNode: NodeData) => {
-    setNodes((prev) => {
-      const next = [...prev, newNode];
+    setNodesByPreset((prev) => {
+      const nextNetwork = [...prev.network, newNode];
+      const nextProject = [...prev.project, newNode];
       try {
-        const visitorOnly = next.filter((n) => n.category === 'visitor');
+        const visitorOnly = nextProject.filter((n) => n.category === 'visitor');
         localStorage.setItem(VISITOR_STORAGE_KEY, JSON.stringify(visitorOnly));
       } catch (e) {
         console.error('Failed to persist visitor node', e);
       }
-      return next;
+      return {
+        network: nextNetwork,
+        project: nextProject,
+      };
     });
   }, []);
 
   // Visitor node removal with storage sync
   const handleDeleteVisitorNode = useCallback((nodeId: string) => {
     playSound('close');
-    setNodes((prev) => {
-      const next = prev.filter((n) => n.id !== nodeId);
+    setNodesByPreset((prev) => {
+      const nextNetwork = prev.network.filter((n) => n.id !== nodeId);
+      const nextProject = prev.project.filter((n) => n.id !== nodeId);
       try {
-        const visitorOnly = next.filter((n) => n.category === 'visitor');
+        const visitorOnly = nextProject.filter((n) => n.category === 'visitor');
         localStorage.setItem(VISITOR_STORAGE_KEY, JSON.stringify(visitorOnly));
       } catch (e) {
         console.error('Failed to update visitor nodes in storage', e);
       }
-      return next;
+      return {
+        network: nextNetwork,
+        project: nextProject,
+      };
     });
   }, []);
 
@@ -574,7 +610,8 @@ export default function App() {
     const vh = typeof window !== 'undefined' ? window.innerHeight : 800;
 
     // Use canonical baseline nodes for calculating structural center (prevents distortion from dragged cards)
-    const targetNodes = ALL_INITIAL_NODES.filter((n) => {
+    const baselineNodes = (preset === 'project' || preset === 'all') ? ALL_RESEARCH_NODES : ALL_NETWORK_NODES;
+    const targetNodes = baselineNodes.filter((n) => {
       if (preset === 'network') {
         return ['node-profile', 'node-models', 'node-credentials', 'node-systems', 'node-project', 'node-clock'].includes(n.id);
       }
@@ -778,7 +815,10 @@ export default function App() {
   const handleResetGraph = useCallback(() => {
     playSound('secondaryClick');
     const savedVisitors = loadSavedVisitorNodes();
-    setNodes([...ALL_INITIAL_NODES, ...savedVisitors]);
+    setNodesByPreset({
+      network: [...ALL_NETWORK_NODES, ...savedVisitors],
+      project: [...ALL_RESEARCH_NODES, ...savedVisitors],
+    });
     setConnections(ALL_INITIAL_CONNECTIONS);
     const targetPreset = activeNavTabRef.current === 'projects' ? 'project' : 'network';
     setActivePreset(targetPreset);

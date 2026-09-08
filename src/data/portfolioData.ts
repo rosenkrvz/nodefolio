@@ -1,14 +1,14 @@
 import { NodeData, Connection } from '../types';
 
 export const INITIAL_NODES: NodeData[] = [
-  // 1. Identity & Researcher Profile Node (Focal Quadrant - Bottom-Left)
+  // 1. Identity & Researcher Profile Node (Column 1, Tier 2)
   {
     id: 'node-profile',
     title: 'Shubham Sharma',
     subtitle: 'AI & Data Science',
     category: 'profile',
-    x: 120,
-    y: 640,
+    x: 100,
+    y: 520,
     width: 340,
     inputs: [],
     outputs: [
@@ -35,14 +35,14 @@ export const INITIAL_NODES: NodeData[] = [
     },
   },
 
-  // 2. Generative Models & Representation Learning (Neural Core Cluster - Top)
+  // 2. Generative Models & Representation Learning (Column 2, Tier 2)
   {
     id: 'node-models',
     title: 'Generative Architectures',
     subtitle: 'Representation & Learning',
     category: 'skills',
-    x: 1040,
-    y: 160,
+    x: 560,
+    y: 520,
     width: 340,
     inputs: [
       { id: 'pin-in-models', label: 'representation.manifold', color: 'crimson', type: 'input', nodeId: 'node-models' },
@@ -60,14 +60,14 @@ export const INITIAL_NODES: NodeData[] = [
     ],
   },
 
-  // 3. Academic & Technical Foundation (Focal Quadrant - Bottom-Right)
+  // 3. Academic & Technical Foundation (Column 1, Tier 3)
   {
     id: 'node-credentials',
     title: 'Academic & Foundation',
     subtitle: 'Mathematics & Computation',
     category: 'certificates',
-    x: 580,
-    y: 640,
+    x: 100,
+    y: 1000,
     width: 340,
     inputs: [
       { id: 'pin-in-cred', label: 'mathematical.core', color: 'crimson', type: 'input', nodeId: 'node-credentials' },
@@ -103,14 +103,14 @@ export const INITIAL_NODES: NodeData[] = [
     ],
   },
 
-  // 4. Neural Systems & Data Infrastructure (Neural Core Cluster - Bottom)
+  // 4. Neural Systems & Data Infrastructure (Column 3, Tier 2)
   {
     id: 'node-systems',
     title: 'Neural Systems & Data',
     subtitle: 'Learning Infrastructure',
     category: 'skills',
-    x: 1040,
-    y: 640,
+    x: 1020,
+    y: 520,
     width: 340,
     inputs: [
       { id: 'pin-in-systems', label: 'tensor.pipeline', color: 'crimson', type: 'input', nodeId: 'node-systems' },
@@ -119,23 +119,23 @@ export const INITIAL_NODES: NodeData[] = [
       { id: 'pin-out-project', label: 'latent.projection', color: 'crimson', type: 'output', nodeId: 'node-systems' },
     ],
     accentColor: '#e11d48',
-    glowColor: 'rgba(225, 29, 72, 0.18)',
+    glowColor: 'rgba(225, 29, 72, 0.22)',
     skills: [
-      { name: 'Vector Search & Embeddings', level: 94, category: 'Data', years: 'Indexing', tags: ['High-Dim Indexing', 'HNSW', 'Vector Search'] },
-      { name: 'Data Pipelines & Feature Store', level: 91, category: 'Pipelines', years: 'Data', tags: ['Parquet/Arrow', 'Data Streaming', 'Tensors'] },
-      { name: 'Model Evaluation & Telemetry', level: 92, category: 'Analysis', years: 'Validation', tags: ['Loss Landscapes', 'Out-of-Distribution', 'Metrics'] },
-      { name: 'Inference & Latency Tuning', level: 90, category: 'Execution', years: 'Runtime', tags: ['Quantization', 'Model Serving', 'Memory Bounds'] },
+      { name: 'Vector Search & Embeddings', level: 94, category: 'Data', years: 'Production', tags: ['HNSW Indexing', 'FAISS', 'Cosine Metrics'] },
+      { name: 'Data Pipelines & Feature Store', level: 92, category: 'Pipelines', years: 'Production', tags: ['Arrow / Parquet', 'Streaming', 'ETL'] },
+      { name: 'Model Evaluation & Telemetry', level: 90, category: 'Analysis', years: 'Core', tags: ['Drift Monitoring', 'Calibration', 'ECE'] },
+      { name: 'Inference & Latency Tuning', level: 88, category: 'Execution', years: 'Advanced', tags: ['TensorRT', 'Quantization (INT8)', 'ONNX'] },
     ],
   },
 
-  // 5. Featured Hero Visual Anchor: Latent Graph Visualizer (Hero Cluster)
+  // 5. Featured Hero Visual Anchor: Latent Graph Visualizer (Column 4, Tier 2)
   {
     id: 'node-project',
     title: 'Latent Graph Visualizer',
     subtitle: 'Interactive Research Artifact',
     category: 'project',
-    x: 1960,
-    y: 160,
+    x: 1480,
+    y: 520,
     width: 440,
     inputs: [
       { id: 'pin-in-project', label: 'latent.projection', color: 'crimson', type: 'input', nodeId: 'node-project' },
@@ -144,9 +144,9 @@ export const INITIAL_NODES: NodeData[] = [
       { id: 'pin-out-visualizer', label: 'temporal.sync', color: 'crimson', type: 'output', nodeId: 'node-project' },
     ],
     accentColor: '#f43f5e',
-    glowColor: 'rgba(244, 63, 94, 0.22)',
+    glowColor: 'rgba(244, 63, 94, 0.25)',
     project: {
-      id: 'proj-latent-graph',
+      id: 'proj-visualizer',
       title: 'Latent Graph Visualizer',
       tagline: 'High-Dimensional Generative Manifold Explorer',
       description: 'An interactive computational workspace mapping continuous latent spaces to discrete topological clusters, enabling real-time parametric traversal, dimensionality reduction (UMAP/t-SNE), and manifold projection.',
@@ -162,14 +162,14 @@ export const INITIAL_NODES: NodeData[] = [
     },
   },
 
-  // 6. System Chronometer Node (Terminal Sync)
+  // 6. System Chronometer Node (Column 5, Tier 2)
   {
     id: 'node-clock',
     title: 'System Chronometer',
     subtitle: 'Temporal Coordinates • Live Sync',
     category: 'clock',
-    x: 2980,
-    y: 360,
+    x: 2040,
+    y: 520,
     width: 260,
     inputs: [
       { id: 'pin-in-clock', label: 'temporal.sync', color: 'crimson', type: 'input', nodeId: 'node-clock' },
