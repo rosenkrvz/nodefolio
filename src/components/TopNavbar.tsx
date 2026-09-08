@@ -54,14 +54,14 @@ const TopNavbarComponent: React.FC<TopNavbarProps> = ({
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const handleShare = () => {
-    playSound('secondaryClick');
+    playSound('toggle');
     navigator.clipboard?.writeText(window.location.href);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
 
   const handleMobileSelect = (tab: 'home' | 'network' | 'projects' | 'notebook') => {
-    playSound('click');
+    playSound('nav');
     setIsMobileMenuOpen(false);
     onSelectNavTab?.(tab);
   };
@@ -74,7 +74,7 @@ const TopNavbarComponent: React.FC<TopNavbarProps> = ({
           <button
             type="button"
             onClick={() => {
-              playSound('secondaryClick');
+              playSound('nav');
               setIsMobileMenuOpen(false);
               onSelectNavTab?.('home');
             }}
@@ -101,7 +101,7 @@ const TopNavbarComponent: React.FC<TopNavbarProps> = ({
             <button
               type="button"
               onClick={() => {
-                playSound('click');
+                playSound('nav');
                 onSelectNavTab?.('home');
               }}
               className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
@@ -115,7 +115,7 @@ const TopNavbarComponent: React.FC<TopNavbarProps> = ({
             <button
               type="button"
               onClick={() => {
-                playSound('click');
+                playSound('nav');
                 onSelectNavTab?.('network');
               }}
               className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
@@ -129,7 +129,7 @@ const TopNavbarComponent: React.FC<TopNavbarProps> = ({
             <button
               type="button"
               onClick={() => {
-                playSound('click');
+                playSound('nav');
                 onSelectNavTab?.('projects');
               }}
               className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
@@ -143,7 +143,7 @@ const TopNavbarComponent: React.FC<TopNavbarProps> = ({
             <button
               type="button"
               onClick={() => {
-                playSound('click');
+                playSound('nav');
                 onSelectNavTab?.('notebook');
               }}
               className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
@@ -157,7 +157,7 @@ const TopNavbarComponent: React.FC<TopNavbarProps> = ({
             <button
               type="button"
               onClick={() => {
-                playSound('secondaryClick');
+                playSound('nav');
                 onOpenResume?.();
               }}
               className="px-3 py-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-white/[0.04] transition-colors cursor-pointer"
@@ -174,7 +174,7 @@ const TopNavbarComponent: React.FC<TopNavbarProps> = ({
             <button
               type="button"
               onClick={() => {
-                playSound('secondaryClick');
+                playSound('toggle');
                 onFocusClock();
               }}
               className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.08] text-xs text-zinc-300 transition-colors cursor-pointer"
@@ -231,7 +231,10 @@ const TopNavbarComponent: React.FC<TopNavbarProps> = ({
           {/* Mobile Menu Toggle Button */}
           <button
             type="button"
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            onClick={() => {
+              playSound('toggle');
+              setIsMobileMenuOpen(!isMobileMenuOpen);
+            }}
             aria-label={isMobileMenuOpen ? 'Close navigation menu' : 'Open navigation menu'}
             className="md:hidden p-2 rounded-lg bg-white/[0.04] text-zinc-300 hover:text-white border border-white/10 transition-colors cursor-pointer"
           >
@@ -279,6 +282,7 @@ const TopNavbarComponent: React.FC<TopNavbarProps> = ({
             <button
               type="button"
               onClick={() => {
+                playSound('nav');
                 setIsMobileMenuOpen(false);
                 onOpenResume?.();
               }}

@@ -6,14 +6,17 @@ const MASTER_VOLUME = 0.28; // Subtle, refined, understated master level
 // Cooldown intervals per sound type in milliseconds to prevent spam
 const COOLDOWNS: Record<SoundType, number> = {
   click: 60,
-  secondaryClick: 50,
+  secondaryClick: 45,
+  nav: 40,
+  nodeSelect: 50,
+  open: 100,
+  close: 100,
+  connect: 140,
+  disconnect: 140,
+  select: 50,
+  toggle: 40,
   hover: 160,
-  open: 120,
-  close: 120,
-  connect: 150,
-  disconnect: 150,
-  select: 70,
-  zoom: 140,
+  zoom: 120,
   success: 200,
   error: 180,
 };
@@ -113,8 +116,8 @@ class AudioManager {
   public toggleMute(): boolean {
     this.setMuted(!this.muted);
     if (!this.muted) {
-      // Play an immediate subtle confirmation click when unmuting
-      this.playSound('secondaryClick');
+      // Play an immediate subtle confirmation thock/tick when unmuting
+      this.playSound('toggle');
     }
     return this.muted;
   }
