@@ -14,24 +14,24 @@ export const ArchitecturalReveal: React.FC<ArchitecturalRevealProps> = ({
     typeof window !== 'undefined' &&
     window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  // Step 4 Reveal phase (0.25 -> 0.85)
-  // Workspace expands smoothly from 0.94 -> 1.0 as the cover blurs and lifts
-  const revealProgress = Math.max(0, Math.min(1, (scrollProgress - 0.25) / 0.60));
+  // Step 4 Reveal phase: continuous smoothstep (0.08 -> 0.88)
+  const rawT = Math.max(0, Math.min(1, (scrollProgress - 0.08) / 0.80));
+  const smoothReveal = rawT * rawT * (3 - 2 * rawT);
 
   // Workspace container scale: expands smoothly to 100% viewport
-  const frameScale = prefersReducedMotion ? 1 : 0.94 + revealProgress * 0.06;
+  const frameScale = prefersReducedMotion ? 1 : 0.95 + smoothReveal * 0.05;
 
   // Status text indicator during transition
-  const isOpening = scrollProgress > 0.25 && scrollProgress < 0.85;
-  const statusOpacity = isOpening ? Math.min(1, Math.sin(revealProgress * Math.PI)) : 0;
+  const isOpening = scrollProgress > 0.15 && scrollProgress < 0.82;
+  const statusOpacity = isOpening ? Math.min(1, Math.sin(smoothReveal * Math.PI)) : 0;
 
   return (
     <div className="absolute inset-0 w-full h-screen overflow-hidden select-none z-10">
       {/* Underlying Computational System Workspace Canvas */}
       <div
         style={{
-          transform: `scale(${frameScale})`,
-          transition: 'transform 0.05s ease-out',
+          transform: `scale(${frameScale.toFixed(4)})`,
+          transition: 'transform 0.1s cubic-bezier(0.25, 1, 0.5, 1)',
         }}
         className="w-full h-full relative"
       >

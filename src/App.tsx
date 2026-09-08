@@ -187,38 +187,68 @@ export default function App() {
     window.addEventListener('mouseup', handleMouseUp);
   };
 
-  // Zoom Handler:
-  // If user holds Ctrl/Meta or pinch-to-zoom, zoom canvas!
-  // Otherwise, let wheel event bubble naturally to scroll the window.
-  const handleWheel = (e: React.WheelEvent) => {
-    if (e.ctrlKey || e.metaKey) {
-      e.preventDefault();
-      const zoomFactor = e.deltaY < 0 ? 1.08 : 0.92;
-      const nextScale = Math.max(0.4, Math.min(1.8, transform.scale * zoomFactor));
-
-      if (!canvasContainerRef.current) return;
-      const rect = canvasContainerRef.current.getBoundingClientRect();
-      const mouseX = e.clientX - rect.left;
-      const mouseY = e.clientY - rect.top;
-
-      const newX = mouseX - (mouseX - transform.x) * (nextScale / transform.scale);
-      const newY = mouseY - (mouseY - transform.y) * (nextScale / transform.scale);
-
-      setTransform({
-        x: newX,
-        y: newY,
-        scale: nextScale,
-      });
-    }
-  };
-
-  // Fit view (responsive to mobile & desktop)
+  // Fit view (responsive to mobile, tablet & desktop)
   const handleFitScreen = useCallback(() => {
-    if (typeof window !== 'undefined' && window.innerWidth < 640) {
-      setTransform({ x: 20, y: 40, scale: 0.65 });
-    } else {
-      setTransform({ x: 60, y: 60, scale: 0.85 });
-    }
+    const vw = typeof window !== 'undefined' ? window.innerWidth : 1200;
+    const vh = typeof window !== 'undefined' ? window.innerHeight : 800;
+
+    // Graph bounding box: x: 60 to 2100 (w: 2040), y: 80 to 930 (h: 850)
+    const graphWidth = 2100;
+    const graphHeight = 880;
+
+    // Available viewport margins: top navbar 68px, bottom status 75px, right dock 85px
+    const availW = Math.max(320, vw - (vw < 640 ? 30 : 135));
+    const availH = Math.max(320, vh - (vw < 640 ? 110 : 155));
+
+    const fitScale = Math.min(availW / graphWidth, availH / graphHeight);
+    const targetScale = Math.max(0.38, Math.min(0.85, Number(fitScale.toFixed(2))));
+
+    // Precision centering
+    const x = Math.round((vw - graphWidth * targetScale) / 2) + 15;
+    const y = Math.round((vh - graphHeight * targetScale) / 2) + 25;
+
+    setTransform({ x, y, scale: targetScale });
+  }, []);
+
+  // Initial auto-fit on load and resize
+  useEffect(() => {
+    handleFitScreen();
+  }, [handleFitScreen]);
+
+  // Direct scroll wheel zoom on workspace (eliminates seizure of zoom control)
+  useEffect(() => {
+    const container = canvasContainerRef.current;
+    if (!container) return;
+
+    const onNativeWheel = (e: WheelEvent) => {
+      // If user is on cover and scrolling down, allow window to scroll naturally
+      if (activeNavTabRef.current === 'home') {
+        return;
+      }
+
+      e.preventDefault();
+      e.stopPropagation();
+
+      const zoomDelta = -e.deltaY * 0.0015;
+      const zoomFactor = Math.exp(zoomDelta);
+
+      setTransform((prev) => {
+        const nextScale = Math.max(0.35, Math.min(2.0, prev.scale * zoomFactor));
+        const rect = container.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+
+        const newX = mouseX - (mouseX - prev.x) * (nextScale / prev.scale);
+        const newY = mouseY - (mouseY - prev.y) * (nextScale / prev.scale);
+
+        return { x: newX, y: newY, scale: nextScale };
+      });
+    };
+
+    container.addEventListener('wheel', onNativeWheel, { passive: false });
+    return () => {
+      container.removeEventListener('wheel', onNativeWheel);
+    };
   }, []);
 
   // Reset Graph
@@ -361,7 +391,6 @@ export default function App() {
                     aria-label="Interactive computational graph canvas"
                     ref={canvasContainerRef}
                     onMouseDown={handleCanvasMouseDown}
-                    onWheel={handleWheel}
                     onClick={handleCanvasBackgroundClick}
                     className="w-full h-full cursor-grab active:cursor-grabbing relative overflow-hidden"
                   >
@@ -389,7 +418,7 @@ export default function App() {
                         onSelectConnection={(id) => setActiveConnectionId(id)}
                       />
 
-                      {/* Connected Graph Nodes (#212121) */}
+                      {/* Connected Graph Nodes (#0b0d12 carbon fiber) */}
                       {filteredNodes.map((node) => (
                         <GraphNode
                           key={node.id}
@@ -426,14 +455,6 @@ export default function App() {
                       onToggleSimulate={() => setIsSimulating(!isSimulating)}
                       onReturnToCover={handleReturnToCover}
                     />
-
-                    {/* Clean Workspace Navigation Hint */}
-                    <div className="absolute bottom-4 left-6 z-20 pointer-events-none hidden sm:flex items-center gap-3 text-xs font-body text-zinc-400">
-                      <span className="px-2 py-1 rounded bg-black/60 border border-white/10 font-semibold text-white">
-                        SPATIAL WORKSPACE
-                      </span>
-                      <span>Drag background to pan &bull; Ctrl+Scroll to zoom &bull; Double click node to inspect &bull; Scroll up for cover</span>
-                    </div>
                   </div>
                 ) : activeView === 'list' ? (
                   /* Inspector Catalog View */
@@ -504,31 +525,39 @@ export default function App() {
                   </div>
                 )}
 
-                {/* Quiet Status Bar */}
+                {/* Unified Precision Workspace Footer Bar */}
                 <footer
-                  aria-label="Portfolio coordinates and node navigation"
-                  className="absolute bottom-3 inset-x-4 sm:inset-x-8 z-20 pointer-events-none flex items-center justify-between text-xs font-body text-zinc-400 select-none"
+                  aria-label="Portfolio coordinates and workspace navigation"
+                  className="absolute bottom-3 inset-x-4 sm:inset-x-8 z-20 pointer-events-none flex items-center justify-between text-[11px] sm:text-xs font-body text-zinc-400 select-none px-4 py-2 rounded-2xl bg-black/80 border border-white/10 backdrop-blur-md shadow-[0_4px_24px_rgba(0,0,0,0.65)]"
                 >
-                  <div className="flex items-center gap-3">
-                    <span className="text-zinc-200 font-semibold font-display tracking-wider uppercase">Shubham Sharma</span>
-                    <span>/</span>
-                    <span className="text-rose-400 font-medium">AI &amp; Data Science</span>
+                  <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+                    <span className="px-2 py-0.5 rounded bg-white/[0.08] border border-white/10 font-semibold text-white uppercase text-[10px] tracking-wider shrink-0">
+                      SPATIAL WORKSPACE
+                    </span>
+                    <span className="text-zinc-200 font-semibold font-display tracking-wider uppercase truncate hidden sm:inline">
+                      Shubham Sharma
+                    </span>
+                    <span className="text-zinc-600 hidden sm:inline">&bull;</span>
+                    <span className="text-rose-400 font-medium truncate">AI &amp; Data Science</span>
                   </div>
 
-                  <div className="hidden md:flex items-center gap-4 text-xs text-zinc-400">
-                    <span>Spatial Network System</span>
+                  <div className="hidden lg:flex items-center gap-3 text-zinc-400 text-[11px]">
+                    <span>Drag background to pan</span>
                     <span>&bull;</span>
-                    <span>Tactile #212121 Nodes</span>
+                    <span>Scroll wheel to zoom</span>
                     <span>&bull;</span>
-                    <span>Active Latent Topology</span>
+                    <span>Drag nodes to arrange</span>
                   </div>
 
-                  <div className="flex items-center gap-2 text-zinc-300 font-medium text-xs">
+                  <div className="flex items-center gap-2 text-zinc-300 font-medium text-[11px] shrink-0">
                     <span>{filteredNodes.length} NODES</span>
                     <span>/</span>
                     <span>{filteredConnections.length} ACTIVE SPLINES</span>
                     <span>&bull;</span>
-                    <span className="text-rose-500 font-bold">LIVE</span>
+                    <span className="text-rose-500 font-bold flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
+                      LIVE
+                    </span>
                   </div>
                 </footer>
               </div>

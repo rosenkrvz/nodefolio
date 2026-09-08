@@ -1,14 +1,14 @@
 import { NodeData, Connection } from '../types';
 
 export const INITIAL_NODES: NodeData[] = [
-  // 1. Identity & Researcher Profile Node (Positioned in lower left quadrant)
+  // 1. Identity & Researcher Profile Node (Input Anchor - Level 0, Centered)
   {
     id: 'node-profile',
     title: 'Shubham Sharma',
     subtitle: 'AI & Data Science',
     category: 'profile',
     x: 60,
-    y: 520,
+    y: 260,
     width: 340,
     inputs: [],
     outputs: [
@@ -35,14 +35,14 @@ export const INITIAL_NODES: NodeData[] = [
     },
   },
 
-  // 2. Generative Models & Representation Learning (Positioned lower middle)
+  // 2. Generative Models & Representation Learning (Level 1 - Upper Track)
   {
     id: 'node-models',
     title: 'Generative Architectures',
     subtitle: 'Representation & Learning',
     category: 'skills',
-    x: 430,
-    y: 520,
+    x: 480,
+    y: 100,
     width: 340,
     inputs: [
       { id: 'pin-in-models', label: 'representation.manifold', color: 'crimson', type: 'input', nodeId: 'node-models' },
@@ -60,73 +60,14 @@ export const INITIAL_NODES: NodeData[] = [
     ],
   },
 
-  // 3. Neural Systems & Data Infrastructure (Positioned lower center-right)
-  {
-    id: 'node-systems',
-    title: 'Neural Systems & Data',
-    subtitle: 'Learning Infrastructure',
-    category: 'skills',
-    x: 800,
-    y: 520,
-    width: 340,
-    inputs: [
-      { id: 'pin-in-systems', label: 'tensor.pipeline', color: 'crimson', type: 'input', nodeId: 'node-systems' },
-    ],
-    outputs: [
-      { id: 'pin-out-project', label: 'latent.projection', color: 'crimson', type: 'output', nodeId: 'node-systems' },
-    ],
-    accentColor: '#e11d48',
-    glowColor: 'rgba(225, 29, 72, 0.18)',
-    skills: [
-      { name: 'Vector Search & Embeddings', level: 94, category: 'Data', years: 'Indexing', tags: ['High-Dim Indexing', 'HNSW', 'Vector Search'] },
-      { name: 'Data Pipelines & Feature Store', level: 91, category: 'Pipelines', years: 'Data', tags: ['Parquet/Arrow', 'Data Streaming', 'Tensors'] },
-      { name: 'Model Evaluation & Telemetry', level: 92, category: 'Analysis', years: 'Validation', tags: ['Loss Landscapes', 'Out-of-Distribution', 'Metrics'] },
-      { name: 'Inference & Latency Tuning', level: 90, category: 'Execution', years: 'Runtime', tags: ['Quantization', 'Model Serving', 'Memory Bounds'] },
-    ],
-  },
-
-  // 4. Featured Hero Visual Anchor: Latent Graph Visualizer (Right side of Hero Heading)
-  {
-    id: 'node-project',
-    title: 'Latent Graph Visualizer',
-    subtitle: 'Interactive Research Artifact',
-    category: 'project',
-    x: 690,
-    y: 50,
-    width: 440,
-    inputs: [
-      { id: 'pin-in-project', label: 'latent.projection', color: 'crimson', type: 'input', nodeId: 'node-project' },
-    ],
-    outputs: [
-      { id: 'pin-out-visualizer', label: 'manifold.signal', color: 'crimson', type: 'output', nodeId: 'node-project' },
-    ],
-    accentColor: '#f43f5e',
-    glowColor: 'rgba(244, 63, 94, 0.22)',
-    project: {
-      id: 'proj-latent-graph',
-      title: 'Latent Graph Visualizer',
-      tagline: 'High-Dimensional Generative Manifold Explorer',
-      description: 'An interactive computational workspace mapping continuous latent spaces to discrete topological clusters, enabling real-time parametric traversal, dimensionality reduction (UMAP/t-SNE), and manifold projection.',
-      tags: ['Latent Manifolds', 'Dimensionality Reduction', 't-SNE / UMAP', 'Embedding Topology', 'WebGL'],
-      metrics: [
-        { label: 'Input Latent', value: '512-D Space' },
-        { label: 'Projection', value: '3D Manifold' },
-        { label: 'Convergence', value: 'Loss 0.0142' },
-      ],
-      image: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=80',
-      liveUrl: 'https://github.com/rosenkrvz/nodefolio',
-      githubUrl: 'https://github.com/rosenkrvz/nodefolio',
-    },
-  },
-
-  // 5. Academic & Technical Foundation (Positioned lower right)
+  // 3. Academic & Technical Foundation (Level 1 - Lower Track)
   {
     id: 'node-credentials',
     title: 'Academic & Foundation',
     subtitle: 'Mathematics & Computation',
     category: 'certificates',
-    x: 1170,
-    y: 520,
+    x: 480,
+    y: 550,
     width: 340,
     inputs: [
       { id: 'pin-in-cred', label: 'mathematical.core', color: 'crimson', type: 'input', nodeId: 'node-credentials' },
@@ -160,15 +101,74 @@ export const INITIAL_NODES: NodeData[] = [
     ],
   },
 
-  // 6. System Chronometer Node (Positioned upper right alongside Latent Visualizer)
+  // 4. Neural Systems & Data Infrastructure (Level 2 - Upper Track)
+  {
+    id: 'node-systems',
+    title: 'Neural Systems & Data',
+    subtitle: 'Learning Infrastructure',
+    category: 'skills',
+    x: 900,
+    y: 100,
+    width: 340,
+    inputs: [
+      { id: 'pin-in-systems', label: 'tensor.pipeline', color: 'crimson', type: 'input', nodeId: 'node-systems' },
+    ],
+    outputs: [
+      { id: 'pin-out-project', label: 'latent.projection', color: 'crimson', type: 'output', nodeId: 'node-systems' },
+    ],
+    accentColor: '#e11d48',
+    glowColor: 'rgba(225, 29, 72, 0.18)',
+    skills: [
+      { name: 'Vector Search & Embeddings', level: 94, category: 'Data', years: 'Indexing', tags: ['High-Dim Indexing', 'HNSW', 'Vector Search'] },
+      { name: 'Data Pipelines & Feature Store', level: 91, category: 'Pipelines', years: 'Data', tags: ['Parquet/Arrow', 'Data Streaming', 'Tensors'] },
+      { name: 'Model Evaluation & Telemetry', level: 92, category: 'Analysis', years: 'Validation', tags: ['Loss Landscapes', 'Out-of-Distribution', 'Metrics'] },
+      { name: 'Inference & Latency Tuning', level: 90, category: 'Execution', years: 'Runtime', tags: ['Quantization', 'Model Serving', 'Memory Bounds'] },
+    ],
+  },
+
+  // 5. Featured Hero Visual Anchor: Latent Graph Visualizer (Level 3 - Upper Track)
+  {
+    id: 'node-project',
+    title: 'Latent Graph Visualizer',
+    subtitle: 'Interactive Research Artifact',
+    category: 'project',
+    x: 1320,
+    y: 80,
+    width: 440,
+    inputs: [
+      { id: 'pin-in-project', label: 'latent.projection', color: 'crimson', type: 'input', nodeId: 'node-project' },
+    ],
+    outputs: [
+      { id: 'pin-out-visualizer', label: 'temporal.sync', color: 'crimson', type: 'output', nodeId: 'node-project' },
+    ],
+    accentColor: '#f43f5e',
+    glowColor: 'rgba(244, 63, 94, 0.22)',
+    project: {
+      id: 'proj-latent-graph',
+      title: 'Latent Graph Visualizer',
+      tagline: 'High-Dimensional Generative Manifold Explorer',
+      description: 'An interactive computational workspace mapping continuous latent spaces to discrete topological clusters, enabling real-time parametric traversal, dimensionality reduction (UMAP/t-SNE), and manifold projection.',
+      tags: ['Latent Manifolds', 'Dimensionality Reduction', 't-SNE / UMAP', 'Embedding Topology', 'WebGL'],
+      metrics: [
+        { label: 'Input Latent', value: '512-D Space' },
+        { label: 'Projection', value: '3D Manifold' },
+        { label: 'Convergence', value: 'Loss 0.0142' },
+      ],
+      image: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=80',
+      liveUrl: 'https://github.com/rosenkrvz/nodefolio',
+      githubUrl: 'https://github.com/rosenkrvz/nodefolio',
+    },
+  },
+
+  // 6. System Chronometer Node (Level 4 - Temporal Terminal)
   {
     id: 'node-clock',
     title: 'System Chronometer',
     subtitle: 'Temporal Coordinates • Live Sync',
     category: 'clock',
-    x: 1160,
-    y: 50,
-    width: 250,
+    x: 1840,
+    y: 120,
+    width: 260,
     inputs: [
       { id: 'pin-in-clock', label: 'temporal.sync', color: 'crimson', type: 'input', nodeId: 'node-clock' },
     ],

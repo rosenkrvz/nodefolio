@@ -26,17 +26,23 @@ export const SplineWires: React.FC<SplineWiresProps> = ({
       style={{ overflow: 'visible' }}
     >
       <defs>
-        {/* Soft Crimson Ambient Glow */}
-        <filter id="wire-glow-filter" x="-20%" y="-20%" width="140%" height="140%">
-          <feGaussianBlur stdDeviation="3" result="coloredBlur" />
+        {/* Soft Depth Drop Shadow */}
+        <filter id="wire-shadow" x="-30%" y="-30%" width="160%" height="160%">
+          <feDropShadow dx="0" dy="4" stdDeviation="6" floodColor="#000000" floodOpacity="0.8" />
+        </filter>
+
+        {/* Ambient Spline Neon Glow Filter */}
+        <filter id="wire-glow-filter" x="-25%" y="-25%" width="150%" height="150%">
+          <feGaussianBlur stdDeviation="3.5" result="coloredBlur" />
           <feMerge>
             <feMergeNode in="coloredBlur" />
             <feMergeNode in="SourceGraphic" />
           </feMerge>
         </filter>
 
-        <filter id="intense-pulse" x="-30%" y="-30%" width="160%" height="160%">
-          <feGaussianBlur stdDeviation="4" result="coloredBlur" />
+        {/* Intense Traveling Energy Pulse Glow */}
+        <filter id="intense-pulse" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur stdDeviation="4.5" result="coloredBlur" />
           <feMerge>
             <feMergeNode in="coloredBlur" />
             <feMergeNode in="SourceGraphic" />
@@ -57,13 +63,15 @@ export const SplineWires: React.FC<SplineWiresProps> = ({
         const x2 = toPos.x;
         const y2 = toPos.y;
 
-        // Spline curvature calculations
-        const deltaX = Math.abs(x2 - x1);
-        const controlDistance = Math.max(60, deltaX * 0.5);
+        // Adaptive natural Hermite spline curvature
+        const dx = x2 - x1;
+        const dy = y2 - y1;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        const curvature = Math.min(Math.max(distance * 0.45, 75), 210);
 
-        const cp1x = x1 + controlDistance;
+        const cp1x = x1 + curvature;
         const cp1y = y1;
-        const cp2x = x2 - controlDistance;
+        const cp2x = x2 - curvature;
         const cp2y = y2;
 
         const pathData = `M ${x1} ${y1} C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${x2} ${y2}`;
@@ -72,7 +80,7 @@ export const SplineWires: React.FC<SplineWiresProps> = ({
         const isRelated = selectedNodeId
           ? conn.fromNodeId === selectedNodeId || conn.toNodeId === selectedNodeId
           : true;
-        const groupOpacity = selectedNodeId ? (isRelated ? 1 : 0.2) : 1;
+        const groupOpacity = selectedNodeId ? (isRelated ? 1 : 0.18) : 1;
 
         return (
           <g
@@ -86,61 +94,81 @@ export const SplineWires: React.FC<SplineWiresProps> = ({
               d={pathData}
               fill="none"
               stroke="transparent"
-              strokeWidth={16}
+              strokeWidth={20}
               className="pointer-events-stroke"
             />
 
-            {/* Ambient subtle glow layer */}
+            {/* 1. Ambient depth drop shadow for 3D realism on carbon fiber */}
+            <path
+              d={pathData}
+              fill="none"
+              stroke="rgba(0, 0, 0, 0.75)"
+              strokeWidth={isSelected ? 6 : 4.5}
+              strokeLinecap="round"
+              filter="url(#wire-shadow)"
+            />
+
+            {/* 2. Radiant energy glow tube */}
             {wireStyle === 'glow' && (
               <path
                 d={pathData}
                 fill="none"
                 stroke={baseColor}
-                strokeWidth={isSelected ? 5 : 3.5}
-                strokeOpacity={isSelected ? 0.4 : 0.15}
+                strokeWidth={isSelected ? 8 : 5}
+                strokeOpacity={isSelected ? 0.45 : 0.2}
                 filter="url(#wire-glow-filter)"
                 strokeLinecap="round"
               />
             )}
 
-            {/* Primary spline line */}
+            {/* 3. Primary superconductor spline core */}
             <path
               d={pathData}
               fill="none"
               stroke={isSelected ? '#ffffff' : baseColor}
-              strokeWidth={isSelected ? 2 : 1.5}
-              strokeOpacity={isSelected ? 0.95 : 0.55}
+              strokeWidth={isSelected ? 2.2 : 1.6}
+              strokeOpacity={isSelected ? 0.98 : 0.72}
               strokeDasharray={wireStyle === 'cyber' ? '6, 6' : undefined}
               strokeLinecap="round"
               className="transition-all duration-150"
             />
 
-            {/* Animated signal pulses flowing along spline */}
+            {/* 4. Hyper-luminous white central filament */}
+            <path
+              d={pathData}
+              fill="none"
+              stroke="#ffffff"
+              strokeWidth={0.8}
+              strokeOpacity={isSelected ? 0.85 : 0.45}
+              strokeLinecap="round"
+            />
+
+            {/* 5. Animated quantum signal pulses flowing along spline */}
             {(conn.animated || isSimulating) && (
               <>
-                {/* Secondary flowing energy line */}
+                {/* Secondary flowing energy track */}
                 <path
                   d={pathData}
                   fill="none"
                   stroke="#ffffff"
-                  strokeWidth={1.5}
-                  strokeDasharray="6, 32"
-                  strokeOpacity={0.7}
+                  strokeWidth={1.2}
+                  strokeDasharray="8, 28"
+                  strokeOpacity={0.65}
                   strokeLinecap="round"
                 >
                   <animate
                     attributeName="stroke-dashoffset"
-                    values="0;-76"
-                    dur={isSimulating ? '1.5s' : '4s'}
+                    values="0;-72"
+                    dur={isSimulating ? '1.6s' : '3.8s'}
                     repeatCount="indefinite"
                   />
                 </path>
 
-                {/* Traveling packet */}
-                <circle r={isSelected ? 3.5 : 2.5} fill="#ffffff" filter="url(#intense-pulse)">
+                {/* Primary traveling energy photon */}
+                <circle r={isSelected ? 4 : 3} fill="#ffffff" filter="url(#intense-pulse)">
                   <animateMotion
                     path={pathData}
-                    dur={isSimulating ? '1.8s' : '4.5s'}
+                    dur={isSimulating ? '1.8s' : '4.2s'}
                     repeatCount="indefinite"
                     rotate="auto"
                   />
@@ -148,11 +176,11 @@ export const SplineWires: React.FC<SplineWiresProps> = ({
 
                 {/* Second staggered packet */}
                 {isSimulating && (
-                  <circle r={2} fill={baseColor} filter="url(#wire-glow-filter)">
+                  <circle r={2.2} fill={baseColor} filter="url(#wire-glow-filter)">
                     <animateMotion
                       path={pathData}
-                      dur="2.2s"
-                      begin="1.1s"
+                      dur="2.4s"
+                      begin="0.9s"
                       repeatCount="indefinite"
                       rotate="auto"
                     />
@@ -161,9 +189,14 @@ export const SplineWires: React.FC<SplineWiresProps> = ({
               </>
             )}
 
-            {/* Origin & target contact dots */}
-            <circle cx={x1} cy={y1} r={2.5} fill={baseColor} />
-            <circle cx={x2} cy={y2} r={2.5} fill={baseColor} />
+            {/* Hardware Socket Terminals at Pins */}
+            {/* Origin Socket */}
+            <circle cx={x1} cy={y1} r={4.5} fill="none" stroke={baseColor} strokeWidth={1.2} strokeOpacity={0.6} />
+            <circle cx={x1} cy={y1} r={2.2} fill="#ffffff" />
+
+            {/* Target Socket */}
+            <circle cx={x2} cy={y2} r={4.5} fill="none" stroke={baseColor} strokeWidth={1.2} strokeOpacity={0.6} />
+            <circle cx={x2} cy={y2} r={2.2} fill="#ffffff" />
           </g>
         );
       })}

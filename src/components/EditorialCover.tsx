@@ -17,45 +17,28 @@ export const EditorialCover: React.FC<EditorialCoverProps> = ({
     window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   // Step 4 Transition Curve:
-  // 0% - 22%: Hero completely visible (sharp, 100% opacity, scale: 1, translateY: 0%)
-  // 25% - 50%: Hero begins subtle transformation (blur: 0->6px, scale: 1.0->0.97, translateY: 0->-20%)
-  // 50% - 75%: Hero noticeably blurred/receded (blur: 6->14px, scale: 0.97->0.94, translateY: -20->-105%)
-  // 75% - 100%: Network revealed, Cover lifts completely out of viewport
+  // Continuous smooth Hermite easing curve for liquid cinematic fluidity
   let blur = 0;
   let opacity = 1;
   let scale = 1;
   let translateYPercent = 0;
-  const isLifting = scrollProgress > 0.22;
+  const isLifting = scrollProgress > 0.08;
 
   if (prefersReducedMotion) {
-    opacity = scrollProgress < 0.5 ? 1 : Math.max(0, 1 - (scrollProgress - 0.5) / 0.25);
+    opacity = scrollProgress < 0.5 ? 1 : Math.max(0, 1 - (scrollProgress - 0.5) / 0.3);
     blur = 0;
     scale = 1;
     translateYPercent = scrollProgress >= 0.75 ? -105 : 0;
   } else {
-    if (scrollProgress <= 0.22) {
-      blur = 0;
-      opacity = 1;
-      scale = 1;
-      translateYPercent = 0;
-    } else if (scrollProgress <= 0.50) {
-      const t1 = (scrollProgress - 0.22) / 0.28; // 0 to 1
-      blur = t1 * 6; // 0px to 6px
-      scale = 1 - t1 * 0.03; // 1.0 to 0.97
-      translateYPercent = -(t1 * 20); // 0% to -20%
-      opacity = 1;
-    } else if (scrollProgress <= 0.82) {
-      const t2 = (scrollProgress - 0.50) / 0.32; // 0 to 1
-      blur = 6 + t2 * 8; // 6px to 14px
-      scale = 0.97 - t2 * 0.03; // 0.97 to 0.94
-      translateYPercent = -20 - (t2 * 85); // -20% to -105%
-      opacity = Math.max(0, 1 - t2 * 0.65);
-    } else {
-      blur = 14;
-      opacity = 0;
-      scale = 0.94;
-      translateYPercent = -105;
-    }
+    // Continuous smooth progression over scroll [0.06, 0.88]
+    const rawT = Math.max(0, Math.min(1, (scrollProgress - 0.06) / 0.82));
+    // Smooth cubic Hermite S-curve
+    const smoothT = rawT * rawT * (3 - 2 * rawT);
+
+    blur = smoothT * 12; // 0px to 12px progressive blur
+    scale = 1 - smoothT * 0.045; // 1.0 to 0.955
+    translateYPercent = -(smoothT * 105); // 0% to -105%
+    opacity = Math.max(0, 1 - Math.pow(smoothT, 2.2));
   }
 
   return (
@@ -63,11 +46,12 @@ export const EditorialCover: React.FC<EditorialCoverProps> = ({
       aria-label="Editorial Portfolio Cover"
       style={{
         opacity,
-        filter: blur > 0 ? `blur(${blur}px)` : 'none',
-        transform: `translateY(${translateYPercent}%) scale(${scale})`,
+        filter: blur > 0.1 ? `blur(${blur.toFixed(1)}px)` : 'none',
+        transform: `translate3d(0, ${translateYPercent.toFixed(2)}%, 0) scale(${scale.toFixed(4)})`,
+        transition: 'transform 0.1s cubic-bezier(0.25, 1, 0.5, 1), filter 0.15s ease-out, opacity 0.15s ease-out',
         pointerEvents: scrollProgress >= 0.80 ? 'none' : 'auto',
       }}
-      className={`absolute inset-0 w-full h-screen flex flex-col justify-between px-6 sm:px-12 md:px-16 pt-24 pb-10 transition-transform duration-75 ease-out select-none overflow-hidden z-20 bg-[#14171c] ${
+      className={`absolute inset-0 w-full h-screen flex flex-col justify-between px-6 sm:px-12 md:px-16 pt-24 pb-10 select-none overflow-hidden z-20 bg-[#14171c] ${
         isLifting ? 'border-b border-rose-500/50 shadow-[0_30px_70px_rgba(0,0,0,0.95)]' : ''
       }`}
     >
