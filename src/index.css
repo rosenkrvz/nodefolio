@@ -284,3 +284,43 @@ body {
   }
 }
 
+/* Accessibility: Respect prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .cube-svg,
+  .second {
+    animation: none !important;
+  }
+}
+
+/* Print Optimization */
+@media print {
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+
+  header,
+  aside,
+  #graph-workspace,
+  .bottom-telemetry-bar,
+  button {
+    display: none !important;
+  }
+
+  .modal-content,
+  .resume-paper {
+    box-shadow: none !important;
+    border: none !important;
+    width: 100% !important;
+  }
+}
+

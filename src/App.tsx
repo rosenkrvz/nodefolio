@@ -322,8 +322,9 @@ export default function App() {
     const availH = Math.max(300, vh - (vw < 640 ? 100 : 130));
     const maxFitScale = Math.min(availW / groupW, availH / groupH);
 
-    // Keep requested 0.70 default scale, scaling down only if screen size requires it
-    const targetScale = Math.min(desiredScale, Math.max(0.38, Number(maxFitScale.toFixed(2))));
+    // Keep requested 0.70 default scale, scaling down gracefully on small mobile screens
+    const minScaleFloor = vw < 640 ? 0.25 : 0.38;
+    const targetScale = Math.min(desiredScale, Math.max(minScaleFloor, Number(maxFitScale.toFixed(2))));
 
     // Precision viewport center (offsetting 64px top nav and 36px bottom status: (64-36)/2 = +14px)
     const viewCenterX = vw / 2;

@@ -13,8 +13,12 @@ interface ErrorBoundaryState {
 }
 
 class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  public override state: ErrorBoundaryState = { hasError: false };
+  public override props: Readonly<ErrorBoundaryProps>;
+
   constructor(props: ErrorBoundaryProps) {
     super(props);
+    this.props = props;
     this.state = { hasError: false };
   }
 
