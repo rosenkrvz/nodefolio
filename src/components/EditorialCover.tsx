@@ -13,30 +13,27 @@ export const EditorialCover: React.FC<EditorialCoverProps> = ({
   onViewWork,
 }) => {
   // Motion curve for the cover:
-  // 0% - 30%: Stable, 100% sharp, fully in focus
-  // 30% - 65%: Progressive defocus, blur(0px -> 12px), subtle scale & fade
-  // > 65%: Hidden completely to let the architectural opening reveal the network
+  // 0% - 15%: Stable, 100% sharp, fully in focus, 0 translateY
+  // 15% - 85%: Physical architectural lift upward (translateY: 0% -> -105%), progressive defocus blur(0px -> 8px)
+  // > 85%: Completely outside viewport, pointer-events: none
   let blur = 0;
   let opacity = 1;
-  let scale = 1;
-  let translateY = 0;
+  let translateYPercent = 0;
+  const isLifting = scrollProgress > 0.15;
 
-  if (scrollProgress <= 0.28) {
+  if (scrollProgress <= 0.15) {
     blur = 0;
     opacity = 1;
-    scale = 1;
-    translateY = 0;
-  } else if (scrollProgress <= 0.65) {
-    const t = (scrollProgress - 0.28) / 0.37; // 0 to 1
-    blur = t * 12; // 0px to 12px
-    opacity = Math.max(0, 1 - t * 0.95);
-    scale = 1 - t * 0.05;
-    translateY = t * -40;
+    translateYPercent = 0;
+  } else if (scrollProgress <= 0.85) {
+    const t = (scrollProgress - 0.15) / 0.70; // 0 to 1
+    blur = t * 8; // 0px to 8px
+    opacity = Math.max(0, 1 - t * 0.45); // Keep substantial opacity as it slides upward
+    translateYPercent = -(t * 105);
   } else {
-    blur = 12;
+    blur = 8;
     opacity = 0;
-    scale = 0.95;
-    translateY = -40;
+    translateYPercent = -105;
   }
 
   return (
@@ -44,11 +41,13 @@ export const EditorialCover: React.FC<EditorialCoverProps> = ({
       aria-label="Editorial Portfolio Cover"
       style={{
         opacity,
-        filter: `blur(${blur}px)`,
-        transform: `translateY(${translateY}px) scale(${scale})`,
-        pointerEvents: opacity < 0.2 ? 'none' : 'auto',
+        filter: blur > 0 ? `blur(${blur}px)` : 'none',
+        transform: `translateY(${translateYPercent}%)`,
+        pointerEvents: scrollProgress >= 0.80 ? 'none' : 'auto',
       }}
-      className="absolute inset-0 w-full h-screen flex flex-col justify-between px-6 sm:px-12 md:px-16 pt-24 pb-10 transition-all duration-75 ease-out select-none overflow-hidden z-10"
+      className={`absolute inset-0 w-full h-screen flex flex-col justify-between px-6 sm:px-12 md:px-16 pt-24 pb-10 transition-transform duration-75 ease-out select-none overflow-hidden z-20 bg-[#090b10] ${
+        isLifting ? 'border-b border-rose-500/50 shadow-[0_30px_70px_rgba(0,0,0,0.95)]' : ''
+      }`}
     >
       {/* Background Editorial Atmosphere */}
       <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
@@ -70,6 +69,11 @@ export const EditorialCover: React.FC<EditorialCoverProps> = ({
         {/* Minimal fine grain grid */}
         <div className="absolute inset-0 bg-[radial-gradient(#ffffff0a_1px,transparent_1px)] [background-size:36px_36px] opacity-30" />
       </div>
+
+      {/* Crimson Seam Glow Indicator when lifting */}
+      {isLifting && (
+        <div className="absolute bottom-0 inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-rose-500 to-transparent shadow-[0_0_16px_#f43f5e] z-30 pointer-events-none" />
+      )}
 
       {/* Top Editorial Eyebrow & Issue Stamp */}
       <div className="relative z-10 w-full max-w-7xl mx-auto flex items-center justify-between text-xs font-body text-zinc-400 uppercase tracking-[0.25em]">

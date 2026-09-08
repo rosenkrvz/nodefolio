@@ -296,19 +296,12 @@ export default function App() {
         <div ref={scrollContainerRef} className="relative w-full h-[350vh]">
           {/* Sticky 100vh Viewport Stage */}
           <div className="sticky top-0 w-full h-screen overflow-hidden">
-            {/* SECTION 01: Solid Editorial Portfolio Cover (0 to ~65% scroll) */}
-            <EditorialCover
-              scrollProgress={scrollProgress}
-              onExplore={handleExplore}
-              onViewWork={() => handleFocusNode('node-project')}
-            />
-
-            {/* PHYSICAL REVEAL EFFECT & SECTION 02: Computational Neural Workspace */}
+            {/* SECTION 02: Computational Neural Workspace (Base Layer) */}
             <ArchitecturalReveal scrollProgress={scrollProgress}>
               <div
                 style={{
-                  opacity: scrollProgress >= 0.28 ? Math.min(1, (scrollProgress - 0.28) / 0.40) : 0,
-                  pointerEvents: scrollProgress >= 0.88 ? 'auto' : 'none',
+                  opacity: scrollProgress >= 0.15 ? Math.min(1, (scrollProgress - 0.15) / 0.35) : 0,
+                  pointerEvents: scrollProgress >= 0.80 ? 'auto' : 'none',
                 }}
                 className="absolute inset-0 w-full h-screen pt-16 transition-opacity duration-75 ease-out z-10"
               >
@@ -490,6 +483,13 @@ export default function App() {
                 </footer>
               </div>
             </ArchitecturalReveal>
+
+            {/* SECTION 01: Solid Editorial Portfolio Cover (Surface Layer, sits on top and physically lifts on scroll) */}
+            <EditorialCover
+              scrollProgress={scrollProgress}
+              onExplore={handleExplore}
+              onViewWork={() => handleFocusNode('node-project')}
+            />
           </div>
         </div>
       </main>
