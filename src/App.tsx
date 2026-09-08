@@ -445,38 +445,31 @@ export default function App() {
     return nodes.filter((n) => {
       if (activePreset === 'all') return true;
       if (activePreset === 'network') {
-        return (
-          [
-            'node-profile',
-            'node-models',
-            'node-credentials',
-            'node-systems',
-            'node-project',
-            'node-clock',
-          ].includes(n.id) || n.category === 'visitor'
-        );
+        return [
+          'node-profile',
+          'node-models',
+          'node-credentials',
+          'node-systems',
+          'node-project',
+          'node-clock',
+        ].includes(n.id);
       }
       if (activePreset === 'skills') {
-        return (
-          [
-            'node-profile',
-            'node-models',
-            'node-systems',
-            'node-pipeline',
-            'node-vision',
-            'node-computational',
-            'node-software',
-          ].includes(n.id) || n.category === 'visitor'
-        );
+        return [
+          'node-profile',
+          'node-models',
+          'node-systems',
+          'node-pipeline',
+          'node-vision',
+          'node-computational',
+          'node-software',
+        ].includes(n.id);
       }
       if (activePreset === 'certificates') {
-        return (
-          ['node-profile', 'node-credentials', 'node-inference', 'node-eval'].includes(n.id) ||
-          n.category === 'visitor'
-        );
+        return ['node-profile', 'node-credentials', 'node-inference', 'node-eval'].includes(n.id);
       }
       if (activePreset === 'project') {
-        // Research tab: showcases the comprehensive computational ecosystem
+        // Research tab: showcases the comprehensive computational ecosystem including visitor notes
         return true;
       }
       return true;
@@ -582,24 +575,23 @@ export default function App() {
 
     const targetNodes = nodes.filter((n) => {
       if (preset === 'network') {
-        return (
-          ['node-profile', 'node-models', 'node-credentials', 'node-systems', 'node-project', 'node-clock'].includes(n.id) ||
-          n.category === 'visitor'
-        );
+        return ['node-profile', 'node-models', 'node-credentials', 'node-systems', 'node-project', 'node-clock'].includes(n.id);
       }
       if (preset === 'skills') {
-        return (
-          ['node-profile', 'node-models', 'node-systems', 'node-pipeline', 'node-vision', 'node-computational', 'node-software'].includes(n.id) ||
-          n.category === 'visitor'
-        );
+        return [
+          'node-profile',
+          'node-models',
+          'node-systems',
+          'node-pipeline',
+          'node-vision',
+          'node-computational',
+          'node-software',
+        ].includes(n.id);
       }
       if (preset === 'certificates') {
-        return (
-          ['node-profile', 'node-credentials', 'node-inference', 'node-eval'].includes(n.id) ||
-          n.category === 'visitor'
-        );
+        return ['node-profile', 'node-credentials', 'node-inference', 'node-eval'].includes(n.id);
       }
-      // 'project' or 'all': full research workspace ecosystem
+      // 'project' or 'all': full research workspace ecosystem including visitor notes
       return true;
     });
 
