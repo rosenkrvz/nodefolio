@@ -151,7 +151,9 @@ export default function App() {
 
   // Audio interaction refs
   const hasPlayedCoverTransitionRef = useRef<boolean>(false);
-  const lastZoomBracketRef = useRef<number>(Math.round(0.60 / 0.25));
+  const lastZoomBracketRef = useRef<number>(60);
+  const isWheelZoomingRef = useRef<boolean>(false);
+  const wheelZoomTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Deterministic harmonic drift personality configs for organic, controlled workspace life
   const NODE_DRIFT_PROFILES: Record<
@@ -243,6 +245,11 @@ export default function App() {
   }, []);
 
   // Autonomous controlled spatial drift loop (throttled to ~30 FPS for optimal battery and zero lag)
+  // Performance: drift offsets are stored in a ref to avoid creating new state objects every frame.
+  // A lightweight render tick counter triggers re-render only when drift values actually change.
+  const driftOffsetsRef = useRef<Record<string, { x: number; y: number }>>(driftOffsets);
+  const [, setDriftTick] = useState(0);
+
   useEffect(() => {
     let animId: number;
     const prefersReducedMotion =
@@ -250,7 +257,7 @@ export default function App() {
       window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
     const loop = (timestamp: number) => {
-      if (timestamp - lastDriftFrameTimeRef.current >= 33) {
+      if (timestamp - lastDriftFrameTimeRef.current >= 45) {
         lastDriftFrameTimeRef.current = timestamp;
 
         const isVisible = scrollProgressRef.current >= 0.20 || activeNavTabRef.current !== 'home';
@@ -259,10 +266,15 @@ export default function App() {
           !prefersReducedMotion &&
           isVisible &&
           !document.hidden &&
-          !isDraggingAnyNodeRef.current;
+          !isDraggingAnyNodeRef.current &&
+          !isPanningRef.current &&
+          !isWheelZoomingRef.current;
 
         if (canSimulate) {
           const t = (Date.now() - driftStartTimeRef.current) / 1000;
+          const prev = driftOffsetsRef.current;
+          let changed = false;
+
           const nextOffsets: Record<string, { x: number; y: number }> = {};
 
           for (const [nodeId, cfg] of Object.entries(NODE_DRIFT_PROFILES)) {
@@ -274,13 +286,23 @@ export default function App() {
               cfg.ampY * Math.cos((2 * Math.PI * t) / cfg.periodY + cfg.phaseY) +
               cfg.ampY * 0.25 * Math.sin((1.4 * Math.PI * t) / cfg.periodY);
 
-            nextOffsets[nodeId] = {
-              x: Math.round(dx * 10) / 10,
-              y: Math.round(dy * 10) / 10,
-            };
+            const rx = Math.round(dx);
+            const ry = Math.round(dy);
+
+            nextOffsets[nodeId] = { x: rx, y: ry };
+
+            // Only flag changed if values actually differ (avoids unnecessary re-renders)
+            const p = prev[nodeId];
+            if (!p || p.x !== rx || p.y !== ry) {
+              changed = true;
+            }
           }
 
-          setDriftOffsets(nextOffsets);
+          if (changed) {
+            driftOffsetsRef.current = nextOffsets;
+            setDriftOffsets(nextOffsets);
+            setDriftTick((c) => c + 1); // Lightweight re-render trigger
+          }
         }
       }
 
@@ -592,6 +614,60 @@ export default function App() {
     );
   }, [connections, activeNodeIds]);
 
+  // Memoized effective nodes combining base position with drift offsets
+  const effectiveNodes = useMemo(() => {
+    return filteredNodes.map((node) => {
+      const drift = driftOffsets[node.id];
+      if (!drift || (drift.x === 0 && drift.y === 0)) return node;
+      return {
+        ...node,
+        x: node.x + drift.x,
+        y: node.y + drift.y,
+      };
+    });
+  }, [filteredNodes, driftOffsets]);
+
+  // Stable event callbacks to avoid breaking React.memo in GraphNode and SplineWires
+  const handleSelectNode = useCallback((id: string) => {
+    playSound('select');
+    setSelectedNodeId(id);
+  }, []);
+
+  const handleOpenCertificateModal = useCallback((cert: CertificateItem) => {
+    playSound('open');
+    setSelectedCertificate(cert);
+  }, []);
+
+  const handleOpenProjectModal = useCallback((proj: ProjectItem) => {
+    playSound('open');
+    setSelectedProject(proj);
+  }, []);
+
+  const handleOpenContactModal = useCallback(() => {
+    playSound('open');
+    setIsContactOpen(true);
+  }, []);
+
+  const handleOpenResumeModal = useCallback(() => {
+    playSound('open');
+    setIsResumeOpen(true);
+  }, []);
+
+  const handleOpenFocusedNode = useCallback((n: NodeData) => {
+    playSound('open');
+    const el = typeof document !== 'undefined' ? document.getElementById(`graph-node-${n.id}`) : null;
+    const rect = el ? el.getBoundingClientRect() : null;
+    setNodeOriginRect(
+      rect ? { left: rect.left, top: rect.top, width: rect.width, height: rect.height } : null
+    );
+    setFocusedNode(n);
+  }, []);
+
+  const handleSelectConnection = useCallback((id: string | null) => {
+    if (id) playSound('connect');
+    setActiveConnectionId(id);
+  }, []);
+
   // Canvas Panning Handlers
   const handleCanvasMouseDown = (e: React.MouseEvent) => {
     const target = e.target as HTMLElement;
@@ -849,18 +925,24 @@ export default function App() {
       const rawDelta = e.deltaMode === 1 ? e.deltaY * 20 : (e.deltaMode === 2 ? e.deltaY * 400 : e.deltaY);
       const clampedDelta = Math.max(-120, Math.min(120, rawDelta));
       
-      // Smooth continuous exponential zoom (~4.5% per wheel notch, buttery smooth on trackpads)
-      const zoomFactor = Math.exp(-clampedDelta * 0.0012);
+      // Temporarily mark wheel zooming active to pause background drift and prevent cache churn
+      isWheelZoomingRef.current = true;
+      if (wheelZoomTimeoutRef.current) clearTimeout(wheelZoomTimeoutRef.current);
+      wheelZoomTimeoutRef.current = setTimeout(() => {
+        isWheelZoomingRef.current = false;
+      }, 220);
+
+      // 1% step per notch for buttery smooth, continuous fluidity (e.g. 52% -> 53% -> 54%)
+      const direction = clampedDelta > 0 ? -1 : 1;
+      const deltaPercent = direction * 0.01;
 
       setTransform((prev) => {
-        const rawScale = prev.scale * zoomFactor;
-        // Keep between 0.25 and 2.20 with 3-decimal precision to support smooth trackpads
-        const nextScale = Math.max(0.25, Math.min(2.20, Math.round(rawScale * 1000) / 1000));
+        const nextScale = Math.max(0.25, Math.min(2.20, Math.round((prev.scale + deltaPercent) * 100) / 100));
 
         if (nextScale === prev.scale) return prev;
 
-        // Tactile detent feedback when crossing 25% scale thresholds (e.g. 50%, 75%, 100%, 125%, 150%)
-        const newBracket = Math.round(nextScale / 0.25);
+        // Tactile detent feedback when stepping each 1% section (52%, 53%, 54%, etc.)
+        const newBracket = Math.round(nextScale * 100);
         if (newBracket !== lastZoomBracketRef.current) {
           lastZoomBracketRef.current = newBracket;
           playSound('zoom');
@@ -1141,64 +1223,29 @@ export default function App() {
                         wireStyle={wireStyle}
                         activeConnectionId={activeConnectionId}
                         selectedNodeId={selectedNodeId}
-                        onSelectConnection={(id) => {
-                          if (id) playSound('connect');
-                          setActiveConnectionId(id);
-                        }}
+                        onSelectConnection={handleSelectConnection}
                       />
 
                       {/* Connected Graph Nodes (#0b0d12 carbon fiber) */}
-                      {filteredNodes.map((node) => {
-                        const drift = driftOffsets[node.id] || { x: 0, y: 0 };
-                        const effectiveNode: NodeData = {
-                          ...node,
-                          x: Math.round((node.x + drift.x) * 10) / 10,
-                          y: Math.round((node.y + drift.y) * 10) / 10,
-                        };
-
-                        return (
-                          <GraphNode
-                            key={node.id}
-                            node={effectiveNode}
-                            scale={transform.scale}
-                            isSelected={selectedNodeId === node.id}
-                            isDimmed={selectedNodeId !== null && selectedNodeId !== node.id}
-                            onSelectNode={(id) => {
-                              playSound('select');
-                              setSelectedNodeId(id);
-                            }}
-                            onNodeDrag={handleNodeDrag}
-                            onNodeResize={handleNodeResize}
-                            onDragStateChange={handleDragStateChange}
-                            onDeleteVisitorNode={handleDeleteVisitorNode}
-                            onOpenCertificateModal={(cert) => {
-                              playSound('open');
-                              setSelectedCertificate(cert);
-                            }}
-                            onOpenProjectModal={(proj) => {
-                              playSound('open');
-                              setSelectedProject(proj);
-                            }}
-                            onOpenContactModal={() => {
-                              playSound('open');
-                              setIsContactOpen(true);
-                            }}
-                            onOpenResumeModal={() => {
-                              playSound('open');
-                              setIsResumeOpen(true);
-                            }}
-                            onOpenFocusedNode={(n) => {
-                              playSound('open');
-                              const el = typeof document !== 'undefined' ? document.getElementById(`graph-node-${n.id}`) : null;
-                              const rect = el ? el.getBoundingClientRect() : null;
-                              setNodeOriginRect(
-                                rect ? { left: rect.left, top: rect.top, width: rect.width, height: rect.height } : null
-                              );
-                              setFocusedNode(n);
-                            }}
-                          />
-                        );
-                      })}
+                      {effectiveNodes.map((effectiveNode) => (
+                        <GraphNode
+                          key={effectiveNode.id}
+                          node={effectiveNode}
+                          scale={transform.scale}
+                          isSelected={selectedNodeId === effectiveNode.id}
+                          isDimmed={selectedNodeId !== null && selectedNodeId !== effectiveNode.id}
+                          onSelectNode={handleSelectNode}
+                          onNodeDrag={handleNodeDrag}
+                          onNodeResize={handleNodeResize}
+                          onDragStateChange={handleDragStateChange}
+                          onDeleteVisitorNode={handleDeleteVisitorNode}
+                          onOpenCertificateModal={handleOpenCertificateModal}
+                          onOpenProjectModal={handleOpenProjectModal}
+                          onOpenContactModal={handleOpenContactModal}
+                          onOpenResumeModal={handleOpenResumeModal}
+                          onOpenFocusedNode={handleOpenFocusedNode}
+                        />
+                      ))}
                     </div>
 
                     {/* Floating Dock Controls */}
@@ -1207,7 +1254,8 @@ export default function App() {
                       onZoomIn={() => {
                         playSound('zoom');
                         setTransform((p) => {
-                          const nextScale = Math.min(1.80, Math.round((p.scale + 0.05) * 100) / 100);
+                          const nextScale = Math.min(2.20, Math.round((p.scale + 0.01) * 100) / 100);
+                          lastZoomBracketRef.current = Math.round(nextScale * 100);
                           const vw = typeof window !== 'undefined' ? window.innerWidth : 1200;
                           const vh = typeof window !== 'undefined' ? window.innerHeight : 800;
                           const newX = Math.round((vw / 2) - ((vw / 2) - p.x) * (nextScale / p.scale));
@@ -1218,7 +1266,8 @@ export default function App() {
                       onZoomOut={() => {
                         playSound('zoom');
                         setTransform((p) => {
-                          const nextScale = Math.max(0.35, Math.round((p.scale - 0.05) * 100) / 100);
+                          const nextScale = Math.max(0.25, Math.round((p.scale - 0.01) * 100) / 100);
+                          lastZoomBracketRef.current = Math.round(nextScale * 100);
                           const vw = typeof window !== 'undefined' ? window.innerWidth : 1200;
                           const vh = typeof window !== 'undefined' ? window.innerHeight : 800;
                           const newX = Math.round((vw / 2) - ((vw / 2) - p.x) * (nextScale / p.scale));

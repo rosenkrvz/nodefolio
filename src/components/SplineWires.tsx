@@ -30,31 +30,10 @@ const SplineWiresComponent: React.FC<SplineWiresProps> = ({
       style={{ overflow: 'visible' }}
     >
       <defs>
-        {/* Soft Depth Drop Shadow */}
-        <filter id="wire-shadow" x="-30%" y="-30%" width="160%" height="160%">
-          <feDropShadow dx="0" dy="4" stdDeviation="6" floodColor="#000000" floodOpacity="0.8" />
-        </filter>
-
-        {/* Ambient Spline Neon Glow Filter */}
-        <filter id="wire-glow-filter" x="-25%" y="-25%" width="150%" height="150%">
-          <feGaussianBlur stdDeviation="3.5" result="coloredBlur" />
-          <feMerge>
-            <feMergeNode in="coloredBlur" />
-            <feMergeNode in="SourceGraphic" />
-          </feMerge>
-        </filter>
-
-        {/* Intense Traveling Energy Pulse Glow */}
-        <filter id="intense-pulse" x="-50%" y="-50%" width="200%" height="200%">
-          <feGaussianBlur stdDeviation="4.5" result="coloredBlur" />
-          <feMerge>
-            <feMergeNode in="coloredBlur" />
-            <feMergeNode in="SourceGraphic" />
-          </feMerge>
-        </filter>
+        {/* Soft gradient accent definitions if needed */}
       </defs>
 
-      {connections.map((conn, idx) => {
+      {connections.map((conn) => {
         const fromPos = pinPositions[conn.fromPinId];
         const toPos = pinPositions[conn.toPinId];
 
@@ -98,31 +77,40 @@ const SplineWiresComponent: React.FC<SplineWiresProps> = ({
               d={pathData}
               fill="none"
               stroke="transparent"
-              strokeWidth={20}
+              strokeWidth={22}
               className="pointer-events-stroke"
             />
 
-            {/* 1. Ambient depth drop shadow for 3D realism on carbon fiber */}
+            {/* 1. Ambient depth drop shadow for 3D realism on carbon fiber (Pure GPU vector, zero cache rasterization) */}
             <path
               d={pathData}
               fill="none"
-              stroke="rgba(0, 0, 0, 0.75)"
-              strokeWidth={isSelected ? 6 : 4.5}
+              stroke="rgba(0, 0, 0, 0.55)"
+              strokeWidth={isSelected ? 6 : 4}
               strokeLinecap="round"
-              filter="url(#wire-shadow)"
+              transform="translate(0, 3)"
             />
 
-            {/* 2. Radiant energy glow tube */}
+            {/* 2. Layered radiant energy glow tube (ultra-fast zero-cache vector rasterization) */}
             {wireStyle === 'glow' && (
-              <path
-                d={pathData}
-                fill="none"
-                stroke={baseColor}
-                strokeWidth={isSelected ? 8 : 5}
-                strokeOpacity={isSelected ? 0.45 : 0.2}
-                filter="url(#wire-glow-filter)"
-                strokeLinecap="round"
-              />
+              <>
+                <path
+                  d={pathData}
+                  fill="none"
+                  stroke={baseColor}
+                  strokeWidth={isSelected ? 11 : 7}
+                  strokeOpacity={isSelected ? 0.35 : 0.12}
+                  strokeLinecap="round"
+                />
+                <path
+                  d={pathData}
+                  fill="none"
+                  stroke={baseColor}
+                  strokeWidth={isSelected ? 5 : 3.5}
+                  strokeOpacity={isSelected ? 0.65 : 0.28}
+                  strokeLinecap="round"
+                />
+              </>
             )}
 
             {/* 3. Primary superconductor spline core */}
@@ -131,7 +119,7 @@ const SplineWiresComponent: React.FC<SplineWiresProps> = ({
               fill="none"
               stroke={isSelected ? '#ffffff' : baseColor}
               strokeWidth={isSelected ? 2.2 : 1.6}
-              strokeOpacity={isSelected ? 0.98 : 0.72}
+              strokeOpacity={isSelected ? 0.98 : 0.75}
               strokeDasharray={wireStyle === 'cyber' ? '6, 6' : undefined}
               strokeLinecap="round"
               className="transition-all duration-150"

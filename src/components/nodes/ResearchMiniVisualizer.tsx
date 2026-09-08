@@ -5,7 +5,7 @@ interface ResearchMiniVisualizerProps {
   accentColor?: string;
 }
 
-export const ResearchMiniVisualizer: React.FC<ResearchMiniVisualizerProps> = ({
+const ResearchMiniVisualizerComponent: React.FC<ResearchMiniVisualizerProps> = ({
   type,
   accentColor = '#f43f5e',
 }) => {
@@ -244,3 +244,5 @@ export const ResearchMiniVisualizer: React.FC<ResearchMiniVisualizerProps> = ({
       );
   }
 };
+
+export const ResearchMiniVisualizer = React.memo(ResearchMiniVisualizerComponent);
