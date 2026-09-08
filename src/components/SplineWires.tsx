@@ -54,7 +54,7 @@ const SplineWiresComponent: React.FC<SplineWiresProps> = ({
         </filter>
       </defs>
 
-      {connections.map((conn) => {
+      {connections.map((conn, idx) => {
         const fromPos = pinPositions[conn.fromPinId];
         const toPos = pinPositions[conn.toPinId];
 
@@ -147,50 +147,51 @@ const SplineWiresComponent: React.FC<SplineWiresProps> = ({
               strokeLinecap="round"
             />
 
-            {/* 5. Animated quantum signal pulses flowing along spline */}
-            {(conn.animated || isSimulating) && (
-              <>
-                {/* Secondary flowing energy track */}
-                <path
-                  d={pathData}
-                  fill="none"
-                  stroke="#ffffff"
-                  strokeWidth={1.2}
-                  strokeDasharray="8, 28"
-                  strokeOpacity={0.65}
-                  strokeLinecap="round"
-                >
-                  <animate
-                    attributeName="stroke-dashoffset"
-                    values="0;-72"
-                    dur={isSimulating ? '1.6s' : '3.8s'}
-                    repeatCount="indefinite"
-                  />
-                </path>
+            {/* 5. Restrained, staggered quantum signal pulses flowing along spline */}
+            {(conn.animated || isSimulating) && !prefersReducedMotion && (
+              (() => {
+                const STAGGER_PROFILES = [
+                  { dur: '5.2s', begin: '0.0s', packetSize: 3.0 },
+                  { dur: '6.6s', begin: '1.8s', packetSize: 2.7 },
+                  { dur: '5.8s', begin: '3.4s', packetSize: 2.9 },
+                  { dur: '7.2s', begin: '0.9s', packetSize: 2.6 },
+                  { dur: '6.2s', begin: '2.5s', packetSize: 3.1 },
+                ];
+                const profile = STAGGER_PROFILES[idx % STAGGER_PROFILES.length];
+                const photonSize = isSelected ? 4.2 : profile.packetSize;
 
-                {/* Primary traveling energy photon */}
-                <circle r={isSelected ? 4 : 3} fill="#ffffff" filter="url(#intense-pulse)">
-                  <animateMotion
-                    path={pathData}
-                    dur={isSimulating ? '1.8s' : '4.2s'}
-                    repeatCount="indefinite"
-                    rotate="auto"
-                  />
-                </circle>
+                return (
+                  <>
+                    {/* Primary traveling signal packet */}
+                    <circle
+                      r={photonSize}
+                      fill="#ffffff"
+                      filter={isSelected ? 'url(#intense-pulse)' : 'url(#wire-glow-filter)'}
+                    >
+                      <animateMotion
+                        path={pathData}
+                        dur={isSelected ? '3.8s' : profile.dur}
+                        begin={profile.begin}
+                        repeatCount="indefinite"
+                        rotate="auto"
+                      />
+                    </circle>
 
-                {/* Second staggered packet */}
-                {isSimulating && (
-                  <circle r={2.2} fill={baseColor} filter="url(#wire-glow-filter)">
-                    <animateMotion
-                      path={pathData}
-                      dur="2.4s"
-                      begin="0.9s"
-                      repeatCount="indefinite"
-                      rotate="auto"
-                    />
-                  </circle>
-                )}
-              </>
+                    {/* Secondary trailing energy packet on selected / active conduit */}
+                    {isSelected && (
+                      <circle r={2.4} fill={baseColor} filter="url(#wire-glow-filter)">
+                        <animateMotion
+                          path={pathData}
+                          dur="3.8s"
+                          begin="1.2s"
+                          repeatCount="indefinite"
+                          rotate="auto"
+                        />
+                      </circle>
+                    )}
+                  </>
+                );
+              })()
             )}
 
             {/* Hardware Socket Terminals at Pins */}

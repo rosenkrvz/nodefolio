@@ -53,64 +53,176 @@ export default function App() {
   // Scroll Container Ref
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  // Throttled scroll progress tracking via requestAnimationFrame
+  // Deterministic harmonic drift personality configs for organic, controlled workspace life
+  const NODE_DRIFT_PROFILES: Record<
+    string,
+    { ampX: number; ampY: number; periodX: number; periodY: number; phaseX: number; phaseY: number }
+  > = useMemo(() => ({
+    'node-profile': { ampX: 4, ampY: 7, periodX: 13.2, periodY: 10.4, phaseX: 0.3, phaseY: 1.1 },
+    'node-models': { ampX: 6, ampY: 5, periodX: 15.6, periodY: 12.8, phaseX: 1.8, phaseY: 2.4 },
+    'node-credentials': { ampX: 5, ampY: 6, periodX: 13.8, periodY: 14.5, phaseX: 3.1, phaseY: 0.7 },
+    'node-systems': { ampX: 6, ampY: 6, periodX: 16.4, periodY: 11.8, phaseX: 4.2, phaseY: 2.9 },
+    'node-project': { ampX: 3.5, ampY: 4, periodX: 18.0, periodY: 15.2, phaseX: 5.0, phaseY: 3.8 },
+    'node-clock': { ampX: 5, ampY: 3, periodX: 11.4, periodY: 9.6, phaseX: 0.9, phaseY: 4.5 },
+  }), []);
+
+  // Subtle harmonic drift state
+  const [driftOffsets, setDriftOffsets] = useState<Record<string, { x: number; y: number }>>({});
+  const isDraggingAnyNodeRef = useRef(false);
+  const driftStartTimeRef = useRef(Date.now());
+  const lastDriftFrameTimeRef = useRef(0);
+
+  // Active nav tab ref for event listeners
   const activeNavTabRef = useRef(activeNavTab);
   activeNavTabRef.current = activeNavTab;
 
+  // Damped, interruptible scroll progress tracking (0.0 to 1.0)
+  const targetProgressRef = useRef<number>(0);
+  const currentProgressRef = useRef<number>(0);
+  const scrollProgressRef = useRef<number>(0);
+  scrollProgressRef.current = scrollProgress;
+
+  // Track dragging state from child nodes
+  const handleDragStateChange = useCallback((nodeId: string, isDragging: boolean) => {
+    isDraggingAnyNodeRef.current = isDragging;
+    if (isDragging) {
+      setDriftOffsets((prev) => ({
+        ...prev,
+        [nodeId]: { x: 0, y: 0 },
+      }));
+    }
+  }, []);
+
+  // Autonomous controlled spatial drift loop (throttled to ~30 FPS for optimal battery and zero lag)
   useEffect(() => {
-    let ticking = false;
-    const handleScroll = () => {
-      if (!ticking) {
-        window.requestAnimationFrame(() => {
-          if (activeNavTabRef.current === 'home') {
-            const docEl = document.documentElement;
-            const totalHeight = docEl.scrollHeight - window.innerHeight;
-            if (totalHeight > 0) {
-              const progress = Math.max(0, Math.min(1, window.scrollY / totalHeight));
-              setScrollProgress(progress);
-              if (progress > 0.85) {
-                setActiveNavTab('network');
-              }
-            }
+    let animId: number;
+    const prefersReducedMotion =
+      typeof window !== 'undefined' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    const loop = (timestamp: number) => {
+      if (timestamp - lastDriftFrameTimeRef.current >= 33) {
+        lastDriftFrameTimeRef.current = timestamp;
+
+        const isVisible = scrollProgress >= 0.20 || activeNavTab !== 'home';
+        const canSimulate =
+          isSimulating &&
+          !prefersReducedMotion &&
+          isVisible &&
+          !document.hidden &&
+          !isDraggingAnyNodeRef.current;
+
+        if (canSimulate) {
+          const t = (Date.now() - driftStartTimeRef.current) / 1000;
+          const nextOffsets: Record<string, { x: number; y: number }> = {};
+
+          for (const [nodeId, cfg] of Object.entries(NODE_DRIFT_PROFILES)) {
+            // Compound smooth sinusoidal harmonics - continuous derivative ensures zero jerk/jitter
+            const dx =
+              cfg.ampX * Math.sin((2 * Math.PI * t) / cfg.periodX + cfg.phaseX) +
+              cfg.ampX * 0.25 * Math.cos((Math.PI * t) / cfg.periodX);
+            const dy =
+              cfg.ampY * Math.cos((2 * Math.PI * t) / cfg.periodY + cfg.phaseY) +
+              cfg.ampY * 0.25 * Math.sin((1.4 * Math.PI * t) / cfg.periodY);
+
+            nextOffsets[nodeId] = {
+              x: Math.round(dx * 10) / 10,
+              y: Math.round(dy * 10) / 10,
+            };
           }
-          ticking = false;
-        });
-        ticking = true;
+
+          setDriftOffsets(nextOffsets);
+        }
+      }
+
+      animId = window.requestAnimationFrame(loop);
+    };
+
+    animId = window.requestAnimationFrame(loop);
+    return () => {
+      window.cancelAnimationFrame(animId);
+    };
+  }, [isSimulating, scrollProgress, activeNavTab, NODE_DRIFT_PROFILES]);
+
+  // Smooth interruptible scroll progress tracking via weighted damping
+  useEffect(() => {
+    const updateTargetProgress = () => {
+      const docEl = document.documentElement;
+      const totalHeight = docEl.scrollHeight - window.innerHeight;
+      if (totalHeight > 0) {
+        targetProgressRef.current = Math.max(0, Math.min(1, window.scrollY / totalHeight));
+      } else {
+        targetProgressRef.current = 0;
       }
     };
 
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    window.addEventListener('resize', handleScroll, { passive: true });
-    handleScroll();
+    let animId: number;
+    const tick = () => {
+      const target = targetProgressRef.current;
+      const current = currentProgressRef.current;
+      const diff = target - current;
+
+      if (Math.abs(diff) > 0.001) {
+        // Weighted damping factor (0.16) for smooth momentum without overshooting
+        const next = current + diff * 0.16;
+        currentProgressRef.current = next;
+        setScrollProgress(Math.round(next * 1000) / 1000);
+      } else if (current !== target) {
+        currentProgressRef.current = target;
+        setScrollProgress(target);
+      }
+
+      // Automatically sync active tab indicator to scroll position
+      if (currentProgressRef.current >= 0.50 && activeNavTabRef.current === 'home') {
+        setActiveNavTab('network');
+      } else if (currentProgressRef.current < 0.40 && activeNavTabRef.current === 'network') {
+        setActiveNavTab('home');
+      }
+
+      animId = window.requestAnimationFrame(tick);
+    };
+
+    window.addEventListener('scroll', updateTargetProgress, { passive: true });
+    window.addEventListener('resize', updateTargetProgress, { passive: true });
+    updateTargetProgress();
+    currentProgressRef.current = targetProgressRef.current;
+    setScrollProgress(targetProgressRef.current);
+    animId = window.requestAnimationFrame(tick);
+
     return () => {
-      window.removeEventListener('scroll', handleScroll);
-      window.removeEventListener('resize', handleScroll);
+      window.removeEventListener('scroll', updateTargetProgress);
+      window.removeEventListener('resize', updateTargetProgress);
+      window.cancelAnimationFrame(animId);
     };
   }, []);
 
-  // Pure deterministic pin coordinate calculation directly from nodes
+  // Pure deterministic pin coordinate calculation directly from nodes and drift offsets
   const pinPositions = useMemo(() => {
     const map: Record<string, { x: number; y: number }> = {};
     for (const node of nodes) {
+      const drift = driftOffsets[node.id] || { x: 0, y: 0 };
+      const currentX = node.x + drift.x;
+      const currentY = node.y + drift.y;
+
       if (node.inputs) {
         node.inputs.forEach((pin, i) => {
           map[pin.id] = {
-            x: node.x + 18,
-            y: node.y + 54 + i * 24,
+            x: currentX + 18,
+            y: currentY + 54 + i * 24,
           };
         });
       }
       if (node.outputs) {
         node.outputs.forEach((pin, j) => {
           map[pin.id] = {
-            x: node.x + node.width - 18,
-            y: node.y + 54 + j * 24,
+            x: currentX + node.width - 18,
+            y: currentY + 54 + j * 24,
           };
         });
       }
     }
     return map;
-  }, [nodes]);
+  }, [nodes, driftOffsets]);
 
   // Node Dragging Handler - Free movement across full screen resolution space, bounded by UI bars
   const handleNodeDrag = useCallback((nodeId: string, deltaX: number, deltaY: number) => {
@@ -352,8 +464,14 @@ export default function App() {
     if (!container) return;
 
     const onNativeWheel = (e: WheelEvent) => {
-      // If user is on cover and scrolling down, allow window to scroll naturally
-      if (activeNavTabRef.current === 'home') {
+      // If user is on cover or in transition phase (< 0.82), allow window to scroll naturally
+      if (scrollProgressRef.current < 0.82) {
+        return;
+      }
+
+      // If user is scrolled into the network, but zooming out at minimum scale (scale <= 0.36) and scrolls up:
+      // Allow window to scroll naturally back up to the Cover!
+      if (e.deltaY < 0 && transformRef.current.scale <= 0.36) {
         return;
       }
 
@@ -404,7 +522,6 @@ export default function App() {
   // Return to cover
   const handleReturnToCover = useCallback(() => {
     setActiveNavTab('home');
-    setScrollProgress(0);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
 
@@ -414,8 +531,9 @@ export default function App() {
     setActiveView('canvas');
     setActivePreset('all');
     setSelectedNodeId(null);
-    setScrollProgress(1);
     centerViewForPreset('all', 0.70);
+    const maxScroll = typeof document !== 'undefined' ? document.documentElement.scrollHeight - window.innerHeight : 1000;
+    window.scrollTo({ top: maxScroll, behavior: 'smooth' });
   }, [centerViewForPreset]);
 
   // Focus specific node on canvas with smooth centered pan
@@ -424,7 +542,8 @@ export default function App() {
     if (!target) return;
 
     setSelectedNodeId(nodeId);
-    setScrollProgress(1);
+    const maxScroll = typeof document !== 'undefined' ? document.documentElement.scrollHeight - window.innerHeight : 1000;
+    window.scrollTo({ top: maxScroll, behavior: 'smooth' });
 
     if (nodeId === 'node-project') {
       setActiveNavTab('projects');
@@ -460,21 +579,23 @@ export default function App() {
       setActiveView('canvas');
       setActivePreset('all');
       setSelectedNodeId(null);
-      setScrollProgress(1);
       centerViewForPreset('all', 0.70);
+      const maxScroll = typeof document !== 'undefined' ? document.documentElement.scrollHeight - window.innerHeight : 1000;
+      window.scrollTo({ top: maxScroll, behavior: 'smooth' });
     } else if (tab === 'projects') {
       setActiveView('canvas');
       setActivePreset('project');
       setSelectedNodeId(null);
-      setScrollProgress(1);
       centerViewForPreset('project', 0.70);
+      const maxScroll = typeof document !== 'undefined' ? document.documentElement.scrollHeight - window.innerHeight : 1000;
+      window.scrollTo({ top: maxScroll, behavior: 'smooth' });
     } else if (tab === 'lab') {
       setActiveView('canvas');
-      setScrollProgress(1);
+      const maxScroll = typeof document !== 'undefined' ? document.documentElement.scrollHeight - window.innerHeight : 1000;
+      window.scrollTo({ top: maxScroll, behavior: 'smooth' });
       handleFocusNode('node-controls');
     } else if (tab === 'notebook') {
       setActiveView('timeline');
-      setScrollProgress(1);
     } else if (tab === 'about') {
       setIsResumeOpen(true);
     }
@@ -493,8 +614,8 @@ export default function App() {
     setActiveConnectionId(null);
   }, []);
 
-  const isCoverActive = activeNavTab === 'home';
-  const effectiveProgress = isCoverActive ? scrollProgress : 1.0;
+  const isCoverActive = activeView === 'canvas';
+  const effectiveProgress = scrollProgress;
 
   return (
     <div className="relative w-full bg-[#14171c] text-[#eaeaea] font-body select-none">
@@ -516,16 +637,19 @@ export default function App() {
 
       {/* CONTINUOUS SCROLL-DRIVEN ARCHITECTURE */}
       <main className="relative w-full max-w-full overflow-x-clip">
-        {/* Real vertical scroll track when on cover, clean 100vh when in workspace */}
-        <div ref={scrollContainerRef} className={`relative w-full ${isCoverActive ? 'h-[250vh]' : 'h-screen overflow-hidden'}`}>
+        {/* Continuous vertical scroll track when on canvas view, dynamic for inspector/timeline */}
+        <div
+          ref={scrollContainerRef}
+          className={`relative w-full ${activeView === 'canvas' ? 'h-[250vh]' : 'min-h-screen'}`}
+        >
           {/* Sticky 100vh Viewport Stage */}
           <div className="sticky top-0 w-full h-screen overflow-hidden">
             {/* SECTION 02: Computational Neural Workspace (Base Layer) */}
             <ArchitecturalReveal scrollProgress={effectiveProgress}>
               <div
                 style={{
-                  opacity: !isCoverActive ? 1 : (effectiveProgress >= 0.25 ? Math.min(1, (effectiveProgress - 0.25) / 0.50) : 0),
-                  pointerEvents: !isCoverActive || effectiveProgress >= 0.80 ? 'auto' : 'none',
+                  opacity: effectiveProgress >= 0.16 ? Math.min(1, (effectiveProgress - 0.16) / 0.45) : 0,
+                  pointerEvents: effectiveProgress >= 0.82 ? 'auto' : 'none',
                 }}
                 className="absolute inset-0 w-full h-screen pt-16 transition-opacity duration-150 ease-out z-10"
               >
@@ -564,22 +688,32 @@ export default function App() {
                       />
 
                       {/* Connected Graph Nodes (#0b0d12 carbon fiber) */}
-                      {filteredNodes.map((node) => (
-                        <GraphNode
-                          key={node.id}
-                          node={node}
-                          scale={transform.scale}
-                          isSelected={selectedNodeId === node.id}
-                          isDimmed={selectedNodeId !== null && selectedNodeId !== node.id}
-                          onSelectNode={(id) => setSelectedNodeId(id)}
-                          onNodeDrag={handleNodeDrag}
-                          onOpenCertificateModal={(cert) => setSelectedCertificate(cert)}
-                          onOpenProjectModal={(proj) => setSelectedProject(proj)}
-                          onOpenContactModal={() => setIsContactOpen(true)}
-                          onOpenResumeModal={() => setIsResumeOpen(true)}
-                          onOpenFocusedNode={(n) => setFocusedNode(n)}
-                        />
-                      ))}
+                      {filteredNodes.map((node) => {
+                        const drift = driftOffsets[node.id] || { x: 0, y: 0 };
+                        const effectiveNode: NodeData = {
+                          ...node,
+                          x: Math.round((node.x + drift.x) * 10) / 10,
+                          y: Math.round((node.y + drift.y) * 10) / 10,
+                        };
+
+                        return (
+                          <GraphNode
+                            key={node.id}
+                            node={effectiveNode}
+                            scale={transform.scale}
+                            isSelected={selectedNodeId === node.id}
+                            isDimmed={selectedNodeId !== null && selectedNodeId !== node.id}
+                            onSelectNode={(id) => setSelectedNodeId(id)}
+                            onNodeDrag={handleNodeDrag}
+                            onDragStateChange={handleDragStateChange}
+                            onOpenCertificateModal={(cert) => setSelectedCertificate(cert)}
+                            onOpenProjectModal={(proj) => setSelectedProject(proj)}
+                            onOpenContactModal={() => setIsContactOpen(true)}
+                            onOpenResumeModal={() => setIsResumeOpen(true)}
+                            onOpenFocusedNode={(n) => setFocusedNode(n)}
+                          />
+                        );
+                      })}
                     </div>
 
                     {/* Floating Dock Controls */}

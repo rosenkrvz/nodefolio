@@ -30,26 +30,32 @@ const EditorialCoverComponent: React.FC<EditorialCoverProps> = ({
     scale = 1;
     translateYPercent = scrollProgress >= 0.75 ? -105 : 0;
   } else {
-    // Continuous smooth progression over scroll [0.06, 0.88]
-    const rawT = Math.max(0, Math.min(1, (scrollProgress - 0.06) / 0.82));
+    // Continuous smooth progression over scroll [0.12, 0.88]
+    // Typography stays readable through the first 50% of the transition
+    const rawT = Math.max(0, Math.min(1, (scrollProgress - 0.12) / 0.76));
     // Smooth cubic Hermite S-curve
     const smoothT = rawT * rawT * (3 - 2 * rawT);
 
-    blur = smoothT * 12; // 0px to 12px progressive blur
-    scale = 1 - smoothT * 0.045; // 1.0 to 0.955
+    // Gradual, GPU-friendly blur progression:
+    // 0% -> 0px, 25% -> 2px, 50% -> 5px, 75% -> 9px, 100% -> 12px
+    blur = smoothT * 12;
+    scale = 1 - smoothT * 0.05; // 1.0 to 0.95
     translateYPercent = -(smoothT * 105); // 0% to -105%
-    opacity = Math.max(0, 1 - Math.pow(smoothT, 2.2));
+    // Maintain strong readability through first half of lift
+    opacity = scrollProgress < 0.35 ? 1 : Math.max(0, 1 - Math.pow(smoothT, 1.8));
   }
+
+  const isFullyOffscreen = scrollProgress >= 0.98;
 
   return (
     <section
       aria-label="Editorial Portfolio Cover"
       style={{
         opacity,
-        filter: blur > 0.1 ? `blur(${blur.toFixed(1)}px)` : 'none',
+        filter: blur > 0.2 ? `blur(${blur.toFixed(1)}px)` : 'none',
         transform: `translate3d(0, ${translateYPercent.toFixed(2)}%, 0) scale(${scale.toFixed(4)})`,
-        transition: 'transform 0.1s cubic-bezier(0.25, 1, 0.5, 1), filter 0.15s ease-out, opacity 0.15s ease-out',
-        pointerEvents: scrollProgress >= 0.80 ? 'none' : 'auto',
+        pointerEvents: scrollProgress >= 0.82 ? 'none' : 'auto',
+        visibility: isFullyOffscreen ? 'hidden' : 'visible',
       }}
       className={`absolute inset-0 w-full h-screen flex flex-col justify-between px-6 sm:px-12 md:px-16 pt-24 pb-10 select-none overflow-hidden z-20 bg-[#14171c] ${
         isLifting ? 'border-b border-rose-500/50 shadow-[0_30px_70px_rgba(0,0,0,0.95)]' : ''

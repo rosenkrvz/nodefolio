@@ -133,6 +133,7 @@ body {
   transform: translateZ(0);
   will-change: transform;
   contain: layout style paint;
+  isolation: isolate;
 }
 
 .node-card:hover {

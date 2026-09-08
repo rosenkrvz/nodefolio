@@ -34,6 +34,7 @@ interface GraphNodeProps {
   onOpenContactModal: () => void;
   onOpenResumeModal: () => void;
   onOpenFocusedNode?: (node: NodeData) => void;
+  onDragStateChange?: (nodeId: string, isDragging: boolean) => void;
 }
 
 const CATEGORY_ICON_MAP: Record<string, React.ReactNode> = {
@@ -58,6 +59,7 @@ const GraphNodeComponent: React.FC<GraphNodeProps> = ({
   onOpenContactModal,
   onOpenResumeModal,
   onOpenFocusedNode,
+  onDragStateChange,
 }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
@@ -77,6 +79,7 @@ const GraphNodeComponent: React.FC<GraphNodeProps> = ({
     e.stopPropagation();
     isDraggingRef.current = true;
     setIsDragging(true);
+    onDragStateChange?.(node.id, true);
     dragStartPosRef.current = { x: e.clientX, y: e.clientY };
     onSelectNode?.(node.id);
 
@@ -93,6 +96,7 @@ const GraphNodeComponent: React.FC<GraphNodeProps> = ({
     const handleMouseUp = () => {
       isDraggingRef.current = false;
       setIsDragging(false);
+      onDragStateChange?.(node.id, false);
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
     };
@@ -112,6 +116,7 @@ const GraphNodeComponent: React.FC<GraphNodeProps> = ({
     const touch = e.touches[0];
     isDraggingRef.current = true;
     setIsDragging(true);
+    onDragStateChange?.(node.id, true);
     dragStartPosRef.current = { x: touch.clientX, y: touch.clientY };
     onSelectNode?.(node.id);
 
@@ -133,6 +138,7 @@ const GraphNodeComponent: React.FC<GraphNodeProps> = ({
     const handleTouchEnd = () => {
       isDraggingRef.current = false;
       setIsDragging(false);
+      onDragStateChange?.(node.id, false);
       window.removeEventListener('touchmove', handleTouchMove);
       window.removeEventListener('touchend', handleTouchEnd);
     };
@@ -155,8 +161,12 @@ const GraphNodeComponent: React.FC<GraphNodeProps> = ({
         transition: isDragging ? 'none' : 'opacity 0.2s ease, transform 0.15s cubic-bezier(0.25, 1, 0.5, 1)',
         willChange: isDragging ? 'transform' : 'auto',
       }}
-      className={`absolute select-none z-10 ${
-        isSelected ? 'z-30' : 'hover:z-20 hover:opacity-100'
+      className={`absolute select-none ${
+        isDragging
+          ? 'z-40'
+          : isSelected
+          ? 'z-30'
+          : 'z-10 hover:z-20 hover:opacity-100'
       }`}
       onClick={(e) => {
         e.stopPropagation();

@@ -32,7 +32,6 @@ const ArchitecturalRevealComponent: React.FC<ArchitecturalRevealProps> = ({
       <div
         style={{
           transform: `scale(${frameScale.toFixed(4)})`,
-          transition: 'transform 0.1s cubic-bezier(0.25, 1, 0.5, 1)',
         }}
         className="w-full h-full relative"
       >
