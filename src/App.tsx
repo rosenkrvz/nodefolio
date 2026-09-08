@@ -35,8 +35,8 @@ export default function App() {
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [activeConnectionId, setActiveConnectionId] = useState<string | null>(null);
 
-  // Canvas pan & zoom transform
-  const [transform, setTransform] = useState<CanvasTransform>({ x: 80, y: 70, scale: 0.86 });
+  // Canvas pan & zoom transform (centered at 70% scale by default)
+  const [transform, setTransform] = useState<CanvasTransform>({ x: 0, y: 0, scale: 0.70 });
   const isPanningRef = useRef(false);
   const panStartRef = useRef({ x: 0, y: 0 });
   const canvasContainerRef = useRef<HTMLDivElement>(null);
@@ -187,35 +187,74 @@ export default function App() {
     window.addEventListener('mouseup', handleMouseUp);
   };
 
-  // Fit view (responsive to mobile, tablet & desktop)
-  const handleFitScreen = useCallback(() => {
+  // Unified, mathematical centering calculation for presets & screen sizes
+  const centerViewForPreset = useCallback((preset: string = 'all', desiredScale: number = 0.70) => {
     const vw = typeof window !== 'undefined' ? window.innerWidth : 1200;
     const vh = typeof window !== 'undefined' ? window.innerHeight : 800;
 
-    // Graph bounding box: x: 60 to 2100 (w: 2040), y: 80 to 930 (h: 850)
-    const graphWidth = 2100;
-    const graphHeight = 880;
+    // Accurate node bounding boxes per preset:
+    // 'all': node-profile [60..400, 260..680] to node-clock [1840..2100, 120..640] & node-credentials [480..820, 550..930]
+    // 'project' (Research Tab): node-models [480..820, 100..500], node-systems [900..1240, 100..500], node-project [1320..1760, 80..760]
+    // 'skills': node-profile [60..400], node-models [480..820], node-systems [900..1240]
+    // 'certificates': node-profile [60..400], node-credentials [480..820]
 
-    // Available viewport margins: top navbar 68px, bottom status 75px, right dock 85px
-    const availW = Math.max(320, vw - (vw < 640 ? 30 : 135));
-    const availH = Math.max(320, vh - (vw < 640 ? 110 : 155));
+    let minX = 60;
+    let maxX = 2100;
+    let minY = 80;
+    let maxY = 930;
 
-    const fitScale = Math.min(availW / graphWidth, availH / graphHeight);
-    const targetScale = Math.max(0.38, Math.min(0.85, Number(fitScale.toFixed(2))));
+    if (preset === 'project') {
+      minX = 480;
+      maxX = 1760; // 1320 + 440
+      minY = 80;
+      maxY = 760;  // 80 + 680
+    } else if (preset === 'skills') {
+      minX = 60;
+      maxX = 1240;
+      minY = 100;
+      maxY = 680;
+    } else if (preset === 'certificates') {
+      minX = 60;
+      maxX = 820;
+      minY = 260;
+      maxY = 930;
+    }
 
-    // Precision centering
-    const x = Math.round((vw - graphWidth * targetScale) / 2) + 15;
-    const y = Math.round((vh - graphHeight * targetScale) / 2) + 25;
+    const groupCenterX = (minX + maxX) / 2;
+    const groupCenterY = (minY + maxY) / 2;
+
+    const groupW = maxX - minX;
+    const groupH = maxY - minY;
+
+    // Viewport usable area accounting for top navbar (64px), bottom telemetry bar (36px), and dock (60px)
+    const availW = Math.max(300, vw - (vw < 640 ? 30 : 100));
+    const availH = Math.max(300, vh - (vw < 640 ? 100 : 130));
+    const maxFitScale = Math.min(availW / groupW, availH / groupH);
+
+    // Keep requested 0.70 default scale, scaling down only if screen size requires it
+    const targetScale = Math.min(desiredScale, Math.max(0.38, Number(maxFitScale.toFixed(2))));
+
+    // Precision viewport center (offsetting 64px top nav and 36px bottom status: (64-36)/2 = +14px)
+    const viewCenterX = vw / 2;
+    const viewCenterY = (vh + 28) / 2;
+
+    const x = Math.round(viewCenterX - groupCenterX * targetScale);
+    const y = Math.round(viewCenterY - groupCenterY * targetScale);
 
     setTransform({ x, y, scale: targetScale });
   }, []);
 
-  // Initial auto-fit on load and resize
-  useEffect(() => {
-    handleFitScreen();
-  }, [handleFitScreen]);
+  // Fit screen handler
+  const handleFitScreen = useCallback(() => {
+    centerViewForPreset(activePreset, 0.70);
+  }, [centerViewForPreset, activePreset]);
 
-  // Direct scroll wheel zoom on workspace (eliminates seizure of zoom control)
+  // Initial auto-centering on load and resize
+  useEffect(() => {
+    centerViewForPreset(activePreset, 0.70);
+  }, [centerViewForPreset, activePreset]);
+
+  // Direct scroll wheel zoom on workspace with tuned sensitivity (counts every percentage smoothly)
   useEffect(() => {
     const container = canvasContainerRef.current;
     if (!container) return;
@@ -229,17 +268,27 @@ export default function App() {
       e.preventDefault();
       e.stopPropagation();
 
-      const zoomDelta = -e.deltaY * 0.0015;
-      const zoomFactor = Math.exp(zoomDelta);
+      // Normalize wheel delta across mice and trackpads:
+      // Standard wheel notch is ~100 delta. We clamp to [-50, 50] to eliminate wild skips.
+      const clampedDelta = Math.max(-50, Math.min(50, -e.deltaY));
+      
+      // Fine-grained multiplier: ~1% to 1.25% change per notch
+      const zoomStep = clampedDelta * 0.00025;
+      const zoomFactor = 1 + zoomStep;
 
       setTransform((prev) => {
-        const nextScale = Math.max(0.35, Math.min(2.0, prev.scale * zoomFactor));
+        // Increment smoothly in 1% increments (0.70 -> 0.71 -> 0.72)
+        const rawScale = prev.scale * zoomFactor;
+        const nextScale = Math.max(0.35, Math.min(1.80, Math.round(rawScale * 100) / 100));
+
+        if (nextScale === prev.scale) return prev;
+
         const rect = container.getBoundingClientRect();
         const mouseX = e.clientX - rect.left;
         const mouseY = e.clientY - rect.top;
 
-        const newX = mouseX - (mouseX - prev.x) * (nextScale / prev.scale);
-        const newY = mouseY - (mouseY - prev.y) * (nextScale / prev.scale);
+        const newX = Math.round(mouseX - (mouseX - prev.x) * (nextScale / prev.scale));
+        const newY = Math.round(mouseY - (mouseY - prev.y) * (nextScale / prev.scale));
 
         return { x: newX, y: newY, scale: nextScale };
       });
@@ -255,8 +304,10 @@ export default function App() {
   const handleResetGraph = useCallback(() => {
     setNodes(INITIAL_NODES);
     setConnections(INITIAL_CONNECTIONS);
-    handleFitScreen();
-  }, [handleFitScreen]);
+    setActivePreset('all');
+    setSelectedNodeId(null);
+    centerViewForPreset('all', 0.70);
+  }, [centerViewForPreset]);
 
   // Return to cover
   const handleReturnToCover = useCallback(() => {
@@ -272,10 +323,10 @@ export default function App() {
     setActivePreset('all');
     setSelectedNodeId(null);
     setScrollProgress(1);
-    handleFitScreen();
-  }, [handleFitScreen]);
+    centerViewForPreset('all', 0.70);
+  }, [centerViewForPreset]);
 
-  // Focus specific node on canvas with smooth pan
+  // Focus specific node on canvas with smooth centered pan
   const handleFocusNode = useCallback((nodeId: string) => {
     const target = nodes.find((n) => n.id === nodeId);
     if (!target) return;
@@ -294,16 +345,20 @@ export default function App() {
 
     const viewportWidth = typeof window !== 'undefined' ? window.innerWidth : 1200;
     const viewportHeight = typeof window !== 'undefined' ? window.innerHeight : 800;
-    const targetScale = viewportWidth < 640 ? 0.75 : 0.95;
+    const targetScale = viewportWidth < 640 ? 0.65 : 0.75;
+    const nodeHalfHeight = nodeId === 'node-project' ? 340 : (nodeId === 'node-clock' ? 260 : 200);
+
+    const viewCenterX = viewportWidth / 2;
+    const viewCenterY = (viewportHeight + 28) / 2;
 
     setTransform({
-      x: viewportWidth / 2 - (target.x + target.width / 2) * targetScale,
-      y: viewportHeight / 2 - (target.y + 160) * targetScale,
+      x: Math.round(viewCenterX - (target.x + target.width / 2) * targetScale),
+      y: Math.round(viewCenterY - (target.y + nodeHalfHeight) * targetScale),
       scale: targetScale,
     });
   }, [nodes]);
 
-  // Top Nav Tab Selection - Instant, reliable loading for all tabs
+  // Top Nav Tab Selection - Centered layouts for Network and Research tabs
   const handleSelectNavTab = useCallback((tab: 'home' | 'network' | 'projects' | 'lab' | 'notebook' | 'about') => {
     setActiveNavTab(tab);
 
@@ -314,23 +369,13 @@ export default function App() {
       setActivePreset('all');
       setSelectedNodeId(null);
       setScrollProgress(1);
-      handleFitScreen();
+      centerViewForPreset('all', 0.70);
     } else if (tab === 'projects') {
       setActiveView('canvas');
       setActivePreset('project');
-      setSelectedNodeId('node-project');
+      setSelectedNodeId(null);
       setScrollProgress(1);
-      const target = nodes.find((n) => n.id === 'node-project');
-      if (target) {
-        const viewportWidth = typeof window !== 'undefined' ? window.innerWidth : 1200;
-        const viewportHeight = typeof window !== 'undefined' ? window.innerHeight : 800;
-        const targetScale = viewportWidth < 640 ? 0.75 : 0.95;
-        setTransform({
-          x: viewportWidth / 2 - (target.x + target.width / 2) * targetScale,
-          y: viewportHeight / 2 - (target.y + 160) * targetScale,
-          scale: targetScale,
-        });
-      }
+      centerViewForPreset('project', 0.70);
     } else if (tab === 'lab') {
       setActiveView('canvas');
       setScrollProgress(1);
@@ -341,7 +386,14 @@ export default function App() {
     } else if (tab === 'about') {
       setIsResumeOpen(true);
     }
-  }, [handleFitScreen, handleFocusNode, handleReturnToCover, nodes]);
+  }, [centerViewForPreset, handleFocusNode, handleReturnToCover]);
+
+  // Preset Selection Handler
+  const handleSelectPreset = useCallback((preset: string) => {
+    setActivePreset(preset);
+    setSelectedNodeId(null);
+    centerViewForPreset(preset, 0.70);
+  }, [centerViewForPreset]);
 
   // Clear node selection when clicking canvas background
   const handleCanvasBackgroundClick = useCallback(() => {
@@ -357,7 +409,7 @@ export default function App() {
       {/* Top Navbar */}
       <TopNavbar
         activePreset={activePreset}
-        onSelectPreset={setActivePreset}
+        onSelectPreset={handleSelectPreset}
         isSimulating={isSimulating}
         onToggleSimulate={() => setIsSimulating(!isSimulating)}
         onResetGraph={handleResetGraph}
@@ -440,8 +492,22 @@ export default function App() {
                     {/* Floating Dock Controls */}
                     <CanvasControlsDock
                       scale={transform.scale}
-                      onZoomIn={() => setTransform((p) => ({ ...p, scale: Math.min(1.8, p.scale * 1.15) }))}
-                      onZoomOut={() => setTransform((p) => ({ ...p, scale: Math.max(0.4, p.scale * 0.85) }))}
+                      onZoomIn={() => setTransform((p) => {
+                        const nextScale = Math.min(1.80, Math.round((p.scale + 0.05) * 100) / 100);
+                        const vw = typeof window !== 'undefined' ? window.innerWidth : 1200;
+                        const vh = typeof window !== 'undefined' ? window.innerHeight : 800;
+                        const newX = Math.round((vw / 2) - ((vw / 2) - p.x) * (nextScale / p.scale));
+                        const newY = Math.round(((vh + 28) / 2) - (((vh + 28) / 2) - p.y) * (nextScale / p.scale));
+                        return { x: newX, y: newY, scale: nextScale };
+                      })}
+                      onZoomOut={() => setTransform((p) => {
+                        const nextScale = Math.max(0.35, Math.round((p.scale - 0.05) * 100) / 100);
+                        const vw = typeof window !== 'undefined' ? window.innerWidth : 1200;
+                        const vh = typeof window !== 'undefined' ? window.innerHeight : 800;
+                        const newX = Math.round((vw / 2) - ((vw / 2) - p.x) * (nextScale / p.scale));
+                        const newY = Math.round(((vh + 28) / 2) - (((vh + 28) / 2) - p.y) * (nextScale / p.scale));
+                        return { x: newX, y: newY, scale: nextScale };
+                      })}
                       onFitScreen={handleFitScreen}
                       showGrid={showGrid}
                       onToggleGrid={() => setShowGrid(!showGrid)}
