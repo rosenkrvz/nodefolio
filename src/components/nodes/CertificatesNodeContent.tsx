@@ -5,11 +5,13 @@ import { ArrowUpRight } from '../icons';
 interface CertificatesNodeContentProps {
   certificates: CertificateItem[];
   onSelectCertificate: (cert: CertificateItem) => void;
+  onExplore?: () => void;
 }
 
 export const CertificatesNodeContent: React.FC<CertificatesNodeContentProps> = ({
   certificates,
   onSelectCertificate,
+  onExplore,
 }) => {
   return (
     <div className="space-y-3 pt-0.5 text-zinc-200">
@@ -38,7 +40,13 @@ export const CertificatesNodeContent: React.FC<CertificatesNodeContentProps> = (
       <div className="pt-2 flex items-center justify-between border-t border-white/[0.08]">
         <button
           type="button"
-          onClick={() => certificates[0] && onSelectCertificate(certificates[0])}
+          onClick={() => {
+            if (onExplore) {
+              onExplore();
+            } else if (certificates[0]) {
+              onSelectCertificate(certificates[0]);
+            }
+          }}
           className="group inline-flex items-center gap-1.5 text-xs font-body font-semibold text-rose-400 hover:text-rose-300 transition-colors"
         >
           <span>Inspect Academic Background</span>

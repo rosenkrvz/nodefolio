@@ -1,20 +1,54 @@
-import React, { useEffect } from 'react';
-import { NodeData, ProjectItem, CertificateItem } from '../types';
-import { Close, ExternalLink, Activity, Layers, Award, Sliders, Eye, User, Clock, ArrowRight } from './icons';
+import React, { useEffect, useState } from 'react';
+import { NodeData, ProjectItem, CertificateItem, Connection } from '../types';
+import { AnalogClock } from './AnalogClock';
+import {
+  Close,
+  ArrowRight,
+  ArrowUpRight,
+  ExternalLink,
+  Activity,
+  Globe,
+  Clock,
+  ShieldCheck,
+  Award,
+  Copy,
+  Check,
+  Layers,
+  Cpu,
+  Binary,
+  Database,
+  Code,
+  User,
+  Mail,
+  FileText,
+  Terminal,
+} from './icons';
 
 interface FocusedNodeModalProps {
   node: NodeData | null;
+  connections?: Connection[];
   onClose: () => void;
   onOpenProjectDetail?: (project: ProjectItem) => void;
   onOpenCertificateDetail?: (cert: CertificateItem) => void;
+  onOpenContact?: () => void;
+  onOpenResume?: () => void;
 }
 
 export const FocusedNodeModal: React.FC<FocusedNodeModalProps> = ({
   node,
+  connections = [],
   onClose,
   onOpenProjectDetail,
   onOpenCertificateDetail,
+  onOpenContact,
+  onOpenResume,
 }) => {
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [clockTime, setClockTime] = useState('');
+  const [clockDate, setClockDate] = useState('');
+  const [timeZone, setTimeZone] = useState('');
+
+  // Keyboard accessibility: Escape to dismiss
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
@@ -25,143 +59,290 @@ export const FocusedNodeModal: React.FC<FocusedNodeModalProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [onClose]);
 
+  // Live chronometer tick for Clock Node
+  useEffect(() => {
+    if (!node || node.category !== 'clock') return;
+    const updateTime = () => {
+      const now = new Date();
+      setClockTime(
+        now.toLocaleTimeString('en-US', {
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+          hour12: true,
+        })
+      );
+      setClockDate(
+        now.toLocaleDateString('en-US', {
+          weekday: 'short',
+          month: 'short',
+          day: 'numeric',
+          year: 'numeric',
+        })
+      );
+      setTimeZone(Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC');
+    };
+    updateTime();
+    const timer = setInterval(updateTime, 1000);
+    return () => clearInterval(timer);
+  }, [node]);
+
   if (!node) return null;
+
+  const handleCopy = (text: string, id: string) => {
+    navigator.clipboard?.writeText(text);
+    setCopiedId(id);
+    setTimeout(() => setCopiedId(null), 2000);
+  };
+
+  // Find incoming & outgoing connection paths for topological routing ledger
+  const incomingConns = connections.filter((c) => c.toNodeId === node.id);
+  const outgoingConns = connections.filter((c) => c.fromNodeId === node.id);
+
+  // Status badge label per category
+  const getStatusBadge = () => {
+    switch (node.category) {
+      case 'profile':
+        return { label: 'IDENTITY CORE', state: 'ONLINE', pulse: true };
+      case 'project':
+        return { label: 'LIVE ARTIFACT', state: '512-D MANIFOLD', pulse: true };
+      case 'skills':
+        return { label: 'COMPUTATIONAL STACK', state: 'COMPILED', pulse: false };
+      case 'certificates':
+        return { label: 'FORMAL RIGOR', state: 'VERIFIED', pulse: false };
+      case 'clock':
+        return { label: 'QUARTZ REF', state: '60 HZ SYNC', pulse: true };
+      default:
+        return { label: 'SYSTEM COMPONENT', state: 'ACTIVE', pulse: false };
+    }
+  };
+
+  const status = getStatusBadge();
 
   return (
     <div
       role="dialog"
       aria-modal="true"
       aria-label={`Detailed technical artifact: ${node.title}`}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 md:p-10 select-none animate-in fade-in duration-200"
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 md:p-10 select-none animate-in fade-in duration-200"
     >
-      {/* Deep dark backdrop blur preserving spatial context */}
+      {/* Deep dark backdrop maintaining spatial awareness of the graph behind it */}
       <div
-        className="absolute inset-0 bg-[#090b10]/80 backdrop-blur-xl transition-opacity"
+        className="absolute inset-0 bg-[#090b10]/85 backdrop-blur-md transition-opacity"
         onClick={onClose}
       />
+      <div
+        className="absolute inset-0 bg-canvas-dots-overlay opacity-30 pointer-events-none"
+        aria-hidden="true"
+      />
 
-      {/* Enlarged Focused Technical Artifact Card (#212121) */}
-      <div className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-[30px] bg-[#212121] border border-white/15 shadow-[0_25px_60px_rgba(0,0,0,0.9),0_0_40px_rgba(225,29,72,0.18)] p-6 sm:p-8 z-10 font-body">
-        {/* Top Artifact Header */}
-        <div className="flex items-start justify-between gap-4 border-b border-white/10 pb-5 mb-6">
-          <div>
-            <div className="flex items-center gap-2 mb-2">
-              <span className="w-2 h-2 rounded-full bg-rose-500 shadow-[0_0_8px_#f43f5e]" />
-              <span className="text-[11px] font-semibold text-rose-400 uppercase tracking-[0.25em]">
-                {node.category} &bull; ARTIFACT {node.id}
+      {/* Architectural Inspection Chassis */}
+      <div
+        className="relative w-full max-w-4xl max-h-[90vh] flex flex-col rounded-[26px] bg-[#0c0e14] border border-white/[0.14] shadow-[0_30px_90px_rgba(0,0,0,0.95),0_0_40px_rgba(225,29,72,0.12)] z-10 font-body overflow-hidden transition-all duration-200"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Top Crimson Laser Horizon Indicator */}
+        <div className="absolute top-0 inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-rose-500 to-transparent shadow-[0_0_14px_#f43f5e] z-30" />
+
+        {/* Technical Corner Registration Reticles */}
+        <div className="absolute top-3 left-3 w-2 h-2 border-t border-l border-rose-500/40 pointer-events-none" />
+        <div className="absolute top-3 right-3 w-2 h-2 border-t border-r border-rose-500/40 pointer-events-none" />
+        <div className="absolute bottom-3 left-3 w-2 h-2 border-b border-l border-rose-500/40 pointer-events-none" />
+        <div className="absolute bottom-3 right-3 w-2 h-2 border-b border-r border-rose-500/40 pointer-events-none" />
+
+        {/* ═══════════ UNIFIED INSPECTION HEADER ═══════════ */}
+        <header className="shrink-0 px-6 sm:px-8 pt-6 pb-5 border-b border-white/[0.08] bg-white/[0.01]">
+          {/* Metadata Eyebrow Row */}
+          <div className="flex items-center justify-between gap-4 mb-3">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <span
+                className={`w-2 h-2 rounded-full ${
+                  status.pulse
+                    ? 'bg-rose-500 shadow-[0_0_8px_#f43f5e] animate-pulse'
+                    : 'bg-rose-500 shadow-[0_0_6px_#f43f5e]'
+                }`}
+              />
+              <span className="font-body text-[11px] font-semibold text-rose-400 uppercase tracking-[0.25em] truncate">
+                {node.category} &bull; ARTIFACT {node.id.toUpperCase()}
+              </span>
+              <span className="text-zinc-600 hidden sm:inline">&bull;</span>
+              <span className="text-zinc-400 text-[10px] font-tech uppercase tracking-widest hidden sm:inline">
+                LAYER 01 / SPATIAL SPEC
               </span>
             </div>
-            <h2 className="font-display text-2xl sm:text-3xl text-white font-bold tracking-tight uppercase">
-              {node.title}
-            </h2>
-            {node.subtitle && (
-              <p className="text-sm text-zinc-300 font-medium mt-1">
-                {node.subtitle}
-              </p>
-            )}
+
+            {/* Right Header Status & Dismissal */}
+            <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+              <div className="hidden xs:flex sm:flex items-center gap-2 px-2.5 py-1 rounded-md bg-white/[0.04] border border-white/[0.08] text-[10px] font-tech text-zinc-300 uppercase tracking-wider">
+                <span className="text-rose-400 font-bold">{status.label}:</span>
+                <span className="text-zinc-200">{status.state}</span>
+              </div>
+
+              <button
+                type="button"
+                onClick={onClose}
+                aria-label="Close inspection panel"
+                className="p-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.10] text-zinc-400 hover:text-white border border-white/[0.10] transition-colors cursor-pointer"
+                title="Close inspection (ESC)"
+              >
+                <Close className="w-4 h-4" />
+              </button>
+            </div>
           </div>
 
-          <button
-            type="button"
-            onClick={onClose}
-            className="p-2 rounded-xl bg-white/5 hover:bg-white/15 text-zinc-400 hover:text-white border border-white/10 transition-colors cursor-pointer"
-            title="Close inspection"
-          >
-            <Close className="w-5 h-5" />
-          </button>
-        </div>
-
-        {/* Content Section based on Node Category */}
-        <div className="space-y-6">
-          {/* Profile Overview */}
-          {node.category === 'profile' && node.profile && (
-            <div className="space-y-4">
-              <p className="text-sm sm:text-base text-zinc-200 leading-relaxed">
-                {node.profile.bio}
-              </p>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
-                {node.profile.stats?.map((st, i) => (
-                  <div key={i} className="p-3.5 rounded-2xl bg-black/40 border border-white/10">
-                    <div className="text-[10px] text-zinc-400 uppercase tracking-widest">{st.label}</div>
-                    <div className="text-sm font-semibold text-white mt-1">{st.value}</div>
-                  </div>
-                ))}
-              </div>
+          {/* Monumental Headline Title */}
+          <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-2">
+            <div>
+              <h2 className="font-display text-2xl sm:text-3xl md:text-4xl text-white font-bold tracking-tight uppercase leading-none">
+                {node.title}
+              </h2>
+              {node.subtitle && (
+                <p className="font-body text-xs sm:text-sm text-zinc-400 font-medium mt-1.5 tracking-wide">
+                  {node.subtitle}
+                </p>
+              )}
             </div>
-          )}
 
-          {/* Project Details */}
-          {node.category === 'project' && node.project && (
-            <div className="space-y-4">
-              <div className="aspect-video w-full rounded-2xl overflow-hidden border border-white/10 relative">
-                <img
-                  src={node.project.image}
-                  alt={node.project.title}
-                  loading="lazy"
-                  decoding="async"
-                  className="w-full h-full object-cover"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
-                <div className="absolute bottom-3 left-4 right-4">
-                  <div className="text-xs text-rose-400 font-semibold tracking-wider uppercase">
-                    {node.project.tagline}
-                  </div>
-                </div>
+            <div className="text-right hidden sm:block">
+              <span className="font-tech text-[11px] font-semibold text-zinc-400 uppercase tracking-[0.2em] block">
+                COORD: [{Math.round(node.x)}, {Math.round(node.y)}]
+              </span>
+              <span className="font-tech text-[10px] text-zinc-400 uppercase tracking-widest block mt-0.5">
+                WIDTH: {node.width}PX &bull; PORTS: {(node.inputs?.length || 0) + (node.outputs?.length || 0)}
+              </span>
+            </div>
+          </div>
+        </header>
+
+        {/* ═══════════ ARTIFACT CONTENT VIEWPORT (SCROLLABLE) ═══════════ */}
+        <div className="flex-1 overflow-y-auto px-6 sm:px-8 py-6 space-y-6">
+          {/* -------------------------------------------------------------
+              1. PROFILE NODE ARTIFACT VIEW
+             ------------------------------------------------------------- */}
+          {node.category === 'profile' && node.profile && (
+            <div className="space-y-6">
+              {/* Personal Thesis Statement Quote */}
+              <div className="relative pl-5 border-l-2 border-rose-500/60 bg-white/[0.015] py-3 pr-4 rounded-r-xl">
+                <p className="font-body text-sm sm:text-base text-zinc-200 leading-relaxed font-normal">
+                  "{node.profile.bio}"
+                </p>
               </div>
 
-              <p className="text-sm text-zinc-300 leading-relaxed">
-                {node.project.description}
-              </p>
+              {/* Research Focus Pillars (Sleek technical specification grid) */}
+              <div>
+                <div className="font-body text-[10px] font-semibold tracking-[0.25em] text-zinc-400 uppercase mb-3 flex items-center gap-2">
+                  <Terminal className="w-3.5 h-3.5 text-rose-400" />
+                  <span>CORE RESEARCH PILLARS &amp; SPECIALIZATION</span>
+                </div>
 
-              {/* Empirical Metrics */}
-              {node.project.metrics && (
-                <div className="grid grid-cols-3 gap-3">
-                  {node.project.metrics.map((m, i) => (
-                    <div key={i} className="p-3 rounded-xl bg-black/40 border border-white/10">
-                      <div className="text-[10px] text-zinc-400 uppercase tracking-wider">{m.label}</div>
-                      <div className="text-sm font-semibold text-white mt-0.5">{m.value}</div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  {node.profile.stats?.map((st, i) => (
+                    <div
+                      key={i}
+                      className="p-4 rounded-xl bg-black/40 border border-white/[0.08] hover:border-white/[0.16] transition-colors"
+                    >
+                      <div className="font-body text-[10px] text-rose-400 font-semibold uppercase tracking-[0.2em]">
+                        {st.label}
+                      </div>
+                      <div className="font-display text-base sm:text-lg font-bold text-white uppercase tracking-wide mt-1.5">
+                        {st.value}
+                      </div>
                     </div>
                   ))}
                 </div>
-              )}
+              </div>
 
-              {/* Tags */}
-              <div className="flex flex-wrap gap-1.5 pt-2">
-                {node.project.tags.map((tag) => (
-                  <span
-                    key={tag}
-                    className="px-2.5 py-1 rounded-lg bg-white/5 border border-white/10 text-xs text-zinc-300 font-medium"
-                  >
-                    {tag}
-                  </span>
-                ))}
+              {/* Location, Availability & Communication Ledger */}
+              <div className="p-4 rounded-xl bg-white/[0.02] border border-white/[0.08] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="space-y-1">
+                  <div className="font-body text-[10px] font-semibold tracking-[0.2em] uppercase text-zinc-400">
+                    RESEARCH AVAILABILITY
+                  </div>
+                  <div className="font-body text-xs text-zinc-200 font-medium">
+                    {node.profile.location}
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2.5">
+                  {onOpenContact && (
+                    <button
+                      type="button"
+                      onClick={onOpenContact}
+                      className="px-4 py-2 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-semibold text-xs uppercase tracking-wider transition-all shadow-[0_0_16px_rgba(225,29,72,0.35)] flex items-center gap-1.5 cursor-pointer active:scale-95"
+                    >
+                      <Mail className="w-3.5 h-3.5" />
+                      <span>Contact &amp; Inquire</span>
+                    </button>
+                  )}
+
+                  {onOpenResume && (
+                    <button
+                      type="button"
+                      onClick={onOpenResume}
+                      className="px-4 py-2 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-zinc-200 hover:text-white border border-white/[0.12] font-semibold text-xs uppercase tracking-wider transition-all cursor-pointer"
+                    >
+                      <span>Full Curriculum Vitae</span>
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           )}
 
-          {/* Skills / Modules Details */}
+          {/* -------------------------------------------------------------
+              2. SKILLS / COMPUTATIONAL PIPELINE STAGES VIEW
+             ------------------------------------------------------------- */}
           {node.category === 'skills' && node.skills && (
-            <div className="space-y-3">
-              <div className="text-xs text-zinc-400 uppercase tracking-widest font-semibold">
-                Technical Modules &amp; Pipeline Stages
+            <div className="space-y-5">
+              {/* Section Header with technical index */}
+              <div className="flex items-center justify-between border-b border-white/[0.06] pb-2.5">
+                <div className="font-body text-[10px] font-semibold tracking-[0.25em] text-zinc-400 uppercase flex items-center gap-2">
+                  <Cpu className="w-3.5 h-3.5 text-rose-400" />
+                  <span>COMPUTATIONAL MODULES &bull; {node.skills.length} OPERATIONAL STAGES</span>
+                </div>
+                <div className="font-tech text-[10px] text-zinc-400 tracking-widest uppercase">
+                  ARCHITECTURE VERIFIED &bull; LATENT OPS
+                </div>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {node.skills.map((sk) => (
-                  <div key={sk.name} className="p-3.5 rounded-2xl bg-black/40 border border-white/10">
-                    <div className="flex items-center justify-between text-xs font-semibold text-white mb-1">
-                      <span>{sk.name}</span>
-                      <span className="text-rose-400 font-tech text-[11px]">{sk.level}%</span>
+
+              {/* Sophisticated Module Ledger (Replaces generic SaaS progress bars) */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                {node.skills.map((sk, idx) => (
+                  <div
+                    key={sk.name}
+                    className="p-4 rounded-xl bg-black/40 border border-white/[0.08] hover:border-white/[0.18] transition-all relative overflow-hidden group"
+                  >
+                    {/* Stage Eyebrow & Category */}
+                    <div className="flex items-center justify-between gap-2 mb-2">
+                      <div className="flex items-center gap-2">
+                        <span className="font-tech text-[10px] font-bold text-rose-400 tracking-wider uppercase">
+                          STAGE 0{idx + 1}
+                        </span>
+                        <span className="text-zinc-600">&bull;</span>
+                        <span className="font-tech text-[10px] text-zinc-400 uppercase tracking-widest">
+                          {sk.category}
+                        </span>
+                      </div>
+
+                      {/* Discrete Benchmark Metric (Editorial/Technical rather than cartoon progress bar) */}
+                      <span className="px-2 py-0.5 rounded bg-white/[0.05] border border-white/[0.08] font-tech text-[10px] font-semibold text-zinc-300">
+                        {sk.level}% BENCH
+                      </span>
                     </div>
-                    <div className="w-full h-1.5 rounded-full bg-white/10 overflow-hidden mb-2">
-                      <div
-                        className="h-full bg-rose-500 rounded-full"
-                        style={{ width: `${sk.level}%` }}
-                      />
-                    </div>
-                    <div className="flex flex-wrap gap-1">
-                      {sk.tags.map((t) => (
-                        <span key={t} className="text-[10px] text-zinc-400 px-1.5 py-0.5 rounded bg-white/5">
-                          {t}
+
+                    {/* Module Title */}
+                    <h3 className="font-display text-base font-bold text-white tracking-wide uppercase mb-3 group-hover:text-rose-100 transition-colors">
+                      {sk.name}
+                    </h3>
+
+                    {/* Runtime Dependencies / Capability Tags */}
+                    <div className="flex flex-wrap gap-1.5 pt-1">
+                      {sk.tags.map((tag) => (
+                        <span
+                          key={tag}
+                          className="px-2 py-0.5 rounded bg-white/[0.03] border border-white/[0.06] text-[10px] font-tech text-zinc-300"
+                        >
+                          {tag}
                         </span>
                       ))}
                     </div>
@@ -171,26 +352,316 @@ export const FocusedNodeModal: React.FC<FocusedNodeModalProps> = ({
             </div>
           )}
 
-          {/* Connections Metadata */}
-          <div className="pt-4 border-t border-white/10 flex items-center justify-between text-xs text-zinc-400">
-            <div>
-              <span>INPUT PORTS: </span>
-              <span className="text-white font-semibold">{node.inputs?.length || 0}</span>
-              <span className="mx-2">&bull;</span>
-              <span>OUTPUT PORTS: </span>
-              <span className="text-white font-semibold">{node.outputs?.length || 0}</span>
+          {/* -------------------------------------------------------------
+              3. PROJECT / RESEARCH ARTIFACT VIEW
+             ------------------------------------------------------------- */}
+          {node.category === 'project' && node.project && (
+            <div className="space-y-6">
+              {/* Embedded Computational Artifact Viewport */}
+              <div className="relative rounded-2xl overflow-hidden border border-white/[0.12] bg-black/60 shadow-2xl">
+                {/* Viewport Header Reticle */}
+                <div className="flex items-center justify-between px-4 py-2 bg-black/80 border-b border-white/[0.08] text-[10px] font-tech text-zinc-400 uppercase tracking-widest">
+                  <div className="flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
+                    <span>EMBEDDED VIEWPORT // ARTIFACT REG: LGV-2026</span>
+                  </div>
+                  <div>PROJECTION MODE: TOPOLOGICAL MANIFOLD</div>
+                </div>
+
+                {/* Viewport Frame with Image and Dimension Overlay */}
+                <div className="relative aspect-[21/9] sm:aspect-[2.4/1] w-full overflow-hidden bg-zinc-950">
+                  <img
+                    src={node.project.image}
+                    alt={node.project.title}
+                    loading="lazy"
+                    decoding="async"
+                    className="w-full h-full object-cover opacity-90 transition-transform duration-700 hover:scale-105"
+                  />
+                  {/* Subtle technical coordinate overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#0c0e14] via-transparent to-transparent opacity-90" />
+                  <div className="absolute inset-0 pointer-events-none bg-canvas-dots-overlay opacity-30" />
+
+                  {/* Corner Target Markings */}
+                  <div className="absolute top-3 left-3 font-tech text-[9px] text-white/50 tracking-widest">
+                    + X:0.742 Y:0.318 Z:0.912
+                  </div>
+                  <div className="absolute top-3 right-3 font-tech text-[9px] text-white/50 tracking-widest">
+                    RESOLUTION: 512-D
+                  </div>
+
+                  <div className="absolute bottom-3 left-4 right-4 flex items-baseline justify-between">
+                    <div>
+                      <span className="font-tech text-[10px] font-bold text-rose-400 tracking-[0.25em] uppercase block mb-0.5">
+                        {node.project.tagline}
+                      </span>
+                      <span className="font-display text-lg font-bold text-white uppercase tracking-tight">
+                        {node.project.title}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Research Abstract Description */}
+              <div className="space-y-2">
+                <div className="font-body text-[10px] font-semibold tracking-[0.25em] text-zinc-400 uppercase">
+                  RESEARCH ABSTRACT &amp; ARCHITECTURAL THESIS
+                </div>
+                <p className="font-body text-sm sm:text-[15px] text-zinc-300 leading-relaxed max-w-3xl">
+                  {node.project.description}
+                </p>
+              </div>
+
+              {/* Empirical Metrics Ledger (3 Columns) */}
+              {node.project.metrics && (
+                <div>
+                  <div className="font-body text-[10px] font-semibold tracking-[0.25em] text-zinc-400 uppercase mb-2.5">
+                    EMPIRICAL MEASUREMENTS &amp; CONVERGENCE
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    {node.project.metrics.map((m, i) => (
+                      <div
+                        key={i}
+                        className="p-3.5 rounded-xl bg-black/40 border border-white/[0.08]"
+                      >
+                        <div className="font-tech text-[10px] text-rose-400 font-semibold uppercase tracking-wider">
+                          {m.label}
+                        </div>
+                        <div className="font-display text-lg font-bold text-white mt-1 uppercase">
+                          {m.value}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Technologies & Inspection Actions */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-2">
+                <div className="flex flex-wrap gap-1.5">
+                  {node.project.tags.map((tag) => (
+                    <span
+                      key={tag}
+                      className="px-2.5 py-1 rounded-lg bg-white/[0.04] border border-white/[0.08] text-xs font-tech text-zinc-300 font-medium"
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+
+                {onOpenProjectDetail && (
+                  <button
+                    type="button"
+                    onClick={() => onOpenProjectDetail(node.project!)}
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-semibold text-xs tracking-wider uppercase transition-all shadow-[0_0_16px_rgba(225,29,72,0.35)] active:scale-95 cursor-pointer shrink-0"
+                  >
+                    <span>Inspect Full Case Study</span>
+                    <ArrowUpRight className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* -------------------------------------------------------------
+              4. ACADEMIC & THEORETICAL FOUNDATION VIEW
+             ------------------------------------------------------------- */}
+          {node.category === 'certificates' && node.certificates && (
+            <div className="space-y-6">
+              <div className="flex items-center justify-between border-b border-white/[0.06] pb-2.5">
+                <div className="font-body text-[10px] font-semibold tracking-[0.25em] text-zinc-400 uppercase flex items-center gap-2">
+                  <Award className="w-3.5 h-3.5 text-rose-400" />
+                  <span>THEORETICAL FOUNDATION &bull; FORMAL CURRICULUM</span>
+                </div>
+                <div className="font-tech text-[10px] text-zinc-400 tracking-widest uppercase">
+                  ACADEMIC RIGOR
+                </div>
+              </div>
+
+              {/* Curriculum Cards */}
+              <div className="space-y-4">
+                {node.certificates.map((cert) => (
+                  <div
+                    key={cert.id}
+                    className="p-5 rounded-2xl bg-black/40 border border-white/[0.08] hover:border-white/[0.18] transition-all space-y-4"
+                  >
+                    <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-2 border-b border-white/[0.06] pb-3">
+                      <div>
+                        <span className="font-tech text-[10px] font-bold text-rose-400 uppercase tracking-widest block mb-1">
+                          {cert.issuer}
+                        </span>
+                        <h3 className="font-display text-lg sm:text-xl font-bold text-white uppercase tracking-tight">
+                          {cert.title}
+                        </h3>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <span className="font-tech text-[10px] text-zinc-400 uppercase px-2 py-0.5 rounded bg-white/[0.04] border border-white/[0.06]">
+                          {cert.issueDate}
+                        </span>
+                      </div>
+                    </div>
+
+                    <p className="font-body text-sm text-zinc-300 leading-relaxed">
+                      {cert.description}
+                    </p>
+
+                    {/* Competency tags */}
+                    <div className="flex flex-wrap gap-1.5 pt-1">
+                      {cert.skills.map((skill) => (
+                        <span
+                          key={skill}
+                          className="px-2.5 py-1 rounded-lg bg-white/[0.04] border border-white/[0.08] text-xs font-tech text-zinc-300"
+                        >
+                          {skill}
+                        </span>
+                      ))}
+                    </div>
+
+                    {/* Verification Actions */}
+                    <div className="pt-2 flex items-center justify-between text-xs font-tech text-zinc-400">
+                      <button
+                        type="button"
+                        onClick={() => handleCopy(cert.credentialId, cert.id)}
+                        className="inline-flex items-center gap-1.5 text-zinc-400 hover:text-white transition-colors cursor-pointer"
+                      >
+                        {copiedId === cert.id ? (
+                          <>
+                            <Check className="w-3.5 h-3.5 text-rose-400" />
+                            <span className="text-rose-400 font-semibold">COPIED REF</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="w-3.5 h-3.5" />
+                            <span>REF: {cert.credentialId}</span>
+                          </>
+                        )}
+                      </button>
+
+                      {onOpenCertificateDetail && (
+                        <button
+                          type="button"
+                          onClick={() => onOpenCertificateDetail(cert)}
+                          className="inline-flex items-center gap-1.5 text-rose-400 hover:text-rose-300 font-semibold tracking-wider uppercase cursor-pointer"
+                        >
+                          <span>Inspect Credential</span>
+                          <ArrowUpRight className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* -------------------------------------------------------------
+              5. SYSTEM CHRONOMETER NODE VIEW
+             ------------------------------------------------------------- */}
+          {node.category === 'clock' && (
+            <div className="space-y-6">
+              <div className="flex items-center justify-between border-b border-white/[0.06] pb-2.5">
+                <div className="font-body text-[10px] font-semibold tracking-[0.25em] text-zinc-400 uppercase flex items-center gap-2">
+                  <Clock className="w-3.5 h-3.5 text-rose-400" />
+                  <span>TEMPORAL COORDINATES &bull; SYSTEM CHRONOMETER</span>
+                </div>
+                <div className="flex items-center gap-1.5 text-rose-400 text-[10px] font-tech uppercase tracking-widest font-semibold">
+                  <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
+                  <span>LIVE OSCILLATION</span>
+                </div>
+              </div>
+
+              {/* Instrument Bezel with Analog Clock and Telemetry Display */}
+              <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-center p-6 rounded-2xl bg-black/50 border border-white/[0.10]">
+                {/* Left: Mechanical Analog Clock Face */}
+                <div className="md:col-span-5 flex items-center justify-center py-4">
+                  <div className="p-3 rounded-full bg-white/[0.02] border border-white/[0.10] shadow-[0_0_30px_rgba(0,0,0,0.8)]">
+                    <AnalogClock scale={1.1} />
+                  </div>
+                </div>
+
+                {/* Right: Digital Real-Time Telemetry Breakdown */}
+                <div className="md:col-span-7 space-y-4">
+                  <div>
+                    <div className="font-tech text-[10px] text-zinc-400 tracking-[0.2em] uppercase mb-1">
+                      LOCAL SYNCHRONIZED TIME
+                    </div>
+                    <div className="font-display text-4xl sm:text-5xl font-black text-white tracking-tight uppercase">
+                      {clockTime || '12:00:00 PM'}
+                    </div>
+                    <div className="font-body text-sm text-zinc-400 font-medium mt-1">
+                      {clockDate}
+                    </div>
+                  </div>
+
+                  {/* Telemetry metrics row */}
+                  <div className="grid grid-cols-2 gap-3 pt-2">
+                    <div className="p-3 rounded-xl bg-white/[0.03] border border-white/[0.06]">
+                      <div className="font-tech text-[10px] text-zinc-400 uppercase tracking-widest">
+                        TIMEZONE
+                      </div>
+                      <div className="font-tech text-xs text-white font-semibold mt-1 truncate">
+                        {timeZone || 'UTC'}
+                      </div>
+                    </div>
+
+                    <div className="p-3 rounded-xl bg-white/[0.03] border border-white/[0.06]">
+                      <div className="font-tech text-[10px] text-zinc-400 uppercase tracking-widest">
+                        DRIFT STABILITY
+                      </div>
+                      <div className="font-tech text-xs text-rose-400 font-semibold mt-1 flex items-center gap-1.5">
+                        <Activity className="w-3 h-3 text-rose-500 animate-pulse" />
+                        <span>&plusmn;0.002 ms (QUARTZ)</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <p className="font-body text-xs text-zinc-400 leading-relaxed">
+                    Provides continuous deterministic timestamp coordination across interactive graph splines, simulated neural pulses, and temporal journal records.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* ═══════════ FOOTER HARDWARE ROUTING LEDGER ═══════════ */}
+        <footer className="shrink-0 px-6 sm:px-8 py-4 border-t border-white/[0.08] bg-black/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+          {/* Pins & Topological Connectivity Map */}
+          <div className="flex flex-wrap items-center gap-3 sm:gap-4 font-tech text-[11px] text-zinc-400">
+            <div className="flex items-center gap-1.5">
+              <span className="text-zinc-500 uppercase tracking-wider">INPUT PINS:</span>
+              <span className="font-bold text-white">{node.inputs?.length || 0}</span>
+              {node.inputs && node.inputs.length > 0 && (
+                <span className="text-zinc-500">
+                  ({node.inputs.map((p) => p.label).join(', ')})
+                </span>
+              )}
             </div>
 
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 rounded-xl bg-white/10 hover:bg-rose-600 text-white font-semibold text-xs transition-colors flex items-center gap-1.5 cursor-pointer"
-            >
-              <span>Back to Graph</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </button>
+            <span className="text-zinc-700 hidden sm:inline">&bull;</span>
+
+            <div className="flex items-center gap-1.5">
+              <span className="text-zinc-500 uppercase tracking-wider">OUTPUT PINS:</span>
+              <span className="font-bold text-rose-400">{node.outputs?.length || 0}</span>
+              {node.outputs && node.outputs.length > 0 && (
+                <span className="text-zinc-500">
+                  ({node.outputs.map((p) => p.label).join(', ')})
+                </span>
+              )}
+            </div>
           </div>
-        </div>
+
+          {/* Dismiss Back to Graph Action */}
+          <button
+            type="button"
+            onClick={onClose}
+            className="self-end sm:self-auto px-4 py-2 rounded-xl bg-white/[0.08] hover:bg-rose-600 text-white font-semibold text-xs tracking-wider uppercase transition-all flex items-center gap-2 cursor-pointer shadow-sm active:scale-95"
+          >
+            <span>Back to Graph</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </button>
+        </footer>
       </div>
     </div>
   );

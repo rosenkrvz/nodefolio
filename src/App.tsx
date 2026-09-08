@@ -1001,6 +1001,7 @@ export default function App() {
       {/* Modals */}
       <FocusedNodeModal
         node={focusedNode}
+        connections={connections}
         onClose={() => {
           playSound('close');
           setFocusedNode(null);
@@ -1014,6 +1015,16 @@ export default function App() {
           playSound('open');
           setFocusedNode(null);
           setSelectedCertificate(c);
+        }}
+        onOpenContact={() => {
+          playSound('open');
+          setFocusedNode(null);
+          setIsContactOpen(true);
+        }}
+        onOpenResume={() => {
+          playSound('open');
+          setFocusedNode(null);
+          setIsResumeOpen(true);
         }}
       />
 

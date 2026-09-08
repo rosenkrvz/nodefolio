@@ -274,13 +274,18 @@ const GraphNodeComponent: React.FC<GraphNodeProps> = ({
             )}
 
             {node.category === 'skills' && node.skills && (
-              <SkillsNodeContent skills={node.skills} accentColor={node.accentColor} />
+              <SkillsNodeContent
+                skills={node.skills}
+                accentColor={node.accentColor}
+                onExplore={() => onOpenFocusedNode?.(node)}
+              />
             )}
 
             {node.category === 'certificates' && node.certificates && (
               <CertificatesNodeContent
                 certificates={node.certificates}
                 onSelectCertificate={onOpenCertificateModal}
+                onExplore={() => onOpenFocusedNode?.(node)}
               />
             )}
 
