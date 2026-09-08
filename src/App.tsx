@@ -571,12 +571,12 @@ export default function App() {
     if (node.id === 'node-clock') return 520;
     if (node.id === 'node-models' || node.id === 'node-systems') return 390;
     if (node.category === 'visitor') return 280;
-    if (node.researchData) return 330;
+    if (node.researchData) return 340;
     return 340;
   }, []);
 
   // Precision mathematical centering calculation for presets & screen sizes
-  const centerViewForPreset = useCallback((preset: string = 'network', desiredScale: number = 0.60) => {
+  const centerViewForPreset = useCallback((preset: string = 'network', desiredScale?: number) => {
     const vw = typeof window !== 'undefined' ? window.innerWidth : 1200;
     const vh = typeof window !== 'undefined' ? window.innerHeight : 800;
 
@@ -617,10 +617,10 @@ export default function App() {
         if (node.y + h > maxY) maxY = node.y + h;
       }
     } else {
-      minX = 60;
-      maxX = 2100;
+      minX = 100;
+      maxX = 2380;
       minY = 80;
-      maxY = 940;
+      maxY = 1800;
     }
 
     const groupCenterX = (minX + maxX) / 2;
@@ -634,9 +634,11 @@ export default function App() {
     const availH = Math.max(300, vh - (vw < 640 ? 100 : 140));
     const maxFitScale = Math.min(availW / groupW, availH / groupH);
 
-    // Keep requested 0.60 default scale, scaling down gracefully on small screens
-    const minScaleFloor = vw < 640 ? 0.25 : 0.35;
-    const targetScale = Math.min(desiredScale, Math.max(minScaleFloor, Number(maxFitScale.toFixed(2))));
+    // Scale default: 0.60 for network tab, or scaled to frame all nodes neatly (capped at 0.48) for research
+    const defaultScale = preset === 'network' ? 0.60 : Math.min(0.48, Number((maxFitScale * 0.94).toFixed(2)));
+    const targetDesired = desiredScale !== undefined ? desiredScale : defaultScale;
+    const minScaleFloor = vw < 640 ? 0.22 : 0.32;
+    const targetScale = Math.min(targetDesired, Math.max(minScaleFloor, Number(maxFitScale.toFixed(2))));
 
     // Precision viewport center (offsetting 64px top nav and ~44px bottom status: (64 + (vh - 52 - 64)/2) = (vh + 12)/2)
     const viewCenterX = vw / 2;
@@ -650,12 +652,12 @@ export default function App() {
 
   // Fit screen handler
   const handleFitScreen = useCallback(() => {
-    centerViewForPreset(activePreset, 0.60);
+    centerViewForPreset(activePreset);
   }, [centerViewForPreset, activePreset]);
 
   // Initial auto-centering on load and resize
   useEffect(() => {
-    centerViewForPreset(activePreset, 0.60);
+    centerViewForPreset(activePreset);
   }, [centerViewForPreset, activePreset]);
 
   // Return to cover with smooth, single-pass upward transition (no ricochet)
@@ -770,9 +772,10 @@ export default function App() {
     const savedVisitors = loadSavedVisitorNodes();
     setNodes([...ALL_INITIAL_NODES, ...savedVisitors]);
     setConnections(ALL_INITIAL_CONNECTIONS);
-    setActivePreset('network');
+    const targetPreset = activeNavTabRef.current === 'projects' ? 'project' : 'network';
+    setActivePreset(targetPreset);
     setSelectedNodeId(null);
-    centerViewForPreset('network', 0.60);
+    centerViewForPreset(targetPreset);
   }, [centerViewForPreset]);
 
   // Smooth single-pass transition down to workspace
@@ -867,7 +870,7 @@ export default function App() {
       setActiveView('canvas');
       setActivePreset('project');
       setSelectedNodeId(null);
-      centerViewForPreset('project', 0.60);
+      centerViewForPreset('project');
       isProgrammaticScrollRef.current = true;
 
       if (wasOnTimeline) {
@@ -911,7 +914,7 @@ export default function App() {
     playSound('secondaryClick');
     setActivePreset(preset);
     setSelectedNodeId(null);
-    centerViewForPreset(preset, 0.60);
+    centerViewForPreset(preset);
   }, [centerViewForPreset]);
 
   // Clear node selection when clicking canvas background

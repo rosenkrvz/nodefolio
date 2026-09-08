@@ -55,10 +55,10 @@ export const AddVisitorNodeModal: React.FC<AddVisitorNodeModalProps> = ({
     }
 
     // Determine collision-safe spatial placement
-    // Visitor notes cluster nicely to the right of official nodes around x: 2360..2680, y: 120..680
+    // Visitor notes cluster nicely to the right of official nodes around x: 2480..2800, y: 120..680
     const col = existingVisitorCount % 2;
     const row = Math.floor(existingVisitorCount / 2);
-    const spawnX = 2380 + col * 290 + (Math.random() * 20 - 10);
+    const spawnX = 2480 + col * 290 + (Math.random() * 20 - 10);
     const spawnY = 140 + row * 220 + (Math.random() * 20 - 10);
 
     const visitorPayload: VisitorNodeData = {
