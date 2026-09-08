@@ -73,6 +73,12 @@ export default function App() {
   const [selectedCertificate, setSelectedCertificate] = useState<CertificateItem | null>(null);
   const [selectedProject, setSelectedProject] = useState<ProjectItem | null>(null);
   const [focusedNode, setFocusedNode] = useState<NodeData | null>(null);
+  const [nodeOriginRect, setNodeOriginRect] = useState<{
+    left: number;
+    top: number;
+    width: number;
+    height: number;
+  } | null>(null);
   const [isContactOpen, setIsContactOpen] = useState(false);
   const [isResumeOpen, setIsResumeOpen] = useState(false);
 
@@ -1056,6 +1062,11 @@ export default function App() {
                             }}
                             onOpenFocusedNode={(n) => {
                               playSound('open');
+                              const el = typeof document !== 'undefined' ? document.getElementById(`graph-node-${n.id}`) : null;
+                              const rect = el ? el.getBoundingClientRect() : null;
+                              setNodeOriginRect(
+                                rect ? { left: rect.left, top: rect.top, width: rect.width, height: rect.height } : null
+                              );
                               setFocusedNode(n);
                             }}
                           />
@@ -1180,30 +1191,35 @@ export default function App() {
       {/* Modals */}
       <FocusedNodeModal
         node={focusedNode}
+        originRect={nodeOriginRect}
         connections={connections}
         onClose={() => {
-          playSound('close');
           setFocusedNode(null);
+          setNodeOriginRect(null);
         }}
         onFocusNode={handleFocusNode}
         onOpenProjectDetail={(p) => {
           playSound('open');
           setFocusedNode(null);
+          setNodeOriginRect(null);
           setSelectedProject(p);
         }}
         onOpenCertificateDetail={(c) => {
           playSound('open');
           setFocusedNode(null);
+          setNodeOriginRect(null);
           setSelectedCertificate(c);
         }}
         onOpenContact={() => {
           playSound('open');
           setFocusedNode(null);
+          setNodeOriginRect(null);
           setIsContactOpen(true);
         }}
         onOpenResume={() => {
           playSound('open');
           setFocusedNode(null);
+          setNodeOriginRect(null);
           setIsResumeOpen(true);
         }}
       />

@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { NodeData, ProjectItem, CertificateItem, Connection } from '../types';
 import { AnalogClock } from './AnalogClock';
 import { ResearchMiniVisualizer } from './nodes/ResearchMiniVisualizer';
+import { playSound } from '../lib/sound';
 import {
   Close,
   ArrowRight,
@@ -31,6 +32,7 @@ import {
 
 interface FocusedNodeModalProps {
   node: NodeData | null;
+  originRect?: { left: number; top: number; width: number; height: number } | null;
   connections?: Connection[];
   onClose: () => void;
   onOpenProjectDetail?: (project: ProjectItem) => void;
@@ -42,6 +44,7 @@ interface FocusedNodeModalProps {
 
 export const FocusedNodeModal: React.FC<FocusedNodeModalProps> = ({
   node,
+  originRect,
   connections = [],
   onClose,
   onOpenProjectDetail,
@@ -50,21 +53,159 @@ export const FocusedNodeModal: React.FC<FocusedNodeModalProps> = ({
   onOpenResume,
   onFocusNode,
 }) => {
+  const chassisRef = useRef<HTMLDivElement>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [clockTime, setClockTime] = useState('');
   const [clockDate, setClockDate] = useState('');
   const [timeZone, setTimeZone] = useState('');
 
+  // Animation lifecycle state: 'mounting' | 'open' | 'closing'
+  const [animState, setAnimState] = useState<'mounting' | 'open' | 'closing'>('mounting');
+  const [isContentVisible, setIsContentVisible] = useState(false);
+  const [transformStyle, setTransformStyle] = useState<{
+    transform: string;
+    opacity: number;
+  }>({
+    transform: 'translate3d(0, 16px, 0) scale(0.96)',
+    opacity: 0,
+  });
+
+  // Calculate origin transform and trigger entry animation
+  useEffect(() => {
+    if (!node) return;
+
+    const prefersReducedMotion =
+      typeof window !== 'undefined' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    if (prefersReducedMotion) {
+      setTransformStyle({
+        transform: 'none',
+        opacity: 1,
+      });
+      setAnimState('open');
+      setIsContentVisible(true);
+      return;
+    }
+
+    const chassis = chassisRef.current;
+    let dx = 0;
+    let dy = 16;
+    let sx = 0.94;
+    let sy = 0.94;
+
+    if (originRect && chassis) {
+      const chassisRect = chassis.getBoundingClientRect();
+      if (chassisRect.width > 0 && chassisRect.height > 0) {
+        const nodeCenterX = originRect.left + originRect.width / 2;
+        const nodeCenterY = originRect.top + originRect.height / 2;
+        const chassisCenterX = chassisRect.left + chassisRect.width / 2;
+        const chassisCenterY = chassisRect.top + chassisRect.height / 2;
+
+        dx = Math.round(nodeCenterX - chassisCenterX);
+        dy = Math.round(nodeCenterY - chassisCenterY);
+        sx = Math.max(0.28, Math.min(1, originRect.width / chassisRect.width));
+        sy = Math.max(0.22, Math.min(1, originRect.height / chassisRect.height));
+      }
+    }
+
+    // Phase 1: Set initial transformed origin state
+    setTransformStyle({
+      transform: `translate3d(${dx}px, ${dy}px, 0) scale(${sx.toFixed(4)}, ${sy.toFixed(4)})`,
+      opacity: 0.45,
+    });
+    setAnimState('mounting');
+    setIsContentVisible(false);
+
+    // Phase 2: Morph smoothly to full modal position
+    let contentTimer: ReturnType<typeof setTimeout>;
+    const rafId = requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        setTransformStyle({
+          transform: 'translate3d(0, 0, 0) scale(1, 1)',
+          opacity: 1,
+        });
+        setAnimState('open');
+
+        // Phase 3: Staggered internal content revelation
+        contentTimer = setTimeout(() => {
+          setIsContentVisible(true);
+        }, 90);
+      });
+    });
+
+    return () => {
+      cancelAnimationFrame(rafId);
+      if (contentTimer) clearTimeout(contentTimer);
+    };
+  }, [node, originRect]);
+
+  // Coordinated closing sequence back toward origin
+  const handleClose = useCallback(
+    (callback?: () => void) => {
+      if (animState === 'closing') return;
+
+      const prefersReducedMotion =
+        typeof window !== 'undefined' &&
+        window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      if (prefersReducedMotion) {
+        playSound('close');
+        onClose();
+        callback?.();
+        return;
+      }
+
+      setAnimState('closing');
+      setIsContentVisible(false);
+      playSound('close');
+
+      const chassis = chassisRef.current;
+      let dx = 0;
+      let dy = 16;
+      let sx = 0.94;
+      let sy = 0.94;
+
+      if (originRect && chassis) {
+        const chassisRect = chassis.getBoundingClientRect();
+        if (chassisRect.width > 0 && chassisRect.height > 0) {
+          const nodeCenterX = originRect.left + originRect.width / 2;
+          const nodeCenterY = originRect.top + originRect.height / 2;
+          const chassisCenterX = chassisRect.left + chassisRect.width / 2;
+          const chassisCenterY = chassisRect.top + chassisRect.height / 2;
+
+          dx = Math.round(nodeCenterX - chassisCenterX);
+          dy = Math.round(nodeCenterY - chassisCenterY);
+          sx = Math.max(0.28, Math.min(1, originRect.width / chassisRect.width));
+          sy = Math.max(0.22, Math.min(1, originRect.height / chassisRect.height));
+        }
+      }
+
+      setTransformStyle({
+        transform: `translate3d(${dx}px, ${dy}px, 0) scale(${sx.toFixed(4)}, ${sy.toFixed(4)})`,
+        opacity: 0,
+      });
+
+      const timer = setTimeout(() => {
+        onClose();
+        callback?.();
+      }, 260);
+
+      return () => clearTimeout(timer);
+    },
+    [animState, onClose, originRect]
+  );
+
   // Keyboard accessibility: Escape to dismiss
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        onClose();
+        handleClose();
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [onClose]);
+  }, [handleClose]);
 
   // Live chronometer tick for Clock Node
   useEffect(() => {
@@ -153,25 +294,50 @@ export const FocusedNodeModal: React.FC<FocusedNodeModalProps> = ({
       role="dialog"
       aria-modal="true"
       aria-label={`Detailed technical artifact: ${node.title}`}
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 md:p-10 select-none animate-in fade-in duration-200"
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 md:p-10 select-none"
     >
       {/* Deep dark backdrop maintaining spatial awareness of the graph behind it */}
       <div
-        className="absolute inset-0 bg-[#090b10]/85 backdrop-blur-md transition-opacity"
-        onClick={onClose}
+        style={{
+          opacity: animState === 'open' ? 1 : 0,
+          transition: 'opacity 260ms ease-out',
+        }}
+        className="absolute inset-0 bg-[#090b10]/85 backdrop-blur-md cursor-pointer"
+        onClick={() => handleClose()}
       />
       <div
-        className="absolute inset-0 bg-canvas-dots-overlay opacity-30 pointer-events-none"
+        style={{
+          opacity: animState === 'open' ? 0.35 : 0,
+          transition: 'opacity 260ms ease-out',
+        }}
+        className="absolute inset-0 bg-canvas-dots-overlay pointer-events-none"
         aria-hidden="true"
       />
 
       {/* Architectural Inspection Chassis */}
       <div
-        className="relative w-full max-w-4xl max-h-[90vh] flex flex-col rounded-[26px] bg-[#0c0e14] border border-white/[0.14] shadow-[0_30px_90px_rgba(0,0,0,0.95),0_0_40px_rgba(225,29,72,0.12)] z-10 font-body overflow-hidden transition-all duration-200"
+        ref={chassisRef}
+        style={{
+          transform: transformStyle.transform,
+          opacity: transformStyle.opacity,
+          transformOrigin: 'center center',
+          transition:
+            animState === 'closing'
+              ? 'transform 260ms cubic-bezier(0.4, 0, 0.2, 1), opacity 220ms ease-in'
+              : animState === 'open'
+              ? 'transform 380ms cubic-bezier(0.16, 1, 0.3, 1), opacity 260ms ease-out'
+              : 'none',
+          willChange: 'transform, opacity',
+        }}
+        className="relative w-full max-w-4xl max-h-[90vh] flex flex-col rounded-[26px] bg-[#0c0e14] border border-white/[0.14] shadow-[0_30px_90px_rgba(0,0,0,0.95),0_0_40px_rgba(225,29,72,0.12)] z-10 font-body overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Top Crimson Laser Horizon Indicator */}
-        <div className="absolute top-0 inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-rose-500 to-transparent shadow-[0_0_14px_#f43f5e] z-30" />
+        <div
+          className={`absolute top-0 inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-rose-500 to-transparent shadow-[0_0_14px_#f43f5e] z-30 transition-opacity duration-300 ${
+            isContentVisible ? 'opacity-100' : 'opacity-60'
+          }`}
+        />
 
         {/* Technical Corner Registration Reticles */}
         <div className="absolute top-3 left-3 w-2 h-2 border-t border-l border-rose-500/40 pointer-events-none" />
@@ -182,7 +348,14 @@ export const FocusedNodeModal: React.FC<FocusedNodeModalProps> = ({
         {/* ═══════════ UNIFIED INSPECTION HEADER ═══════════ */}
         <header className="shrink-0 px-6 sm:px-8 pt-6 pb-5 border-b border-white/[0.08] bg-white/[0.01]">
           {/* Metadata Eyebrow Row */}
-          <div className="flex items-center justify-between gap-4 mb-3">
+          <div
+            style={{
+              opacity: isContentVisible ? 1 : 0,
+              transform: isContentVisible ? 'translateY(0)' : 'translateY(5px)',
+              transition: 'opacity 260ms ease 40ms, transform 260ms cubic-bezier(0.16, 1, 0.3, 1) 40ms',
+            }}
+            className="flex items-center justify-between gap-4 mb-3"
+          >
             <div className="flex items-center gap-2.5 min-w-0">
               <span
                 className={`w-2 h-2 rounded-full ${
@@ -209,7 +382,7 @@ export const FocusedNodeModal: React.FC<FocusedNodeModalProps> = ({
 
               <button
                 type="button"
-                onClick={onClose}
+                onClick={() => handleClose()}
                 aria-label="Close inspection panel"
                 className="p-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.10] text-zinc-400 hover:text-white border border-white/[0.10] transition-colors cursor-pointer"
                 title="Close inspection (ESC)"
@@ -220,7 +393,14 @@ export const FocusedNodeModal: React.FC<FocusedNodeModalProps> = ({
           </div>
 
           {/* Monumental Headline Title */}
-          <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-2">
+          <div
+            style={{
+              opacity: isContentVisible ? 1 : 0,
+              transform: isContentVisible ? 'translateY(0)' : 'translateY(6px)',
+              transition: 'opacity 280ms ease 80ms, transform 280ms cubic-bezier(0.16, 1, 0.3, 1) 80ms',
+            }}
+            className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-2"
+          >
             <div>
               <h2 className="font-display text-2xl sm:text-3xl md:text-4xl text-white font-bold tracking-tight uppercase leading-none">
                 {node.title}
@@ -244,7 +424,14 @@ export const FocusedNodeModal: React.FC<FocusedNodeModalProps> = ({
         </header>
 
         {/* ═══════════ ARTIFACT CONTENT VIEWPORT (SCROLLABLE) ═══════════ */}
-        <div className="flex-1 overflow-y-auto px-6 sm:px-8 py-6 space-y-6">
+        <div
+          style={{
+            opacity: isContentVisible ? 1 : 0,
+            transform: isContentVisible ? 'translateY(0)' : 'translateY(6px)',
+            transition: 'opacity 300ms ease 130ms, transform 300ms cubic-bezier(0.16, 1, 0.3, 1) 130ms',
+          }}
+          className="flex-1 overflow-y-auto px-6 sm:px-8 py-6 space-y-6"
+        >
           {/* -------------------------------------------------------------
               1. PROFILE NODE ARTIFACT VIEW
              ------------------------------------------------------------- */}
@@ -762,8 +949,7 @@ export const FocusedNodeModal: React.FC<FocusedNodeModalProps> = ({
                         key={relId}
                         type="button"
                         onClick={() => {
-                          onClose();
-                          onFocusNode?.(relId);
+                          handleClose(() => onFocusNode?.(relId));
                         }}
                         className="px-3 py-1.5 rounded-lg bg-white/[0.04] hover:bg-rose-500/20 hover:border-rose-500/40 border border-white/[0.08] text-xs font-tech text-zinc-300 hover:text-white transition-all flex items-center gap-1.5 cursor-pointer"
                       >
@@ -816,7 +1002,14 @@ export const FocusedNodeModal: React.FC<FocusedNodeModalProps> = ({
         </div>
 
         {/* ═══════════ FOOTER HARDWARE ROUTING LEDGER ═══════════ */}
-        <footer className="shrink-0 px-6 sm:px-8 py-4 border-t border-white/[0.08] bg-black/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+        <footer
+          style={{
+            opacity: isContentVisible ? 1 : 0,
+            transform: isContentVisible ? 'translateY(0)' : 'translateY(5px)',
+            transition: 'opacity 260ms ease 170ms, transform 260ms cubic-bezier(0.16, 1, 0.3, 1) 170ms',
+          }}
+          className="shrink-0 px-6 sm:px-8 py-4 border-t border-white/[0.08] bg-black/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
+        >
           {/* Pins & Topological Connectivity Map */}
           <div className="flex flex-wrap items-center gap-3 sm:gap-4 font-tech text-[11px] text-zinc-400">
             <div className="flex items-center gap-1.5">
@@ -845,7 +1038,7 @@ export const FocusedNodeModal: React.FC<FocusedNodeModalProps> = ({
           {/* Dismiss Back to Graph Action */}
           <button
             type="button"
-            onClick={onClose}
+            onClick={() => handleClose()}
             className="self-end sm:self-auto px-4 py-2 rounded-xl bg-white/[0.08] hover:bg-rose-600 text-white font-semibold text-xs tracking-wider uppercase transition-all flex items-center gap-2 cursor-pointer shadow-sm active:scale-95"
           >
             <span>Back to Graph</span>

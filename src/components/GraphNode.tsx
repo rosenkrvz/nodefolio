@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useId } from 'react';
+import React, { useState, useRef, useEffect, useId, useCallback } from 'react';
 import { NodeData, Pin, CertificateItem, ProjectItem } from '../types';
 import { PinPort } from './PinPort';
 import { ProfileNodeContent } from './nodes/ProfileNodeContent';
@@ -89,11 +89,19 @@ const GraphNodeComponent: React.FC<GraphNodeProps> = ({
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
+  const [isOriginExpanding, setIsOriginExpanding] = useState(false);
   const isDraggingRef = useRef(false);
   const isResizingRef = useRef(false);
   const dragStartPosRef = useRef({ x: 0, y: 0 });
   const nodeRef = useRef<HTMLDivElement>(null);
   const cardElementId = useId();
+
+  const handleOpenFocus = useCallback((e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    setIsOriginExpanding(true);
+    setTimeout(() => setIsOriginExpanding(false), 450);
+    onOpenFocusedNode?.(node);
+  }, [node, onOpenFocusedNode]);
 
   // Deliberate Side / Corner Resize Mouse Handler
   const handleResizeMouseDown = (e: React.MouseEvent, direction: 'right' | 'corner') => {
@@ -267,15 +275,19 @@ const GraphNodeComponent: React.FC<GraphNodeProps> = ({
             : node.shape === 'sticky'
             ? 'rounded-2xl rotate-[-1deg]'
             : 'rounded-[30px]'
-        } node-card transition-all duration-200 ${
-          isSelected ? 'node-card-active ring-1 ring-rose-500/40 shadow-[0_0_30px_rgba(225,29,72,0.25)]' : 'hover:border-white/10'
+        } node-card transition-all duration-300 ${
+          isOriginExpanding
+            ? 'ring-2 ring-rose-500 shadow-[0_0_35px_rgba(244,63,94,0.6)] border-rose-500/80 scale-[1.015]'
+            : isSelected
+            ? 'node-card-active ring-1 ring-rose-500/40 shadow-[0_0_30px_rgba(225,29,72,0.25)]'
+            : 'hover:border-white/10'
         }`}
       >
         {/* Node Top Header (Draggable Bar) */}
         <div
           onMouseDown={handleMouseDown}
           onTouchStart={handleTouchStart}
-          onDoubleClick={() => onOpenFocusedNode?.(node)}
+          onDoubleClick={() => handleOpenFocus()}
           className={`flex items-center justify-between px-4 py-3 ${
             node.shape === 'capsule'
               ? 'rounded-t-[36px]'
@@ -307,11 +319,12 @@ const GraphNodeComponent: React.FC<GraphNodeProps> = ({
             {onOpenFocusedNode && (
               <button
                 type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onOpenFocusedNode(node);
-                }}
-                className="p-1 rounded-md text-zinc-400 hover:text-white hover:bg-white/10 transition-colors"
+                onClick={handleOpenFocus}
+                className={`p-1 rounded-md transition-all duration-200 ${
+                  isOriginExpanding
+                    ? 'text-white bg-rose-500/20 scale-110 shadow-[0_0_12px_rgba(244,63,94,0.4)]'
+                    : 'text-zinc-400 hover:text-white hover:bg-white/10'
+                }`}
                 title="Inspect detailed artifact"
               >
                 <Maximize className="w-3.5 h-3.5 text-rose-400" />
@@ -372,7 +385,7 @@ const GraphNodeComponent: React.FC<GraphNodeProps> = ({
               <SkillsNodeContent
                 skills={node.skills}
                 accentColor={node.accentColor}
-                onExplore={() => onOpenFocusedNode?.(node)}
+                onExplore={() => handleOpenFocus()}
               />
             )}
 
@@ -380,7 +393,7 @@ const GraphNodeComponent: React.FC<GraphNodeProps> = ({
               <CertificatesNodeContent
                 certificates={node.certificates}
                 onSelectCertificate={onOpenCertificateModal}
-                onExplore={() => onOpenFocusedNode?.(node)}
+                onExplore={() => handleOpenFocus()}
               />
             )}
 
@@ -449,10 +462,7 @@ const GraphNodeComponent: React.FC<GraphNodeProps> = ({
                 {onOpenFocusedNode && (
                   <button
                     type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onOpenFocusedNode(node);
-                    }}
+                    onClick={handleOpenFocus}
                     className="w-full pt-1 text-left text-[11px] font-tech font-semibold text-rose-400 hover:text-rose-300 transition-colors uppercase tracking-wider flex items-center justify-between group/link cursor-pointer"
                   >
                     <span>View Technical Specification</span>
