@@ -18,6 +18,7 @@ import { ProjectDetailModal } from './components/modals/ProjectDetailModal';
 import { ContactModal } from './components/modals/ContactModal';
 import { ResumeModal } from './components/modals/ResumeModal';
 import { InspectorListView } from './components/InspectorListView';
+import { ChronicleView } from './components/ChronicleView';
 
 export default function App() {
   // Navigation & Scroll State
@@ -760,69 +761,27 @@ export default function App() {
                     onOpenContact={() => setIsContactOpen(true)}
                   />
                 ) : (
-                  /* Timeline Chronicle View */
-                  <div className="absolute inset-0 pt-24 pb-16 px-4 sm:px-8 max-w-4xl mx-auto overflow-y-auto z-30 pointer-events-auto font-body">
-                    <div className="mb-8 flex items-center justify-between">
-                      <div>
-                        <div className="flex items-center gap-2 mb-2">
-                          <span className="w-2 h-2 rounded-full bg-rose-500" />
-                          <span className="font-body text-xs tracking-widest uppercase text-rose-400 font-bold">
-                            Research &amp; Exploration Chronicle
-                          </span>
-                        </div>
-                        <h2 className="font-display text-3xl sm:text-4xl text-white font-bold uppercase tracking-tight">
-                          Computational Milestones
-                        </h2>
-                        <p className="font-body text-zinc-300 text-sm sm:text-base mt-1.5 leading-relaxed">
-                          Key trajectories in statistical learning, generative models, and mathematical research.
-                        </p>
-                      </div>
-
-                      <button
-                        type="button"
-                        onClick={() => setActiveView('canvas')}
-                        className="px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-xs uppercase tracking-wider font-semibold transition-colors cursor-pointer"
-                      >
-                        Back to Canvas
-                      </button>
-                    </div>
-
-                    <div className="relative border-l border-white/10 pl-6 ml-3 space-y-8 font-body">
-                      <div className="relative">
-                        <div className="absolute -left-[31px] top-1.5 w-3 h-3 rounded-full bg-rose-500 border-2 border-[#14171c]" />
-                        <span className="text-xs text-rose-400 uppercase tracking-wider font-semibold">Present • Active Focus</span>
-                        <h3 className="font-display text-xl text-white font-semibold mt-0.5 tracking-wide">High-Dimensional Latent Manifold Traversal</h3>
-                        <p className="text-sm sm:text-[15px] text-zinc-200 mt-1 leading-relaxed">
-                          Investigating continuous trajectory interpolation in diffusion latent representations with WebGL manifold projection.
-                        </p>
-                      </div>
-
-                      <div className="relative">
-                        <div className="absolute -left-[31px] top-1.5 w-3 h-3 rounded-full bg-zinc-600 border-2 border-[#14171c]" />
-                        <span className="text-xs text-zinc-400 uppercase tracking-wider font-semibold">Research Study</span>
-                        <h3 className="font-display text-xl text-white font-semibold mt-0.5 tracking-wide">Transformers &amp; Self-Attention Dynamics</h3>
-                        <p className="text-sm sm:text-[15px] text-zinc-200 mt-1 leading-relaxed">
-                          Implementation of FlashAttention kernels, KV cache optimization, and sequence representations for multimodal inference.
-                        </p>
-                      </div>
-
-                      <div className="relative">
-                        <div className="absolute -left-[31px] top-1.5 w-3 h-3 rounded-full bg-zinc-600 border-2 border-[#14171c]" />
-                        <span className="text-xs text-zinc-400 uppercase tracking-wider font-semibold">Academic Foundation</span>
-                        <h3 className="font-display text-xl text-white font-semibold mt-0.5 tracking-wide">Probability, Optimization &amp; Linear Algebra</h3>
-                        <p className="text-sm sm:text-[15px] text-zinc-200 mt-1 leading-relaxed">
-                          Rigorous coursework and problem sets in multivariate calculus, convex optimization, and statistical inference.
-                        </p>
-                      </div>
-                    </div>
+                  /* Editorial Chronicle Journal View */
+                  <div className="absolute inset-0 z-30 pointer-events-auto overflow-y-auto">
+                    <ChronicleView
+                      onBackToCanvas={() => {
+                        setActiveView('canvas');
+                        setActiveNavTab('network');
+                      }}
+                      onFocusNodeOnCanvas={(nodeId) => {
+                        setActiveView('canvas');
+                        handleFocusNode(nodeId);
+                      }}
+                    />
                   </div>
                 )}
 
-                {/* Unified Precision Workspace Footer Bar */}
-                <footer
-                  aria-label="Portfolio coordinates and workspace navigation"
-                  className="absolute bottom-3 inset-x-4 sm:inset-x-8 z-20 pointer-events-none flex items-center justify-between text-[11px] sm:text-xs font-body text-zinc-400 select-none px-4 py-2 rounded-2xl bg-black/80 border border-white/10 backdrop-blur-md shadow-[0_4px_24px_rgba(0,0,0,0.65)]"
-                >
+                {/* Unified Precision Workspace Footer Bar (Only shown on spatial canvas to prevent overlap on Chronicle) */}
+                {activeView === 'canvas' && (
+                  <footer
+                    aria-label="Portfolio coordinates and workspace navigation"
+                    className="absolute bottom-3 inset-x-4 sm:inset-x-8 z-20 pointer-events-none flex items-center justify-between text-[11px] sm:text-xs font-body text-zinc-400 select-none px-4 py-2 rounded-2xl bg-black/80 border border-white/10 backdrop-blur-md shadow-[0_4px_24px_rgba(0,0,0,0.65)]"
+                  >
                   <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
                     <span className="px-2 py-0.5 rounded bg-white/[0.08] border border-white/10 font-semibold text-white uppercase text-[10px] tracking-wider shrink-0">
                       SPATIAL WORKSPACE
@@ -853,7 +812,8 @@ export default function App() {
                     </span>
                   </div>
                 </footer>
-              </div>
+              )}
+            </div>
             </ArchitecturalReveal>
 
             {/* SECTION 01: Solid Editorial Portfolio Cover (Surface Layer, sits on top and physically lifts on scroll) */}
