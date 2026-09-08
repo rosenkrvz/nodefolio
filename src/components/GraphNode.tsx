@@ -46,7 +46,7 @@ const CATEGORY_ICON_MAP: Record<string, React.ReactNode> = {
   clock: <ClockIcon className="w-3.5 h-3.5 text-rose-400" />,
 };
 
-export const GraphNode: React.FC<GraphNodeProps> = ({
+const GraphNodeComponent: React.FC<GraphNodeProps> = ({
   node,
   scale,
   isSelected = false,
@@ -60,6 +60,7 @@ export const GraphNode: React.FC<GraphNodeProps> = ({
   onOpenFocusedNode,
 }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
   const isDraggingRef = useRef(false);
   const dragStartPosRef = useRef({ x: 0, y: 0 });
   const nodeRef = useRef<HTMLDivElement>(null);
@@ -75,6 +76,7 @@ export const GraphNode: React.FC<GraphNodeProps> = ({
 
     e.stopPropagation();
     isDraggingRef.current = true;
+    setIsDragging(true);
     dragStartPosRef.current = { x: e.clientX, y: e.clientY };
     onSelectNode?.(node.id);
 
@@ -90,6 +92,7 @@ export const GraphNode: React.FC<GraphNodeProps> = ({
 
     const handleMouseUp = () => {
       isDraggingRef.current = false;
+      setIsDragging(false);
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
     };
@@ -108,11 +111,16 @@ export const GraphNode: React.FC<GraphNodeProps> = ({
 
     const touch = e.touches[0];
     isDraggingRef.current = true;
+    setIsDragging(true);
     dragStartPosRef.current = { x: touch.clientX, y: touch.clientY };
     onSelectNode?.(node.id);
 
     const handleTouchMove = (moveEvent: TouchEvent) => {
       if (!isDraggingRef.current || moveEvent.touches.length !== 1) return;
+      // Prevent browser default page scrolling while dragging node
+      if (moveEvent.cancelable) {
+        moveEvent.preventDefault();
+      }
       const t = moveEvent.touches[0];
       const dx = (t.clientX - dragStartPosRef.current.x) / scale;
       const dy = (t.clientY - dragStartPosRef.current.y) / scale;
@@ -124,11 +132,12 @@ export const GraphNode: React.FC<GraphNodeProps> = ({
 
     const handleTouchEnd = () => {
       isDraggingRef.current = false;
+      setIsDragging(false);
       window.removeEventListener('touchmove', handleTouchMove);
       window.removeEventListener('touchend', handleTouchEnd);
     };
 
-    window.addEventListener('touchmove', handleTouchMove);
+    window.addEventListener('touchmove', handleTouchMove, { passive: false });
     window.addEventListener('touchend', handleTouchEnd);
   };
 
@@ -143,8 +152,10 @@ export const GraphNode: React.FC<GraphNodeProps> = ({
         transform: `translate(${node.x}px, ${node.y}px)`,
         width: `${node.width}px`,
         opacity: isDimmed ? 0.38 : 1,
+        transition: isDragging ? 'none' : 'opacity 0.2s ease, transform 0.15s cubic-bezier(0.25, 1, 0.5, 1)',
+        willChange: isDragging ? 'transform' : 'auto',
       }}
-      className={`absolute select-none z-10 transition-all duration-200 ${
+      className={`absolute select-none z-10 ${
         isSelected ? 'z-30' : 'hover:z-20 hover:opacity-100'
       }`}
       onClick={(e) => {
@@ -154,6 +165,9 @@ export const GraphNode: React.FC<GraphNodeProps> = ({
     >
       {/* Node Container Card with Dark Neumorphic Aesthetic */}
       <div
+        style={{
+          transition: isDragging ? 'none' : undefined,
+        }}
         className={`rounded-[30px] node-card transition-all duration-200 ${
           isSelected ? 'node-card-active ring-1 ring-rose-500/40 shadow-[0_0_30px_rgba(225,29,72,0.25)]' : 'hover:border-white/10'
         }`}
@@ -284,3 +298,15 @@ export const GraphNode: React.FC<GraphNodeProps> = ({
     </div>
   );
 };
+
+export const GraphNode = React.memo(GraphNodeComponent, (prev, next) => {
+  return (
+    prev.node.x === next.node.x &&
+    prev.node.y === next.node.y &&
+    prev.node.width === next.node.width &&
+    prev.scale === next.scale &&
+    prev.isSelected === next.isSelected &&
+    prev.isDimmed === next.isDimmed &&
+    prev.node.id === next.node.id
+  );
+});

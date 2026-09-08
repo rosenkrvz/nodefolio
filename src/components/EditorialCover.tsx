@@ -7,7 +7,7 @@ interface EditorialCoverProps {
   onViewWork: () => void;
 }
 
-export const EditorialCover: React.FC<EditorialCoverProps> = ({
+const EditorialCoverComponent: React.FC<EditorialCoverProps> = ({
   scrollProgress,
   onExplore,
   onViewWork,
@@ -201,3 +201,5 @@ export const EditorialCover: React.FC<EditorialCoverProps> = ({
     </section>
   );
 };
+
+export const EditorialCover = React.memo(EditorialCoverComponent);

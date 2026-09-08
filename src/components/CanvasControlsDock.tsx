@@ -23,7 +23,7 @@ interface CanvasControlsDockProps {
   onReturnToCover?: () => void;
 }
 
-export const CanvasControlsDock: React.FC<CanvasControlsDockProps> = ({
+const CanvasControlsDockComponent: React.FC<CanvasControlsDockProps> = ({
   scale,
   onZoomIn,
   onZoomOut,
@@ -126,3 +126,5 @@ export const CanvasControlsDock: React.FC<CanvasControlsDockProps> = ({
     </aside>
   );
 };
+
+export const CanvasControlsDock = React.memo(CanvasControlsDockComponent);

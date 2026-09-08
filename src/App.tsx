@@ -238,6 +238,46 @@ export default function App() {
     window.addEventListener('mouseup', handleMouseUp);
   };
 
+  // Mobile touch canvas panning
+  const handleCanvasTouchStart = (e: React.TouchEvent) => {
+    if (e.touches.length !== 1) return;
+    const target = e.target as HTMLElement;
+    if (
+      target.closest('.node-card') ||
+      target.closest('button') ||
+      target.closest('.port-pin') ||
+      target.closest('aside')
+    ) {
+      return;
+    }
+
+    isPanningRef.current = true;
+    const touch = e.touches[0];
+    panStartRef.current = { x: touch.clientX - transform.x, y: touch.clientY - transform.y };
+
+    const handleTouchMove = (moveEvent: TouchEvent) => {
+      if (!isPanningRef.current || moveEvent.touches.length !== 1) return;
+      if (moveEvent.cancelable) {
+        moveEvent.preventDefault();
+      }
+      const t = moveEvent.touches[0];
+      setTransform((prev) => ({
+        ...prev,
+        x: Math.round(t.clientX - panStartRef.current.x),
+        y: Math.round(t.clientY - panStartRef.current.y),
+      }));
+    };
+
+    const handleTouchEnd = () => {
+      isPanningRef.current = false;
+      window.removeEventListener('touchmove', handleTouchMove);
+      window.removeEventListener('touchend', handleTouchEnd);
+    };
+
+    window.addEventListener('touchmove', handleTouchMove, { passive: false });
+    window.addEventListener('touchend', handleTouchEnd);
+  };
+
   // Unified, mathematical centering calculation for presets & screen sizes
   const centerViewForPreset = useCallback((preset: string = 'all', desiredScale: number = 0.70) => {
     const vw = typeof window !== 'undefined' ? window.innerWidth : 1200;
@@ -494,6 +534,7 @@ export default function App() {
                     aria-label="Interactive computational graph canvas"
                     ref={canvasContainerRef}
                     onMouseDown={handleCanvasMouseDown}
+                    onTouchStart={handleCanvasTouchStart}
                     onClick={handleCanvasBackgroundClick}
                     className="w-full h-full cursor-grab active:cursor-grabbing relative overflow-hidden"
                   >

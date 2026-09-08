@@ -55,9 +55,10 @@ export const ProjectNodeContent: React.FC<ProjectNodeContentProps> = ({
     pointsRef.current = pts;
   }, []);
 
-  // Canvas render loop with 3D projection and coordinate grid
+  // Canvas render loop with 3D projection and coordinate grid (optimized to pause when offscreen)
   useEffect(() => {
     let animFrame: number;
+    let isVisible = true;
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
@@ -66,6 +67,7 @@ export const ProjectNodeContent: React.FC<ProjectNodeContentProps> = ({
     let time = 0;
 
     const render = () => {
+      if (!isVisible) return;
       time += 0.015;
       if (isRotating) {
         rotationRef.current.rotY += 0.006;
@@ -183,9 +185,45 @@ export const ProjectNodeContent: React.FC<ProjectNodeContentProps> = ({
       animFrame = requestAnimationFrame(render);
     };
 
+    // Pause when browser tab is inactive
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        isVisible = false;
+        cancelAnimationFrame(animFrame);
+      } else {
+        isVisible = true;
+        cancelAnimationFrame(animFrame);
+        animFrame = requestAnimationFrame(render);
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    // Pause when canvas is scrolled off viewport
+    let observer: IntersectionObserver | null = null;
+    if (typeof IntersectionObserver !== 'undefined') {
+      observer = new IntersectionObserver(
+        ([entry]) => {
+          if (!entry.isIntersecting) {
+            isVisible = false;
+            cancelAnimationFrame(animFrame);
+          } else {
+            isVisible = true;
+            cancelAnimationFrame(animFrame);
+            animFrame = requestAnimationFrame(render);
+          }
+        },
+        { threshold: 0.05 }
+      );
+      observer.observe(canvas);
+    }
+
     render();
 
-    return () => cancelAnimationFrame(animFrame);
+    return () => {
+      cancelAnimationFrame(animFrame);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      observer?.disconnect();
+    };
   }, [isRotating, projectionMode]);
 
   // Handle interactive manual rotation on canvas

@@ -25,7 +25,7 @@ interface TopNavbarProps {
   onSelectNavTab?: (tab: 'home' | 'network' | 'projects' | 'lab' | 'notebook' | 'about') => void;
 }
 
-export const TopNavbar: React.FC<TopNavbarProps> = ({
+const TopNavbarComponent: React.FC<TopNavbarProps> = ({
   activePreset,
   onSelectPreset,
   isSimulating,
@@ -271,3 +271,5 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
     </>
   );
 };
+
+export const TopNavbar = React.memo(TopNavbarComponent);

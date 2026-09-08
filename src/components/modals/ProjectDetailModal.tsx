@@ -79,6 +79,8 @@ export const ProjectDetailModal: React.FC<ProjectDetailModalProps> = ({ project,
             src={project.image}
             alt={project.title}
             referrerPolicy="no-referrer"
+            loading="lazy"
+            decoding="async"
             className="w-full h-full object-cover opacity-85"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-[#111419] via-black/20 to-transparent" />

@@ -6,7 +6,7 @@ interface ArchitecturalRevealProps {
   children: React.ReactNode;
 }
 
-export const ArchitecturalReveal: React.FC<ArchitecturalRevealProps> = ({
+const ArchitecturalRevealComponent: React.FC<ArchitecturalRevealProps> = ({
   scrollProgress,
   children,
 }) => {
@@ -59,4 +59,6 @@ export const ArchitecturalReveal: React.FC<ArchitecturalRevealProps> = ({
     </div>
   );
 };
+
+export const ArchitecturalReveal = React.memo(ArchitecturalRevealComponent);
 

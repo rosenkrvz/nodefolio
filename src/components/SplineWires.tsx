@@ -11,7 +11,7 @@ interface SplineWiresProps {
   selectedNodeId?: string | null;
 }
 
-export const SplineWires: React.FC<SplineWiresProps> = ({
+const SplineWiresComponent: React.FC<SplineWiresProps> = ({
   connections,
   pinPositions,
   isSimulating,
@@ -20,6 +20,10 @@ export const SplineWires: React.FC<SplineWiresProps> = ({
   onSelectConnection,
   selectedNodeId,
 }) => {
+  const prefersReducedMotion =
+    typeof window !== 'undefined' &&
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
   return (
     <svg
       className="absolute top-0 left-0 w-full h-full pointer-events-none z-0"
@@ -203,3 +207,5 @@ export const SplineWires: React.FC<SplineWiresProps> = ({
     </svg>
   );
 };
+
+export const SplineWires = React.memo(SplineWiresComponent);
