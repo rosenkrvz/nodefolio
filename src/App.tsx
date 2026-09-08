@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useRef, useCallback, useMemo, useEffect, useLayoutEffect } from 'react';
+import React, { useState, useRef, useCallback, useMemo, useEffect } from 'react';
 import { NodeData, Connection, CertificateItem, ProjectItem, CanvasTransform, Pin } from './types';
 import { INITIAL_NODES, INITIAL_CONNECTIONS } from './data/portfolioData';
 import { SplineWires } from './components/SplineWires';
@@ -152,13 +152,12 @@ export default function App() {
   useEffect(() => {
     const updateTargetProgress = () => {
       if (activeViewRef.current !== 'canvas') return;
-      if (isProgrammaticScrollRef.current) return;
       const docEl = document.documentElement;
       const totalHeight = docEl.scrollHeight - window.innerHeight;
       if (totalHeight > 0) {
         targetProgressRef.current = Math.max(0, Math.min(1, window.scrollY / totalHeight));
       } else {
-        targetProgressRef.current = activeNavTabRef.current === 'home' ? 0 : 1;
+        targetProgressRef.current = 0;
       }
     };
 
@@ -215,17 +214,7 @@ export default function App() {
     };
   }, []);
 
-  // Synchronously lock scroll position when entering canvas workspace from another view
-  useLayoutEffect(() => {
-    if (activeView === 'canvas' && activeNavTab !== 'home' && targetProgressRef.current === 1) {
-      const docEl = document.documentElement;
-      const maxScroll = docEl.scrollHeight - window.innerHeight;
-      if (maxScroll > 0 && Math.abs(window.scrollY - maxScroll) > 10) {
-        window.scrollTo({ top: maxScroll, behavior: 'instant' });
-      }
-      isProgrammaticScrollRef.current = false;
-    }
-  }, [activeView, activeNavTab]);
+
 
   // Pure deterministic pin coordinate calculation directly from nodes and drift offsets
   const pinPositions = useMemo(() => {
@@ -613,9 +602,10 @@ export default function App() {
     const target = nodes.find((n) => n.id === nodeId);
     if (!target) return;
 
-    const wasNotOnCanvas = activeViewRef.current !== 'canvas';
+    const wasOnTimeline = activeViewRef.current === 'timeline';
     setActiveView('canvas');
     setSelectedNodeId(nodeId);
+    isProgrammaticScrollRef.current = true;
 
     if (nodeId === 'node-project') {
       setActiveNavTab('projects');
@@ -640,13 +630,17 @@ export default function App() {
       scale: targetScale,
     });
 
-    if (wasNotOnCanvas || scrollProgressRef.current < 0.8) {
+    if (wasOnTimeline) {
+      // Coming from Chronicle - skip scroll animation entirely, land directly in workspace
       targetProgressRef.current = 1;
       currentProgressRef.current = 1;
       setScrollProgress(1);
-      isProgrammaticScrollRef.current = true;
-      const maxScroll = typeof window !== 'undefined' ? Math.max(1000, Math.round(window.innerHeight * 2.2)) : 1000;
+      const maxScroll = typeof document !== 'undefined' ? document.documentElement.scrollHeight - window.innerHeight : 1000;
       window.scrollTo({ top: maxScroll, behavior: 'instant' });
+    } else {
+      // Coming from Cover or already on canvas - smooth scroll down
+      const maxScroll = typeof document !== 'undefined' ? document.documentElement.scrollHeight - window.innerHeight : 1000;
+      window.scrollTo({ top: maxScroll, behavior: 'smooth' });
     }
   }, [nodes]);
 
@@ -657,45 +651,59 @@ export default function App() {
     if (tab === 'home') {
       handleReturnToCover();
     } else if (tab === 'network') {
-      const wasNotOnCanvas = activeViewRef.current !== 'canvas';
+      const wasOnTimeline = activeViewRef.current === 'timeline';
       setActiveView('canvas');
       setActivePreset('all');
       setSelectedNodeId(null);
       centerViewForPreset('all', 0.70);
+      isProgrammaticScrollRef.current = true;
 
-      if (wasNotOnCanvas || scrollProgressRef.current < 0.8) {
+      if (wasOnTimeline) {
+        // Coming from Chronicle — skip scroll animation, land instantly in workspace
         targetProgressRef.current = 1;
         currentProgressRef.current = 1;
         setScrollProgress(1);
-        isProgrammaticScrollRef.current = true;
-        const maxScroll = typeof window !== 'undefined' ? Math.max(1000, Math.round(window.innerHeight * 2.2)) : 1000;
+        const maxScroll = typeof document !== 'undefined' ? document.documentElement.scrollHeight - window.innerHeight : 1000;
         window.scrollTo({ top: maxScroll, behavior: 'instant' });
+      } else {
+        // Coming from Cover or already on canvas — original smooth scroll behavior
+        const maxScroll = typeof document !== 'undefined' ? document.documentElement.scrollHeight - window.innerHeight : 1000;
+        window.scrollTo({ top: maxScroll, behavior: 'smooth' });
       }
     } else if (tab === 'projects') {
-      const wasNotOnCanvas = activeViewRef.current !== 'canvas';
+      const wasOnTimeline = activeViewRef.current === 'timeline';
       setActiveView('canvas');
       setActivePreset('project');
       setSelectedNodeId(null);
       centerViewForPreset('project', 0.70);
+      isProgrammaticScrollRef.current = true;
 
-      if (wasNotOnCanvas || scrollProgressRef.current < 0.8) {
+      if (wasOnTimeline) {
+        // Coming from Chronicle — skip scroll animation, land instantly in workspace
         targetProgressRef.current = 1;
         currentProgressRef.current = 1;
         setScrollProgress(1);
-        isProgrammaticScrollRef.current = true;
-        const maxScroll = typeof window !== 'undefined' ? Math.max(1000, Math.round(window.innerHeight * 2.2)) : 1000;
+        const maxScroll = typeof document !== 'undefined' ? document.documentElement.scrollHeight - window.innerHeight : 1000;
         window.scrollTo({ top: maxScroll, behavior: 'instant' });
+      } else {
+        // Coming from Cover or already on canvas — original smooth scroll behavior
+        const maxScroll = typeof document !== 'undefined' ? document.documentElement.scrollHeight - window.innerHeight : 1000;
+        window.scrollTo({ top: maxScroll, behavior: 'smooth' });
       }
     } else if (tab === 'lab') {
-      const wasNotOnCanvas = activeViewRef.current !== 'canvas';
+      const wasOnTimeline = activeViewRef.current === 'timeline';
       setActiveView('canvas');
-      if (wasNotOnCanvas || scrollProgressRef.current < 0.8) {
+      isProgrammaticScrollRef.current = true;
+
+      if (wasOnTimeline) {
         targetProgressRef.current = 1;
         currentProgressRef.current = 1;
         setScrollProgress(1);
-        isProgrammaticScrollRef.current = true;
-        const maxScroll = typeof window !== 'undefined' ? Math.max(1000, Math.round(window.innerHeight * 2.2)) : 1000;
+        const maxScroll = typeof document !== 'undefined' ? document.documentElement.scrollHeight - window.innerHeight : 1000;
         window.scrollTo({ top: maxScroll, behavior: 'instant' });
+      } else {
+        const maxScroll = typeof document !== 'undefined' ? document.documentElement.scrollHeight - window.innerHeight : 1000;
+        window.scrollTo({ top: maxScroll, behavior: 'smooth' });
       }
       handleFocusNode('node-controls');
     } else if (tab === 'notebook') {
@@ -918,13 +926,11 @@ export default function App() {
               </ArchitecturalReveal>
 
               {/* SECTION 01: Solid Editorial Portfolio Cover (Surface Layer, sits on top and physically lifts on scroll) */}
-              {(activeNavTab === 'home' || scrollProgress < 0.98) && (
-                <EditorialCover
-                  scrollProgress={scrollProgress}
-                  onExplore={handleExplore}
-                  onViewWork={() => handleSelectNavTab('projects')}
-                />
-              )}
+              <EditorialCover
+                scrollProgress={scrollProgress}
+                onExplore={handleExplore}
+                onViewWork={() => handleSelectNavTab('projects')}
+              />
             </div>
           </div>
         )}
