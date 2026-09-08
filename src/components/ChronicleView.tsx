@@ -1,5 +1,5 @@
-import React from 'react';
-import { ArrowLeft, ArrowUpRight } from './icons';
+import React, { useState, useEffect, useRef } from 'react';
+import { ArrowLeft, ArrowUpRight, ChevronDown } from './icons';
 import { LabNoteSection } from './LabNoteSection';
 
 interface ChronicleMilestone {
@@ -120,169 +120,356 @@ interface ChronicleViewProps {
   onFocusNodeOnCanvas?: (nodeId: string) => void;
 }
 
+/**
+ * Fade-in on scroll observer hook
+ */
+function useScrollReveal() {
+  const ref = useRef<HTMLDivElement>(null);
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+          observer.unobserve(el);
+        }
+      },
+      { threshold: 0.12 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  return { ref, isVisible };
+}
+
+/**
+ * Single milestone card component with scroll-driven reveal animation
+ */
+const MilestoneCard: React.FC<{
+  item: ChronicleMilestone;
+  index: number;
+  onFocusNodeOnCanvas?: (nodeId: string) => void;
+}> = ({ item, index, onFocusNodeOnCanvas }) => {
+  const { ref, isVisible } = useScrollReveal();
+  const isActive = item.status === 'active';
+
+  return (
+    <div
+      ref={ref}
+      style={{
+        opacity: isVisible ? 1 : 0,
+        transform: isVisible ? 'translateY(0)' : 'translateY(32px)',
+        transition: `opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1) ${index * 0.06}s, transform 0.7s cubic-bezier(0.22, 1, 0.36, 1) ${index * 0.06}s`,
+      }}
+    >
+      {/* Phase card: glass-morphism dark card with crimson accent seam */}
+      <article
+        className={`relative group rounded-2xl overflow-hidden transition-all duration-300 ${
+          isActive
+            ? 'bg-[#12141a]/90 border border-rose-500/30 shadow-[0_0_40px_rgba(225,29,72,0.08),0_20px_50px_rgba(0,0,0,0.6)]'
+            : 'bg-[#12141a]/70 border border-white/[0.06] hover:border-white/[0.14] shadow-[0_16px_40px_rgba(0,0,0,0.5)]'
+        }`}
+      >
+        {/* Active investigation crimson top seam */}
+        {isActive && (
+          <div className="absolute top-0 inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-rose-500 to-transparent shadow-[0_0_12px_#f43f5e]" />
+        )}
+
+        <div className="p-6 sm:p-8 md:p-10">
+          {/* Top row: Phase + Period + Status */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
+            <div className="flex items-center gap-3">
+              {/* Phase index number */}
+              <div className="w-10 h-10 rounded-xl bg-white/[0.04] border border-white/[0.08] flex items-center justify-center shrink-0">
+                <span className="font-display text-sm font-bold text-zinc-300">
+                  {String(5 - index).padStart(2, '0')}
+                </span>
+              </div>
+
+              <div className="flex flex-col">
+                <span className="font-body text-[10px] font-semibold tracking-[0.25em] uppercase text-zinc-500">
+                  {item.phase}
+                </span>
+                <span className={`font-body text-xs font-bold tracking-wider uppercase ${isActive ? 'text-rose-400' : 'text-zinc-300'}`}>
+                  {item.period}
+                </span>
+              </div>
+            </div>
+
+            {/* Status badge */}
+            <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full self-start sm:self-auto ${
+              isActive
+                ? 'bg-rose-500/10 border border-rose-500/25'
+                : 'bg-white/[0.03] border border-white/[0.08]'
+            }`}>
+              <span
+                className={`w-1.5 h-1.5 rounded-full ${
+                  isActive ? 'bg-rose-500 animate-pulse shadow-[0_0_6px_#f43f5e]' : 'bg-zinc-500'
+                }`}
+              />
+              <span className={`font-body text-[10px] font-bold tracking-[0.2em] uppercase ${isActive ? 'text-rose-300' : 'text-zinc-400'}`}>
+                {item.statusLabel}
+              </span>
+            </div>
+          </div>
+
+          {/* Category eyebrow */}
+          <div className="font-body text-[10px] font-semibold tracking-[0.3em] uppercase text-zinc-500 mb-3">
+            {item.category}
+          </div>
+
+          {/* Title */}
+          <h2 className="font-display text-xl sm:text-2xl md:text-3xl font-bold text-white tracking-tight uppercase leading-tight mb-4">
+            {item.title}
+          </h2>
+
+          {/* Thesis quote */}
+          <div className="relative pl-4 border-l-2 border-rose-500/40 mb-5">
+            <p className="font-body text-sm sm:text-[15px] text-zinc-200 font-medium leading-relaxed italic">
+              "{item.thesis}"
+            </p>
+          </div>
+
+          {/* Description */}
+          <p className="font-body text-sm text-zinc-400 leading-relaxed mb-6 max-w-3xl">
+            {item.description}
+          </p>
+
+          {/* Tags row */}
+          <div className="flex flex-wrap items-center gap-2 mb-6">
+            {item.tags.map((tag) => (
+              <span
+                key={tag}
+                className="px-3 py-1 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] font-body text-[11px] tracking-wider text-zinc-300 transition-colors uppercase font-medium"
+              >
+                {tag}
+              </span>
+            ))}
+          </div>
+
+          {/* Bottom: Metrics + Canvas link */}
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pt-5 border-t border-white/[0.06]">
+            {/* Metrics grid */}
+            {item.metrics && item.metrics.length > 0 && (
+              <div className="flex items-center gap-6">
+                {item.metrics.map((m, mIdx) => (
+                  <div key={mIdx} className="space-y-0.5">
+                    <span className="block font-body text-[9px] font-semibold tracking-[0.2em] text-zinc-500 uppercase">{m.label}</span>
+                    <span className="block font-body text-xs font-bold text-zinc-200">{m.value}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Canvas link */}
+            {item.linkedNodeId && onFocusNodeOnCanvas && (
+              <button
+                type="button"
+                onClick={() => onFocusNodeOnCanvas(item.linkedNodeId!)}
+                className="inline-flex items-center gap-1.5 font-body text-xs tracking-wider uppercase text-rose-400 hover:text-rose-300 font-semibold group/link cursor-pointer focus:outline-none transition-colors"
+              >
+                <span>Inspect Node</span>
+                <ArrowUpRight className="w-3.5 h-3.5 transition-transform group-hover/link:translate-x-0.5 group-hover/link:-translate-y-0.5" />
+              </button>
+            )}
+          </div>
+        </div>
+      </article>
+    </div>
+  );
+};
+
+
 export const ChronicleView: React.FC<ChronicleViewProps> = ({
   onBackToCanvas,
   onFocusNodeOnCanvas,
 }) => {
+  const heroRef = useRef<HTMLDivElement>(null);
+  const [heroVisible, setHeroVisible] = useState(false);
+
+  useEffect(() => {
+    // Trigger hero entrance after mount
+    const timer = setTimeout(() => setHeroVisible(true), 80);
+    return () => clearTimeout(timer);
+  }, []);
+
   return (
-    <div className="relative w-full min-h-screen bg-[#0c0e12] text-[#ededed] font-body select-text pt-24 pb-32 px-4 sm:px-8 md:px-12">
-      {/* Subtle Coordinate dots texture */}
-      <div className="fixed inset-0 pointer-events-none bg-canvas-dots-overlay opacity-30 z-0" aria-hidden="true" />
+    <div className="relative w-full min-h-screen bg-[#0c0e12] text-[#ededed] font-body select-text overflow-hidden">
+      {/* ═══════════ ATMOSPHERIC LAYERS ═══════════ */}
 
-      {/* Atmospheric diagonal grid */}
-      <div className="fixed inset-0 pointer-events-none opacity-40 z-0 pattern-bg" aria-hidden="true" />
+      {/* Background diagonal stripe grid (same as Cover page) */}
+      <div className="fixed inset-0 pointer-events-none z-0 pattern-bg opacity-40" aria-hidden="true">
+        <div className="cube-svg" />
+      </div>
 
-      {/* Subtle ambient illumination */}
-      <div className="fixed top-0 right-1/4 w-[600px] h-[500px] pointer-events-none bg-[radial-gradient(ellipse_at_center,rgba(225,29,72,0.06),transparent_65%)] z-0" aria-hidden="true" />
+      {/* Coordinate dot overlay */}
+      <div className="fixed inset-0 pointer-events-none bg-canvas-dots-overlay opacity-25 z-0" aria-hidden="true" />
 
-      <div className="relative z-10 max-w-5xl mx-auto">
-        {/* Top Header & Navigation Bar */}
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6 pb-12 border-b border-white/[0.08]">
-          <div className="space-y-3">
-            {/* Editorial Eyebrow */}
-            <div className="flex items-center gap-2.5 font-tech text-xs tracking-[0.28em] text-rose-400 font-semibold uppercase">
-              <span className="w-1.5 h-1.5 rounded-none bg-rose-500 shadow-[0_0_8px_#f43f5e]" />
-              <span>RESEARCH &amp; BUILD JOURNAL</span>
+      {/* Rose ambient glow — upper right (mirrors Cover) */}
+      <div className="fixed inset-0 pointer-events-none bg-[radial-gradient(ellipse_at_75%_15%,rgba(225,29,72,0.12),transparent_55%)] z-0" aria-hidden="true" />
+
+      {/* Secondary deep ambient — lower left */}
+      <div className="fixed inset-0 pointer-events-none bg-[radial-gradient(ellipse_at_15%_85%,rgba(225,29,72,0.06),transparent_50%)] z-0" aria-hidden="true" />
+
+
+      {/* ═══════════ HERO SECTION ═══════════ */}
+      <div className="relative z-10 w-full pt-24 pb-0 px-6 sm:px-12 md:px-16">
+        <div
+          ref={heroRef}
+          style={{
+            opacity: heroVisible ? 1 : 0,
+            transform: heroVisible ? 'translateY(0)' : 'translateY(24px)',
+            transition: 'opacity 0.8s cubic-bezier(0.22, 1, 0.36, 1), transform 0.8s cubic-bezier(0.22, 1, 0.36, 1)',
+          }}
+          className="max-w-7xl mx-auto"
+        >
+          {/* Top editorial eyebrow (matches Cover layout) */}
+          <div className="flex items-center justify-between mb-12">
+            <div className="flex items-center gap-2.5 font-body text-xs tracking-[0.25em] text-zinc-400 uppercase">
+              <span className="w-2 h-2 rounded-full bg-rose-500 shadow-[0_0_8px_#f43f5e]" />
+              <span className="font-semibold text-zinc-300">CHRONICLE / 03</span>
               <span className="text-zinc-600">&bull;</span>
-              <span className="text-zinc-400">2023 — 2026</span>
+              <span className="text-zinc-400 hidden sm:inline">RESEARCH & BUILD LOG</span>
             </div>
 
-            {/* Monumental Headline in Satoshi */}
-            <h1 className="font-display text-4xl sm:text-5xl md:text-6xl font-black text-white tracking-[-0.035em] uppercase leading-[0.92]">
-              Computational Milestones
-            </h1>
-
-            {/* Concise Human Intro in Satoshi */}
-            <p className="font-body text-sm sm:text-base text-zinc-400 font-normal leading-relaxed max-w-2xl pt-1">
-              A chronological record of what I am investigating, testing, and building across statistical learning, generative representations, and computational systems.
-            </p>
+            <div className="flex items-center gap-3">
+              <span className="font-accent text-3xl leading-none text-rose-400/90 font-bold -mb-1 hidden sm:inline">
+                2023 — 2026
+              </span>
+            </div>
           </div>
 
-          {/* Action: Return to Canvas */}
-          <div className="flex items-center gap-4 shrink-0">
-            <button
-              type="button"
-              onClick={onBackToCanvas}
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 hover:border-white/20 font-tech text-xs tracking-[0.2em] uppercase font-semibold text-zinc-300 hover:text-white transition-all active:scale-95 cursor-pointer group shadow-sm"
-            >
-              <ArrowLeft className="w-3.5 h-3.5 text-rose-400 transition-transform group-hover:-translate-x-1" />
-              <span>Back to Canvas</span>
-            </button>
+          {/* Grid: Hero title left + specs right (mirrors Cover asymmetric layout) */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-end pb-16 border-b border-white/[0.06]">
+            {/* Left: Big editorial title */}
+            <div className="lg:col-span-8 flex flex-col items-start">
+              {/* Category pillar */}
+              <div className="font-body text-xs sm:text-sm font-semibold tracking-[0.35em] uppercase text-rose-400 mb-4 flex items-center gap-2">
+                <span>MILESTONES</span>
+                <span className="text-zinc-600">/</span>
+                <span>EXPERIMENTS</span>
+                <span className="text-zinc-600">/</span>
+                <span>FOUNDATIONS</span>
+              </div>
+
+              {/* Monumental display title — Josefin Sans */}
+              <h1 className="leading-[0.92] mb-6 select-none tracking-tight">
+                <span className="block font-display text-5xl sm:text-7xl md:text-8xl font-black text-white tracking-[-0.03em] uppercase">
+                  COMPUTATIONAL
+                </span>
+                <span className="block font-display text-5xl sm:text-7xl md:text-8xl font-light text-zinc-400/90 tracking-[-0.02em] uppercase mt-1">
+                  CHRONICLE
+                </span>
+              </h1>
+
+              {/* Supporting copy */}
+              <p className="font-body text-base sm:text-lg text-zinc-300 font-normal leading-relaxed mb-8 max-w-xl">
+                A chronological record of what I am investigating, testing, and building across statistical learning, generative representations, and computational systems.
+              </p>
+
+              {/* Action buttons */}
+              <div className="flex flex-wrap items-center gap-4 font-body">
+                <button
+                  type="button"
+                  onClick={onBackToCanvas}
+                  className="px-6 py-3.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-zinc-200 hover:text-white border border-white/[0.12] hover:border-white/[0.25] font-semibold text-xs sm:text-sm tracking-wider uppercase transition-all active:scale-95 cursor-pointer flex items-center gap-2 group"
+                >
+                  <ArrowLeft className="w-4 h-4 text-rose-400 transition-transform group-hover:-translate-x-1" />
+                  <span>BACK TO CANVAS</span>
+                </button>
+
+                <a
+                  href="#chronicle-entries"
+                  className="px-6 py-3.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-semibold text-xs sm:text-sm tracking-wider uppercase transition-all shadow-[0_0_24px_rgba(225,29,72,0.4)] hover:shadow-[0_0_32px_rgba(225,29,72,0.6)] flex items-center gap-2 group active:scale-95 cursor-pointer"
+                >
+                  <span>VIEW ENTRIES</span>
+                  <ChevronDown className="w-4 h-4 transition-transform group-hover:translate-y-0.5" />
+                </a>
+              </div>
+            </div>
+
+            {/* Right column: Research stats (mirrors Cover's spec column) */}
+            <div className="hidden lg:flex lg:col-span-4 flex-col items-end text-right space-y-8 pl-8">
+              <div className="space-y-2.5">
+                <span className="font-accent text-3xl leading-none text-rose-400/80 block">
+                  RESEARCH PHASES
+                </span>
+                {[
+                  { label: 'ACTIVE INVESTIGATIONS', value: '01' },
+                  { label: 'VERIFIED EXPERIMENTS', value: '02' },
+                  { label: 'SYSTEMS DEPLOYED', value: '01' },
+                  { label: 'FORMAL FOUNDATIONS', value: '01' },
+                ].map((stat) => (
+                  <div
+                    key={stat.label}
+                    className="flex items-center justify-end gap-3"
+                  >
+                    <span className="font-body text-xs text-zinc-400 font-medium tracking-[0.2em] uppercase">
+                      {stat.label}
+                    </span>
+                    <span className="font-display text-lg font-bold text-white w-8 text-right">
+                      {stat.value}
+                    </span>
+                  </div>
+                ))}
+              </div>
+
+              <div className="pt-6 border-t border-white/[0.08] max-w-[220px]">
+                <p className="font-body text-xs text-zinc-400 leading-relaxed uppercase tracking-wider">
+                  5 phases of research spanning systems architecture to generative models.
+                </p>
+                <div className="w-8 h-0.5 bg-rose-500 mt-3 ml-auto" />
+              </div>
+            </div>
           </div>
         </div>
+      </div>
 
-        {/* Timeline Journal Ledger */}
-        <div className="divide-y divide-white/[0.08]">
-          {MILESTONES.map((item, idx) => {
-            const isActive = item.status === 'active';
 
-            return (
-              <article
-                key={item.id}
-                className={`py-12 sm:py-16 transition-colors group ${
-                  isActive ? 'bg-gradient-to-r from-rose-500/[0.02] via-transparent to-transparent -mx-4 sm:-mx-8 px-4 sm:px-8 rounded-2xl' : ''
-                }`}
-              >
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-10">
-                  {/* Left Column: Period, Index & Status Badge */}
-                  <div className="lg:col-span-4 flex flex-col justify-between space-y-4">
-                    <div className="space-y-2">
-                      {/* Period Badge */}
-                      <div className="flex items-center gap-2 font-tech text-xs tracking-[0.22em] text-zinc-400 uppercase font-semibold">
-                        <span className="text-zinc-600">{item.phase}</span>
-                        <span className="text-zinc-700">&bull;</span>
-                        <span className={isActive ? 'text-rose-400 font-bold' : 'text-zinc-300'}>{item.period}</span>
-                      </div>
-
-                      {/* Status Stamp */}
-                      <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white/[0.03] border border-white/[0.08] font-tech text-[10px] tracking-[0.2em] uppercase font-semibold">
-                        <span
-                          className={`w-1.5 h-1.5 rounded-full ${
-                            isActive ? 'bg-rose-500 animate-pulse shadow-[0_0_6px_#f43f5e]' : 'bg-zinc-500'
-                          }`}
-                        />
-                        <span className={isActive ? 'text-rose-300' : 'text-zinc-400'}>{item.statusLabel}</span>
-                      </div>
-                    </div>
-
-                    {/* Metadata Telemetry Pill */}
-                    {item.metrics && item.metrics.length > 0 && (
-                      <div className="hidden sm:grid grid-cols-3 gap-2 pt-4 border-t border-white/[0.05]">
-                        {item.metrics.map((m, mIdx) => (
-                          <div key={mIdx} className="space-y-0.5">
-                            <span className="block font-tech text-[9px] tracking-wider text-zinc-500 uppercase">{m.label}</span>
-                            <span className="block font-tech text-xs font-semibold text-zinc-300 truncate">{m.value}</span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Right Column: Content, Title, Thesis & Tags */}
-                  <div className="lg:col-span-8 space-y-4">
-                    {/* Category */}
-                    <div className="font-tech text-[11px] font-semibold tracking-[0.25em] uppercase text-zinc-400 flex items-center gap-2">
-                      <span>{item.category}</span>
-                    </div>
-
-                    {/* Title in Satoshi Bold Display */}
-                    <h2 className="font-display text-2xl sm:text-3xl font-bold text-white tracking-tight uppercase leading-snug group-hover:text-zinc-100 transition-colors">
-                      {item.title}
-                    </h2>
-
-                    {/* Thesis In Italics / Satoshi Medium */}
-                    <p className="font-body text-base text-zinc-200 font-medium leading-relaxed italic">
-                      "{item.thesis}"
-                    </p>
-
-                    {/* Detailed Narrative in Satoshi Regular */}
-                    <p className="font-body text-sm sm:text-[15px] text-zinc-400 font-normal leading-relaxed">
-                      {item.description}
-                    </p>
-
-                    {/* Technical Badges */}
-                    <div className="flex flex-wrap items-center gap-1.5 pt-2">
-                      {item.tags.map((tag) => (
-                        <span
-                          key={tag}
-                          className="px-2.5 py-1 rounded bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.08] font-tech text-[11px] tracking-wider text-zinc-300 transition-colors uppercase font-medium"
-                        >
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-
-                    {/* Interactive Canvas Link if node exists */}
-                    {item.linkedNodeId && onFocusNodeOnCanvas && (
-                      <div className="pt-2">
-                        <button
-                          type="button"
-                          onClick={() => onFocusNodeOnCanvas(item.linkedNodeId!)}
-                          className="inline-flex items-center gap-1.5 font-tech text-xs tracking-wider uppercase text-rose-400 hover:text-rose-300 font-semibold group/link cursor-pointer focus:outline-none transition-colors"
-                        >
-                          <span>Inspect Node on Spatial Canvas</span>
-                          <ArrowUpRight className="w-3.5 h-3.5 transition-transform group-hover/link:translate-x-0.5 group-hover/link:-translate-y-0.5" />
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </article>
-            );
-          })}
+      {/* ═══════════ MILESTONE ENTRIES ═══════════ */}
+      <div id="chronicle-entries" className="relative z-10 max-w-5xl mx-auto px-4 sm:px-8 md:px-12 pt-12 pb-8">
+        {/* Section label */}
+        <div className="flex items-center gap-3 mb-10">
+          <div className="w-6 h-[1px] bg-rose-500" />
+          <span className="font-body text-[10px] font-bold tracking-[0.3em] uppercase text-zinc-400">
+            PHASE LEDGER • {MILESTONES.length} ENTRIES
+          </span>
+          <div className="flex-1 h-[1px] bg-white/[0.06]" />
         </div>
 
-        {/* LAB NOTE / INTERACTIVE EXPERIMENTAL ARTIFACT SECTION */}
+        {/* Milestone cards */}
+        <div className="space-y-6">
+          {MILESTONES.map((item, idx) => (
+            <MilestoneCard
+              key={item.id}
+              item={item}
+              index={idx}
+              onFocusNodeOnCanvas={onFocusNodeOnCanvas}
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* ═══════════ LAB NOTE SECTION ═══════════ */}
+      <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-8 md:px-12">
         <LabNoteSection />
+      </div>
 
-        {/* Closing Editorial Colophon */}
-        <div className="mt-16 pt-10 border-t border-white/[0.08] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 font-tech text-xs tracking-widest uppercase text-zinc-500">
-          <div className="flex items-center gap-3">
-            <span className="w-2 h-2 rounded-none bg-rose-500" />
-            <span>CHRONICLE ARCHIVE // VOL. 2026</span>
+      {/* ═══════════ CLOSING COLOPHON ═══════════ */}
+      <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-8 md:px-12 mt-16 pb-20">
+        <div className="pt-10 border-t border-white/[0.08] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
+          <div className="flex items-center gap-3 font-body text-xs tracking-[0.25em] uppercase text-zinc-500">
+            <span className="w-2 h-2 rounded-full bg-rose-500 shadow-[0_0_6px_#f43f5e]" />
+            <span className="font-semibold text-zinc-300">CHRONICLE ARCHIVE</span>
+            <span className="text-zinc-600">&bull;</span>
+            <span>VOL. 2026</span>
           </div>
 
-          <div className="text-zinc-400 font-medium">
+          <div className="font-body text-xs text-zinc-400 font-medium tracking-[0.15em] uppercase">
             Open for Select Research &amp; Engineering Collaborations
           </div>
         </div>
