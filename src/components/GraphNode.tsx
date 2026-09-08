@@ -20,20 +20,16 @@ import {
   Eye,
   User,
   Clock,
-  Plus,
-  Minus,
 } from './icons';
 
 interface GraphNodeProps {
   node: NodeData;
   scale: number;
-  nodeScale?: number;
   isSelected?: boolean;
   isDimmed?: boolean;
   onSelectNode?: (nodeId: string) => void;
   onNodeDrag: (nodeId: string, deltaX: number, deltaY: number) => void;
   onNodeResize?: (nodeId: string, newWidth: number) => void;
-  onUpdateNodeScale?: (scale: number) => void;
   onOpenCertificateModal: (cert: CertificateItem) => void;
   onOpenProjectModal: (proj: ProjectItem) => void;
   onOpenContactModal: () => void;
@@ -55,13 +51,11 @@ const CATEGORY_ICON_MAP: Record<string, React.ReactNode> = {
 const GraphNodeComponent: React.FC<GraphNodeProps> = ({
   node,
   scale,
-  nodeScale = 1.0,
   isSelected = false,
   isDimmed = false,
   onSelectNode,
   onNodeDrag,
   onNodeResize,
-  onUpdateNodeScale,
   onOpenCertificateModal,
   onOpenProjectModal,
   onOpenContactModal,
@@ -78,25 +72,27 @@ const GraphNodeComponent: React.FC<GraphNodeProps> = ({
   const nodeRef = useRef<HTMLDivElement>(null);
   const cardElementId = useId();
 
-  // Mouse drag corner resize handler
-  const handleResizeMouseDown = (e: React.MouseEvent) => {
+  // Deliberate Side / Corner Resize Mouse Handler
+  const handleResizeMouseDown = (e: React.MouseEvent, direction: 'right' | 'corner') => {
     e.stopPropagation();
     e.preventDefault();
     isResizingRef.current = true;
     setIsResizing(true);
+    document.body.style.cursor = direction === 'right' ? 'ew-resize' : 'nwse-resize';
     const startX = e.clientX;
     const startWidth = node.width;
 
     const handleMouseMove = (moveEvent: MouseEvent) => {
       if (!isResizingRef.current) return;
       const dx = (moveEvent.clientX - startX) / scale;
-      const newWidth = Math.round(Math.max(240, Math.min(650, startWidth + dx)));
+      const newWidth = Math.round(Math.max(240, Math.min(680, startWidth + dx)));
       onNodeResize?.(node.id, newWidth);
     };
 
     const handleMouseUp = () => {
       isResizingRef.current = false;
       setIsResizing(false);
+      document.body.style.cursor = '';
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
     };
@@ -105,8 +101,8 @@ const GraphNodeComponent: React.FC<GraphNodeProps> = ({
     window.addEventListener('mouseup', handleMouseUp);
   };
 
-  // Touch drag corner resize handler
-  const handleResizeTouchStart = (e: React.TouchEvent) => {
+  // Deliberate Side / Corner Resize Touch Handler
+  const handleResizeTouchStart = (e: React.TouchEvent, direction: 'right' | 'corner') => {
     e.stopPropagation();
     if (e.touches.length === 0) return;
     isResizingRef.current = true;
@@ -117,7 +113,7 @@ const GraphNodeComponent: React.FC<GraphNodeProps> = ({
     const handleTouchMove = (moveEvent: TouchEvent) => {
       if (!isResizingRef.current || moveEvent.touches.length === 0) return;
       const dx = (moveEvent.touches[0].clientX - startX) / scale;
-      const newWidth = Math.round(Math.max(240, Math.min(650, startWidth + dx)));
+      const newWidth = Math.round(Math.max(240, Math.min(680, startWidth + dx)));
       onNodeResize?.(node.id, newWidth);
     };
 
@@ -287,34 +283,6 @@ const GraphNodeComponent: React.FC<GraphNodeProps> = ({
               </button>
             )}
 
-            {/* Quick Node Size Stepper */}
-            {onNodeResize && (
-              <div className="flex items-center bg-black/30 rounded-md p-0.5 border border-white/[0.08]">
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onNodeResize(node.id, Math.max(240, node.width - 30));
-                  }}
-                  className="p-0.5 rounded text-zinc-400 hover:text-white hover:bg-white/10 transition-colors"
-                  title="Shrink Node Width (-30px)"
-                >
-                  <Minus className="w-2.5 h-2.5" />
-                </button>
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onNodeResize(node.id, Math.min(650, node.width + 30));
-                  }}
-                  className="p-0.5 rounded text-zinc-400 hover:text-white hover:bg-white/10 transition-colors"
-                  title="Expand Node Width (+30px)"
-                >
-                  <Plus className="w-2.5 h-2.5" />
-                </button>
-              </div>
-            )}
-
             <button
               type="button"
               onClick={() => setIsCollapsed(!isCollapsed)}
@@ -382,11 +350,7 @@ const GraphNodeComponent: React.FC<GraphNodeProps> = ({
             )}
 
             {node.category === 'controls' && (
-              <ControlsNodeContent
-                initialData={node.controlsData}
-                nodeScale={nodeScale}
-                onUpdateNodeScale={onUpdateNodeScale}
-              />
+              <ControlsNodeContent initialData={node.controlsData} />
             )}
 
             {node.category === 'project' && node.project && (
@@ -406,29 +370,76 @@ const GraphNodeComponent: React.FC<GraphNodeProps> = ({
           </div>
         )}
 
-        {/* Interactive Corner Resize Grip Handle */}
+        {/* ═══════════ DELIBERATE SIDE & CORNER RESIZE HANDLES ═══════════ */}
         {onNodeResize && (
-          <div
-            onMouseDown={handleResizeMouseDown}
-            onTouchStart={handleResizeTouchStart}
-            title="Drag to resize node square"
-            className="absolute bottom-1 right-1.5 w-5 h-5 flex items-end justify-end p-0.5 cursor-se-resize text-zinc-600 hover:text-rose-400 transition-colors z-20 group/resize select-none"
-          >
-            <svg
-              width="10"
-              height="10"
-              viewBox="0 0 10 10"
-              fill="currentColor"
-              className="opacity-40 group-hover/resize:opacity-100 transition-opacity"
+          <>
+            {/* Right Side Edge Resize Zone: Shows standard OS-style horizontal arrow ↔ */}
+            <div
+              onMouseDown={(e) => handleResizeMouseDown(e, 'right')}
+              onTouchStart={(e) => handleResizeTouchStart(e, 'right')}
+              title="Drag side to resize node width"
+              className="absolute -right-2 top-4 bottom-4 w-4 z-30 cursor-ew-resize flex items-center justify-center group/side-resize"
             >
-              <circle cx="8" cy="8" r="1" />
-              <circle cx="8" cy="4.5" r="1" />
-              <circle cx="4.5" cy="8" r="1" />
-              <circle cx="8" cy="1" r="1" />
-              <circle cx="4.5" cy="4.5" r="1" />
-              <circle cx="1" cy="8" r="1" />
-            </svg>
-          </div>
+              {/* Subtle hover hairline indicator */}
+              <div className="w-[3px] h-12 rounded-full bg-white/20 group-hover/side-resize:bg-rose-500/80 group-hover/side-resize:shadow-[0_0_8px_#f43f5e] transition-all duration-150" />
+
+              {/* Standard OS Double-Ended Horizontal Resize Arrow: ↔ */}
+              <div
+                className={`absolute -right-3 p-1 rounded-md bg-[#0c0e14]/95 border border-rose-500/70 shadow-[0_0_12px_rgba(244,63,94,0.45)] text-rose-400 pointer-events-none transition-all duration-150 ${
+                  isResizing
+                    ? 'opacity-100 scale-105'
+                    : 'opacity-0 group-hover/side-resize:opacity-100 scale-90 group-hover/side-resize:scale-100'
+                }`}
+              >
+                <svg
+                  width="13"
+                  height="13"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <polyline points="7 8 3 12 7 16" />
+                  <polyline points="17 8 21 12 17 16" />
+                  <line x1="3" y1="12" x2="21" y2="12" />
+                </svg>
+              </div>
+            </div>
+
+            {/* Bottom-Right Corner Resize Zone: Shows standard OS-style diagonal arrow ⤡ */}
+            <div
+              onMouseDown={(e) => handleResizeMouseDown(e, 'corner')}
+              onTouchStart={(e) => handleResizeTouchStart(e, 'corner')}
+              title="Drag corner to resize node square"
+              className="absolute -bottom-2 -right-2 w-7 h-7 z-30 cursor-nwse-resize flex items-center justify-center group/corner-resize"
+            >
+              {/* Standard OS Diagonal Window Resize Arrow: ⤡ */}
+              <div
+                className={`p-1.5 rounded-md bg-[#0c0e14]/95 border border-rose-500/80 shadow-[0_0_12px_rgba(244,63,94,0.5)] text-rose-400 pointer-events-none transition-all duration-150 ${
+                  isResizing
+                    ? 'opacity-100 scale-105'
+                    : 'opacity-0 group-hover/corner-resize:opacity-100 scale-90 group-hover/corner-resize:scale-100'
+                }`}
+              >
+                <svg
+                  width="13"
+                  height="13"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <polyline points="15 3 21 3 21 9" />
+                  <polyline points="9 21 3 21 3 15" />
+                  <line x1="21" y1="3" x2="3" y2="21" />
+                </svg>
+              </div>
+            </div>
+          </>
         )}
       </div>
     </div>
@@ -441,7 +452,6 @@ export const GraphNode = React.memo(GraphNodeComponent, (prev, next) => {
     prev.node.y === next.node.y &&
     prev.node.width === next.node.width &&
     prev.scale === next.scale &&
-    prev.nodeScale === next.nodeScale &&
     prev.isSelected === next.isSelected &&
     prev.isDimmed === next.isDimmed &&
     prev.node.id === next.node.id
