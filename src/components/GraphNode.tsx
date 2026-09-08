@@ -162,9 +162,17 @@ const GraphNodeComponent: React.FC<GraphNodeProps> = ({
 
   // Mouse drag handler
   const handleMouseDown = (e: React.MouseEvent) => {
-    // Avoid dragging if clicking an interactive control like input/button
+    if (e.button !== 0) return;
+
+    // Avoid dragging if clicking an interactive control like input/button/link/pin/resize-handle
     const target = e.target as HTMLElement;
-    if (['BUTTON', 'INPUT', 'SELECT', 'A'].includes(target.tagName) || target.closest('button')) {
+    if (
+      ['BUTTON', 'INPUT', 'SELECT', 'A', 'TEXTAREA'].includes(target.tagName) ||
+      target.closest('button') ||
+      target.closest('a') ||
+      target.closest('.port-pin') ||
+      target.closest('.resize-handle')
+    ) {
       return;
     }
 
@@ -201,7 +209,13 @@ const GraphNodeComponent: React.FC<GraphNodeProps> = ({
   const handleTouchStart = (e: React.TouchEvent) => {
     if (e.touches.length !== 1) return;
     const target = e.target as HTMLElement;
-    if (['BUTTON', 'INPUT', 'SELECT', 'A'].includes(target.tagName) || target.closest('button')) {
+    if (
+      ['BUTTON', 'INPUT', 'SELECT', 'A', 'TEXTAREA'].includes(target.tagName) ||
+      target.closest('button') ||
+      target.closest('a') ||
+      target.closest('.port-pin') ||
+      target.closest('.resize-handle')
+    ) {
       return;
     }
 
@@ -246,6 +260,8 @@ const GraphNodeComponent: React.FC<GraphNodeProps> = ({
     <div
       ref={nodeRef}
       id={`graph-node-${node.id}`}
+      onMouseDown={handleMouseDown}
+      onTouchStart={handleTouchStart}
       style={{
         transform: `translate(${node.x}px, ${node.y}px)`,
         width: `${node.width}px`,
@@ -253,7 +269,7 @@ const GraphNodeComponent: React.FC<GraphNodeProps> = ({
         transition: isDragging ? 'none' : 'opacity 0.2s ease, transform 0.15s cubic-bezier(0.25, 1, 0.5, 1)',
         willChange: isDragging ? 'transform' : 'auto',
       }}
-      className={`absolute select-none ${
+      className={`absolute select-none cursor-grab active:cursor-grabbing ${
         isDragging
           ? 'z-40'
           : isSelected

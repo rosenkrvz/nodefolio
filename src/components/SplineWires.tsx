@@ -47,17 +47,8 @@ const SplineWiresComponent: React.FC<SplineWiresProps> = ({
         const y2 = toPos.y;
 
         // Adaptive natural Hermite spline curvature
-        const dx = x2 - x1;
-        const dy = y2 - y1;
-        const distance = Math.sqrt(dx * dx + dy * dy);
-        const curvature = Math.min(Math.max(distance * 0.45, 75), 210);
-
-        const cp1x = x1 + curvature;
-        const cp1y = y1;
-        const cp2x = x2 - curvature;
-        const cp2y = y2;
-
-        const pathData = `M ${x1} ${y1} C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${x2} ${y2}`;
+        // Pure straight vector trajectory — completely straight at all times, zero twist or curl
+        const pathData = `M ${x1} ${y1} L ${x2} ${y2}`;
         const baseColor = conn.color || '#e11d48';
         const isSelected = activeConnectionId === conn.id;
         const isRelated = selectedNodeId

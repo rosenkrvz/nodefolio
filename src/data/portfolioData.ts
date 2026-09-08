@@ -10,10 +10,13 @@ export const INITIAL_NODES: NodeData[] = [
     x: 100,
     y: 520,
     width: 340,
-    inputs: [],
+    inputs: [
+      { id: 'pin-in-profile', label: 'inference.hypothesis', color: 'crimson', type: 'input', nodeId: 'node-profile' },
+    ],
     outputs: [
       { id: 'pin-prof-models', label: 'representation.manifold', color: 'crimson', type: 'output', nodeId: 'node-profile' },
       { id: 'pin-prof-credentials', label: 'mathematical.core', color: 'crimson', type: 'output', nodeId: 'node-profile' },
+      { id: 'pin-out-project', label: 'latent.projection', color: 'crimson', type: 'output', nodeId: 'node-profile' },
     ],
     accentColor: '#e11d48',
     glowColor: 'rgba(225, 29, 72, 0.2)',
@@ -49,6 +52,7 @@ export const INITIAL_NODES: NodeData[] = [
     ],
     outputs: [
       { id: 'pin-out-systems', label: 'tensor.pipeline', color: 'crimson', type: 'output', nodeId: 'node-models' },
+      { id: 'pin-out-clock', label: 'runtime.sync', color: 'crimson', type: 'output', nodeId: 'node-models' },
     ],
     accentColor: '#be123c',
     glowColor: 'rgba(190, 18, 60, 0.18)',

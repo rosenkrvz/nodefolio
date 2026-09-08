@@ -6,7 +6,7 @@
 import React, { useState, useRef, useCallback, useMemo, useEffect } from 'react';
 import { NodeData, Connection, CertificateItem, ProjectItem, CanvasTransform, Pin } from './types';
 import { INITIAL_NODES, INITIAL_CONNECTIONS } from './data/portfolioData';
-import { EXPANDED_RESEARCH_NODES, EXPANDED_CONNECTIONS, RESEARCH_CORE_COORDINATES } from './data/researchNodesData';
+import { EXPANDED_RESEARCH_NODES, RESEARCH_CONNECTIONS, RESEARCH_CORE_COORDINATES } from './data/researchNodesData';
 import { SplineWires } from './components/SplineWires';
 import { GraphNode } from './components/GraphNode';
 import { TopNavbar } from './components/TopNavbar';
@@ -46,7 +46,7 @@ const ALL_RESEARCH_NODES: NodeData[] = [
   ...EXPANDED_RESEARCH_NODES,
 ];
 const ALL_INITIAL_NODES: NodeData[] = ALL_RESEARCH_NODES;
-const ALL_INITIAL_CONNECTIONS: Connection[] = [...INITIAL_CONNECTIONS, ...EXPANDED_CONNECTIONS];
+const ALL_INITIAL_CONNECTIONS: Connection[] = [...INITIAL_CONNECTIONS, ...RESEARCH_CONNECTIONS];
 
 // ─── URL Hash Routing ─────────────────────────────────────────────────────────
 // Maps internal nav tabs to clean URL hash fragments for shareable, bookmarkable links.
@@ -119,7 +119,7 @@ export default function App() {
     [currentTabKey]
   );
   const [activeView, setActiveView] = useState<'canvas' | 'list' | 'timeline'>(initialTab === 'notebook' ? 'timeline' : 'canvas');
-  const [isSimulating, setIsSimulating] = useState<boolean>(true);
+  const [isSimulating, setIsSimulating] = useState<boolean>(false);
   const [wireStyle, setWireStyle] = useState<'glow' | 'minimal' | 'cyber'>('glow');
   const [showGrid, setShowGrid] = useState<boolean>(true);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
@@ -459,72 +459,18 @@ export default function App() {
     return map;
   }, [nodes, driftOffsets]);
 
-  // Node Dragging Handler - Free movement across full screen resolution space, bounded by UI bars
+  // Node Dragging Handler - Free movement across full canvas resolution space (50 to 4200)
   const handleNodeDrag = useCallback((nodeId: string, deltaX: number, deltaY: number) => {
     setNodes((prevNodes) => {
       const targetNode = prevNodes.find((n) => n.id === nodeId);
       if (!targetNode) return prevNodes;
 
-      const vw = typeof window !== 'undefined' ? window.innerWidth : 1920;
-      const vh = typeof window !== 'undefined' ? window.innerHeight : 1080;
-
-      // Measure node height if DOM element is available
-      const nodeEl = typeof document !== 'undefined' ? document.getElementById(`graph-node-${nodeId}`) : null;
-      const nodeW = targetNode.width;
-      const nodeH = nodeEl ? nodeEl.offsetHeight : (nodeId === 'node-project' ? 680 : (nodeId === 'node-clock' ? 520 : 420));
-
-      const { scale, x: tx, y: ty } = transformRef.current;
-
-      // Screen boundaries guarding functional bars:
-      // Left: 16px from screen edge
-      const minScreenX = 16;
-      // Right: 80px before screen edge (safeguarding right controls dock)
-      const maxScreenX = vw - 80;
-      // Top: 72px from top (safeguarding 64px header navbar)
-      const minScreenY = 72;
-      // Bottom: 56px from bottom (safeguarding 36px bottom status bar at bottom-3)
-      const maxScreenY = vh - 56;
-
-      const cardScreenW = nodeW * scale;
-      const availScreenW = maxScreenX - minScreenX;
-
-      let minGraphX: number;
-      let maxGraphX: number;
-      if (cardScreenW <= availScreenW) {
-        minGraphX = (minScreenX - tx) / scale;
-        maxGraphX = (maxScreenX - tx) / scale - nodeW;
-      } else {
-        minGraphX = (maxScreenX - cardScreenW - tx) / scale;
-        maxGraphX = (minScreenX - tx) / scale;
-      }
-
-      const cardScreenH = nodeH * scale;
-      const availScreenH = maxScreenY - minScreenY;
-
-      let minGraphY: number;
-      let maxGraphY: number;
-      if (cardScreenH <= availScreenH) {
-        minGraphY = (minScreenY - ty) / scale;
-        maxGraphY = (maxScreenY - ty) / scale - nodeH;
-      } else {
-        minGraphY = (maxScreenY - cardScreenH - ty) / scale;
-        maxGraphY = (minScreenY + 20 - ty) / scale;
-      }
-
-      const proposedX = targetNode.x + deltaX;
-      const proposedY = targetNode.y + deltaY;
-
-      const effectiveMinX = Math.min(minGraphX, maxGraphX);
-      const effectiveMaxX = Math.max(minGraphX, maxGraphX);
-      const effectiveMinY = Math.min(minGraphY, maxGraphY);
-      const effectiveMaxY = Math.max(minGraphY, maxGraphY);
-
-      const nextX = Math.round(Math.max(effectiveMinX, Math.min(effectiveMaxX, proposedX)));
-      const nextY = Math.round(Math.max(effectiveMinY, Math.min(effectiveMaxY, proposedY)));
+      const nextX = Math.round(Math.max(50, Math.min(4200, targetNode.x + deltaX)));
+      const nextY = Math.round(Math.max(50, Math.min(4200, targetNode.y + deltaY)));
 
       return prevNodes.map((n) => (n.id === nodeId ? { ...n, x: nextX, y: nextY } : n));
     });
-  }, []);
+  }, [setNodes]);
 
   // Deliberate Node Square Edge Resize Handler
   const handleNodeResize = useCallback((nodeId: string, newWidth: number) => {
@@ -608,11 +554,18 @@ export default function App() {
 
   const activeNodeIds = useMemo(() => new Set(filteredNodes.map((n) => n.id)), [filteredNodes]);
 
+  const currentPresetConnections = useMemo(() => {
+    if (activePreset === 'project' || activePreset === 'all') {
+      return RESEARCH_CONNECTIONS;
+    }
+    return INITIAL_CONNECTIONS;
+  }, [activePreset]);
+
   const filteredConnections = useMemo(() => {
-    return connections.filter(
+    return currentPresetConnections.filter(
       (c) => activeNodeIds.has(c.fromNodeId) && activeNodeIds.has(c.toNodeId)
     );
-  }, [connections, activeNodeIds]);
+  }, [currentPresetConnections, activeNodeIds]);
 
   // Memoized effective nodes combining base position with drift offsets
   const effectiveNodes = useMemo(() => {
@@ -1297,7 +1250,7 @@ export default function App() {
                         setIsSimulating(!isSimulating);
                       }}
                       onReturnToCover={handleReturnToCover}
-                      onOpenAddNode={() => setIsAddNodeOpen(true)}
+                      onOpenAddNode={activePreset === 'project' ? () => setIsAddNodeOpen(true) : undefined}
                     />
                   </div>
 

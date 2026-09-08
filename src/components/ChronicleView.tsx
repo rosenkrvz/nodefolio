@@ -372,40 +372,23 @@ export const ChronicleView: React.FC<ChronicleViewProps> = ({
   };
 
   return (
-    <div className="relative w-full min-h-screen bg-[#07090e] text-[#ededed] font-body select-text overflow-x-hidden">
-      {/* ═══════════ LOW-CONTRAST ATMOSPHERIC BACKDROP ═══════════ */}
+    <div className="relative w-full min-h-screen bg-[#14171c] text-[#ededed] font-body select-text overflow-x-hidden">
+      {/* ═══════════ EDITORIAL COVER MATCHING ARCHITECTURAL BACKDROP ═══════════ */}
+      <div
+        className="fixed inset-0 pointer-events-none overflow-hidden z-0"
+        aria-hidden="true"
+      >
+        <div className="pattern-bg">
+          <div className="cube-svg" />
+        </div>
+      </div>
 
-      {/* Subtle architectural coordinate grid */}
-      <div
-        className="fixed inset-0 pointer-events-none z-0 opacity-25"
-        style={{
-          backgroundImage:
-            'radial-gradient(circle at 1px 1px, rgba(255,255,255,0.12) 1px, transparent 0)',
-          backgroundSize: '32px 32px',
-        }}
-        aria-hidden="true"
-      />
+      {/* Subtle Coordinate Grid Overlay */}
+      <div className="fixed inset-0 pointer-events-none bg-canvas-dots-overlay opacity-60 z-0" aria-hidden="true" />
 
-      {/* Faint mathematical construction lines */}
-      <div
-        className="fixed inset-0 pointer-events-none z-0 opacity-15"
-        style={{
-          backgroundImage:
-            'linear-gradient(to right, rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.05) 1px, transparent 1px)',
-          backgroundSize: '128px 128px',
-        }}
-        aria-hidden="true"
-      />
-
-      {/* Subtle restrained crimson atmospheric wash */}
-      <div
-        className="fixed inset-0 pointer-events-none bg-[radial-gradient(ellipse_at_80%_10%,rgba(244,63,94,0.08),transparent_60%)] z-0"
-        aria-hidden="true"
-      />
-      <div
-        className="fixed inset-0 pointer-events-none bg-[radial-gradient(ellipse_at_10%_80%,rgba(244,63,94,0.04),transparent_50%)] z-0"
-        aria-hidden="true"
-      />
+      {/* Subtle Crimson Ambient Glow */}
+      <div className="fixed inset-0 pointer-events-none bg-[radial-gradient(ellipse_at_80%_25%,rgba(225,29,72,0.14),transparent_55%)] z-0" aria-hidden="true" />
+      <div className="fixed inset-0 pointer-events-none bg-[radial-gradient(ellipse_at_10%_80%,rgba(225,29,72,0.06),transparent_50%)] z-0" aria-hidden="true" />
 
       {/* ═══════════ CINEMATIC EDITORIAL HERO SECTION ═══════════ */}
       <header className="relative z-10 w-full pt-28 pb-12 px-6 sm:px-12 md:px-16 border-b border-white/[0.08]">
