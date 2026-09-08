@@ -476,28 +476,74 @@ export default function App() {
     centerViewForPreset(activePreset, 0.70);
   }, [centerViewForPreset, activePreset]);
 
-  // Direct scroll wheel zoom on workspace with tuned sensitivity (counts every percentage smoothly)
+  // Return to cover with smooth, single-pass upward transition (no ricochet)
+  const handleReturnToCover = useCallback(() => {
+    setActiveNavTab('home');
+    if (activeViewRef.current !== 'canvas') {
+      setActiveView('canvas');
+      targetProgressRef.current = 0;
+      currentProgressRef.current = 0;
+      setScrollProgress(0);
+      window.scrollTo({ top: 0, behavior: 'instant' });
+      return;
+    }
+
+    // On canvas view: smoothly scroll window to top in one natural, continuous glide
+    isProgrammaticScrollRef.current = true;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, []);
+
+  // Direct scroll wheel zoom on workspace & dedicated upper-tab-bar return to cover
   useEffect(() => {
-    const container = canvasContainerRef.current;
-    if (!container) return;
+    const onWindowWheel = (e: WheelEvent) => {
+      // Only manage when in canvas view
+      if (activeViewRef.current !== 'canvas') return;
 
-    const onNativeWheel = (e: WheelEvent) => {
-      // If user is on cover or in transition phase (< 0.82), allow window to scroll naturally
-      if (scrollProgressRef.current < 0.82) {
+      // If a modal dialog is open, allow native scrolling within modal
+      if (document.querySelector('[role="dialog"]')) return;
+
+      // If a programmatic scroll transition is in flight, prevent wheel interruptions
+      if (isProgrammaticScrollRef.current) {
+        e.preventDefault();
         return;
       }
 
-      // If user is scrolled into the network, but zooming out at minimum scale (scale <= 0.36) and scrolls up:
-      // Allow window to scroll naturally back up to the Cover!
-      if (e.deltaY < 0 && transformRef.current.scale <= 0.36) {
+      // Check if user is currently inside the computational node space UI
+      const inNodeSpace = scrollProgressRef.current >= 0.80;
+
+      if (!inNodeSpace) {
+        // User is on cover page or transitioning down into node space:
+        // Allow natural window scroll so cover page animation plays smoothly
         return;
       }
 
+      // Inside Node Space UI:
+      const target = e.target as HTMLElement | null;
+      const isUpperTabBar = e.clientY <= 64 || Boolean(target?.closest('header'));
+
+      if (isUpperTabBar) {
+        // Mouse is in the upper tab bar:
+        if (e.deltaY < 0) {
+          // Scroll up on the tab bar: trigger the smooth scroll animation to cover page!
+          e.preventDefault();
+          handleReturnToCover();
+        } else {
+          // Scroll down on upper tab bar when already in node space
+          e.preventDefault();
+        }
+        return;
+      }
+
+      // Mouse is in the node space anywhere (not in upper tab bar):
+      // NEVER trigger cover page animation! Strictly zoom in and zoom out the cards.
       e.preventDefault();
       e.stopPropagation();
 
+      const container = canvasContainerRef.current;
+      if (!container) return;
+
       // Normalize wheel delta across mice and trackpads:
-      // Standard wheel notch is ~100 delta. We clamp to [-50, 50] to eliminate wild skips.
+      // Standard wheel notch is ~100 delta. Clamp to [-50, 50] to eliminate wild skips.
       const clampedDelta = Math.max(-50, Math.min(50, -e.deltaY));
       
       // Fine-grained multiplier: ~1% to 1.25% change per notch
@@ -522,11 +568,11 @@ export default function App() {
       });
     };
 
-    container.addEventListener('wheel', onNativeWheel, { passive: false });
+    window.addEventListener('wheel', onWindowWheel, { passive: false });
     return () => {
-      container.removeEventListener('wheel', onNativeWheel);
+      window.removeEventListener('wheel', onWindowWheel);
     };
-  }, []);
+  }, [handleReturnToCover]);
 
   // Reset Graph
   const handleResetGraph = useCallback(() => {
@@ -536,23 +582,6 @@ export default function App() {
     setSelectedNodeId(null);
     centerViewForPreset('all', 0.70);
   }, [centerViewForPreset]);
-
-  // Return to cover with smooth, single-pass upward transition (no ricochet)
-  const handleReturnToCover = useCallback(() => {
-    setActiveNavTab('home');
-    if (activeViewRef.current !== 'canvas') {
-      setActiveView('canvas');
-      targetProgressRef.current = 0;
-      currentProgressRef.current = 0;
-      setScrollProgress(0);
-      window.scrollTo({ top: 0, behavior: 'instant' });
-      return;
-    }
-
-    // On canvas view: smoothly scroll window to top in one natural, continuous glide
-    isProgrammaticScrollRef.current = true;
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, []);
 
   // Smooth single-pass transition down to workspace
   const handleExplore = useCallback(() => {
