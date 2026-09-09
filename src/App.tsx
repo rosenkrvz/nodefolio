@@ -421,15 +421,135 @@ export default function App() {
     };
   }, [isSimulating, NODE_DRIFT_PROFILES]);
 
-  // Smooth interruptible scroll progress tracking via weighted damping with magnetic settle (Idle-Aware)
+  // ─── HIGH-PRECISION VELOCITY-AWARE SCROLL ENGINE & MAGNETIC SETTLE ─────────
+  const startSettleRef = useRef<((target: 0 | 1, customDuration?: number) => void) | null>(null);
+  const cancelSettleRef = useRef<(() => void) | null>(null);
+
   useEffect(() => {
-    let settleTimeoutId: ReturnType<typeof setTimeout> | null = null;
     let animId: number | null = null;
+    let settleAnimId: number | null = null;
+    let settleTimeoutId: ReturnType<typeof setTimeout> | null = null;
     let isTicking = false;
+    let isSettling = false;
+    let isInteracting = false;
+    let interactionTimeoutId: ReturnType<typeof setTimeout> | null = null;
+
+    let lastScrollY = typeof window !== 'undefined' ? window.scrollY : 0;
+    let lastScrollTime = performance.now();
+    let scrollVelocity = 0; // normalized progress units per second
+    let lastTickTime = performance.now();
+
+    const prefersReducedMotion =
+      typeof window !== 'undefined' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    const cancelSettle = () => {
+      if (settleAnimId !== null) {
+        window.cancelAnimationFrame(settleAnimId);
+        settleAnimId = null;
+      }
+      if (settleTimeoutId !== null) {
+        clearTimeout(settleTimeoutId);
+        settleTimeoutId = null;
+      }
+      isSettling = false;
+      isProgrammaticScrollRef.current = false;
+    };
+    cancelSettleRef.current = cancelSettle;
+
+    const startSettle = (target: 0 | 1, customDuration?: number) => {
+      if (activeViewRef.current !== 'canvas') return;
+      cancelSettle();
+
+      const docEl = document.documentElement;
+      const totalHeight = docEl.scrollHeight - window.innerHeight;
+      if (totalHeight <= 0) return;
+
+      isSettling = true;
+      isProgrammaticScrollRef.current = true;
+
+      const startProgress = currentProgressRef.current;
+      const distance = Math.abs(target - startProgress);
+
+      // Target 150–320ms based on distance remaining:
+      // Small adjustments (e.g. 0.10 distance) settle in ~160ms; full travel takes ~300ms
+      const duration = customDuration ?? Math.max(150, Math.min(320, Math.round(150 + distance * 180)));
+      const startTime = performance.now();
+
+      const settleStep = (now: number) => {
+        if (!isSettling) return;
+        const elapsed = now - startTime;
+        const t = Math.min(1, elapsed / duration);
+
+        // Polished cubic ease-out: starts with gesture momentum and glides into an elegant resting snap
+        const easedT = 1 - Math.pow(1 - t, 3);
+        const nextProgress = startProgress + (target - startProgress) * easedT;
+
+        currentProgressRef.current = nextProgress;
+        targetProgressRef.current = nextProgress;
+        setScrollProgress(Math.round(nextProgress * 1000) / 1000);
+
+        const targetScrollY = Math.round(nextProgress * totalHeight);
+        window.scrollTo({ top: targetScrollY, behavior: 'instant' });
+
+        if (t < 1) {
+          settleAnimId = window.requestAnimationFrame(settleStep);
+        } else {
+          // Finalize rest state cleanly
+          currentProgressRef.current = target;
+          targetProgressRef.current = target;
+          setScrollProgress(target);
+          window.scrollTo({ top: Math.round(target * totalHeight), behavior: 'instant' });
+
+          isSettling = false;
+          settleAnimId = null;
+          isProgrammaticScrollRef.current = false;
+
+          // Synchronize active navigation tab to the settled state
+          if (target === 1 && activeNavTabRef.current === 'home') {
+            setActiveNavTab('network');
+            setActivePreset('network');
+          } else if (target === 0 && activeNavTabRef.current !== 'home') {
+            setActiveNavTab('home');
+          }
+        }
+      };
+
+      settleAnimId = window.requestAnimationFrame(settleStep);
+    };
+    startSettleRef.current = startSettle;
+
+    const checkAndTriggerSettle = () => {
+      if (isSettling || isProgrammaticScrollRef.current || activeViewRef.current !== 'canvas') return;
+      const docEl = document.documentElement;
+      const totalHeight = docEl.scrollHeight - window.innerHeight;
+      if (totalHeight <= 0) return;
+
+      const progress = currentProgressRef.current;
+      // Only settle when inside the intermediate transition zone
+      if (progress > 0.04 && progress < 0.96) {
+        const velocity = scrollVelocity;
+        // Project position based on gesture velocity:
+        // A strong flick (velocity > 0.6 / -0.6) commits decisively to that direction.
+        // A slow or interrupted scroll determines direction based on 0.48 threshold with slight momentum.
+        let target: 0 | 1 = 0;
+        if (velocity > 0.6) {
+          target = 1;
+        } else if (velocity < -0.6) {
+          target = 0;
+        } else {
+          const projected = progress + velocity * 0.18;
+          target = projected >= 0.48 ? 1 : 0;
+        }
+
+        startSettle(target);
+      }
+    };
 
     const ensureTicking = () => {
       if (!isTicking && typeof window !== 'undefined') {
         isTicking = true;
+        lastTickTime = performance.now();
         animId = window.requestAnimationFrame(tick);
       }
     };
@@ -447,6 +567,26 @@ export default function App() {
     };
 
     const onScroll = () => {
+      if (isSettling) return;
+
+      const docEl = document.documentElement;
+      const totalHeight = docEl.scrollHeight - window.innerHeight;
+      if (totalHeight <= 0) return;
+
+      const currentY = window.scrollY;
+      const now = performance.now();
+      const dt = now - lastScrollTime;
+
+      // Track physical scroll velocity (progress units per second)
+      if (dt > 6) {
+        const dy = currentY - lastScrollY;
+        const instantV = (dy / totalHeight) / (dt / 1000);
+        // Exponential moving average filter for smooth, reliable velocity measurement
+        scrollVelocity = scrollVelocity * 0.35 + instantV * 0.65;
+        lastScrollY = currentY;
+        lastScrollTime = now;
+      }
+
       updateTargetProgress();
 
       // Clear any pending settle timer while user is actively scrolling
@@ -455,32 +595,75 @@ export default function App() {
         settleTimeoutId = null;
       }
 
-      // Magnetic settle: when user stops scrolling in the transition zone between Cover and Workspace
-      if (!isProgrammaticScrollRef.current && activeViewRef.current === 'canvas') {
+      // Fast magnetic settle: triggered after user finishes gesture (55ms idle debounce)
+      if (!isProgrammaticScrollRef.current && activeViewRef.current === 'canvas' && !isInteracting) {
         settleTimeoutId = setTimeout(() => {
-          if (isProgrammaticScrollRef.current || activeViewRef.current !== 'canvas') return;
-          const docEl = document.documentElement;
-          const totalHeight = docEl.scrollHeight - window.innerHeight;
-          if (totalHeight <= 0) return;
+          checkAndTriggerSettle();
+        }, 55);
+      }
+    };
 
-          const progress = window.scrollY / totalHeight;
-          if (progress > 0.08 && progress < 0.92) {
-            if (progress >= 0.35) {
-              // Complete glide down to Network workspace
-              isProgrammaticScrollRef.current = true;
-              setActiveNavTab('network');
-              setActivePreset('network');
-              window.scrollTo({ top: totalHeight, behavior: 'smooth' });
-              ensureTicking();
-            } else {
-              // Return cleanly to Cover
-              isProgrammaticScrollRef.current = true;
-              setActiveNavTab('home');
-              window.scrollTo({ top: 0, behavior: 'smooth' });
-              ensureTicking();
-            }
+    // User gesture listeners for zero-latency cancellation & touch velocity tracking
+    const markInteracting = () => {
+      isInteracting = true;
+      cancelSettle();
+      if (interactionTimeoutId) clearTimeout(interactionTimeoutId);
+      interactionTimeoutId = setTimeout(() => {
+        isInteracting = false;
+      }, 70);
+    };
+
+    const onWheel = () => {
+      markInteracting();
+    };
+
+    let touchStartY = 0;
+    let touchStartTime = 0;
+
+    const onTouchStart = (e: TouchEvent) => {
+      markInteracting();
+      if (e.touches.length > 0) {
+        touchStartY = e.touches[0].clientY;
+        touchStartTime = performance.now();
+      }
+    };
+
+    const onTouchMove = () => {
+      markInteracting();
+    };
+
+    const onTouchEnd = (e: TouchEvent) => {
+      isInteracting = false;
+      if (interactionTimeoutId) clearTimeout(interactionTimeoutId);
+
+      // Measure touch flick velocity if available
+      if (e.changedTouches.length > 0 && touchStartTime > 0) {
+        const touchEndY = e.changedTouches[0].clientY;
+        const touchDt = (performance.now() - touchStartTime) / 1000;
+        const docEl = document.documentElement;
+        const totalH = docEl.scrollHeight - window.innerHeight;
+        if (touchDt > 0.03 && touchDt < 0.6 && totalH > 0) {
+          // dy > 0 means finger dragged up (scrolled down)
+          const dy = touchStartY - touchEndY;
+          const touchV = (dy / totalH) / touchDt;
+          if (Math.abs(touchV) > 0.4) {
+            scrollVelocity = touchV;
           }
-        }, 180);
+        }
+      }
+
+      // Trigger immediate settle check on release (micro-delay to register final scroll tick)
+      if (activeViewRef.current === 'canvas' && !isProgrammaticScrollRef.current) {
+        if (settleTimeoutId) clearTimeout(settleTimeoutId);
+        settleTimeoutId = setTimeout(() => {
+          checkAndTriggerSettle();
+        }, 30);
+      }
+    };
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (['ArrowUp', 'ArrowDown', 'PageUp', 'PageDown', 'Home', 'End', ' '].includes(e.key)) {
+        markInteracting();
       }
     };
 
@@ -492,15 +675,27 @@ export default function App() {
       }
 
       if (activeViewRef.current === 'canvas') {
+        if (isSettling) {
+          isTicking = false;
+          animId = null;
+          return;
+        }
+
+        const now = performance.now();
+        const dt = Math.min(0.05, Math.max(0.001, (now - lastTickTime) / 1000));
+        lastTickTime = now;
+
         const target = targetProgressRef.current;
         const current = currentProgressRef.current;
         const diff = target - current;
 
         let needsAnotherTick = false;
 
-        if (Math.abs(diff) > 0.0008) {
-          // Weighted damping factor (0.12) for smoother liquid momentum without overshooting
-          const next = current + diff * 0.12;
+        if (Math.abs(diff) > 0.0005) {
+          // Responsive frame-rate independent exponential smoothing (lambda = 32 s^-1)
+          // Follows user's touch/wheel immediately with physical smoothness, no floaty lag
+          const factor = prefersReducedMotion ? 1 : 1 - Math.exp(-32 * dt);
+          const next = current + diff * factor;
           currentProgressRef.current = next;
           setScrollProgress(Math.round(next * 1000) / 1000);
           needsAnotherTick = true;
@@ -509,18 +704,8 @@ export default function App() {
           setScrollProgress(target);
         }
 
-        // Release programmatic scroll lock when arrival is achieved
-        if (isProgrammaticScrollRef.current) {
-          needsAnotherTick = true;
-          if (activeNavTabRef.current === 'home' && currentProgressRef.current <= 0.05) {
-            isProgrammaticScrollRef.current = false;
-          } else if (activeNavTabRef.current !== 'home' && currentProgressRef.current >= 0.85) {
-            isProgrammaticScrollRef.current = false;
-          }
-        }
-
         // Automatically sync active tab indicator to scroll position only when manually scrolling
-        if (!isProgrammaticScrollRef.current) {
+        if (!isProgrammaticScrollRef.current && !isSettling) {
           if (currentProgressRef.current >= 0.70 && activeNavTabRef.current === 'home') {
             setActiveNavTab('network');
             setActivePreset('network');
@@ -529,7 +714,7 @@ export default function App() {
           }
         }
 
-        // Tactile transition audio: trigger ONE subtle activation sound upon crossing into the neural workspace
+        // Tactile transition audio
         if (currentProgressRef.current >= 0.70 && !hasPlayedCoverTransitionRef.current) {
           hasPlayedCoverTransitionRef.current = true;
           playSound('open');
@@ -543,13 +728,17 @@ export default function App() {
         }
       }
 
-      // Settled — sleep RAF until next scroll or resize event
       isTicking = false;
       animId = null;
     };
 
     window.addEventListener('scroll', onScroll, { passive: true });
     window.addEventListener('resize', updateTargetProgress, { passive: true });
+    window.addEventListener('wheel', onWheel, { passive: true });
+    window.addEventListener('touchstart', onTouchStart, { passive: true });
+    window.addEventListener('touchmove', onTouchMove, { passive: true });
+    window.addEventListener('touchend', onTouchEnd, { passive: true });
+    window.addEventListener('keydown', onKeyDown, { passive: true });
     
     // Page visibility event to pause/resume RAF cleanly
     const onVisibilityChange = () => {
@@ -565,11 +754,17 @@ export default function App() {
     ensureTicking();
 
     return () => {
-      if (settleTimeoutId) clearTimeout(settleTimeoutId);
+      cancelSettle();
+      if (animId !== null) window.cancelAnimationFrame(animId);
+      if (interactionTimeoutId) clearTimeout(interactionTimeoutId);
       window.removeEventListener('scroll', onScroll);
       window.removeEventListener('resize', updateTargetProgress);
+      window.removeEventListener('wheel', onWheel);
+      window.removeEventListener('touchstart', onTouchStart);
+      window.removeEventListener('touchmove', onTouchMove);
+      window.removeEventListener('touchend', onTouchEnd);
+      window.removeEventListener('keydown', onKeyDown);
       document.removeEventListener('visibilitychange', onVisibilityChange);
-      if (animId !== null) window.cancelAnimationFrame(animId);
       if (dragRafIdRef.current !== null) window.cancelAnimationFrame(dragRafIdRef.current);
       if (resizeRafIdRef.current !== null) window.cancelAnimationFrame(resizeRafIdRef.current);
       if (panRafIdRef.current !== null) window.cancelAnimationFrame(panRafIdRef.current);
@@ -1184,7 +1379,7 @@ export default function App() {
     };
   }, [activePreset, centerViewForPreset]);
 
-  // Return to cover with smooth, single-pass upward transition (no ricochet)
+  // Return to cover with smooth, fast single-pass upward transition (no ricochet)
   const handleReturnToCover = useCallback(() => {
     playSound('close');
     setActiveNavTab('home');
@@ -1197,9 +1392,12 @@ export default function App() {
       return;
     }
 
-    // On canvas view: smoothly scroll window to top in one natural, continuous glide
-    isProgrammaticScrollRef.current = true;
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (startSettleRef.current) {
+      startSettleRef.current(0, 280);
+    } else {
+      isProgrammaticScrollRef.current = true;
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   }, []);
 
   // Direct scroll wheel zoom on workspace & dedicated upper-tab-bar return to cover
@@ -1316,9 +1514,13 @@ export default function App() {
     setActivePreset('network');
     setSelectedNodeId(null);
     centerViewForPreset('network', 0.60);
-    isProgrammaticScrollRef.current = true;
-    const maxScroll = typeof document !== 'undefined' ? document.documentElement.scrollHeight - window.innerHeight : 1000;
-    window.scrollTo({ top: maxScroll, behavior: 'smooth' });
+    if (startSettleRef.current) {
+      startSettleRef.current(1, 280);
+    } else {
+      isProgrammaticScrollRef.current = true;
+      const maxScroll = typeof document !== 'undefined' ? document.documentElement.scrollHeight - window.innerHeight : 1000;
+      window.scrollTo({ top: maxScroll, behavior: 'smooth' });
+    }
   }, [centerViewForPreset]);
 
   // Focus specific node on canvas with smooth centered pan
@@ -1519,7 +1721,7 @@ export default function App() {
                     opacity: activeNavTab !== 'home' ? 1 : (scrollProgress >= 0.10 ? Math.min(1, Math.pow((scrollProgress - 0.10) / 0.40, 1.2)) : 0),
                     pointerEvents: (activeNavTab !== 'home' || scrollProgress >= 0.80) ? 'auto' : 'none',
                   }}
-                  className="absolute inset-0 w-full h-screen pt-14 sm:pt-16 transition-opacity duration-150 ease-out z-10"
+                  className="absolute inset-0 w-full h-screen pt-14 sm:pt-16 z-10"
                 >
                   {isMobile ? (
                     <MobileNodespace

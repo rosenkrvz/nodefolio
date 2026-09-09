@@ -62,19 +62,21 @@ const EditorialCoverComponent: React.FC<EditorialCoverProps> = ({
     const rawT = Math.max(0, Math.min(1, (scrollProgress - 0.10) / 0.82));
     const smoothT = rawT * rawT * rawT * (rawT * (rawT * 6 - 15) + 10);
 
-    // Multi-stage continuous blur progression:
+    // Multi-stage continuous blur progression (discretized to 0.5px steps to prevent GPU re-rasterization spikes):
+    let rawBlur = 0;
     if (scrollProgress < 0.12) {
-      blur = 0;
+      rawBlur = 0;
     } else if (scrollProgress < 0.35) {
       const t = (scrollProgress - 0.12) / 0.23;
-      blur = t * 2.8; // 0px -> 2.8px
+      rawBlur = t * 2.8; // 0px -> 2.8px
     } else if (scrollProgress < 0.65) {
       const t = (scrollProgress - 0.35) / 0.30;
-      blur = 2.8 + t * 4.7; // 2.8px -> 7.5px
+      rawBlur = 2.8 + t * 4.7; // 2.8px -> 7.5px
     } else {
       const t = Math.min(1, (scrollProgress - 0.65) / 0.25);
-      blur = 7.5 + t * 6.5; // 7.5px -> 14.0px
+      rawBlur = 7.5 + t * 6.5; // 7.5px -> 14.0px
     }
+    blur = Math.round(rawBlur * 2) / 2;
 
     scale = 1 - smoothT * 0.055; // 1.00 to 0.945
     translateYPercent = -(smoothT * 105); // 0% to -105%
@@ -95,10 +97,11 @@ const EditorialCoverComponent: React.FC<EditorialCoverProps> = ({
       aria-label="Editorial Portfolio Cover"
       style={{
         opacity,
-        filter: blur > 0.2 ? `blur(${blur.toFixed(1)}px)` : 'none',
+        filter: blur >= 0.5 ? `blur(${blur.toFixed(1)}px)` : 'none',
         transform: `translate3d(0, ${translateYPercent.toFixed(2)}%, 0) scale(${scale.toFixed(4)})`,
         pointerEvents: (activeNavTab !== 'home' || scrollProgress >= 0.82) ? 'none' : 'auto',
         visibility: (activeNavTab !== 'home' || isFullyOffscreen) ? 'hidden' : 'visible',
+        willChange: isFullyOffscreen ? 'auto' : 'transform, opacity',
       }}
       className={`absolute inset-0 w-full h-screen flex flex-col justify-between px-6 sm:px-12 md:px-16 pt-24 pb-10 select-none overflow-hidden z-20 bg-[#14171c] ${
         isLifting ? 'border-b border-rose-500/50 shadow-[0_30px_70px_rgba(0,0,0,0.95)]' : ''
@@ -109,7 +112,7 @@ const EditorialCoverComponent: React.FC<EditorialCoverProps> = ({
         style={{
           transform: `translate3d(0, ${bgDriftPercent.toFixed(2)}%, 0)`,
         }}
-        className="absolute inset-0 pointer-events-none overflow-hidden z-0 transition-transform duration-75"
+        className="absolute inset-0 pointer-events-none overflow-hidden z-0"
         aria-hidden="true"
       >
         <div className="pattern-bg">
@@ -127,7 +130,7 @@ const EditorialCoverComponent: React.FC<EditorialCoverProps> = ({
       {isLifting && (
         <div
           style={{ opacity: seamIntensity }}
-          className="absolute bottom-0 inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-rose-500 to-transparent shadow-[0_0_18px_#f43f5e] z-30 pointer-events-none transition-opacity duration-150"
+          className="absolute bottom-0 inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-rose-500 to-transparent shadow-[0_0_18px_#f43f5e] z-30 pointer-events-none"
         />
       )}
 
@@ -137,7 +140,7 @@ const EditorialCoverComponent: React.FC<EditorialCoverProps> = ({
           transform: `translate3d(0, ${eyebrowTranslateY.toFixed(1)}px, 0)`,
           opacity: eyebrowOpacity,
         }}
-        className="relative z-10 w-full max-w-7xl mx-auto flex items-center justify-between text-xs font-body text-zinc-400 uppercase tracking-[0.25em] transition-opacity duration-100"
+        className="relative z-10 w-full max-w-7xl mx-auto flex items-center justify-between text-xs font-body text-zinc-400 uppercase tracking-[0.25em]"
       >
         <div className="flex items-center gap-2.5">
           <BrandLogo variant="icon" size={15} className="text-rose-400 shrink-0" />
@@ -224,7 +227,7 @@ const EditorialCoverComponent: React.FC<EditorialCoverProps> = ({
             transform: `translate3d(0, ${specsTranslateY.toFixed(1)}px, 0)`,
             opacity: specsOpacity,
           }}
-          className="hidden lg:flex lg:col-span-4 flex-col items-end text-right space-y-8 pl-8 transition-opacity duration-100"
+          className="hidden lg:flex lg:col-span-4 flex-col items-end text-right space-y-8 pl-8"
         >
           <div className="space-y-2.5">
             <span className="font-accent text-3xl leading-none text-rose-400/80 block">
@@ -262,7 +265,7 @@ const EditorialCoverComponent: React.FC<EditorialCoverProps> = ({
           transform: `translate3d(0, ${bottomHintTranslateY.toFixed(1)}px, 0)`,
           pointerEvents: bottomHintOpacity < 0.1 ? 'none' : 'auto',
         }}
-        className="relative z-10 w-full max-w-7xl mx-auto flex items-center justify-between pt-6 border-t border-white/[0.08] text-xs font-body text-zinc-500 transition-opacity duration-75"
+        className="relative z-10 w-full max-w-7xl mx-auto flex items-center justify-between pt-6 border-t border-white/[0.08] text-xs font-body text-zinc-500"
       >
         <button
           type="button"
