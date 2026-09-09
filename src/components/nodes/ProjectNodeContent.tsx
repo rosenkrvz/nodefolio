@@ -1,6 +1,7 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { ProjectItem } from '../../types';
 import { ArrowUpRight, RotateCcw } from '../icons';
+import { getDevicePerformanceTier } from '../../lib/performanceTier';
 
 interface ProjectNodeContentProps {
   project: ProjectItem;
@@ -27,8 +28,11 @@ export const ProjectNodeContent: React.FC<ProjectNodeContentProps> = ({
 
   // Generate deterministic computational clusters (embeddings)
   const pointsRef = useRef<Point3D[]>([]);
+  const projectedRef = useRef<Array<{ x: number; y: number; z: number; cluster: number; size: number }>>([]);
 
   useEffect(() => {
+    const tier = getDevicePerformanceTier();
+    const countPerCluster = tier === 'low' ? 20 : tier === 'balanced' ? 32 : 44;
     const pts: Point3D[] = [];
     const clusterCenters = [
       { x: -50, y: -30, z: 30, color: 0 },
@@ -38,7 +42,7 @@ export const ProjectNodeContent: React.FC<ProjectNodeContentProps> = ({
     ];
 
     clusterCenters.forEach((c, cIdx) => {
-      for (let i = 0; i < 48; i++) {
+      for (let i = 0; i < countPerCluster; i++) {
         const u = Math.random();
         const v = Math.random();
         const rad = Math.sqrt(-2 * Math.log(u || 0.01)) * 22;
@@ -53,21 +57,33 @@ export const ProjectNodeContent: React.FC<ProjectNodeContentProps> = ({
       }
     });
     pointsRef.current = pts;
+    projectedRef.current = pts.map(() => ({ x: 0, y: 0, z: 0, cluster: 0, size: 0 }));
   }, []);
 
   // Canvas render loop with 3D projection and coordinate grid (optimized to pause when offscreen)
   useEffect(() => {
     let animFrame: number;
     let isVisible = true;
+    let lastRenderTime = 0;
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
+    const tier = getDevicePerformanceTier();
+    const minFrameInterval = tier === 'high' ? 16 : 32; // 60fps on high, 30fps on balanced/low
+
     let time = 0;
 
-    const render = () => {
+    const render = (now: number = performance.now()) => {
       if (!isVisible) return;
+
+      if (now - lastRenderTime < minFrameInterval) {
+        animFrame = requestAnimationFrame(render);
+        return;
+      }
+      lastRenderTime = now;
+
       time += 0.015;
       if (isRotating) {
         rotationRef.current.rotY += 0.006;
@@ -94,7 +110,7 @@ export const ProjectNodeContent: React.FC<ProjectNodeContentProps> = ({
       const axisLines = [
         [[-80, 0, 0], [80, 0, 0]],
         [[0, -60, 0], [0, 60, 0]],
-        [[0, 0, -60], [0, 0, 60]],
+        [[0, 0, -60], [0, 60, 0]],
       ];
 
       axisLines.forEach(([p1, p2]) => {
@@ -119,7 +135,7 @@ export const ProjectNodeContent: React.FC<ProjectNodeContentProps> = ({
         ctx.stroke();
       });
 
-      // 2. Project and sort clustered points
+      // 2. Project clustered points into pre-allocated reusable buffer (zero GC allocation)
       const clusterPalette = [
         '#f43f5e', // rose
         '#fb7185', // light rose
@@ -127,59 +143,66 @@ export const ProjectNodeContent: React.FC<ProjectNodeContentProps> = ({
         '#fda4af', // pink highlight
       ];
 
-      const projected = pointsRef.current.map((pt) => {
-        // Subtle topological oscillation depending on projection mode
-        const osc = projectionMode === 'umap' 
-          ? Math.sin(time + pt.cluster) * 2 
-          : projectionMode === 'tsne' 
-          ? Math.cos(time * 0.8 + pt.x * 0.05) * 3 
+      const pts = pointsRef.current;
+      const projected = projectedRef.current;
+      const numPts = pts.length;
+
+      for (let i = 0; i < numPts; i++) {
+        const pt = pts[i];
+        const osc = projectionMode === 'umap'
+          ? Math.sin(time + pt.cluster) * 2
+          : projectionMode === 'tsne'
+          ? Math.cos(time * 0.8 + pt.x * 0.05) * 3
           : 0;
 
         const px = pt.x;
         const py = pt.y + osc;
         const pz = pt.z;
 
-        // Rotate Y
         const rx1 = px * cosY - pz * sinY;
         const rz1 = px * sinY + pz * cosY;
-        // Rotate X
         const ry2 = py * cosX - rz1 * sinX;
         const rz2 = py * sinX + rz1 * cosX;
 
         const scale = fov / (fov + rz2 + 140);
-        return {
-          x: cx + rx1 * scale,
-          y: cy + ry2 * scale,
-          z: rz2,
-          cluster: pt.cluster,
-          size: pt.size * scale,
-        };
-      });
-
-      projected.sort((a, b) => b.z - a.z);
+        const target = projected[i];
+        if (target) {
+          target.x = cx + rx1 * scale;
+          target.y = cy + ry2 * scale;
+          target.z = rz2;
+          target.cluster = pt.cluster;
+          target.size = pt.size * scale;
+        }
+      }
 
       // 3. Draw Manifold curves connecting proximate points
       ctx.lineWidth = 0.8;
-      for (let i = 0; i < projected.length; i += 6) {
+      const step = tier === 'low' ? 8 : 6;
+      for (let i = 0; i < numPts; i += step) {
         const p1 = projected[i];
-        const p2 = projected[(i + 3) % projected.length];
-        const dist = Math.hypot(p1.x - p2.x, p1.y - p2.y);
-        if (dist < 70 && p1.cluster === p2.cluster) {
-          ctx.strokeStyle = 'rgba(244, 63, 94, 0.16)';
-          ctx.beginPath();
-          ctx.moveTo(p1.x, p1.y);
-          ctx.lineTo(p2.x, p2.y);
-          ctx.stroke();
+        const p2 = projected[(i + 3) % numPts];
+        if (p1 && p2) {
+          const dist = Math.hypot(p1.x - p2.x, p1.y - p2.y);
+          if (dist < 70 && p1.cluster === p2.cluster) {
+            ctx.strokeStyle = 'rgba(244, 63, 94, 0.16)';
+            ctx.beginPath();
+            ctx.moveTo(p1.x, p1.y);
+            ctx.lineTo(p2.x, p2.y);
+            ctx.stroke();
+          }
         }
       }
 
       // 4. Draw Embedding Points
-      projected.forEach((pt) => {
-        ctx.fillStyle = clusterPalette[pt.cluster] || '#f43f5e';
-        ctx.beginPath();
-        ctx.arc(pt.x, pt.y, Math.max(0.8, pt.size), 0, Math.PI * 2);
-        ctx.fill();
-      });
+      for (let i = 0; i < numPts; i++) {
+        const pt = projected[i];
+        if (pt) {
+          ctx.fillStyle = clusterPalette[pt.cluster] || '#f43f5e';
+          ctx.beginPath();
+          ctx.arc(pt.x, pt.y, Math.max(0.8, pt.size), 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
 
       ctx.restore();
       animFrame = requestAnimationFrame(render);

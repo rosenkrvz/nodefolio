@@ -297,7 +297,7 @@ export const FocusedNodeModal: React.FC<FocusedNodeModalProps> = ({
       role="dialog"
       aria-modal="true"
       aria-label={`Detailed technical artifact: ${node.title}`}
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 md:p-10 select-none"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-6 md:p-10 select-none"
     >
       {/* Deep dark backdrop maintaining spatial awareness of the graph behind it */}
       <div
@@ -332,9 +332,11 @@ export const FocusedNodeModal: React.FC<FocusedNodeModalProps> = ({
               : 'none',
           willChange: 'transform, opacity',
         }}
-        className="relative w-full max-w-4xl max-h-[90vh] flex flex-col rounded-[26px] bg-[#0c0e14] border border-white/[0.14] shadow-[0_30px_90px_rgba(0,0,0,0.95),0_0_40px_rgba(225,29,72,0.12)] z-10 font-body overflow-hidden"
+        className="relative w-full max-w-4xl max-h-[92vh] sm:max-h-[90vh] flex flex-col rounded-t-[28px] sm:rounded-[26px] bg-[#0c0e14] border-t sm:border border-white/[0.14] shadow-[0_30px_90px_rgba(0,0,0,0.95),0_0_40px_rgba(225,29,72,0.12)] z-10 font-body overflow-hidden pb-[calc(env(safe-area-inset-bottom,0px)+8px)] sm:pb-0"
         onClick={(e) => e.stopPropagation()}
       >
+        {/* Mobile Pull Handle */}
+        <div className="sm:hidden w-12 h-1 rounded-full bg-white/20 mx-auto mt-2.5 -mb-1 shrink-0" />
         {/* Top Crimson Laser Horizon Indicator */}
         <div
           className={`absolute top-0 inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-rose-500 to-transparent shadow-[0_0_14px_#f43f5e] z-30 transition-opacity duration-300 ${
@@ -387,7 +389,7 @@ export const FocusedNodeModal: React.FC<FocusedNodeModalProps> = ({
                 type="button"
                 onClick={() => handleClose()}
                 aria-label="Close inspection panel"
-                className="p-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.10] text-zinc-400 hover:text-white border border-white/[0.10] transition-colors cursor-pointer"
+                className="w-10 h-10 sm:w-8 sm:h-8 flex items-center justify-center rounded-xl sm:rounded-lg bg-white/[0.06] hover:bg-white/[0.12] active:bg-white/[0.18] text-zinc-300 hover:text-white border border-white/12 transition-colors cursor-pointer"
                 title="Close inspection (ESC)"
               >
                 <Close className="w-4 h-4" />

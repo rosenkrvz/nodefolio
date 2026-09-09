@@ -22,6 +22,8 @@ import { AddVisitorNodeModal } from './components/modals/AddVisitorNodeModal';
 import { InspectorListView } from './components/InspectorListView';
 import { ChronicleView } from './components/ChronicleView';
 import { playSound } from './lib/sound';
+import { useIsMobile } from './hooks/useIsMobile';
+import { MobileNodespace } from './components/MobileNodespace';
 
 const VISITOR_STORAGE_KEY = 'nodefolio_visitor_notes';
 
@@ -31,7 +33,27 @@ const loadSavedVisitorNodes = (): NodeData[] => {
     const raw = localStorage.getItem(VISITOR_STORAGE_KEY);
     if (!raw) return [];
     const parsed = JSON.parse(raw);
-    if (Array.isArray(parsed)) return parsed;
+    if (Array.isArray(parsed)) {
+      let migrated = false;
+      const normalized = parsed.map((item: NodeData, idx: number) => {
+        // Self-healing migration: if note was spawned at old coordinates (x >= 2000), migrate to visible cluster area
+        if (item.x >= 2000 || item.x < 100 || item.y < 100) {
+          migrated = true;
+          const col = idx % 2;
+          const row = Math.floor(idx / 2);
+          return {
+            ...item,
+            x: 1450 + col * 290,
+            y: 450 + row * 240,
+          };
+        }
+        return item;
+      });
+      if (migrated) {
+        localStorage.setItem(VISITOR_STORAGE_KEY, JSON.stringify(normalized));
+      }
+      return normalized;
+    }
   } catch (e) {
     console.error('Failed to parse saved visitor nodes', e);
   }
@@ -39,8 +61,6 @@ const loadSavedVisitorNodes = (): NodeData[] => {
 };
 
 const RESEARCH_NODE_IDS = new Set([
-  'node-pipeline',
-  'node-inference',
   'node-profile',
   'node-models',
   'node-systems',
@@ -116,18 +136,22 @@ export default function App() {
   });
 
   const currentTabKey = activePreset === 'project' || activePreset === 'all' ? 'project' : 'network';
+  const currentTabKeyRef = useRef(currentTabKey);
+  currentTabKeyRef.current = currentTabKey;
+
   const nodes = nodesByPreset[currentTabKey];
   const setNodes = useCallback(
     (updater: NodeData[] | ((prev: NodeData[]) => NodeData[])) => {
+      const activeKey = currentTabKeyRef.current;
       setNodesByPreset((prev) => {
-        const next = typeof updater === 'function' ? updater(prev[currentTabKey]) : updater;
+        const next = typeof updater === 'function' ? updater(prev[activeKey]) : updater;
         return {
           ...prev,
-          [currentTabKey]: next,
+          [activeKey]: next,
         };
       });
     },
-    [currentTabKey]
+    []
   );
   const [activeView, setActiveView] = useState<'canvas' | 'list' | 'timeline'>(initialTab === 'notebook' ? 'timeline' : 'canvas');
   const [isSimulating, setIsSimulating] = useState<boolean>(false);
@@ -142,7 +166,18 @@ export default function App() {
   transformRef.current = transform;
   const isPanningRef = useRef(false);
   const panStartRef = useRef({ x: 0, y: 0 });
+  const pendingPanRef = useRef<{ x: number; y: number } | null>(null);
+  const panRafIdRef = useRef<number | null>(null);
   const canvasContainerRef = useRef<HTMLDivElement>(null);
+
+  // Mobile detection hook
+  const isMobile = useIsMobile();
+
+  // Multi-touch pinch-to-zoom refs
+  const pinchStartDistRef = useRef<number>(0);
+  const pinchStartTransformRef = useRef<CanvasTransform>({ x: 0, y: 0, scale: 0.6 });
+  const pinchMidpointRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+  const isPinchingRef = useRef<boolean>(false);
 
   // Modals state
   const [selectedCertificate, setSelectedCertificate] = useState<CertificateItem | null>(null);
@@ -163,8 +198,15 @@ export default function App() {
   // Audio interaction refs
   const hasPlayedCoverTransitionRef = useRef<boolean>(false);
   const lastZoomBracketRef = useRef<number>(60);
+  const lastZoomSoundTimeRef = useRef<number>(0);
   const isWheelZoomingRef = useRef<boolean>(false);
   const wheelZoomTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // RAF batching refs for high-frequency pointer moves and resizes
+  const pendingDragDeltasRef = useRef<Record<string, { dx: number; dy: number }>>({});
+  const dragRafIdRef = useRef<number | null>(null);
+  const pendingResizeRef = useRef<Record<string, number>>({});
+  const resizeRafIdRef = useRef<number | null>(null);
 
   // Deterministic harmonic drift personality configs for organic, controlled workspace life
   const NODE_DRIFT_PROFILES: Record<
@@ -224,6 +266,41 @@ export default function App() {
     }, 100);
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Auto-normalize any existing visitor nodes if they were saved at old offscreen coordinates (x >= 2000)
+  useEffect(() => {
+    setNodesByPreset((prev) => {
+      let hasFar = false;
+      const normalize = (list: NodeData[]) =>
+        list.map((n, idx) => {
+          if (n.category === 'visitor' && (n.x >= 2000 || n.x < 100 || n.y < 100)) {
+            hasFar = true;
+            const col = idx % 2;
+            const row = Math.floor(idx / 2);
+            return {
+              ...n,
+              x: 1450 + col * 290,
+              y: 450 + row * 240,
+            };
+          }
+          return n;
+        });
+
+      const nextNetwork = normalize(prev.network);
+      const nextProject = normalize(prev.project);
+
+      if (hasFar) {
+        try {
+          const visitorOnly = nextProject.filter((n) => n.category === 'visitor');
+          localStorage.setItem(VISITOR_STORAGE_KEY, JSON.stringify(visitorOnly));
+        } catch (e) {
+          console.error('Failed to sync normalized visitor nodes', e);
+        }
+        return { network: nextNetwork, project: nextProject };
+      }
+      return prev;
+    });
   }, []);
 
   // 3. Browser back/forward navigation via hashchange
@@ -331,9 +408,18 @@ export default function App() {
     };
   }, [isSimulating, NODE_DRIFT_PROFILES]);
 
-  // Smooth interruptible scroll progress tracking via weighted damping with magnetic settle
+  // Smooth interruptible scroll progress tracking via weighted damping with magnetic settle (Idle-Aware)
   useEffect(() => {
     let settleTimeoutId: ReturnType<typeof setTimeout> | null = null;
+    let animId: number | null = null;
+    let isTicking = false;
+
+    const ensureTicking = () => {
+      if (!isTicking && typeof window !== 'undefined') {
+        isTicking = true;
+        animId = window.requestAnimationFrame(tick);
+      }
+    };
 
     const updateTargetProgress = () => {
       if (activeViewRef.current !== 'canvas') return;
@@ -344,6 +430,7 @@ export default function App() {
       } else {
         targetProgressRef.current = 0;
       }
+      ensureTicking();
     };
 
     const onScroll = () => {
@@ -371,29 +458,39 @@ export default function App() {
               setActiveNavTab('network');
               setActivePreset('network');
               window.scrollTo({ top: totalHeight, behavior: 'smooth' });
+              ensureTicking();
             } else {
               // Return cleanly to Cover
               isProgrammaticScrollRef.current = true;
               setActiveNavTab('home');
               window.scrollTo({ top: 0, behavior: 'smooth' });
+              ensureTicking();
             }
           }
         }, 180);
       }
     };
 
-    let animId: number;
     const tick = () => {
+      if (typeof document !== 'undefined' && document.hidden) {
+        isTicking = false;
+        animId = null;
+        return;
+      }
+
       if (activeViewRef.current === 'canvas') {
         const target = targetProgressRef.current;
         const current = currentProgressRef.current;
         const diff = target - current;
 
-        if (Math.abs(diff) > 0.001) {
+        let needsAnotherTick = false;
+
+        if (Math.abs(diff) > 0.0008) {
           // Weighted damping factor (0.12) for smoother liquid momentum without overshooting
           const next = current + diff * 0.12;
           currentProgressRef.current = next;
           setScrollProgress(Math.round(next * 1000) / 1000);
+          needsAnotherTick = true;
         } else if (current !== target) {
           currentProgressRef.current = target;
           setScrollProgress(target);
@@ -401,6 +498,7 @@ export default function App() {
 
         // Release programmatic scroll lock when arrival is achieved
         if (isProgrammaticScrollRef.current) {
+          needsAnotherTick = true;
           if (activeNavTabRef.current === 'home' && currentProgressRef.current <= 0.05) {
             isProgrammaticScrollRef.current = false;
           } else if (activeNavTabRef.current !== 'home' && currentProgressRef.current >= 0.85) {
@@ -425,23 +523,43 @@ export default function App() {
         } else if (currentProgressRef.current < 0.30 && hasPlayedCoverTransitionRef.current) {
           hasPlayedCoverTransitionRef.current = false;
         }
+
+        if (needsAnotherTick) {
+          animId = window.requestAnimationFrame(tick);
+          return;
+        }
       }
 
-      animId = window.requestAnimationFrame(tick);
+      // Settled — sleep RAF until next scroll or resize event
+      isTicking = false;
+      animId = null;
     };
 
     window.addEventListener('scroll', onScroll, { passive: true });
     window.addEventListener('resize', updateTargetProgress, { passive: true });
+    
+    // Page visibility event to pause/resume RAF cleanly
+    const onVisibilityChange = () => {
+      if (!document.hidden) {
+        updateTargetProgress();
+      }
+    };
+    document.addEventListener('visibilitychange', onVisibilityChange);
+
     updateTargetProgress();
     currentProgressRef.current = targetProgressRef.current;
     setScrollProgress(targetProgressRef.current);
-    animId = window.requestAnimationFrame(tick);
+    ensureTicking();
 
     return () => {
       if (settleTimeoutId) clearTimeout(settleTimeoutId);
       window.removeEventListener('scroll', onScroll);
       window.removeEventListener('resize', updateTargetProgress);
-      window.cancelAnimationFrame(animId);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+      if (animId !== null) window.cancelAnimationFrame(animId);
+      if (dragRafIdRef.current !== null) window.cancelAnimationFrame(dragRafIdRef.current);
+      if (resizeRafIdRef.current !== null) window.cancelAnimationFrame(resizeRafIdRef.current);
+      if (panRafIdRef.current !== null) window.cancelAnimationFrame(panRafIdRef.current);
     };
   }, []);
 
@@ -475,27 +593,52 @@ export default function App() {
     return map;
   }, [nodes, driftOffsets]);
 
-  // Node Dragging Handler - Free movement across full canvas resolution space (50 to 4200)
+  // Node Dragging Handler - RAF-throttled batching across full canvas resolution space
   const handleNodeDrag = useCallback((nodeId: string, deltaX: number, deltaY: number) => {
-    setNodes((prevNodes) => {
-      const targetNode = prevNodes.find((n) => n.id === nodeId);
-      if (!targetNode) return prevNodes;
+    const cur = pendingDragDeltasRef.current[nodeId] || { dx: 0, dy: 0 };
+    pendingDragDeltasRef.current[nodeId] = { dx: cur.dx + deltaX, dy: cur.dy + deltaY };
 
-      const nextX = Math.round(Math.max(50, Math.min(4200, targetNode.x + deltaX)));
-      const nextY = Math.round(Math.max(50, Math.min(4200, targetNode.y + deltaY)));
+    if (dragRafIdRef.current === null) {
+      dragRafIdRef.current = window.requestAnimationFrame(() => {
+        dragRafIdRef.current = null;
+        const deltas = pendingDragDeltasRef.current;
+        pendingDragDeltasRef.current = {};
 
-      return prevNodes.map((n) => (n.id === nodeId ? { ...n, x: nextX, y: nextY } : n));
-    });
+        setNodes((prevNodes) => {
+          let hasChanges = false;
+          const nextNodes = prevNodes.map((n) => {
+            const d = deltas[n.id];
+            if (!d || (d.dx === 0 && d.dy === 0)) return n;
+            hasChanges = true;
+            const nextX = Math.round(Math.max(50, Math.min(4200, n.x + d.dx)));
+            const nextY = Math.round(Math.max(50, Math.min(4200, n.y + d.dy)));
+            return { ...n, x: nextX, y: nextY };
+          });
+          return hasChanges ? nextNodes : prevNodes;
+        });
+      });
+    }
   }, [setNodes]);
 
-  // Deliberate Node Square Edge Resize Handler
+  // Deliberate Node Square Edge Resize Handler - RAF throttled
   const handleNodeResize = useCallback((nodeId: string, newWidth: number) => {
-    setNodes((prevNodes) =>
-      prevNodes.map((n) => (n.id === nodeId ? { ...n, width: newWidth } : n))
-    );
-  }, []);
+    pendingResizeRef.current[nodeId] = newWidth;
+    if (resizeRafIdRef.current === null) {
+      resizeRafIdRef.current = window.requestAnimationFrame(() => {
+        resizeRafIdRef.current = null;
+        const resizes = pendingResizeRef.current;
+        pendingResizeRef.current = {};
+        setNodes((prevNodes) => {
+          return prevNodes.map((n) => {
+            const w = resizes[n.id];
+            return w !== undefined ? { ...n, width: w } : n;
+          });
+        });
+      });
+    }
+  }, [setNodes]);
 
-  // Visitor node creation with local persistence
+  // Visitor node creation with local persistence and auto-focus
   const handleAddVisitorNode = useCallback((newNode: NodeData) => {
     setNodesByPreset((prev) => {
       const nextNetwork = [...prev.network, newNode];
@@ -509,6 +652,33 @@ export default function App() {
       return {
         network: nextNetwork,
         project: nextProject,
+      };
+    });
+
+    // Immediately select and highlight the newly added visitor node
+    setSelectedNodeId(newNode.id);
+
+    // Pan camera to ensure the new visitor note is comfortably inside view
+    const vw = typeof window !== 'undefined' ? window.innerWidth : 1200;
+    const vh = typeof window !== 'undefined' ? window.innerHeight : 800;
+    setTransform((prev) => {
+      const s = prev.scale;
+      const nodeCenterX = newNode.x + newNode.width / 2;
+      const nodeCenterY = newNode.y + 110;
+      const screenX = nodeCenterX * s + prev.x;
+      const screenY = nodeCenterY * s + prev.y;
+      const margin = 100;
+      const isComfortablyInside =
+        screenX > margin && screenX < vw - margin && screenY > margin && screenY < vh - margin;
+
+      if (isComfortablyInside) {
+        return prev;
+      }
+
+      return {
+        ...prev,
+        x: Math.round(vw / 2 - nodeCenterX * s),
+        y: Math.round(vh / 2 - nodeCenterY * s),
       };
     });
   }, []);
@@ -535,6 +705,9 @@ export default function App() {
   // Filter nodes & connections based on active preset
   const filteredNodes = useMemo(() => {
     return nodes.filter((n) => {
+      // Community visitor notes are always preserved across active workspaces (Network & Research)
+      if (n.category === 'visitor') return true;
+
       if (activePreset === 'all') return true;
       if (activePreset === 'network') {
         return [
@@ -642,6 +815,7 @@ export default function App() {
     const target = e.target as HTMLElement;
     if (
       target.closest('.node-card') ||
+      target.closest('[id^="graph-node-"]') ||
       target.closest('button') ||
       target.closest('.port-pin') ||
       target.closest('aside')
@@ -654,15 +828,38 @@ export default function App() {
 
     const handleMouseMove = (moveEvent: MouseEvent) => {
       if (!isPanningRef.current) return;
-      setTransform((prev) => ({
-        ...prev,
-        x: moveEvent.clientX - panStartRef.current.x,
-        y: moveEvent.clientY - panStartRef.current.y,
-      }));
+      pendingPanRef.current = {
+        x: Math.round(moveEvent.clientX - panStartRef.current.x),
+        y: Math.round(moveEvent.clientY - panStartRef.current.y),
+      };
+      if (panRafIdRef.current === null) {
+        panRafIdRef.current = window.requestAnimationFrame(() => {
+          panRafIdRef.current = null;
+          if (pendingPanRef.current) {
+            setTransform((prev) => ({
+              ...prev,
+              x: pendingPanRef.current!.x,
+              y: pendingPanRef.current!.y,
+            }));
+          }
+        });
+      }
     };
 
     const handleMouseUp = () => {
       isPanningRef.current = false;
+      if (panRafIdRef.current !== null) {
+        window.cancelAnimationFrame(panRafIdRef.current);
+        panRafIdRef.current = null;
+      }
+      if (pendingPanRef.current) {
+        setTransform((prev) => ({
+          ...prev,
+          x: pendingPanRef.current!.x,
+          y: pendingPanRef.current!.y,
+        }));
+        pendingPanRef.current = null;
+      }
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
     };
@@ -671,38 +868,107 @@ export default function App() {
     window.addEventListener('mouseup', handleMouseUp);
   };
 
-  // Mobile touch canvas panning
+  // Mobile touch canvas panning & 2-finger pinch zoom
   const handleCanvasTouchStart = (e: React.TouchEvent) => {
-    if (e.touches.length !== 1) return;
     const target = e.target as HTMLElement;
     if (
       target.closest('.node-card') ||
+      target.closest('[id^="graph-node-"]') ||
       target.closest('button') ||
       target.closest('.port-pin') ||
-      target.closest('aside')
+      target.closest('aside') ||
+      target.closest('nav')
     ) {
       return;
     }
 
+    if (e.touches.length === 2) {
+      // 2-finger pinch zoom initiation
+      isPanningRef.current = false;
+      isPinchingRef.current = true;
+      const t1 = e.touches[0];
+      const t2 = e.touches[1];
+      pinchStartDistRef.current = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+      pinchStartTransformRef.current = { ...transformRef.current };
+      pinchMidpointRef.current = {
+        x: (t1.clientX + t2.clientX) / 2,
+        y: (t1.clientY + t2.clientY) / 2,
+      };
+
+      const handlePinchMove = (moveEvent: TouchEvent) => {
+        if (!isPinchingRef.current || moveEvent.touches.length !== 2) return;
+        if (moveEvent.cancelable) moveEvent.preventDefault();
+
+        const p1 = moveEvent.touches[0];
+        const p2 = moveEvent.touches[1];
+        const currentDist = Math.hypot(p2.clientX - p1.clientX, p2.clientY - p1.clientY);
+        const factor = currentDist / (pinchStartDistRef.current || 1);
+        const init = pinchStartTransformRef.current;
+        const nextScale = Math.min(2.0, Math.max(0.35, Math.round(init.scale * factor * 100) / 100));
+        const mid = pinchMidpointRef.current;
+        const nextX = Math.round(mid.x - (mid.x - init.x) * (nextScale / init.scale));
+        const nextY = Math.round(mid.y - (mid.y - init.y) * (nextScale / init.scale));
+
+        setTransform({ x: nextX, y: nextY, scale: nextScale });
+      };
+
+      const handlePinchEnd = () => {
+        isPinchingRef.current = false;
+        window.removeEventListener('touchmove', handlePinchMove);
+        window.removeEventListener('touchend', handlePinchEnd);
+      };
+
+      window.addEventListener('touchmove', handlePinchMove, { passive: false });
+      window.addEventListener('touchend', handlePinchEnd);
+      return;
+    }
+
+    if (e.touches.length !== 1) return;
+
+    isPinchingRef.current = false;
     isPanningRef.current = true;
     const touch = e.touches[0];
     panStartRef.current = { x: touch.clientX - transform.x, y: touch.clientY - transform.y };
 
     const handleTouchMove = (moveEvent: TouchEvent) => {
-      if (!isPanningRef.current || moveEvent.touches.length !== 1) return;
       if (moveEvent.cancelable) {
         moveEvent.preventDefault();
       }
+      if (!isPanningRef.current || moveEvent.touches.length !== 1) return;
+
       const t = moveEvent.touches[0];
-      setTransform((prev) => ({
-        ...prev,
+      pendingPanRef.current = {
         x: Math.round(t.clientX - panStartRef.current.x),
         y: Math.round(t.clientY - panStartRef.current.y),
-      }));
+      };
+      if (panRafIdRef.current === null) {
+        panRafIdRef.current = window.requestAnimationFrame(() => {
+          panRafIdRef.current = null;
+          if (pendingPanRef.current) {
+            setTransform((prev) => ({
+              ...prev,
+              x: pendingPanRef.current!.x,
+              y: pendingPanRef.current!.y,
+            }));
+          }
+        });
+      }
     };
 
     const handleTouchEnd = () => {
       isPanningRef.current = false;
+      if (panRafIdRef.current !== null) {
+        window.cancelAnimationFrame(panRafIdRef.current);
+        panRafIdRef.current = null;
+      }
+      if (pendingPanRef.current) {
+        setTransform((prev) => ({
+          ...prev,
+          x: pendingPanRef.current!.x,
+          y: pendingPanRef.current!.y,
+        }));
+        pendingPanRef.current = null;
+      }
       window.removeEventListener('touchmove', handleTouchMove);
       window.removeEventListener('touchend', handleTouchEnd);
     };
@@ -725,6 +991,7 @@ export default function App() {
   const centerViewForPreset = useCallback((preset: string = 'network', desiredScale?: number) => {
     const vw = typeof window !== 'undefined' ? window.innerWidth : 1200;
     const vh = typeof window !== 'undefined' ? window.innerHeight : 800;
+    const isMobileViewport = vw < 768;
 
     // Use canonical baseline nodes for calculating structural center (prevents distortion from dragged cards)
     const baselineNodes = (preset === 'project' || preset === 'all') ? ALL_RESEARCH_NODES : ALL_NETWORK_NODES;
@@ -733,8 +1000,8 @@ export default function App() {
         return ['node-profile', 'node-models', 'node-credentials', 'node-systems', 'node-project', 'node-clock'].includes(n.id);
       }
       if (preset === 'project') {
-        // Research tab: Center symmetrically on the 6-node 2x3 organized layout
-        return ['node-pipeline', 'node-inference', 'node-profile', 'node-models', 'node-systems', 'node-project'].includes(n.id);
+        // Research tab: Center symmetrically on the 4 core research nodes
+        return ['node-profile', 'node-models', 'node-systems', 'node-project'].includes(n.id);
       }
       if (preset === 'skills') {
         return [
@@ -753,6 +1020,42 @@ export default function App() {
       // 'all': full research workspace ecosystem
       return true;
     });
+
+    // DEDICATED MOBILE SPATIAL COMPOSITION:
+    // Never scale down the entire graph to an unreadable 0.22 scale.
+    // Instead, compose a readable 0.74–0.80 scale focal view around the anchor research node with glowing splines visible.
+    if (isMobileViewport) {
+      const mobileScale = desiredScale !== undefined
+        ? desiredScale
+        : Math.min(0.82, Math.max(0.70, Math.round(((vw - 20) / 440) * 100) / 100));
+
+      const focalNode = targetNodes.find((n) => n.id === 'node-profile') || targetNodes[0];
+
+      let targetX = 650;
+      let targetY = 1000;
+      let targetW = 340;
+      let targetH = 340;
+
+      if (focalNode) {
+        targetX = focalNode.x;
+        targetY = focalNode.y;
+        targetW = focalNode.width || 340;
+        targetH = getNodeEstimatedHeight(focalNode);
+      }
+
+      const focalCenterX = targetX + targetW / 2;
+      const focalCenterY = targetY + targetH / 2;
+
+      // Center in mobile screen accounting for compact top nav (54px) and bottom dock (64px)
+      const viewCenterX = vw / 2;
+      const viewCenterY = (vh - 10) / 2;
+
+      const x = Math.round(viewCenterX - focalCenterX * mobileScale);
+      const y = Math.round(viewCenterY - focalCenterY * mobileScale);
+
+      setTransform({ x, y, scale: mobileScale });
+      return;
+    }
 
     let minX = Infinity;
     let maxX = -Infinity;
@@ -781,14 +1084,14 @@ export default function App() {
     const groupH = Math.max(100, maxY - minY);
 
     // Viewport usable area accounting for top navbar (64px), bottom telemetry bar (44px), and dock controls (60px)
-    const availW = Math.max(300, vw - (vw < 640 ? 30 : 120));
-    const availH = Math.max(300, vh - (vw < 640 ? 100 : 140));
+    const availW = Math.max(300, vw - 120);
+    const availH = Math.max(300, vh - 140);
     const maxFitScale = Math.min(availW / groupW, availH / groupH);
 
     // Scale default: 0.60 for network tab and research focal gateway, or fitted neatly (capped at 0.48) for other views
     const defaultScale = (preset === 'network' || preset === 'project') ? 0.60 : Math.min(0.48, Number((maxFitScale * 0.94).toFixed(2)));
     const targetDesired = desiredScale !== undefined ? desiredScale : defaultScale;
-    const minScaleFloor = vw < 640 ? 0.22 : 0.32;
+    const minScaleFloor = 0.32;
     const targetScale = Math.min(targetDesired, Math.max(minScaleFloor, Number(maxFitScale.toFixed(2))));
 
     // Precision viewport center (offsetting 64px top nav and ~44px bottom status: (64 + (vh - 52 - 64)/2) = (vh + 12)/2)
@@ -800,6 +1103,29 @@ export default function App() {
 
     setTransform({ x, y, scale: targetScale });
   }, [getNodeEstimatedHeight]);
+
+  // Fast mobile / index camera jump to any research node with readable framing
+  const handleJumpToNode = useCallback((nodeId: string) => {
+    playSound('click');
+    setSelectedNodeId(nodeId);
+    const targetNode = filteredNodes.find((n) => n.id === nodeId);
+    if (!targetNode) return;
+
+    const vw = typeof window !== 'undefined' ? window.innerWidth : 1200;
+    const vh = typeof window !== 'undefined' ? window.innerHeight : 800;
+    const isMobileViewport = vw < 768;
+
+    setTransform((prev) => {
+      const s = isMobileViewport ? Math.max(0.74, prev.scale) : prev.scale;
+      const nodeCenterX = targetNode.x + targetNode.width / 2;
+      const nodeCenterY = targetNode.y + getNodeEstimatedHeight(targetNode) / 2;
+      return {
+        scale: s,
+        x: Math.round(vw / 2 - nodeCenterX * s),
+        y: Math.round((vh - (isMobileViewport ? 10 : 0)) / 2 - nodeCenterY * s),
+      };
+    });
+  }, [filteredNodes, getNodeEstimatedHeight]);
 
   // Fit screen handler
   const handleFitScreen = useCallback(() => {
@@ -910,10 +1236,12 @@ export default function App() {
 
         if (nextScale === prev.scale) return prev;
 
-        // Tactile detent feedback when stepping each 1% section (52%, 53%, 54%, etc.)
+        // Tactile detent feedback when stepping each 1% section (throttled to 75ms)
         const newBracket = Math.round(nextScale * 100);
-        if (newBracket !== lastZoomBracketRef.current) {
+        const now = Date.now();
+        if (newBracket !== lastZoomBracketRef.current && now - lastZoomSoundTimeRef.current >= 75) {
           lastZoomBracketRef.current = newBracket;
+          lastZoomSoundTimeRef.current = now;
           playSound('zoom');
         }
 
@@ -1021,7 +1349,7 @@ export default function App() {
       setActiveView('canvas');
       setActivePreset('network');
       setSelectedNodeId(null);
-      centerViewForPreset('network', 0.60);
+      centerViewForPreset('network');
       isProgrammaticScrollRef.current = true;
       setTimeout(() => { isProgrammaticScrollRef.current = false; }, 500);
 
@@ -1042,7 +1370,7 @@ export default function App() {
       setActiveView('canvas');
       setActivePreset('project');
       setSelectedNodeId(null);
-      centerViewForPreset('project', 0.60);
+      centerViewForPreset('project');
       isProgrammaticScrollRef.current = true;
       setTimeout(() => { isProgrammaticScrollRef.current = false; }, 500);
 
@@ -1160,171 +1488,195 @@ export default function App() {
                     opacity: activeNavTab !== 'home' ? 1 : (scrollProgress >= 0.10 ? Math.min(1, Math.pow((scrollProgress - 0.10) / 0.40, 1.2)) : 0),
                     pointerEvents: (activeNavTab !== 'home' || scrollProgress >= 0.80) ? 'auto' : 'none',
                   }}
-                  className="absolute inset-0 w-full h-screen pt-16 transition-opacity duration-150 ease-out z-10"
+                  className="absolute inset-0 w-full h-screen pt-14 sm:pt-16 transition-opacity duration-150 ease-out z-10"
                 >
-                  <div
-                    id="graph-workspace"
-                    aria-label="Interactive computational graph canvas"
-                    ref={canvasContainerRef}
-                    onMouseDown={handleCanvasMouseDown}
-                    onTouchStart={handleCanvasTouchStart}
-                    onClick={handleCanvasBackgroundClick}
-                    className="w-full h-full cursor-grab active:cursor-grabbing relative overflow-hidden"
-                  >
-                    {/* Subtle architectural background texture */}
-                    {showGrid && (
-                      <div className="absolute inset-0 pattern-bg pointer-events-none opacity-35" />
-                    )}
-
-                    {/* Spatial Transformed Canvas */}
-                    <div
-                      style={{
-                        transform: `translate(${transform.x}px, ${transform.y}px) scale(${transform.scale})`,
-                        transformOrigin: '0 0',
-                      }}
-                      className="w-full h-full min-w-[4400px] min-h-[4400px] relative pointer-events-auto overflow-visible"
-                    >
-                      {/* Spline Connections Layer with Focus/Depth Dimming */}
-                      <SplineWires
-                        connections={filteredConnections}
-                        pinPositions={pinPositions}
-                        isSimulating={isSimulating}
-                        wireStyle={wireStyle}
-                        activeConnectionId={activeConnectionId}
-                        selectedNodeId={selectedNodeId}
-                        onSelectConnection={handleSelectConnection}
-                      />
-
-                      {/* Connected Graph Nodes (#0b0d12 carbon fiber) */}
-                      {effectiveNodes.map((effectiveNode) => (
-                        <GraphNode
-                          key={effectiveNode.id}
-                          node={effectiveNode}
-                          scale={transform.scale}
-                          isSelected={selectedNodeId === effectiveNode.id}
-                          isDimmed={selectedNodeId !== null && selectedNodeId !== effectiveNode.id}
-                          onSelectNode={handleSelectNode}
-                          onNodeDrag={handleNodeDrag}
-                          onNodeResize={handleNodeResize}
-                          onDragStateChange={handleDragStateChange}
-                          onDeleteVisitorNode={handleDeleteVisitorNode}
-                          onOpenCertificateModal={handleOpenCertificateModal}
-                          onOpenProjectModal={handleOpenProjectModal}
-                          onOpenContactModal={handleOpenContactModal}
-                          onOpenResumeModal={handleOpenResumeModal}
-                          onOpenFocusedNode={handleOpenFocusedNode}
-                        />
-                      ))}
-                    </div>
-
-                    {/* Floating Dock Controls */}
-                    <CanvasControlsDock
-                      scale={transform.scale}
-                      onZoomIn={() => {
-                        playSound('zoom');
-                        setTransform((p) => {
-                          const nextScale = Math.min(2.20, Math.round((p.scale + 0.01) * 100) / 100);
-                          lastZoomBracketRef.current = Math.round(nextScale * 100);
-                          const vw = typeof window !== 'undefined' ? window.innerWidth : 1200;
-                          const vh = typeof window !== 'undefined' ? window.innerHeight : 800;
-                          const newX = Math.round((vw / 2) - ((vw / 2) - p.x) * (nextScale / p.scale));
-                          const newY = Math.round(((vh + 12) / 2) - (((vh + 12) / 2) - p.y) * (nextScale / p.scale));
-                          return { x: newX, y: newY, scale: nextScale };
-                        });
-                      }}
-                      onZoomOut={() => {
-                        playSound('zoom');
-                        setTransform((p) => {
-                          const nextScale = Math.max(0.25, Math.round((p.scale - 0.01) * 100) / 100);
-                          lastZoomBracketRef.current = Math.round(nextScale * 100);
-                          const vw = typeof window !== 'undefined' ? window.innerWidth : 1200;
-                          const vh = typeof window !== 'undefined' ? window.innerHeight : 800;
-                          const newX = Math.round((vw / 2) - ((vw / 2) - p.x) * (nextScale / p.scale));
-                          const newY = Math.round(((vh + 12) / 2) - (((vh + 12) / 2) - p.y) * (nextScale / p.scale));
-                          return { x: newX, y: newY, scale: nextScale };
-                        });
-                      }}
-                      onFitScreen={() => {
-                        playSound('secondaryClick');
-                        handleFitScreen();
-                      }}
-                      showGrid={showGrid}
-                      onToggleGrid={() => {
-                        playSound('secondaryClick');
-                        setShowGrid(!showGrid);
-                      }}
-                      wireStyle={wireStyle}
-                      onCycleWireStyle={() => {
-                        playSound('secondaryClick');
-                        const styles: ('glow' | 'minimal' | 'cyber')[] = ['glow', 'minimal', 'cyber'];
-                        const next = styles[(styles.indexOf(wireStyle) + 1) % styles.length];
-                        setWireStyle(next);
-                      }}
+                  {isMobile ? (
+                    <MobileNodespace
+                      nodes={filteredNodes}
+                      connections={filteredConnections}
+                      activePreset={activePreset as 'project' | 'network' | 'all'}
+                      selectedNodeId={selectedNodeId}
+                      onSelectNode={handleSelectNode}
+                      onOpenCertificateModal={handleOpenCertificateModal}
+                      onOpenProjectModal={handleOpenProjectModal}
+                      onOpenContactModal={handleOpenContactModal}
+                      onOpenResumeModal={handleOpenResumeModal}
+                      onOpenFocusedNode={handleOpenFocusedNode}
+                      onDeleteVisitorNode={handleDeleteVisitorNode}
+                      onOpenAddNode={() => setIsAddNodeOpen(true)}
                       isSimulating={isSimulating}
-                      onToggleSimulate={() => {
-                        playSound('connect');
-                        setIsSimulating(!isSimulating);
-                      }}
-                      onReturnToCover={handleReturnToCover}
-                      onOpenAddNode={activePreset === 'project' ? () => setIsAddNodeOpen(true) : undefined}
+                      wireStyle={wireStyle}
+                      showGrid={showGrid}
                     />
-                  </div>
+                  ) : (
+                    <>
+                      <div
+                        id="graph-workspace"
+                        aria-label="Interactive computational graph canvas"
+                        ref={canvasContainerRef}
+                        onMouseDown={handleCanvasMouseDown}
+                        onTouchStart={handleCanvasTouchStart}
+                        onClick={handleCanvasBackgroundClick}
+                        className="w-full h-full cursor-grab active:cursor-grabbing relative overflow-hidden touch-none"
+                      >
+                        {/* Subtle architectural background texture */}
+                        {showGrid && (
+                          <div className="absolute inset-0 pattern-bg pointer-events-none opacity-35" />
+                        )}
 
-                  {/* Unified Precision Workspace Footer Bar */}
-                  <footer
-                    aria-label="Portfolio coordinates and workspace navigation"
-                    className="absolute bottom-3 inset-x-4 sm:inset-x-8 z-20 pointer-events-none flex items-center justify-between text-[11px] sm:text-xs font-body text-zinc-400 select-none px-4 py-2 rounded-2xl bg-black/80 border border-white/10 backdrop-blur-md shadow-[0_4px_24px_rgba(0,0,0,0.65)]"
-                  >
-                    <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
-                      <span className="px-2 py-0.5 rounded bg-white/[0.08] border border-white/10 font-semibold text-white uppercase text-[10px] tracking-wider shrink-0">
-                        SPATIAL WORKSPACE
-                      </span>
-                      <span className="text-zinc-200 font-semibold font-display tracking-wider uppercase truncate hidden sm:inline">
-                        Shubham Sharma
-                      </span>
-                      <span className="text-zinc-600 hidden sm:inline">&bull;</span>
-                      <span className="text-rose-400 font-medium truncate">AI &amp; Data Science</span>
-                    </div>
+                        {/* Spatial Transformed Canvas */}
+                        <div
+                          style={{
+                            transform: `translate(${transform.x}px, ${transform.y}px) scale(${transform.scale})`,
+                            transformOrigin: '0 0',
+                          }}
+                          className="w-full h-full min-w-[4400px] min-h-[4400px] relative pointer-events-auto overflow-visible"
+                        >
+                          {/* Spline Connections Layer with Focus/Depth Dimming */}
+                          <SplineWires
+                            connections={filteredConnections}
+                            pinPositions={pinPositions}
+                            isSimulating={isSimulating}
+                            wireStyle={wireStyle}
+                            activeConnectionId={activeConnectionId}
+                            selectedNodeId={selectedNodeId}
+                            onSelectConnection={handleSelectConnection}
+                            isMobile={false}
+                          />
 
-                    <div className="hidden lg:flex items-center gap-3 text-zinc-400 text-[11px]">
-                      <span>Drag background to pan</span>
-                      <span>&bull;</span>
-                      <span>Scroll wheel to zoom</span>
-                      <span>&bull;</span>
-                      <span>Drag nodes to arrange</span>
-                      <span>&bull;</span>
-                      <span className="text-zinc-300 font-medium">Resize edges to adjust node sizes</span>
-                    </div>
-
-                    {(() => {
-                      const visitorCount = filteredNodes.filter((n) => n.category === 'visitor').length;
-                      const officialCount = filteredNodes.length - visitorCount;
-                      return (
-                        <div className="flex items-center gap-2 text-zinc-300 font-medium text-[11px] shrink-0">
-                          <span>{officialCount} RESEARCH NODES</span>
-                          {visitorCount > 0 && (
-                            <>
-                              <span>+</span>
-                              <span className="text-rose-400 font-semibold">{visitorCount} VISITOR NOTE{visitorCount > 1 ? 'S' : ''}</span>
-                            </>
-                          )}
-                          <span>/</span>
-                          <span>{filteredConnections.length} ACTIVE SPLINES</span>
-                          <span>&bull;</span>
-                          <span className="text-rose-500 font-bold flex items-center gap-1.5">
-                            <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
-                            LIVE
-                          </span>
+                          {/* Connected Graph Nodes (#0b0d12 carbon fiber) */}
+                          {effectiveNodes.map((effectiveNode) => (
+                            <GraphNode
+                              key={effectiveNode.id}
+                              node={effectiveNode}
+                              scale={transform.scale}
+                              isSelected={selectedNodeId === effectiveNode.id}
+                              isDimmed={selectedNodeId !== null && selectedNodeId !== effectiveNode.id}
+                              onSelectNode={handleSelectNode}
+                              onNodeDrag={handleNodeDrag}
+                              onNodeResize={handleNodeResize}
+                              onDragStateChange={handleDragStateChange}
+                              onDeleteVisitorNode={handleDeleteVisitorNode}
+                              onOpenCertificateModal={handleOpenCertificateModal}
+                              onOpenProjectModal={handleOpenProjectModal}
+                              onOpenContactModal={handleOpenContactModal}
+                              onOpenResumeModal={handleOpenResumeModal}
+                              onOpenFocusedNode={handleOpenFocusedNode}
+                            />
+                          ))}
                         </div>
-                      );
-                    })()}
-                  </footer>
+
+                        {/* Desktop Floating Dock Controls (Hidden on Mobile) */}
+                        <CanvasControlsDock
+                          scale={transform.scale}
+                          onZoomIn={() => {
+                            playSound('zoom');
+                            setTransform((p) => {
+                              const nextScale = Math.min(2.20, Math.round((p.scale + 0.01) * 100) / 100);
+                              lastZoomBracketRef.current = Math.round(nextScale * 100);
+                              const vw = typeof window !== 'undefined' ? window.innerWidth : 1200;
+                              const vh = typeof window !== 'undefined' ? window.innerHeight : 800;
+                              const newX = Math.round((vw / 2) - ((vw / 2) - p.x) * (nextScale / p.scale));
+                              const newY = Math.round(((vh + 12) / 2) - (((vh + 12) / 2) - p.y) * (nextScale / p.scale));
+                              return { x: newX, y: newY, scale: nextScale };
+                            });
+                          }}
+                          onZoomOut={() => {
+                            playSound('zoom');
+                            setTransform((p) => {
+                              const nextScale = Math.max(0.25, Math.round((p.scale - 0.01) * 100) / 100);
+                              lastZoomBracketRef.current = Math.round(nextScale * 100);
+                              const vw = typeof window !== 'undefined' ? window.innerWidth : 1200;
+                              const vh = typeof window !== 'undefined' ? window.innerHeight : 800;
+                              const newX = Math.round((vw / 2) - ((vw / 2) - p.x) * (nextScale / p.scale));
+                              const newY = Math.round(((vh + 12) / 2) - (((vh + 12) / 2) - p.y) * (nextScale / p.scale));
+                              return { x: newX, y: newY, scale: nextScale };
+                            });
+                          }}
+                          onFitScreen={() => {
+                            playSound('secondaryClick');
+                            handleFitScreen();
+                          }}
+                          showGrid={showGrid}
+                          onToggleGrid={() => {
+                            playSound('secondaryClick');
+                            setShowGrid(!showGrid);
+                          }}
+                          wireStyle={wireStyle}
+                          onCycleWireStyle={() => {
+                            playSound('secondaryClick');
+                            const styles: ('glow' | 'minimal' | 'cyber')[] = ['glow', 'minimal', 'cyber'];
+                            const next = styles[(styles.indexOf(wireStyle) + 1) % styles.length];
+                            setWireStyle(next);
+                          }}
+                          isSimulating={isSimulating}
+                          onToggleSimulate={() => {
+                            playSound('connect');
+                            setIsSimulating(!isSimulating);
+                          }}
+                          onReturnToCover={handleReturnToCover}
+                          onOpenAddNode={() => setIsAddNodeOpen(true)}
+                        />
+                      </div>
+
+                      {/* Desktop Unified Precision Workspace Footer Bar (Hidden on Mobile) */}
+                      <footer
+                        aria-label="Portfolio coordinates and workspace navigation"
+                        className="absolute bottom-3 inset-x-4 sm:inset-x-8 z-20 pointer-events-none hidden md:flex items-center justify-between text-[11px] sm:text-xs font-body text-zinc-400 select-none px-4 py-2 rounded-2xl bg-black/80 border border-white/10 backdrop-blur-md shadow-[0_4px_24px_rgba(0,0,0,0.65)]"
+                      >
+                        <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+                          <span className="px-2 py-0.5 rounded bg-white/[0.08] border border-white/10 font-semibold text-white uppercase text-[10px] tracking-wider shrink-0">
+                            SPATIAL WORKSPACE
+                          </span>
+                          <span className="text-zinc-200 font-semibold font-display tracking-wider uppercase truncate hidden sm:inline">
+                            Shubham Sharma
+                          </span>
+                          <span className="text-zinc-600 hidden sm:inline">&bull;</span>
+                          <span className="text-rose-400 font-medium truncate">AI &amp; Data Science</span>
+                        </div>
+
+                        <div className="hidden lg:flex items-center gap-3 text-zinc-400 text-[11px]">
+                          <span>Drag background to pan</span>
+                          <span>&bull;</span>
+                          <span>Scroll wheel to zoom</span>
+                          <span>&bull;</span>
+                          <span>Drag nodes to arrange</span>
+                          <span>&bull;</span>
+                          <span className="text-zinc-300 font-medium">Resize edges to adjust node sizes</span>
+                        </div>
+
+                        {(() => {
+                          const visitorCount = filteredNodes.filter((n) => n.category === 'visitor').length;
+                          const officialCount = filteredNodes.length - visitorCount;
+                          return (
+                            <div className="flex items-center gap-2 text-zinc-300 font-medium text-[11px] shrink-0">
+                              <span>{officialCount} {activePreset === 'project' ? 'RESEARCH' : 'NETWORK'} NODES</span>
+                              {visitorCount > 0 && (
+                                <>
+                                  <span>+</span>
+                                  <span className="text-rose-400 font-semibold">{visitorCount} VISITOR NOTE{visitorCount > 1 ? 'S' : ''}</span>
+                                </>
+                              )}
+                              <span>/</span>
+                              <span>{filteredConnections.length} ACTIVE SPLINES</span>
+                              <span>&bull;</span>
+                              <span className="text-rose-500 font-bold flex items-center gap-1.5">
+                                <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
+                                LIVE
+                              </span>
+                            </div>
+                          );
+                        })()}
+                      </footer>
+                    </>
+                  )}
                 </div>
               </ArchitecturalReveal>
 
               {/* SECTION 01: Solid Editorial Portfolio Cover (Surface Layer, sits on top and physically lifts on scroll) */}
               <EditorialCover
                 scrollProgress={scrollProgress}
+                activeNavTab={activeNavTab}
                 onExplore={handleExplore}
                 onViewWork={() => handleSelectNavTab('projects')}
               />
@@ -1409,6 +1761,7 @@ export default function App() {
         onClose={() => setIsAddNodeOpen(false)}
         onAddNode={handleAddVisitorNode}
         existingVisitorCount={nodes.filter((n) => n.category === 'visitor').length}
+        currentTransform={transform}
       />
     </div>
   );

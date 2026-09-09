@@ -142,59 +142,37 @@ interface ChronicleViewProps {
   onFocusNodeOnCanvas?: (nodeId: string) => void;
 }
 
+interface EditorialResearchEntryProps {
+  item: ChronicleMilestone;
+  numeral: string;
+  reducedMotion: boolean;
+  onFocusNodeOnCanvas?: (nodeId: string) => void;
+  prevPhase?: { id: string; phase: string } | null;
+  nextPhase?: { id: string; phase: string } | null;
+  onSelectPhase?: (phaseId: string) => void;
+}
+
 /**
  * Editorial Research Entry Component
  * High-end architectural layout with asymmetric columns, bespoke visual artifact,
- * and prominent typography.
+ * and prominent typography for the active selected phase.
  */
-const EditorialResearchEntry: React.FC<{
-  item: ChronicleMilestone;
-  index: number;
-  reducedMotion: boolean;
-  onFocusNodeOnCanvas?: (nodeId: string) => void;
-  onInView?: (id: string) => void;
-}> = ({ item, index, reducedMotion, onFocusNodeOnCanvas, onInView }) => {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [isVisible, setIsVisible] = useState(false);
-  const isActive = item.status === 'active';
-
-  useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setIsVisible(true);
-          onInView?.(item.id);
-        }
-      },
-      { threshold: 0.15 }
-    );
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [item.id, onInView]);
-
+const EditorialResearchEntry: React.FC<EditorialResearchEntryProps> = ({
+  item,
+  numeral,
+  onFocusNodeOnCanvas,
+  prevPhase,
+  nextPhase,
+  onSelectPhase,
+}) => {
   return (
     <article
       id={`milestone-${item.id}`}
-      ref={containerRef}
       onMouseEnter={() => playSound('hover')}
-      style={{
-        opacity: reducedMotion ? 1 : isVisible ? 1 : 0,
-        transform: reducedMotion ? 'none' : isVisible ? 'translateY(0)' : 'translateY(28px)',
-        transition: reducedMotion
-          ? 'none'
-          : `opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1) ${index * 0.05}s, transform 0.7s cubic-bezier(0.22, 1, 0.36, 1) ${index * 0.05}s`,
-      }}
-      className={`relative group scroll-mt-28 pb-16 pt-10 border-b border-white/[0.08] transition-colors duration-300 ${
-        isActive ? 'bg-gradient-to-b from-rose-500/[0.03] to-transparent' : ''
-      }`}
+      className="relative group scroll-mt-28 pb-12 pt-8 border-b border-white/[0.08] transition-colors duration-300 bg-gradient-to-b from-rose-500/[0.03] to-transparent rounded-2xl p-6 sm:p-8"
     >
       {/* Active Phase Crimson Laser Accent Top Rule */}
-      {isActive && (
-        <div className="absolute top-0 inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-rose-500 to-transparent shadow-[0_0_12px_#f43f5e]" />
-      )}
+      <div className="absolute top-0 inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-rose-500 to-transparent shadow-[0_0_14px_#f43f5e]" />
 
       {/* Grid: 3-column asymmetric editorial layout */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
@@ -202,40 +180,22 @@ const EditorialResearchEntry: React.FC<{
         <div className="lg:col-span-3 flex flex-col items-start space-y-4">
           {/* Phase Numeral & Classification */}
           <div className="flex items-baseline gap-3">
-            <span
-              className={`font-display text-4xl sm:text-5xl font-black tracking-tight leading-none ${
-                isActive ? 'text-white' : 'text-zinc-500 group-hover:text-zinc-300'
-              } transition-colors`}
-            >
-              {String(5 - index).padStart(2, '0')}
+            <span className="font-display text-4xl sm:text-5xl font-black tracking-tight leading-none text-white transition-colors">
+              {numeral}
             </span>
             <div className="flex flex-col">
               <span className="font-tech text-[10px] tracking-[0.25em] uppercase text-zinc-400 font-semibold">
                 {item.phase}
               </span>
-              <span
-                className={`font-body text-xs font-bold tracking-wider uppercase ${
-                  isActive ? 'text-rose-400' : 'text-zinc-300'
-                }`}
-              >
+              <span className="font-body text-xs font-bold tracking-wider uppercase text-rose-400">
                 {item.period}
               </span>
             </div>
           </div>
 
           {/* Status Badge */}
-          <div
-            className={`inline-flex items-center gap-2 px-2.5 py-1 rounded-md text-[10px] font-tech tracking-[0.2em] uppercase font-bold ${
-              isActive
-                ? 'bg-rose-500/10 text-rose-300 border border-rose-500/30 shadow-[0_0_10px_rgba(244,63,94,0.15)]'
-                : 'bg-white/[0.03] text-zinc-400 border border-white/[0.08]'
-            }`}
-          >
-            <span
-              className={`w-1.5 h-1.5 rounded-full ${
-                isActive ? 'bg-rose-500 animate-pulse shadow-[0_0_6px_#f43f5e]' : 'bg-zinc-600'
-              }`}
-            />
+          <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-md text-[10px] font-tech tracking-[0.2em] uppercase font-bold bg-rose-500/10 text-rose-300 border border-rose-500/30 shadow-[0_0_10px_rgba(244,63,94,0.15)]">
+            <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse shadow-[0_0_6px_#f43f5e]" />
             <span>{item.statusLabel}</span>
           </div>
 
@@ -248,16 +208,12 @@ const EditorialResearchEntry: React.FC<{
         {/* Center Column: Monumental Headline & Narrative (col-span-5) */}
         <div className="lg:col-span-5 space-y-5">
           {/* Title */}
-          <h2
-            className={`font-display text-2xl sm:text-3xl font-bold tracking-tight uppercase leading-[1.12] transition-colors duration-200 ${
-              isActive ? 'text-white' : 'text-zinc-200 group-hover:text-white'
-            }`}
-          >
+          <h2 className="font-display text-2xl sm:text-3xl font-bold tracking-tight uppercase leading-[1.12] text-white">
             {item.title}
           </h2>
 
           {/* Thesis quote with surgical accent rule */}
-          <div className="relative pl-4 border-l-2 border-rose-500/50">
+          <div className="relative pl-4 border-l-2 border-rose-500/60">
             <p className="font-body text-sm sm:text-[15px] text-zinc-200 font-medium leading-relaxed italic">
               "{item.thesis}"
             </p>
@@ -283,10 +239,10 @@ const EditorialResearchEntry: React.FC<{
 
         {/* Right Column: Visual Artifact & Telemetry Specs (col-span-4) */}
         <div className="lg:col-span-4 space-y-4">
-          {/* Custom Computational Visual Artifact */}
+          {/* Custom Computational Visual Artifact with Active Rose Glow */}
           <ChronicleMilestoneArtifact
             milestoneId={item.id}
-            active={isActive}
+            active={true}
             className="w-full shadow-lg"
           />
 
@@ -327,6 +283,46 @@ const EditorialResearchEntry: React.FC<{
           </div>
         </div>
       </div>
+
+      {/* Bottom Phase Navigation Footer */}
+      <div className="mt-8 pt-6 border-t border-white/[0.06] flex flex-wrap items-center justify-between gap-4">
+        {prevPhase ? (
+          <button
+            type="button"
+            onClick={() => {
+              playSound('select');
+              onSelectPhase?.(prevPhase.id);
+            }}
+            className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/[0.03] hover:bg-white/[0.08] hover:border-rose-500/40 border border-white/[0.08] font-tech text-[10px] tracking-wider text-zinc-300 hover:text-white uppercase transition-all cursor-pointer group/btn"
+          >
+            <ArrowLeft className="w-3.5 h-3.5 text-rose-400 transition-transform group-hover/btn:-translate-x-0.5" />
+            <span>PREV: {prevPhase.phase}</span>
+          </button>
+        ) : (
+          <div />
+        )}
+
+        <div className="flex items-center gap-2 font-tech text-[10px] tracking-widest text-zinc-500 uppercase">
+          <span className="w-1.5 h-1.5 rounded-full bg-rose-500/70" />
+          <span>PHASE {numeral} OF 05</span>
+        </div>
+
+        {nextPhase ? (
+          <button
+            type="button"
+            onClick={() => {
+              playSound('select');
+              onSelectPhase?.(nextPhase.id);
+            }}
+            className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/[0.03] hover:bg-white/[0.08] hover:border-rose-500/40 border border-white/[0.08] font-tech text-[10px] tracking-wider text-zinc-300 hover:text-white uppercase transition-all cursor-pointer group/btn"
+          >
+            <span>NEXT: {nextPhase.phase}</span>
+            <ArrowLeft className="w-3.5 h-3.5 text-rose-400 rotate-180 transition-transform group-hover/btn:translate-x-0.5" />
+          </button>
+        ) : (
+          <div />
+        )}
+      </div>
     </article>
   );
 };
@@ -337,6 +333,8 @@ export const ChronicleView: React.FC<ChronicleViewProps> = ({
 }) => {
   const [entryStage, setEntryStage] = useState(0);
   const [activePhaseId, setActivePhaseId] = useState<string>('m1');
+  const [displayedPhaseId, setDisplayedPhaseId] = useState<string>('m1');
+  const [isTransitioning, setIsTransitioning] = useState<boolean>(false);
   const [reducedMotion, setReducedMotion] = useState(false);
 
   // Check prefers-reduced-motion
@@ -369,6 +367,24 @@ export const ChronicleView: React.FC<ChronicleViewProps> = ({
     };
   }, [reducedMotion]);
 
+  // Smooth cross-fade transition when active phase changes
+  useEffect(() => {
+    if (activePhaseId === displayedPhaseId) return;
+
+    if (reducedMotion) {
+      setDisplayedPhaseId(activePhaseId);
+      return;
+    }
+
+    setIsTransitioning(true);
+    const timer = setTimeout(() => {
+      setDisplayedPhaseId(activePhaseId);
+      setIsTransitioning(false);
+    }, 180);
+
+    return () => clearTimeout(timer);
+  }, [activePhaseId, displayedPhaseId, reducedMotion]);
+
   // Build timeline phases for the interactive axis
   const timelinePhases: TimelinePhase[] = useMemo(() => {
     return MILESTONES.map((m) => ({
@@ -381,12 +397,31 @@ export const ChronicleView: React.FC<ChronicleViewProps> = ({
     }));
   }, []);
 
-  // Scroll to selected milestone from axis
+  const activeMilestone = useMemo(() => {
+    return MILESTONES.find((m) => m.id === activePhaseId) || MILESTONES[0];
+  }, [activePhaseId]);
+
+  const displayedMilestone = useMemo(() => {
+    return MILESTONES.find((m) => m.id === displayedPhaseId) || MILESTONES[0];
+  }, [displayedPhaseId]);
+
+  const currentIdx = useMemo(() => {
+    return MILESTONES.findIndex((m) => m.id === displayedMilestone.id);
+  }, [displayedMilestone]);
+
+  const prevMilestone = currentIdx > 0 ? MILESTONES[currentIdx - 1] : null;
+  const nextMilestone = currentIdx < MILESTONES.length - 1 ? MILESTONES[currentIdx + 1] : null;
+  const displayedNumeral = displayedMilestone.phase.split(' ')[1] || '05';
+
+  // Select milestone from axis or stepper
   const handleSelectPhase = (phaseId: string) => {
     setActivePhaseId(phaseId);
-    const targetEl = document.getElementById(`milestone-${phaseId}`);
+    const targetEl = document.getElementById('chronicle-ledger');
     if (targetEl) {
-      targetEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      const rect = targetEl.getBoundingClientRect();
+      if (rect.top < 60 || rect.top > window.innerHeight * 0.75) {
+        targetEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
     }
   };
 
@@ -536,7 +571,7 @@ export const ChronicleView: React.FC<ChronicleViewProps> = ({
                   JOURNAL SPECIFICATION
                 </div>
                 {[
-                  { label: 'ACTIVE INVESTIGATION', value: 'PHASE 05' },
+                  { label: 'ACTIVE INVESTIGATION', value: activeMilestone.phase },
                   { label: 'VERIFIED BENCHMARKS', value: '02 MODULES' },
                   { label: 'SYSTEMS COMPLETED', value: '02 ENGINES' },
                   { label: 'FORMAL RIGOR', value: 'KKT DUALITY' },
@@ -594,18 +629,25 @@ export const ChronicleView: React.FC<ChronicleViewProps> = ({
           </span>
         </div>
 
-        {/* Milestone Entries */}
-        <div className="space-y-4">
-          {MILESTONES.map((item, idx) => (
-            <EditorialResearchEntry
-              key={item.id}
-              item={item}
-              index={idx}
-              reducedMotion={reducedMotion}
-              onFocusNodeOnCanvas={onFocusNodeOnCanvas}
-              onInView={(id) => setActivePhaseId(id)}
-            />
-          ))}
+        {/* Milestone Entry with smooth transition */}
+        <div
+          id="chronicle-main-entry"
+          tabIndex={-1}
+          className="transition-all duration-300 ease-out focus:outline-none"
+          style={{
+            opacity: isTransitioning ? 0.35 : 1,
+            transform: isTransitioning ? 'translateY(6px)' : 'translateY(0)',
+          }}
+        >
+          <EditorialResearchEntry
+            item={displayedMilestone}
+            numeral={displayedNumeral}
+            reducedMotion={reducedMotion}
+            onFocusNodeOnCanvas={onFocusNodeOnCanvas}
+            prevPhase={prevMilestone ? { id: prevMilestone.id, phase: prevMilestone.phase } : null}
+            nextPhase={nextMilestone ? { id: nextMilestone.id, phase: nextMilestone.phase } : null}
+            onSelectPhase={handleSelectPhase}
+          />
         </div>
       </main>
 

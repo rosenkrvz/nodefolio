@@ -139,11 +139,20 @@ class AudioManager {
     });
   }
 
+  private activeVoices: number = 0;
+  private readonly MAX_CONCURRENT_VOICES = 4;
+
   public playSound(type: SoundType, options?: { volumeMultiplier?: number }): void {
     if (this.muted) return;
+    if (typeof document !== 'undefined' && document.hidden) return;
 
     // Mobile check: skip hover sounds completely on touch devices
     if (type === 'hover' && this.isMobileDevice) return;
+
+    // Voice concurrency limit: prevent Web Audio thread choking during bursts
+    if (this.activeVoices >= this.MAX_CONCURRENT_VOICES && (type === 'zoom' || type === 'hover')) {
+      return;
+    }
 
     // Cooldown check to prevent acoustic spam
     const now = Date.now();
@@ -158,6 +167,11 @@ class AudioManager {
       if (!this.ensureContext() || !this.ctx || !this.masterGain) {
         return;
       }
+
+      this.activeVoices++;
+      setTimeout(() => {
+        this.activeVoices = Math.max(0, this.activeVoices - 1);
+      }, 120);
 
       // If custom volume multiplier passed, route through a temporary gain node
       if (options?.volumeMultiplier && options.volumeMultiplier !== 1.0) {

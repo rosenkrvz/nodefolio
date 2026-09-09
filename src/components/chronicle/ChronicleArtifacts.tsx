@@ -129,10 +129,12 @@ export const LatentManifoldArtifact: React.FC<ArtifactProps> = ({ active = true,
  * PHASE 04: Self-Attention Kernel Optimization & KV-Cache Dynamics
  * Visualizes tiled matrix SRAM memory partitioning (FlashAttention logic) and IO-aware throughput.
  */
-export const AttentionKernelArtifact: React.FC<ArtifactProps> = ({ className = '' }) => {
+export const AttentionKernelArtifact: React.FC<ArtifactProps> = ({ active = true, className = '' }) => {
   return (
     <div
-      className={`relative w-full aspect-[16/10] rounded-xl overflow-hidden bg-[#090b10] border border-white/[0.08] hover:border-white/[0.18] group/artifact transition-all duration-300 ${className}`}
+      className={`relative w-full aspect-[16/10] rounded-xl overflow-hidden bg-[#090b10] border group/artifact transition-all duration-300 ${
+        active ? 'border-rose-500/30 shadow-[0_0_25px_rgba(244,63,94,0.12)]' : 'border-white/[0.08] hover:border-white/[0.18]'
+      } ${className}`}
     >
       <div className="absolute inset-0 p-3.5 flex flex-col justify-between">
         {/* Header telemetry */}
@@ -209,10 +211,12 @@ export const AttentionKernelArtifact: React.FC<ArtifactProps> = ({ className = '
  * PHASE 03: Hyperspherical Uniformity & Contrastive Representation Spaces
  * Visualizes a projection unit sphere S^{d-1}, alignment forces, and uniform repulsive distribution.
  */
-export const HypersphereContrastiveArtifact: React.FC<ArtifactProps> = ({ className = '' }) => {
+export const HypersphereContrastiveArtifact: React.FC<ArtifactProps> = ({ active = true, className = '' }) => {
   return (
     <div
-      className={`relative w-full aspect-[16/10] rounded-xl overflow-hidden bg-[#090b10] border border-white/[0.08] hover:border-white/[0.18] group/artifact transition-all duration-300 ${className}`}
+      className={`relative w-full aspect-[16/10] rounded-xl overflow-hidden bg-[#090b10] border group/artifact transition-all duration-300 ${
+        active ? 'border-rose-500/30 shadow-[0_0_25px_rgba(244,63,94,0.12)]' : 'border-white/[0.08] hover:border-white/[0.18]'
+      } ${className}`}
     >
       <svg
         viewBox="0 0 320 200"
@@ -267,10 +271,12 @@ export const HypersphereContrastiveArtifact: React.FC<ArtifactProps> = ({ classN
  * PHASE 02: Convex Optimization, Probability & Statistical Machine Learning
  * Visualizes loss contour ellipses, gradient descent trajectory, and Lagrangian dual hyperplane.
  */
-export const ConvexOptimizationArtifact: React.FC<ArtifactProps> = ({ className = '' }) => {
+export const ConvexOptimizationArtifact: React.FC<ArtifactProps> = ({ active = true, className = '' }) => {
   return (
     <div
-      className={`relative w-full aspect-[16/10] rounded-xl overflow-hidden bg-[#090b10] border border-white/[0.08] hover:border-white/[0.18] group/artifact transition-all duration-300 ${className}`}
+      className={`relative w-full aspect-[16/10] rounded-xl overflow-hidden bg-[#090b10] border group/artifact transition-all duration-300 ${
+        active ? 'border-rose-500/30 shadow-[0_0_25px_rgba(244,63,94,0.12)]' : 'border-white/[0.08] hover:border-white/[0.18]'
+      } ${className}`}
     >
       <svg
         viewBox="0 0 320 200"
@@ -320,10 +326,12 @@ export const ConvexOptimizationArtifact: React.FC<ArtifactProps> = ({ className 
  * PHASE 01: Systems Architecture & Reverse-Mode Autodiff Engine
  * Visualizes a DAG computational graph tape with forward evaluation and reverse-mode adjoint accumulation.
  */
-export const AutogradDAGArtifact: React.FC<ArtifactProps> = ({ className = '' }) => {
+export const AutogradDAGArtifact: React.FC<ArtifactProps> = ({ active = true, className = '' }) => {
   return (
     <div
-      className={`relative w-full aspect-[16/10] rounded-xl overflow-hidden bg-[#090b10] border border-white/[0.08] hover:border-white/[0.18] group/artifact transition-all duration-300 ${className}`}
+      className={`relative w-full aspect-[16/10] rounded-xl overflow-hidden bg-[#090b10] border group/artifact transition-all duration-300 ${
+        active ? 'border-rose-500/30 shadow-[0_0_25px_rgba(244,63,94,0.12)]' : 'border-white/[0.08] hover:border-white/[0.18]'
+      } ${className}`}
     >
       <svg
         viewBox="0 0 320 200"
@@ -379,18 +387,18 @@ export const ChronicleMilestoneArtifact: React.FC<{
   milestoneId: string;
   active?: boolean;
   className?: string;
-}> = ({ milestoneId, active = false, className = '' }) => {
+}> = ({ milestoneId, active = true, className = '' }) => {
   switch (milestoneId) {
     case 'm1':
       return <LatentManifoldArtifact active={active} className={className} />;
     case 'm2':
-      return <AttentionKernelArtifact className={className} />;
+      return <AttentionKernelArtifact active={active} className={className} />;
     case 'm3':
-      return <HypersphereContrastiveArtifact className={className} />;
+      return <HypersphereContrastiveArtifact active={active} className={className} />;
     case 'm4':
-      return <ConvexOptimizationArtifact className={className} />;
+      return <ConvexOptimizationArtifact active={active} className={className} />;
     case 'm5':
-      return <AutogradDAGArtifact className={className} />;
+      return <AutogradDAGArtifact active={active} className={className} />;
     default:
       return <LatentManifoldArtifact active={active} className={className} />;
   }

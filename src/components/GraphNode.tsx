@@ -97,6 +97,11 @@ const GraphNodeComponent: React.FC<GraphNodeProps> = ({
   const nodeRef = useRef<HTMLDivElement>(null);
   const cardElementId = useId();
 
+  const onNodeDragRef = useRef(onNodeDrag);
+  onNodeDragRef.current = onNodeDrag;
+  const scaleRef = useRef(scale);
+  scaleRef.current = scale;
+
   const handleOpenFocus = useCallback((e?: React.MouseEvent) => {
     e?.stopPropagation();
     setIsOriginExpanding(true);
@@ -185,11 +190,12 @@ const GraphNodeComponent: React.FC<GraphNodeProps> = ({
 
     const handleMouseMove = (moveEvent: MouseEvent) => {
       if (!isDraggingRef.current) return;
-      const dx = (moveEvent.clientX - dragStartPosRef.current.x) / scale;
-      const dy = (moveEvent.clientY - dragStartPosRef.current.y) / scale;
+      const s = scaleRef.current || 1;
+      const dx = (moveEvent.clientX - dragStartPosRef.current.x) / s;
+      const dy = (moveEvent.clientY - dragStartPosRef.current.y) / s;
       if (dx !== 0 || dy !== 0) {
         dragStartPosRef.current = { x: moveEvent.clientX, y: moveEvent.clientY };
-        onNodeDrag(node.id, dx, dy);
+        onNodeDragRef.current?.(node.id, dx, dy);
       }
     };
 
@@ -233,11 +239,12 @@ const GraphNodeComponent: React.FC<GraphNodeProps> = ({
         moveEvent.preventDefault();
       }
       const t = moveEvent.touches[0];
-      const dx = (t.clientX - dragStartPosRef.current.x) / scale;
-      const dy = (t.clientY - dragStartPosRef.current.y) / scale;
+      const s = scaleRef.current || 1;
+      const dx = (t.clientX - dragStartPosRef.current.x) / s;
+      const dy = (t.clientY - dragStartPosRef.current.y) / s;
       if (dx !== 0 || dy !== 0) {
         dragStartPosRef.current = { x: t.clientX, y: t.clientY };
-        onNodeDrag(node.id, dx, dy);
+        onNodeDragRef.current?.(node.id, dx, dy);
       }
     };
 

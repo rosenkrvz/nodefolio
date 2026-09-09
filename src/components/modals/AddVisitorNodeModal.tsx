@@ -8,6 +8,7 @@ interface AddVisitorNodeModalProps {
   onClose: () => void;
   onAddNode: (node: NodeData) => void;
   existingVisitorCount: number;
+  currentTransform?: { x: number; y: number; scale: number };
 }
 
 export const AddVisitorNodeModal: React.FC<AddVisitorNodeModalProps> = ({
@@ -15,6 +16,7 @@ export const AddVisitorNodeModal: React.FC<AddVisitorNodeModalProps> = ({
   onClose,
   onAddNode,
   existingVisitorCount,
+  currentTransform,
 }) => {
   const [name, setName] = useState('');
   const [message, setMessage] = useState('');
@@ -54,12 +56,34 @@ export const AddVisitorNodeModal: React.FC<AddVisitorNodeModalProps> = ({
       return;
     }
 
-    // Determine collision-safe spatial placement
-    // Visitor notes cluster nicely to the right of official nodes around x: 2480..2800, y: 120..680
-    const col = existingVisitorCount % 2;
-    const row = Math.floor(existingVisitorCount / 2);
-    const spawnX = 2480 + col * 290 + (Math.random() * 20 - 10);
-    const spawnY = 140 + row * 220 + (Math.random() * 20 - 10);
+    // Determine collision-safe spatial placement right inside the user's current viewport
+    const targetW = shape === 'capsule' ? 240 : 270;
+    const targetH = 220;
+
+    let spawnX: number;
+    let spawnY: number;
+
+    if (currentTransform && typeof window !== 'undefined') {
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
+      const s = currentTransform.scale || 0.6;
+      // Calculate screen center in canvas coordinate space
+      const centerCanvasX = (vw / 2 - currentTransform.x) / s - targetW / 2;
+      const centerCanvasY = (vh / 2 - currentTransform.y) / s - targetH / 2;
+
+      // Small organic stagger so multiple notes don't stack directly on top of each other
+      const staggerX = (existingVisitorCount % 3) * 36 - 36 + (Math.random() * 20 - 10);
+      const staggerY = Math.floor((existingVisitorCount % 6) / 3) * 36 - 18 + (Math.random() * 20 - 10);
+
+      spawnX = Math.round(Math.max(100, Math.min(4100, centerCanvasX + staggerX)));
+      spawnY = Math.round(Math.max(100, Math.min(4100, centerCanvasY + staggerY)));
+    } else {
+      // Fallback: place gracefully right next to the active research cluster
+      const col = existingVisitorCount % 2;
+      const row = Math.floor(existingVisitorCount / 2);
+      spawnX = 1450 + col * 290 + (Math.random() * 20 - 10);
+      spawnY = 450 + row * 240 + (Math.random() * 20 - 10);
+    }
 
     const visitorPayload: VisitorNodeData = {
       id: `visitor-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
@@ -101,16 +125,19 @@ export const AddVisitorNodeModal: React.FC<AddVisitorNodeModalProps> = ({
       role="dialog"
       aria-modal="true"
       aria-label="Create and place a research note on the computational graph"
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 select-none animate-in fade-in duration-150"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 select-none animate-in fade-in duration-150"
     >
       <div className="absolute inset-0 bg-[#090b10]/85 backdrop-blur-md" onClick={onClose} />
 
       <div
-        className="relative w-full max-w-lg rounded-2xl bg-[#0c0e14] border border-white/[0.14] shadow-2xl p-6 z-10 font-body text-zinc-200"
+        className="relative w-full max-w-lg rounded-t-3xl sm:rounded-2xl bg-[#0c0e14] border-t sm:border border-white/[0.14] shadow-2xl p-5 sm:p-6 z-10 font-body text-zinc-200 max-h-[92vh] overflow-y-auto pb-[calc(env(safe-area-inset-bottom,0px)+20px)] sm:pb-6 animate-in slide-in-from-bottom-3 sm:slide-in-from-bottom-0 duration-200"
         onClick={(e) => e.stopPropagation()}
       >
+        {/* Mobile Pull Handle */}
+        <div className="sm:hidden w-10 h-1 rounded-full bg-white/20 mx-auto -mt-1 mb-4 shrink-0" />
+
         {/* Header reticle */}
-        <div className="flex items-center justify-between border-b border-white/[0.08] pb-3 mb-5">
+        <div className="flex items-center justify-between border-b border-white/[0.08] pb-3 mb-4 sm:mb-5">
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
             <span className="font-tech text-xs font-bold text-rose-400 uppercase tracking-widest">
@@ -120,7 +147,8 @@ export const AddVisitorNodeModal: React.FC<AddVisitorNodeModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-white/[0.08] transition-colors cursor-pointer"
+            aria-label="Close add node modal"
+            className="w-10 h-10 sm:w-8 sm:h-8 flex items-center justify-center rounded-xl sm:rounded-lg text-zinc-400 hover:text-white hover:bg-white/[0.08] transition-colors cursor-pointer"
           >
             <Close className="w-4 h-4" />
           </button>

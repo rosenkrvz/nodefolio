@@ -74,6 +74,7 @@ body {
     #1c1f25 70px,
     #242930 130px
   );
+  contain: strict;
 }
 
 .cube-svg {
@@ -92,15 +93,23 @@ body {
   opacity: 0.65;
   z-index: 1;
   pointer-events: none;
-  animation: cubeMove 24s linear infinite alternate;
+  animation: cubeMove 28s linear infinite alternate;
+  will-change: transform;
 }
 
 @keyframes cubeMove {
   from {
-    transform: translateY(0) scale(1);
+    transform: translate3d(0, 0, 0) scale(1);
   }
   to {
-    transform: translateY(-15%) scale(1.015) rotate(0.5deg);
+    transform: translate3d(0, -10%, 0) scale(1.01);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cube-svg {
+    animation: none;
+    transform: none;
   }
 }
 
@@ -124,10 +133,9 @@ body {
   background-repeat: repeat;
   border: 1px solid rgba(255, 255, 255, 0.15);
   box-shadow: 
-    0 0 16px rgba(255, 255, 255, 0.07),
-    0 20px 45px rgba(0, 0, 0, 0.85),
-    inset 0 1px 0 rgba(255, 255, 255, 0.22);
-  transition: border-color 0.25s ease, box-shadow 0.25s ease;
+    0 16px 36px rgba(0, 0, 0, 0.8),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
   overflow: hidden;
   contain: layout style paint;
   isolation: isolate;

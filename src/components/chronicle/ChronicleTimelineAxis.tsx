@@ -55,49 +55,60 @@ export const ChronicleTimelineAxis: React.FC<ChronicleTimelineAxisProps> = ({
         </div>
 
         {/* Responsive 5-Card Stepper Deck */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-2.5 w-full">
+        <div
+          role="tablist"
+          aria-label="Chronicle Phases"
+          className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-2.5 w-full"
+        >
           {phases.map((p) => {
             const isSelected = p.id === activePhaseId;
-            const isCurrent = p.status === 'active';
 
             return (
               <button
                 key={p.id}
+                role="tab"
+                id={`tab-${p.id}`}
+                aria-selected={isSelected}
+                aria-controls="chronicle-main-entry"
                 type="button"
                 onClick={() => {
-                  playSound('select');
-                  onSelectPhase(p.id);
+                  if (!isSelected) {
+                    playSound('select');
+                    onSelectPhase(p.id);
+                  }
                 }}
-                className={`relative group flex flex-col justify-between p-2.5 sm:p-3 rounded-xl text-left transition-all duration-200 cursor-pointer overflow-hidden focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/60 ${
+                className={`relative group flex flex-col justify-between p-2.5 sm:p-3 rounded-xl text-left transition-all duration-300 cursor-pointer overflow-hidden focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-2 focus-visible:ring-offset-[#090b10] ${
                   isSelected
-                    ? 'bg-[#151922] border border-rose-500/60 shadow-[0_4px_20px_rgba(244,63,94,0.18)] -translate-y-0.5'
-                    : 'bg-[#0c0e15]/90 border border-white/[0.07] hover:border-white/[0.22] hover:bg-[#121620] hover:-translate-y-0.5'
+                    ? 'bg-[#151922] border border-rose-500/60 shadow-[0_4px_24px_rgba(244,63,94,0.22)] -translate-y-0.5 z-10'
+                    : 'bg-[#0c0e15]/90 border border-white/[0.07] hover:border-white/[0.22] hover:bg-[#121620] hover:-translate-y-0.5 z-0'
                 }`}
               >
                 {/* Active Glowing Top Seam */}
-                {isSelected && (
-                  <div className="absolute top-0 inset-x-0 h-[2px] bg-gradient-to-r from-rose-500 via-rose-400 to-rose-500 shadow-[0_0_10px_#f43f5e]" />
-                )}
+                <div
+                  className={`absolute top-0 inset-x-0 h-[2px] bg-gradient-to-r from-rose-500 via-rose-400 to-rose-500 shadow-[0_0_10px_#f43f5e] transition-opacity duration-300 pointer-events-none ${
+                    isSelected ? 'opacity-100' : 'opacity-0'
+                  }`}
+                />
 
                 {/* Subtle Ambient Radial Glow on Active */}
-                {isSelected && (
-                  <div className="absolute -right-6 -bottom-6 w-20 h-20 rounded-full bg-rose-500/10 blur-xl pointer-events-none" />
-                )}
+                <div
+                  className={`absolute -right-6 -bottom-6 w-24 h-24 rounded-full bg-rose-500/15 blur-xl pointer-events-none transition-opacity duration-300 ${
+                    isSelected ? 'opacity-100' : 'opacity-0'
+                  }`}
+                />
 
                 {/* Card Top Row: Phase + Status Dot + Year Badge */}
-                <div className="flex items-center justify-between w-full gap-1.5">
+                <div className="flex items-center justify-between w-full gap-1.5 relative z-10">
                   <div className="flex items-center gap-1.5 min-w-0">
                     <span
-                      className={`w-1.5 h-1.5 rounded-full shrink-0 transition-all ${
-                        isCurrent
-                          ? 'bg-rose-500 shadow-[0_0_6px_#f43f5e]'
-                          : isSelected
-                          ? 'bg-white shadow-[0_0_6px_#ffffff]'
+                      className={`w-1.5 h-1.5 rounded-full shrink-0 transition-all duration-300 ${
+                        isSelected
+                          ? 'bg-rose-500 shadow-[0_0_8px_#f43f5e] animate-pulse scale-110'
                           : 'bg-zinc-600 group-hover:bg-zinc-400'
                       }`}
                     />
                     <span
-                      className={`font-tech text-[10px] tracking-wider uppercase font-bold truncate ${
+                      className={`font-tech text-[10px] tracking-wider uppercase font-bold truncate transition-colors duration-300 ${
                         isSelected ? 'text-rose-400' : 'text-zinc-400 group-hover:text-zinc-200'
                       }`}
                     >
@@ -105,15 +116,21 @@ export const ChronicleTimelineAxis: React.FC<ChronicleTimelineAxisProps> = ({
                     </span>
                   </div>
 
-                  <span className="font-mono text-[10px] text-zinc-400 font-semibold px-1.5 py-0.5 rounded bg-white/[0.04] border border-white/[0.06] shrink-0">
+                  <span
+                    className={`font-mono text-[10px] font-semibold px-1.5 py-0.5 rounded shrink-0 transition-all duration-300 ${
+                      isSelected
+                        ? 'text-rose-300 bg-rose-500/10 border border-rose-500/30'
+                        : 'text-zinc-400 bg-white/[0.04] border border-white/[0.06] group-hover:border-white/[0.12]'
+                    }`}
+                  >
                     {p.year}
                   </span>
                 </div>
 
                 {/* Card Body: Primary Topic */}
-                <div className="mt-2 w-full">
+                <div className="mt-2 w-full relative z-10">
                   <h4
-                    className={`font-display text-[12px] sm:text-[13px] font-bold tracking-tight leading-snug truncate transition-colors ${
+                    className={`font-display text-[12px] sm:text-[13px] font-bold tracking-tight leading-snug truncate transition-colors duration-300 ${
                       isSelected ? 'text-white' : 'text-zinc-300 group-hover:text-white'
                     }`}
                   >
@@ -121,7 +138,13 @@ export const ChronicleTimelineAxis: React.FC<ChronicleTimelineAxisProps> = ({
                   </h4>
 
                   {p.subTopic && (
-                    <p className="mt-0.5 font-mono text-[10px] text-zinc-500 group-hover:text-zinc-400 truncate">
+                    <p
+                      className={`mt-0.5 font-mono text-[10px] truncate transition-colors duration-300 ${
+                        isSelected
+                          ? 'text-zinc-300'
+                          : 'text-zinc-500 group-hover:text-zinc-400'
+                      }`}
+                    >
                       {p.subTopic}
                     </p>
                   )}

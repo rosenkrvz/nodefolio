@@ -68,9 +68,9 @@ const TopNavbarComponent: React.FC<TopNavbarProps> = ({
 
   return (
     <>
-      <header className="fixed top-0 inset-x-0 h-16 z-50 flex items-center justify-between px-4 sm:px-8 md:px-12 bg-[#090b10]/90 backdrop-blur-md border-b border-white/[0.08] pointer-events-auto select-none font-body">
+      <header className="fixed top-0 inset-x-0 h-14 sm:h-16 z-50 flex items-center justify-between px-3 sm:px-8 md:px-12 bg-[#090b10]/95 backdrop-blur-md border-b border-white/[0.08] pointer-events-auto select-none font-body pt-[env(safe-area-inset-top,0px)]">
         {/* Brand Identity / Geometric SS Monogram */}
-        <div className="flex items-center gap-4 sm:gap-6">
+        <div className="flex items-center gap-2.5 sm:gap-6 min-w-0">
           <button
             type="button"
             onClick={() => {
@@ -78,19 +78,19 @@ const TopNavbarComponent: React.FC<TopNavbarProps> = ({
               setIsMobileMenuOpen(false);
               onSelectNavTab?.('home');
             }}
-            className="flex items-center gap-3 text-left group cursor-pointer focus:outline-none"
+            className="flex items-center gap-2 sm:gap-3 text-left group cursor-pointer focus:outline-none min-w-0"
           >
             {/* Distinctive Geometric Monogram Badge */}
             <BrandLogo variant="navbar" active={activeNavTab === 'home'} />
 
-            <div>
+            <div className="min-w-0">
               <div className="flex items-center gap-1.5 leading-none">
-                <span className="font-display text-sm font-bold text-white tracking-wider uppercase">
+                <span className="font-display text-xs sm:text-sm font-bold text-white tracking-wider uppercase truncate">
                   SHUBHAM SHARMA
                 </span>
-                <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+                <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse shrink-0" />
               </div>
-              <span className="font-body text-[10px] font-semibold text-zinc-400 tracking-[0.2em] uppercase block mt-0.5">
+              <span className="font-body text-[9px] sm:text-[10px] font-semibold text-zinc-400 tracking-[0.16em] sm:tracking-[0.2em] uppercase block mt-0.5 truncate">
                 COMPUTATION &bull; RESEARCH
               </span>
             </div>
@@ -154,22 +154,31 @@ const TopNavbarComponent: React.FC<TopNavbarProps> = ({
             >
               CHRONICLE
             </button>
-            <button
-              type="button"
-              onClick={() => {
-                playSound('nav');
-                onOpenResume?.();
-              }}
-              className="px-3 py-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-white/[0.04] transition-colors cursor-pointer"
-            >
-              CV
-            </button>
+            {onOpenResume && (
+              <button
+                type="button"
+                onClick={() => {
+                  playSound('nav');
+                  onOpenResume();
+                }}
+                className="px-3 py-1.5 rounded-lg hover:text-white hover:bg-white/[0.04] transition-colors cursor-pointer"
+              >
+                CV
+              </button>
+            )}
           </nav>
         </div>
 
-        {/* Right Controls: Quiet Telemetry & Primary Contact Action */}
-        <div className="flex items-center gap-2 sm:gap-3 text-xs">
-          {/* Clock Button */}
+        {/* Mobile Minimal Section Pill */}
+        <div className="md:hidden flex items-center px-1">
+          <span className="text-[10px] font-tech font-bold text-zinc-300 bg-white/[0.06] border border-white/10 px-2 py-0.5 rounded-full uppercase tracking-wider">
+            {activeNavTab === 'projects' ? 'RESEARCH' : activeNavTab === 'network' ? 'NETWORK' : activeNavTab === 'notebook' ? 'CHRONICLE' : 'COVER'}
+          </span>
+        </div>
+
+        {/* Right Controls */}
+        <div className="flex items-center gap-1.5 sm:gap-3 text-xs shrink-0">
+          {/* Clock Button (Desktop / Tablet) */}
           {onFocusClock && (
             <button
               type="button"
@@ -190,7 +199,7 @@ const TopNavbarComponent: React.FC<TopNavbarProps> = ({
             type="button"
             onClick={toggleMute}
             aria-label={isMuted ? 'Unmute interface sound' : 'Mute interface sound'}
-            className={`p-2 rounded-lg border transition-colors cursor-pointer ${
+            className={`w-10 h-10 sm:w-auto sm:h-auto sm:p-2 flex items-center justify-center rounded-xl sm:rounded-lg border transition-colors cursor-pointer ${
               isMuted
                 ? 'bg-white/[0.02] text-zinc-500 border-white/[0.06] hover:text-zinc-300'
                 : 'bg-white/[0.03] hover:bg-white/[0.06] text-zinc-300 hover:text-white border-white/[0.08]'
@@ -198,34 +207,34 @@ const TopNavbarComponent: React.FC<TopNavbarProps> = ({
             title={isMuted ? 'Unmute Sound' : 'Mute Sound'}
           >
             {isMuted ? (
-              <VolumeX className="w-3.5 h-3.5 text-zinc-500" />
+              <VolumeX className="w-4 h-4 sm:w-3.5 sm:h-3.5 text-zinc-500" />
             ) : (
-              <VolumeMax className="w-3.5 h-3.5 text-rose-400" />
+              <VolumeMax className="w-4 h-4 sm:w-3.5 sm:h-3.5 text-rose-400" />
             )}
           </button>
 
-          {/* Share Button */}
+          {/* Share Button (Desktop only) */}
           <button
             type="button"
             onClick={handleShare}
             aria-label="Share URL"
-            className="p-2 rounded-lg bg-white/[0.03] hover:bg-white/[0.06] text-zinc-400 hover:text-white border border-white/[0.08] transition-colors cursor-pointer"
+            className="hidden md:flex p-2 rounded-lg bg-white/[0.03] hover:bg-white/[0.06] text-zinc-400 hover:text-white border border-white/[0.08] transition-colors cursor-pointer"
             title="Share URL"
           >
             {copied ? <Check className="w-3.5 h-3.5 text-rose-400" /> : <Share className="w-3.5 h-3.5" />}
           </button>
 
-          {/* Contact Action */}
+          {/* Contact Action (Desktop only - mobile opens via menu drawer) */}
           <button
             type="button"
             onClick={() => {
               playSound('click');
               onOpenContact();
             }}
-            className="flex items-center gap-1.5 px-3.5 sm:px-4 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold uppercase tracking-wider transition-all shadow-[0_0_16px_rgba(225,29,72,0.35)] active:scale-95 cursor-pointer"
+            className="hidden md:flex items-center gap-1.5 px-3.5 sm:px-4 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold uppercase tracking-wider transition-all shadow-[0_0_16px_rgba(225,29,72,0.35)] active:scale-95 cursor-pointer"
           >
             <Mail className="w-3.5 h-3.5" />
-            <span className="hidden xs:inline sm:inline">Contact</span>
+            <span>Contact</span>
           </button>
 
           {/* Mobile Menu Toggle Button */}
@@ -236,12 +245,12 @@ const TopNavbarComponent: React.FC<TopNavbarProps> = ({
               setIsMobileMenuOpen(!isMobileMenuOpen);
             }}
             aria-label={isMobileMenuOpen ? 'Close navigation menu' : 'Open navigation menu'}
-            className="md:hidden p-2 rounded-lg bg-white/[0.04] text-zinc-300 hover:text-white border border-white/10 transition-colors cursor-pointer"
+            className="md:hidden w-10 h-10 flex items-center justify-center rounded-xl bg-white/[0.04] text-zinc-300 hover:text-white border border-white/10 transition-colors cursor-pointer"
           >
             {isMobileMenuOpen ? (
-              <Close className="w-5 h-5" />
+              <Close className="w-4 h-4" />
             ) : (
-              <Menu className="w-5 h-5" />
+              <Menu className="w-4 h-4" />
             )}
           </button>
         </div>
@@ -249,47 +258,73 @@ const TopNavbarComponent: React.FC<TopNavbarProps> = ({
 
       {/* Mobile Navigation Drawer */}
       {isMobileMenuOpen && (
-        <div className="fixed inset-x-0 top-16 z-40 bg-[#090b10]/95 backdrop-blur-xl border-b border-white/10 p-4 md:hidden animate-in slide-in-from-top-2 duration-150 font-body">
+        <div className="fixed inset-x-0 top-14 sm:top-16 z-40 bg-[#090b10]/98 backdrop-blur-2xl border-b border-white/10 p-4 md:hidden animate-in slide-in-from-top-2 duration-150 font-body shadow-2xl">
           <nav className="flex flex-col gap-1 text-sm uppercase tracking-widest font-semibold text-zinc-300">
             <button
               type="button"
               onClick={() => handleMobileSelect('home')}
-              className="px-4 py-2.5 rounded-xl text-left hover:bg-white/[0.08] hover:text-white transition-colors"
+              className={`px-4 py-3 rounded-xl text-left transition-colors cursor-pointer ${
+                activeNavTab === 'home' ? 'bg-white/10 text-white font-bold' : 'hover:bg-white/[0.06]'
+              }`}
             >
               Cover
             </button>
             <button
               type="button"
               onClick={() => handleMobileSelect('network')}
-              className="px-4 py-2.5 rounded-xl text-left hover:bg-white/[0.08] hover:text-white transition-colors"
+              className={`px-4 py-3 rounded-xl text-left transition-colors cursor-pointer ${
+                activeNavTab === 'network' ? 'bg-white/10 text-white font-bold' : 'hover:bg-white/[0.06]'
+              }`}
             >
               Network
             </button>
             <button
               type="button"
               onClick={() => handleMobileSelect('projects')}
-              className="px-4 py-2.5 rounded-xl text-left hover:bg-white/[0.08] hover:text-white transition-colors"
+              className={`px-4 py-3 rounded-xl text-left transition-colors cursor-pointer ${
+                activeNavTab === 'projects' ? 'bg-white/10 text-white font-bold' : 'hover:bg-white/[0.06]'
+              }`}
             >
               Research
             </button>
             <button
               type="button"
               onClick={() => handleMobileSelect('notebook')}
-              className="px-4 py-2.5 rounded-xl text-left hover:bg-white/[0.08] hover:text-white transition-colors"
+              className={`px-4 py-3 rounded-xl text-left transition-colors cursor-pointer ${
+                activeNavTab === 'notebook' ? 'bg-white/10 text-white font-bold' : 'hover:bg-white/[0.06]'
+              }`}
             >
               Chronicle
             </button>
-            <button
-              type="button"
-              onClick={() => {
-                playSound('nav');
-                setIsMobileMenuOpen(false);
-                onOpenResume?.();
-              }}
-              className="px-4 py-2.5 rounded-xl text-left hover:bg-white/[0.08] hover:text-white transition-colors"
-            >
-              CV / Resume
-            </button>
+            {onOpenResume && (
+              <button
+                type="button"
+                onClick={() => {
+                  playSound('nav');
+                  setIsMobileMenuOpen(false);
+                  onOpenResume();
+                }}
+                className="px-4 py-3 rounded-xl text-left hover:bg-white/[0.06] hover:text-white transition-colors cursor-pointer"
+              >
+                CV / Resume
+              </button>
+            )}
+
+            {/* Mobile Contact Action */}
+            <div className="pt-3 mt-2 border-t border-white/10">
+              <button
+                type="button"
+                onClick={() => {
+                  playSound('click');
+                  setIsMobileMenuOpen(false);
+                  onOpenContact();
+                }}
+                className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-rose-600 hover:bg-rose-500 active:bg-rose-700 text-white font-bold uppercase tracking-wider text-xs shadow-lg transition-all cursor-pointer"
+              >
+                <Mail className="w-4 h-4" />
+                <span>Contact Shubham Sharma</span>
+              </button>
+            </div>
           </nav>
         </div>
       )}

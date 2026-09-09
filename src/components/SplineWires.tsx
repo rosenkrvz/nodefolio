@@ -9,6 +9,7 @@ interface SplineWiresProps {
   activeConnectionId: string | null;
   onSelectConnection?: (id: string | null) => void;
   selectedNodeId?: string | null;
+  isMobile?: boolean;
 }
 
 const SplineWiresComponent: React.FC<SplineWiresProps> = ({
@@ -18,6 +19,7 @@ const SplineWiresComponent: React.FC<SplineWiresProps> = ({
   activeConnectionId,
   onSelectConnection,
   selectedNodeId,
+  isMobile = false,
 }) => {
   return (
     <svg
@@ -68,7 +70,7 @@ const SplineWiresComponent: React.FC<SplineWiresProps> = ({
                 d={pathData}
                 fill="none"
                 stroke={baseColor}
-                strokeWidth={isSelected ? 8 : 4.5}
+                strokeWidth={isMobile ? (isSelected ? 5.5 : 3) : (isSelected ? 8 : 4.5)}
                 strokeOpacity={isSelected ? 0.45 : 0.2}
                 strokeLinecap="round"
               />
@@ -79,15 +81,15 @@ const SplineWiresComponent: React.FC<SplineWiresProps> = ({
               d={pathData}
               fill="none"
               stroke={isSelected ? '#ffffff' : baseColor}
-              strokeWidth={isSelected ? 2.5 : 1.8}
+              strokeWidth={isMobile ? (isSelected ? 2 : 1.4) : (isSelected ? 2.5 : 1.8)}
               strokeOpacity={isSelected ? 1 : 0.85}
               strokeDasharray={wireStyle === 'cyber' ? '6, 6' : undefined}
               strokeLinecap="round"
             />
 
             {/* Precision socket terminals */}
-            <circle cx={x1} cy={y1} r={3} fill="#ffffff" stroke={baseColor} strokeWidth={1.5} />
-            <circle cx={x2} cy={y2} r={3} fill="#ffffff" stroke={baseColor} strokeWidth={1.5} />
+            <circle cx={x1} cy={y1} r={isMobile ? 2.5 : 3} fill="#ffffff" stroke={baseColor} strokeWidth={isMobile ? 1.2 : 1.5} />
+            <circle cx={x2} cy={y2} r={isMobile ? 2.5 : 3} fill="#ffffff" stroke={baseColor} strokeWidth={isMobile ? 1.2 : 1.5} />
           </g>
         );
       })}
@@ -95,4 +97,33 @@ const SplineWiresComponent: React.FC<SplineWiresProps> = ({
   );
 };
 
-export const SplineWires = React.memo(SplineWiresComponent);
+export const SplineWires = React.memo(SplineWiresComponent, (prev, next) => {
+  if (
+    prev.isMobile !== next.isMobile ||
+    prev.isSimulating !== next.isSimulating ||
+    prev.wireStyle !== next.wireStyle ||
+    prev.activeConnectionId !== next.activeConnectionId ||
+    prev.selectedNodeId !== next.selectedNodeId ||
+    prev.connections.length !== next.connections.length
+  ) {
+    return false;
+  }
+
+  // Compare actual pin coordinates for the active connections
+  for (let i = 0; i < next.connections.length; i++) {
+    const conn = next.connections[i];
+    const prevFrom = prev.pinPositions[conn.fromPinId];
+    const nextFrom = next.pinPositions[conn.fromPinId];
+    if (!prevFrom || !nextFrom || prevFrom.x !== nextFrom.x || prevFrom.y !== nextFrom.y) {
+      return false;
+    }
+
+    const prevTo = prev.pinPositions[conn.toPinId];
+    const nextTo = next.pinPositions[conn.toPinId];
+    if (!prevTo || !nextTo || prevTo.x !== nextTo.x || prevTo.y !== nextTo.y) {
+      return false;
+    }
+  }
+
+  return true;
+});

@@ -5,12 +5,14 @@ import { BrandLogo } from './ui/BrandLogo';
 
 interface EditorialCoverProps {
   scrollProgress: number; // 0 to 1
+  activeNavTab?: string;
   onExplore: () => void;
   onViewWork: () => void;
 }
 
 const EditorialCoverComponent: React.FC<EditorialCoverProps> = ({
   scrollProgress,
+  activeNavTab = 'home',
   onExplore,
   onViewWork,
 }) => {
@@ -95,8 +97,8 @@ const EditorialCoverComponent: React.FC<EditorialCoverProps> = ({
         opacity,
         filter: blur > 0.2 ? `blur(${blur.toFixed(1)}px)` : 'none',
         transform: `translate3d(0, ${translateYPercent.toFixed(2)}%, 0) scale(${scale.toFixed(4)})`,
-        pointerEvents: scrollProgress >= 0.82 ? 'none' : 'auto',
-        visibility: isFullyOffscreen ? 'hidden' : 'visible',
+        pointerEvents: (activeNavTab !== 'home' || scrollProgress >= 0.82) ? 'none' : 'auto',
+        visibility: (activeNavTab !== 'home' || isFullyOffscreen) ? 'hidden' : 'visible',
       }}
       className={`absolute inset-0 w-full h-screen flex flex-col justify-between px-6 sm:px-12 md:px-16 pt-24 pb-10 select-none overflow-hidden z-20 bg-[#14171c] ${
         isLifting ? 'border-b border-rose-500/50 shadow-[0_30px_70px_rgba(0,0,0,0.95)]' : ''

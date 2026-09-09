@@ -71,7 +71,7 @@ const CanvasControlsDockComponent: React.FC<CanvasControlsDockProps> = ({
   }, [stopRepeating]);
 
   return (
-    <aside aria-label="Canvas view and zoom controls" className="absolute right-4 top-1/2 -translate-y-1/2 z-30 flex flex-col gap-1 p-1 rounded-xl bg-[#0e1015]/90 backdrop-blur-md border border-white/[0.08] shadow-2xl font-body">
+    <aside aria-label="Canvas view and zoom controls" className="absolute right-4 top-1/2 -translate-y-1/2 z-30 hidden md:flex flex-col gap-1 p-1 rounded-xl bg-[#0e1015]/90 backdrop-blur-md border border-white/[0.08] shadow-2xl font-body">
       {/* Add Your Own Node Button */}
       {onOpenAddNode && (
         <>
