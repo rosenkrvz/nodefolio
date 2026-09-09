@@ -35,24 +35,36 @@ const loadSavedVisitorNodes = (): NodeData[] => {
     const parsed = JSON.parse(raw);
     if (Array.isArray(parsed)) {
       let migrated = false;
-      const normalized = parsed.map((item: NodeData, idx: number) => {
-        // Self-healing migration: if note was spawned at old coordinates (x >= 2000), migrate to visible cluster area
-        if (item.x >= 2000 || item.x < 100 || item.y < 100) {
+      const validNodes: NodeData[] = [];
+      parsed.forEach((item: any, idx: number) => {
+        if (!item || typeof item !== 'object' || typeof item.id !== 'string') return;
+        
+        let x = typeof item.x === 'number' && !isNaN(item.x) ? item.x : 1450;
+        let y = typeof item.y === 'number' && !isNaN(item.y) ? item.y : 450;
+        
+        if (x >= 2000 || x < 100 || y < 100) {
           migrated = true;
           const col = idx % 2;
           const row = Math.floor(idx / 2);
-          return {
-            ...item,
-            x: 1450 + col * 290,
-            y: 450 + row * 240,
-          };
+          x = 1450 + col * 290;
+          y = 450 + row * 240;
         }
-        return item;
+
+        validNodes.push({
+          ...item,
+          x,
+          y,
+          width: typeof item.width === 'number' && !isNaN(item.width) ? item.width : 270,
+          inputs: Array.isArray(item.inputs) ? item.inputs : [],
+          outputs: Array.isArray(item.outputs) ? item.outputs : [],
+          category: 'visitor',
+        });
       });
-      if (migrated) {
-        localStorage.setItem(VISITOR_STORAGE_KEY, JSON.stringify(normalized));
+
+      if (migrated || validNodes.length !== parsed.length) {
+        localStorage.setItem(VISITOR_STORAGE_KEY, JSON.stringify(validNodes));
       }
-      return normalized;
+      return validNodes;
     }
   } catch (e) {
     console.error('Failed to parse saved visitor nodes', e);
@@ -139,15 +151,16 @@ export default function App() {
   const currentTabKeyRef = useRef(currentTabKey);
   currentTabKeyRef.current = currentTabKey;
 
-  const nodes = nodesByPreset[currentTabKey];
+  const nodes = nodesByPreset[currentTabKey] || (currentTabKey === 'project' ? ALL_RESEARCH_NODES : ALL_NETWORK_NODES);
   const setNodes = useCallback(
     (updater: NodeData[] | ((prev: NodeData[]) => NodeData[])) => {
       const activeKey = currentTabKeyRef.current;
       setNodesByPreset((prev) => {
-        const next = typeof updater === 'function' ? updater(prev[activeKey]) : updater;
+        const currentList = prev[activeKey] || (activeKey === 'project' ? ALL_RESEARCH_NODES : ALL_NETWORK_NODES);
+        const next = typeof updater === 'function' ? updater(currentList) : updater;
         return {
           ...prev,
-          [activeKey]: next,
+          [activeKey]: Array.isArray(next) ? next : currentList,
         };
       });
     },
@@ -568,25 +581,34 @@ export default function App() {
   // Pure deterministic pin coordinate calculation directly from nodes and drift offsets
   const pinPositions = useMemo(() => {
     const map: Record<string, { x: number; y: number }> = {};
+    if (!Array.isArray(nodes)) return map;
     for (const node of nodes) {
+      if (!node) continue;
       const drift = driftOffsets[node.id] || { x: 0, y: 0 };
-      const currentX = node.x + drift.x;
-      const currentY = node.y + drift.y;
+      const rawX = typeof node.x === 'number' && !isNaN(node.x) ? node.x : 0;
+      const rawY = typeof node.y === 'number' && !isNaN(node.y) ? node.y : 0;
+      const currentX = rawX + (drift.x || 0);
+      const currentY = rawY + (drift.y || 0);
+      const width = typeof node.width === 'number' && !isNaN(node.width) ? node.width : 340;
 
-      if (node.inputs) {
+      if (Array.isArray(node.inputs)) {
         node.inputs.forEach((pin, i) => {
-          map[pin.id] = {
-            x: currentX + 18,
-            y: currentY + 54 + i * 24,
-          };
+          if (pin && typeof pin.id === 'string') {
+            map[pin.id] = {
+              x: currentX + 18,
+              y: currentY + 54 + i * 24,
+            };
+          }
         });
       }
-      if (node.outputs) {
+      if (Array.isArray(node.outputs)) {
         node.outputs.forEach((pin, j) => {
-          map[pin.id] = {
-            x: currentX + node.width - 18,
-            y: currentY + 54 + j * 24,
-          };
+          if (pin && typeof pin.id === 'string') {
+            map[pin.id] = {
+              x: currentX + width - 18,
+              y: currentY + 54 + j * 24,
+            };
+          }
         });
       }
     }
@@ -1022,8 +1044,7 @@ export default function App() {
     });
 
     // DEDICATED MOBILE SPATIAL COMPOSITION:
-    // Never scale down the entire graph to an unreadable 0.22 scale.
-    // Instead, compose a readable 0.74–0.80 scale focal view around the anchor research node with glowing splines visible.
+    // Composes a readable 0.74–0.80 scale focal view around the anchor node
     if (isMobileViewport) {
       const mobileScale = desiredScale !== undefined
         ? desiredScale
@@ -1031,8 +1052,8 @@ export default function App() {
 
       const focalNode = targetNodes.find((n) => n.id === 'node-profile') || targetNodes[0];
 
-      let targetX = 650;
-      let targetY = 1000;
+      let targetX = 480;
+      let targetY = 740;
       let targetW = 340;
       let targetH = 340;
 
@@ -1088,18 +1109,28 @@ export default function App() {
     const availH = Math.max(300, vh - 140);
     const maxFitScale = Math.min(availW / groupW, availH / groupH);
 
-    // Scale default: 0.60 for network tab and research focal gateway, or fitted neatly (capped at 0.48) for other views
-    const defaultScale = (preset === 'network' || preset === 'project') ? 0.60 : Math.min(0.48, Number((maxFitScale * 0.94).toFixed(2)));
+    // Zoom scale: 0.72 for Research tab (zoomed in & readable to the naked eye), 0.60 for Network tab
+    const defaultScale = preset === 'project' ? 0.72 : (preset === 'network' ? 0.60 : Math.min(0.48, Number((maxFitScale * 0.94).toFixed(2))));
     const targetDesired = desiredScale !== undefined ? desiredScale : defaultScale;
-    const minScaleFloor = 0.32;
+    const minScaleFloor = preset === 'project' ? 0.62 : 0.32;
     const targetScale = Math.min(targetDesired, Math.max(minScaleFloor, Number(maxFitScale.toFixed(2))));
 
-    // Precision viewport center (offsetting 64px top nav and ~44px bottom status: (64 + (vh - 52 - 64)/2) = (vh + 12)/2)
+    // Precision viewport center
     const viewCenterX = vw / 2;
     const viewCenterY = (vh + 12) / 2;
 
     const x = Math.round(viewCenterX - groupCenterX * targetScale);
-    const y = Math.round(viewCenterY - groupCenterY * targetScale);
+    let y = Math.round(viewCenterY - groupCenterY * targetScale);
+
+    if (preset === 'network') {
+      // Anchors row 1 comfortably at ~100px from top (36px below 64px top nav),
+      // ensuring bottom cards sit cleanly with ample breathing room above the bottom workspace footer bar
+      const desiredRow1ScreenY = Math.max(90, Math.min(130, Math.round(vh * 0.13)));
+      y = Math.round(desiredRow1ScreenY - 380 * targetScale);
+    } else if (preset === 'project') {
+      // Subtle upward optical compensation for research 2x2 grid
+      y -= Math.round(vh * 0.035);
+    }
 
     setTransform({ x, y, scale: targetScale });
   }, [getNodeEstimatedHeight]);

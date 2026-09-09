@@ -1,14 +1,14 @@
 import { NodeData, Connection } from '../types';
 
 export const INITIAL_NODES: NodeData[] = [
-  // 1. Identity & Researcher Profile Node (Column 1, Tier 2)
+  // 1. Identity & Researcher Profile Node (Column 1, Row 1)
   {
     id: 'node-profile',
     title: 'Shubham Sharma',
     subtitle: 'AI & Data Science',
     category: 'profile',
     x: 100,
-    y: 520,
+    y: 380,
     width: 340,
     inputs: [
       { id: 'pin-in-profile', label: 'inference.hypothesis', color: 'crimson', type: 'input', nodeId: 'node-profile' },
@@ -16,7 +16,7 @@ export const INITIAL_NODES: NodeData[] = [
     outputs: [
       { id: 'pin-prof-models', label: 'representation.manifold', color: 'crimson', type: 'output', nodeId: 'node-profile' },
       { id: 'pin-prof-credentials', label: 'mathematical.core', color: 'crimson', type: 'output', nodeId: 'node-profile' },
-      { id: 'pin-out-project', label: 'latent.projection', color: 'crimson', type: 'output', nodeId: 'node-profile' },
+      { id: 'pin-prof-project', label: 'latent.projection', color: 'crimson', type: 'output', nodeId: 'node-profile' },
     ],
     accentColor: '#e11d48',
     glowColor: 'rgba(225, 29, 72, 0.2)',
@@ -38,14 +38,14 @@ export const INITIAL_NODES: NodeData[] = [
     },
   },
 
-  // 2. Generative Models & Representation Learning (Column 2, Tier 2)
+  // 2. Generative Models & Representation Learning (Column 2, Row 1)
   {
     id: 'node-models',
     title: 'Generative Architectures',
     subtitle: 'Representation & Learning',
     category: 'skills',
     x: 560,
-    y: 520,
+    y: 380,
     width: 340,
     inputs: [
       { id: 'pin-in-models', label: 'representation.manifold', color: 'crimson', type: 'input', nodeId: 'node-models' },
@@ -64,14 +64,14 @@ export const INITIAL_NODES: NodeData[] = [
     ],
   },
 
-  // 3. Academic & Technical Foundation (Column 1, Tier 3)
+  // 3. Academic & Technical Foundation (Column 1, Row 2 - under Profile)
   {
     id: 'node-credentials',
     title: 'Academic & Foundation',
     subtitle: 'Mathematics & Computation',
     category: 'certificates',
     x: 100,
-    y: 1000,
+    y: 840,
     width: 340,
     inputs: [
       { id: 'pin-in-cred', label: 'mathematical.core', color: 'crimson', type: 'input', nodeId: 'node-credentials' },
@@ -107,20 +107,20 @@ export const INITIAL_NODES: NodeData[] = [
     ],
   },
 
-  // 4. Neural Systems & Data Infrastructure (Column 3, Tier 2)
+  // 4. Neural Systems & Data Infrastructure (Column 3, Row 1)
   {
     id: 'node-systems',
     title: 'Neural Systems & Data',
     subtitle: 'Learning Infrastructure',
     category: 'skills',
     x: 1020,
-    y: 520,
+    y: 380,
     width: 340,
     inputs: [
       { id: 'pin-in-systems', label: 'tensor.pipeline', color: 'crimson', type: 'input', nodeId: 'node-systems' },
     ],
     outputs: [
-      { id: 'pin-out-project', label: 'latent.projection', color: 'crimson', type: 'output', nodeId: 'node-systems' },
+      { id: 'pin-systems-project', label: 'latent.projection', color: 'crimson', type: 'output', nodeId: 'node-systems' },
     ],
     accentColor: '#e11d48',
     glowColor: 'rgba(225, 29, 72, 0.22)',
@@ -132,17 +132,18 @@ export const INITIAL_NODES: NodeData[] = [
     ],
   },
 
-  // 5. Featured Hero Visual Anchor: Latent Graph Visualizer (Column 4, Tier 2)
+  // 5. Featured Hero Visual Anchor: Latent Graph Visualizer (Column 4, Row 1)
   {
     id: 'node-project',
     title: 'Latent Graph Visualizer',
     subtitle: 'Interactive Research Artifact',
     category: 'project',
     x: 1480,
-    y: 520,
+    y: 380,
     width: 440,
     inputs: [
       { id: 'pin-in-project', label: 'latent.projection', color: 'crimson', type: 'input', nodeId: 'node-project' },
+      { id: 'pin-in-project-systems', label: 'inference.graph', color: 'crimson', type: 'input', nodeId: 'node-project' },
     ],
     outputs: [
       { id: 'pin-out-visualizer', label: 'temporal.sync', color: 'crimson', type: 'output', nodeId: 'node-project' },
@@ -166,14 +167,14 @@ export const INITIAL_NODES: NodeData[] = [
     },
   },
 
-  // 6. System Chronometer Node (Column 5, Tier 2)
+  // 6. System Chronometer Node (Column 5, Row 1)
   {
     id: 'node-clock',
     title: 'System Chronometer',
     subtitle: 'Temporal Coordinates • Live Sync',
     category: 'clock',
     x: 2040,
-    y: 520,
+    y: 380,
     width: 260,
     inputs: [
       { id: 'pin-in-clock', label: 'temporal.sync', color: 'crimson', type: 'input', nodeId: 'node-clock' },
@@ -208,9 +209,9 @@ export const INITIAL_CONNECTIONS: Connection[] = [
   {
     id: 'conn-systems-project',
     fromNodeId: 'node-systems',
-    fromPinId: 'pin-out-project',
+    fromPinId: 'pin-systems-project',
     toNodeId: 'node-project',
-    toPinId: 'pin-in-project',
+    toPinId: 'pin-in-project-systems',
     color: '#f43f5e',
     label: 'latent.projection',
     animated: true,

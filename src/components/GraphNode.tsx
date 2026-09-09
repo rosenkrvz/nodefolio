@@ -487,16 +487,18 @@ const GraphNodeComponent: React.FC<GraphNodeProps> = ({
                 </p>
 
                 {/* Tags */}
-                <div className="flex flex-wrap gap-1 pt-0.5">
-                  {node.researchData.tags.slice(0, 3).map((tag) => (
-                    <span
-                      key={tag}
-                      className="px-2 py-0.5 rounded bg-white/[0.03] border border-white/[0.06] text-[9px] font-tech text-zinc-400"
-                    >
-                      {tag}
-                    </span>
-                  ))}
-                </div>
+                {Array.isArray(node.researchData.tags) && (
+                  <div className="flex flex-wrap gap-1 pt-0.5">
+                    {node.researchData.tags.slice(0, 3).map((tag) => (
+                      <span
+                        key={tag}
+                        className="px-2 py-0.5 rounded bg-white/[0.03] border border-white/[0.06] text-[9px] font-tech text-zinc-400"
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                )}
 
                 {/* View Technical Specification Trigger */}
                 {onOpenFocusedNode && (

@@ -147,6 +147,12 @@ export const ProjectNodeContent: React.FC<ProjectNodeContentProps> = ({
       const projected = projectedRef.current;
       const numPts = pts.length;
 
+      if (numPts <= 0) {
+        ctx.restore();
+        animFrame = requestAnimationFrame(render);
+        return;
+      }
+
       for (let i = 0; i < numPts; i++) {
         const pt = pts[i];
         const osc = projectionMode === 'umap'
@@ -225,7 +231,9 @@ export const ProjectNodeContent: React.FC<ProjectNodeContentProps> = ({
     let observer: IntersectionObserver | null = null;
     if (typeof IntersectionObserver !== 'undefined') {
       observer = new IntersectionObserver(
-        ([entry]) => {
+        (entries) => {
+          const entry = entries && entries[0];
+          if (!entry) return;
           if (!entry.isIntersecting) {
             isVisible = false;
             cancelAnimationFrame(animFrame);
@@ -351,17 +359,19 @@ export const ProjectNodeContent: React.FC<ProjectNodeContentProps> = ({
       </div>
 
       {/* Metric chips */}
-      <div className="grid grid-cols-3 gap-1.5 pt-0.5">
-        {project.metrics.map((m, idx) => (
-          <div
-            key={idx}
-            className="px-2.5 py-1.5 rounded-lg bg-white/[0.03] border border-white/[0.06] text-center"
-          >
-            <div className="text-[10px] font-body font-semibold text-zinc-400 uppercase tracking-wider">{m.label}</div>
-            <div className="text-xs sm:text-[13px] font-display text-white font-semibold truncate mt-0.5">{m.value}</div>
-          </div>
-        ))}
-      </div>
+      {Array.isArray(project?.metrics) && project.metrics.length > 0 && (
+        <div className="grid grid-cols-3 gap-1.5 pt-0.5">
+          {project.metrics.map((m, idx) => (
+            <div
+              key={idx}
+              className="px-2.5 py-1.5 rounded-lg bg-white/[0.03] border border-white/[0.06] text-center"
+            >
+              <div className="text-[10px] font-body font-semibold text-zinc-400 uppercase tracking-wider">{m.label}</div>
+              <div className="text-xs sm:text-[13px] font-display text-white font-semibold truncate mt-0.5">{m.value}</div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Action Footer */}
       <div className="pt-2 flex items-center justify-between border-t border-white/[0.08]">

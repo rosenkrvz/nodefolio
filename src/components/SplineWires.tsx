@@ -30,7 +30,18 @@ const SplineWiresComponent: React.FC<SplineWiresProps> = ({
         const fromPos = pinPositions[conn.fromPinId];
         const toPos = pinPositions[conn.toPinId];
 
-        if (!fromPos || !toPos) {
+        if (
+          !fromPos ||
+          !toPos ||
+          typeof fromPos.x !== 'number' ||
+          typeof fromPos.y !== 'number' ||
+          typeof toPos.x !== 'number' ||
+          typeof toPos.y !== 'number' ||
+          isNaN(fromPos.x) ||
+          isNaN(fromPos.y) ||
+          isNaN(toPos.x) ||
+          isNaN(toPos.y)
+        ) {
           return null;
         }
 

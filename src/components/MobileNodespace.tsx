@@ -323,6 +323,8 @@ export const MobileNodespace: React.FC<MobileNodespaceProps> = ({
     }
   };
 
+  if (!activeNode) return null;
+
   return (
     <div
       id="mobile-focused-node-navigator"
@@ -503,7 +505,7 @@ export const MobileNodespace: React.FC<MobileNodespaceProps> = ({
                 &larr;
               </span>
               <span className="text-[10px] font-tech font-bold text-zinc-300 group-hover:text-white uppercase tracking-wider truncate max-w-[90px] sm:max-w-[120px] hidden min-[360px]:inline">
-                {leftTarget.node.title.split(' ')[0]}
+                {leftTarget.node.title ? leftTarget.node.title.split(' ')[0] : 'Node'}
               </span>
             </div>
           </button>
@@ -514,12 +516,12 @@ export const MobileNodespace: React.FC<MobileNodespaceProps> = ({
           <button
             type="button"
             onClick={() => navigateToNode(rightTarget.node.id, 'right', rightTarget.connection?.id)}
-            aria-label={`Navigate right to ${rightTarget.node.title}`}
+            aria-label={`Navigate right to ${rightTarget.node.title || 'next node'}`}
             className="group absolute -right-1 sm:-right-3 top-1/2 -translate-y-1/2 z-20 min-w-[44px] min-h-[44px] flex items-center justify-end p-1 cursor-pointer focus:outline-none"
           >
             <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#0c0e14]/92 border border-white/12 group-hover:border-rose-500/70 group-active:scale-95 shadow-[0_4px_16px_rgba(0,0,0,0.7)] backdrop-blur-md transition-all">
               <span className="text-[10px] font-tech font-bold text-zinc-300 group-hover:text-white uppercase tracking-wider truncate max-w-[90px] sm:max-w-[120px] hidden min-[360px]:inline">
-                {rightTarget.node.title.split(' ')[0]}
+                {rightTarget.node.title ? rightTarget.node.title.split(' ')[0] : 'Node'}
               </span>
               <span className="text-rose-400 font-mono text-xs group-hover:translate-x-0.5 transition-transform">
                 &rarr;
@@ -724,7 +726,7 @@ export const MobileNodespace: React.FC<MobileNodespaceProps> = ({
                 &darr;
               </span>
               <span className="text-[10px] sm:text-[11px] font-tech font-bold text-zinc-300 group-hover:text-white uppercase tracking-wider truncate max-w-[200px]">
-                {bottomTarget.node.title}
+                {bottomTarget.node?.title || 'Node'}
               </span>
             </button>
           </div>
@@ -752,7 +754,7 @@ export const MobileNodespace: React.FC<MobileNodespaceProps> = ({
         splineCount={connections.length}
         visitorCount={nodes.filter((n) => n.category === 'visitor').length}
         presetName={activePreset === 'project' ? 'RESEARCH' : 'NETWORK'}
-        activeNodeTitle={activeNode.title}
+        activeNodeTitle={activeNode?.title || 'Node'}
       />
 
       {/* Research Node Index Drawer Sheet */}
