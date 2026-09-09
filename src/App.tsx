@@ -24,23 +24,27 @@ import { ChronicleView } from './components/ChronicleView';
 import { playSound } from './lib/sound';
 import { useIsMobile } from './hooks/useIsMobile';
 import { MobileNodespace } from './components/MobileNodespace';
+import { GraphErrorBoundary } from './components/GraphErrorBoundary';
 
 const VISITOR_STORAGE_KEY = 'nodefolio_visitor_notes';
+const VISITOR_STORAGE_VERSION = 'v2';
+const VISITOR_VERSION_KEY = 'nodefolio_visitor_version';
 
 const loadSavedVisitorNodes = (): NodeData[] => {
   if (typeof window === 'undefined') return [];
   try {
     const raw = localStorage.getItem(VISITOR_STORAGE_KEY);
     if (!raw) return [];
+    const currentVersion = localStorage.getItem(VISITOR_VERSION_KEY);
     const parsed = JSON.parse(raw);
     if (Array.isArray(parsed)) {
-      let migrated = false;
+      let migrated = currentVersion !== VISITOR_STORAGE_VERSION;
       const validNodes: NodeData[] = [];
       parsed.forEach((item: any, idx: number) => {
         if (!item || typeof item !== 'object' || typeof item.id !== 'string') return;
         
-        let x = typeof item.x === 'number' && !isNaN(item.x) ? item.x : 1450;
-        let y = typeof item.y === 'number' && !isNaN(item.y) ? item.y : 450;
+        let x = typeof item.x === 'number' && isFinite(item.x) ? item.x : 1450;
+        let y = typeof item.y === 'number' && isFinite(item.y) ? item.y : 450;
         
         if (x >= 2000 || x < 100 || y < 100) {
           migrated = true;
@@ -52,9 +56,10 @@ const loadSavedVisitorNodes = (): NodeData[] => {
 
         validNodes.push({
           ...item,
+          id: String(item.id),
           x,
           y,
-          width: typeof item.width === 'number' && !isNaN(item.width) ? item.width : 270,
+          width: typeof item.width === 'number' && isFinite(item.width) ? item.width : 270,
           inputs: Array.isArray(item.inputs) ? item.inputs : [],
           outputs: Array.isArray(item.outputs) ? item.outputs : [],
           category: 'visitor',
@@ -63,6 +68,7 @@ const loadSavedVisitorNodes = (): NodeData[] => {
 
       if (migrated || validNodes.length !== parsed.length) {
         localStorage.setItem(VISITOR_STORAGE_KEY, JSON.stringify(validNodes));
+        localStorage.setItem(VISITOR_VERSION_KEY, VISITOR_STORAGE_VERSION);
       }
       return validNodes;
     }
@@ -352,17 +358,40 @@ export default function App() {
   const [, setDriftTick] = useState(0);
 
   useEffect(() => {
-    if (!isSimulating) {
+    if (!isSimulating || activeView !== 'canvas') {
       setDriftOffsets({});
       return;
     }
 
-    let animId: number;
+    let animId: number | null = null;
+    let disposed = false;
+    let isRunning = false;
+
     const prefersReducedMotion =
       typeof window !== 'undefined' &&
       window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+    const requestNextFrame = () => {
+      if (disposed || isRunning || document.hidden || activeViewRef.current !== 'canvas') return;
+      isRunning = true;
+      animId = window.requestAnimationFrame(loop);
+    };
+
+    const stopLoop = () => {
+      isRunning = false;
+      if (animId !== null) {
+        window.cancelAnimationFrame(animId);
+        animId = null;
+      }
+    };
+
     const loop = (timestamp: number) => {
+      isRunning = false;
+      if (disposed) return;
+      if (document.hidden || activeViewRef.current !== 'canvas') {
+        return;
+      }
+
       if (timestamp - lastDriftFrameTimeRef.current >= 45) {
         lastDriftFrameTimeRef.current = timestamp;
 
@@ -412,14 +441,27 @@ export default function App() {
         }
       }
 
-      animId = window.requestAnimationFrame(loop);
+      requestNextFrame();
     };
 
-    animId = window.requestAnimationFrame(loop);
-    return () => {
-      window.cancelAnimationFrame(animId);
+    const handleVisibilityChange = () => {
+      if (disposed) return;
+      if (document.hidden || activeViewRef.current !== 'canvas') {
+        stopLoop();
+      } else {
+        requestNextFrame();
+      }
     };
-  }, [isSimulating, NODE_DRIFT_PROFILES]);
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    requestNextFrame();
+
+    return () => {
+      disposed = true;
+      stopLoop();
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [isSimulating, activeView, NODE_DRIFT_PROFILES]);
 
   // ─── HIGH-PRECISION VELOCITY-AWARE SCROLL ENGINE & MAGNETIC SETTLE ─────────
   const startSettleRef = useRef<((target: 0 | 1, customDuration?: number) => void) | null>(null);
@@ -778,13 +820,15 @@ export default function App() {
     const map: Record<string, { x: number; y: number }> = {};
     if (!Array.isArray(nodes)) return map;
     for (const node of nodes) {
-      if (!node) continue;
-      const drift = driftOffsets[node.id] || { x: 0, y: 0 };
-      const rawX = typeof node.x === 'number' && !isNaN(node.x) ? node.x : 0;
-      const rawY = typeof node.y === 'number' && !isNaN(node.y) ? node.y : 0;
-      const currentX = rawX + (drift.x || 0);
-      const currentY = rawY + (drift.y || 0);
-      const width = typeof node.width === 'number' && !isNaN(node.width) ? node.width : 340;
+      if (!node || typeof node !== 'object' || typeof node.id !== 'string') continue;
+      const drift = driftOffsets[node.id];
+      const dx = drift && typeof drift.x === 'number' && isFinite(drift.x) ? drift.x : 0;
+      const dy = drift && typeof drift.y === 'number' && isFinite(drift.y) ? drift.y : 0;
+      const rawX = typeof node.x === 'number' && isFinite(node.x) ? node.x : 0;
+      const rawY = typeof node.y === 'number' && isFinite(node.y) ? node.y : 0;
+      const currentX = rawX + dx;
+      const currentY = rawY + dy;
+      const width = typeof node.width === 'number' && isFinite(node.width) && node.width > 0 ? node.width : 340;
 
       if (Array.isArray(node.inputs)) {
         node.inputs.forEach((pin, i) => {
@@ -975,15 +1019,21 @@ export default function App() {
 
   // Memoized effective nodes combining base position with drift offsets
   const effectiveNodes = useMemo(() => {
-    return filteredNodes.map((node) => {
-      const drift = driftOffsets[node.id];
-      if (!drift || (drift.x === 0 && drift.y === 0)) return node;
-      return {
-        ...node,
-        x: node.x + drift.x,
-        y: node.y + drift.y,
-      };
-    });
+    return filteredNodes
+      .filter((node): node is NodeData => Boolean(node && typeof node === 'object' && typeof node.id === 'string'))
+      .map((node) => {
+        const rawX = typeof node.x === 'number' && isFinite(node.x) ? node.x : 0;
+        const rawY = typeof node.y === 'number' && isFinite(node.y) ? node.y : 0;
+        const drift = driftOffsets[node.id];
+        const dx = drift && typeof drift.x === 'number' && isFinite(drift.x) ? drift.x : 0;
+        const dy = drift && typeof drift.y === 'number' && isFinite(drift.y) ? drift.y : 0;
+        if (dx === 0 && dy === 0 && node.x === rawX && node.y === rawY) return node;
+        return {
+          ...node,
+          x: rawX + dx,
+          y: rawY + dy,
+        };
+      });
   }, [filteredNodes, driftOffsets]);
 
   // Stable event callbacks to avoid breaking React.memo in GraphNode and SplineWires
@@ -1041,22 +1091,26 @@ export default function App() {
     }
 
     isPanningRef.current = true;
-    panStartRef.current = { x: e.clientX - transform.x, y: e.clientY - transform.y };
+    const curX = typeof transform?.x === 'number' && isFinite(transform.x) ? transform.x : 0;
+    const curY = typeof transform?.y === 'number' && isFinite(transform.y) ? transform.y : 0;
+    panStartRef.current = { x: e.clientX - curX, y: e.clientY - curY };
 
     const handleMouseMove = (moveEvent: MouseEvent) => {
       if (!isPanningRef.current) return;
+      const start = panStartRef.current || { x: 0, y: 0 };
       pendingPanRef.current = {
-        x: Math.round(moveEvent.clientX - panStartRef.current.x),
-        y: Math.round(moveEvent.clientY - panStartRef.current.y),
+        x: Math.round(moveEvent.clientX - start.x),
+        y: Math.round(moveEvent.clientY - start.y),
       };
       if (panRafIdRef.current === null) {
         panRafIdRef.current = window.requestAnimationFrame(() => {
           panRafIdRef.current = null;
-          if (pendingPanRef.current) {
+          const targetPan = pendingPanRef.current;
+          if (targetPan && isFinite(targetPan.x) && isFinite(targetPan.y)) {
             setTransform((prev) => ({
-              ...prev,
-              x: pendingPanRef.current!.x,
-              y: pendingPanRef.current!.y,
+              ...(prev || { scale: 0.60 }),
+              x: targetPan.x,
+              y: targetPan.y,
             }));
           }
         });
@@ -1069,20 +1123,23 @@ export default function App() {
         window.cancelAnimationFrame(panRafIdRef.current);
         panRafIdRef.current = null;
       }
-      if (pendingPanRef.current) {
+      const targetPan = pendingPanRef.current;
+      pendingPanRef.current = null;
+      if (targetPan && isFinite(targetPan.x) && isFinite(targetPan.y)) {
         setTransform((prev) => ({
-          ...prev,
-          x: pendingPanRef.current!.x,
-          y: pendingPanRef.current!.y,
+          ...(prev || { scale: 0.60 }),
+          x: targetPan.x,
+          y: targetPan.y,
         }));
-        pendingPanRef.current = null;
       }
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
+      window.removeEventListener('blur', handleMouseUp);
     };
 
     window.addEventListener('mousemove', handleMouseMove);
     window.addEventListener('mouseup', handleMouseUp);
+    window.addEventListener('blur', handleMouseUp);
   };
 
   // Mobile touch canvas panning & 2-finger pinch zoom
@@ -1105,8 +1162,10 @@ export default function App() {
       isPinchingRef.current = true;
       const t1 = e.touches[0];
       const t2 = e.touches[1];
+      if (!t1 || !t2) return;
+
       pinchStartDistRef.current = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
-      pinchStartTransformRef.current = { ...transformRef.current };
+      pinchStartTransformRef.current = { ...(transformRef.current || { x: 0, y: 0, scale: 0.60 }) };
       pinchMidpointRef.current = {
         x: (t1.clientX + t2.clientX) / 2,
         y: (t1.clientY + t2.clientY) / 2,
@@ -1118,25 +1177,32 @@ export default function App() {
 
         const p1 = moveEvent.touches[0];
         const p2 = moveEvent.touches[1];
+        if (!p1 || !p2) return;
+
         const currentDist = Math.hypot(p2.clientX - p1.clientX, p2.clientY - p1.clientY);
         const factor = currentDist / (pinchStartDistRef.current || 1);
-        const init = pinchStartTransformRef.current;
+        const init = pinchStartTransformRef.current || { x: 0, y: 0, scale: 0.60 };
         const nextScale = Math.min(2.0, Math.max(0.35, Math.round(init.scale * factor * 100) / 100));
-        const mid = pinchMidpointRef.current;
-        const nextX = Math.round(mid.x - (mid.x - init.x) * (nextScale / init.scale));
-        const nextY = Math.round(mid.y - (mid.y - init.y) * (nextScale / init.scale));
+        const mid = pinchMidpointRef.current || { x: 0, y: 0 };
+        const initScale = init.scale > 0 ? init.scale : 0.60;
+        const nextX = Math.round(mid.x - (mid.x - init.x) * (nextScale / initScale));
+        const nextY = Math.round(mid.y - (mid.y - init.y) * (nextScale / initScale));
 
-        setTransform({ x: nextX, y: nextY, scale: nextScale });
+        if (isFinite(nextX) && isFinite(nextY) && isFinite(nextScale)) {
+          setTransform({ x: nextX, y: nextY, scale: nextScale });
+        }
       };
 
       const handlePinchEnd = () => {
         isPinchingRef.current = false;
         window.removeEventListener('touchmove', handlePinchMove);
         window.removeEventListener('touchend', handlePinchEnd);
+        window.removeEventListener('touchcancel', handlePinchEnd);
       };
 
       window.addEventListener('touchmove', handlePinchMove, { passive: false });
       window.addEventListener('touchend', handlePinchEnd);
+      window.addEventListener('touchcancel', handlePinchEnd);
       return;
     }
 
@@ -1145,7 +1211,11 @@ export default function App() {
     isPinchingRef.current = false;
     isPanningRef.current = true;
     const touch = e.touches[0];
-    panStartRef.current = { x: touch.clientX - transform.x, y: touch.clientY - transform.y };
+    if (!touch) return;
+
+    const curX = typeof transform?.x === 'number' && isFinite(transform.x) ? transform.x : 0;
+    const curY = typeof transform?.y === 'number' && isFinite(transform.y) ? transform.y : 0;
+    panStartRef.current = { x: touch.clientX - curX, y: touch.clientY - curY };
 
     const handleTouchMove = (moveEvent: TouchEvent) => {
       if (moveEvent.cancelable) {
@@ -1154,18 +1224,22 @@ export default function App() {
       if (!isPanningRef.current || moveEvent.touches.length !== 1) return;
 
       const t = moveEvent.touches[0];
+      if (!t) return;
+
+      const start = panStartRef.current || { x: 0, y: 0 };
       pendingPanRef.current = {
-        x: Math.round(t.clientX - panStartRef.current.x),
-        y: Math.round(t.clientY - panStartRef.current.y),
+        x: Math.round(t.clientX - start.x),
+        y: Math.round(t.clientY - start.y),
       };
       if (panRafIdRef.current === null) {
         panRafIdRef.current = window.requestAnimationFrame(() => {
           panRafIdRef.current = null;
-          if (pendingPanRef.current) {
+          const targetPan = pendingPanRef.current;
+          if (targetPan && isFinite(targetPan.x) && isFinite(targetPan.y)) {
             setTransform((prev) => ({
-              ...prev,
-              x: pendingPanRef.current!.x,
-              y: pendingPanRef.current!.y,
+              ...(prev || { scale: 0.60 }),
+              x: targetPan.x,
+              y: targetPan.y,
             }));
           }
         });
@@ -1178,24 +1252,28 @@ export default function App() {
         window.cancelAnimationFrame(panRafIdRef.current);
         panRafIdRef.current = null;
       }
-      if (pendingPanRef.current) {
+      const targetPan = pendingPanRef.current;
+      pendingPanRef.current = null;
+      if (targetPan && isFinite(targetPan.x) && isFinite(targetPan.y)) {
         setTransform((prev) => ({
-          ...prev,
-          x: pendingPanRef.current!.x,
-          y: pendingPanRef.current!.y,
+          ...(prev || { scale: 0.60 }),
+          x: targetPan.x,
+          y: targetPan.y,
         }));
-        pendingPanRef.current = null;
       }
       window.removeEventListener('touchmove', handleTouchMove);
       window.removeEventListener('touchend', handleTouchEnd);
+      window.removeEventListener('touchcancel', handleTouchEnd);
     };
 
     window.addEventListener('touchmove', handleTouchMove, { passive: false });
     window.addEventListener('touchend', handleTouchEnd);
+    window.addEventListener('touchcancel', handleTouchEnd);
   };
 
   // Helper for computing estimated vertical height per node type
   const getNodeEstimatedHeight = useCallback((node: NodeData): number => {
+    if (!node || typeof node !== 'object') return 340;
     if (node.id === 'node-project') return 680;
     if (node.id === 'node-clock') return 520;
     if (node.id === 'node-models' || node.id === 'node-systems') return 390;
@@ -1213,6 +1291,7 @@ export default function App() {
     // Use canonical baseline nodes for calculating structural center (prevents distortion from dragged cards)
     const baselineNodes = (preset === 'project' || preset === 'all') ? ALL_RESEARCH_NODES : ALL_NETWORK_NODES;
     const targetNodes = baselineNodes.filter((n) => {
+      if (!n || typeof n !== 'object') return false;
       if (preset === 'network') {
         return ['node-profile', 'node-models', 'node-credentials', 'node-systems', 'node-project', 'node-clock'].includes(n.id);
       }
@@ -1238,6 +1317,10 @@ export default function App() {
       return true;
     });
 
+    const validTargetNodes = targetNodes.filter(
+      (n): n is NodeData => Boolean(n && typeof n === 'object' && typeof n.x === 'number' && isFinite(n.x) && typeof n.y === 'number' && isFinite(n.y))
+    );
+
     // DEDICATED MOBILE SPATIAL COMPOSITION:
     // Composes a readable 0.74–0.80 scale focal view around the anchor node
     if (isMobileViewport) {
@@ -1245,7 +1328,7 @@ export default function App() {
         ? desiredScale
         : Math.min(0.82, Math.max(0.70, Math.round(((vw - 20) / 440) * 100) / 100));
 
-      const focalNode = targetNodes.find((n) => n.id === 'node-profile') || targetNodes[0];
+      const focalNode = validTargetNodes.find((n) => n.id === 'node-profile') || validTargetNodes[0];
 
       let targetX = 480;
       let targetY = 740;
@@ -1253,9 +1336,9 @@ export default function App() {
       let targetH = 340;
 
       if (focalNode) {
-        targetX = focalNode.x;
-        targetY = focalNode.y;
-        targetW = focalNode.width || 340;
+        targetX = typeof focalNode.x === 'number' && isFinite(focalNode.x) ? focalNode.x : 480;
+        targetY = typeof focalNode.y === 'number' && isFinite(focalNode.y) ? focalNode.y : 740;
+        targetW = typeof focalNode.width === 'number' && isFinite(focalNode.width) ? focalNode.width : 340;
         targetH = getNodeEstimatedHeight(focalNode);
       }
 
@@ -1278,13 +1361,16 @@ export default function App() {
     let minY = Infinity;
     let maxY = -Infinity;
 
-    if (targetNodes.length > 0) {
-      for (const node of targetNodes) {
+    if (validTargetNodes.length > 0) {
+      for (const node of validTargetNodes) {
+        const nx = typeof node.x === 'number' && isFinite(node.x) ? node.x : 0;
+        const ny = typeof node.y === 'number' && isFinite(node.y) ? node.y : 0;
+        const nw = typeof node.width === 'number' && isFinite(node.width) ? node.width : 340;
         const h = getNodeEstimatedHeight(node);
-        if (node.x < minX) minX = node.x;
-        if (node.x + node.width > maxX) maxX = node.x + node.width;
-        if (node.y < minY) minY = node.y;
-        if (node.y + h > maxY) maxY = node.y + h;
+        if (nx < minX) minX = nx;
+        if (nx + nw > maxX) maxX = nx + nw;
+        if (ny < minY) minY = ny;
+        if (ny + h > maxY) maxY = ny + h;
       }
     } else {
       minX = 100;
@@ -1334,16 +1420,18 @@ export default function App() {
   const handleJumpToNode = useCallback((nodeId: string) => {
     playSound('click');
     setSelectedNodeId(nodeId);
-    const targetNode = filteredNodes.find((n) => n.id === nodeId);
-    if (!targetNode) return;
+    const targetNode = filteredNodes.find((n) => n && n.id === nodeId);
+    if (!targetNode || typeof targetNode.x !== 'number' || !isFinite(targetNode.x) || typeof targetNode.y !== 'number' || !isFinite(targetNode.y)) return;
 
     const vw = typeof window !== 'undefined' ? window.innerWidth : 1200;
     const vh = typeof window !== 'undefined' ? window.innerHeight : 800;
     const isMobileViewport = vw < 768;
+    const tw = typeof targetNode.width === 'number' && isFinite(targetNode.width) ? targetNode.width : 340;
 
     setTransform((prev) => {
-      const s = isMobileViewport ? Math.max(0.74, prev.scale) : prev.scale;
-      const nodeCenterX = targetNode.x + targetNode.width / 2;
+      const prevScale = typeof prev?.scale === 'number' && isFinite(prev.scale) && prev.scale > 0 ? prev.scale : 0.65;
+      const s = isMobileViewport ? Math.max(0.74, prevScale) : prevScale;
+      const nodeCenterX = targetNode.x + tw / 2;
       const nodeCenterY = targetNode.y + getNodeEstimatedHeight(targetNode) / 2;
       return {
         scale: s,
@@ -1461,9 +1549,12 @@ export default function App() {
       const deltaPercent = direction * 0.01;
 
       setTransform((prev) => {
-        const nextScale = Math.max(0.25, Math.min(2.20, Math.round((prev.scale + deltaPercent) * 100) / 100));
+        const ps = typeof prev?.scale === 'number' && isFinite(prev.scale) && prev.scale > 0 ? prev.scale : 0.65;
+        const px = typeof prev?.x === 'number' && isFinite(prev.x) ? prev.x : 0;
+        const py = typeof prev?.y === 'number' && isFinite(prev.y) ? prev.y : 0;
+        const nextScale = Math.max(0.25, Math.min(2.20, Math.round((ps + deltaPercent) * 100) / 100));
 
-        if (nextScale === prev.scale) return prev;
+        if (nextScale === ps) return prev;
 
         // Tactile detent feedback when stepping each 1% section (throttled to 75ms)
         const newBracket = Math.round(nextScale * 100);
@@ -1478,8 +1569,8 @@ export default function App() {
         const mouseX = e.clientX - rect.left;
         const mouseY = e.clientY - rect.top;
 
-        const newX = Math.round(mouseX - (mouseX - prev.x) * (nextScale / prev.scale));
-        const newY = Math.round(mouseY - (mouseY - prev.y) * (nextScale / prev.scale));
+        const newX = Math.round(mouseX - (mouseX - px) * (nextScale / ps));
+        const newY = Math.round(mouseY - (mouseY - py) * (nextScale / ps));
 
         return { x: newX, y: newY, scale: nextScale };
       });
@@ -1526,8 +1617,8 @@ export default function App() {
   // Focus specific node on canvas with smooth centered pan
   const handleFocusNode = useCallback((nodeId: string) => {
     playSound('select');
-    const target = nodes.find((n) => n.id === nodeId);
-    if (!target) return;
+    const target = nodes.find((n) => n && n.id === nodeId);
+    if (!target || typeof target.x !== 'number' || !isFinite(target.x) || typeof target.y !== 'number' || !isFinite(target.y)) return;
 
     const wasOnTimeline = activeViewRef.current === 'timeline';
     setActiveView('canvas');
@@ -1547,12 +1638,13 @@ export default function App() {
     const viewportHeight = typeof window !== 'undefined' ? window.innerHeight : 800;
     const targetScale = viewportWidth < 640 ? 0.55 : 0.65;
     const nodeHalfHeight = nodeId === 'node-project' ? 340 : (nodeId === 'node-clock' ? 260 : 170);
+    const tw = typeof target.width === 'number' && isFinite(target.width) ? target.width : 340;
 
     const viewCenterX = viewportWidth / 2;
     const viewCenterY = (viewportHeight + 12) / 2;
 
     setTransform({
-      x: Math.round(viewCenterX - (target.x + target.width / 2) * targetScale),
+      x: Math.round(viewCenterX - (target.x + tw / 2) * targetScale),
       y: Math.round(viewCenterY - (target.y + nodeHalfHeight) * targetScale),
       scale: targetScale,
     });
@@ -1742,7 +1834,7 @@ export default function App() {
                       showGrid={showGrid}
                     />
                   ) : (
-                    <>
+                    <GraphErrorBoundary onResetGraph={handleResetGraph}>
                       <div
                         id="graph-workspace"
                         aria-label="Interactive computational graph canvas"
@@ -1805,24 +1897,30 @@ export default function App() {
                           onZoomIn={() => {
                             playSound('zoom');
                             setTransform((p) => {
-                              const nextScale = Math.min(2.20, Math.round((p.scale + 0.01) * 100) / 100);
+                              const ps = typeof p?.scale === 'number' && isFinite(p.scale) && p.scale > 0 ? p.scale : 0.65;
+                              const px = typeof p?.x === 'number' && isFinite(p.x) ? p.x : 0;
+                              const py = typeof p?.y === 'number' && isFinite(p.y) ? p.y : 0;
+                              const nextScale = Math.min(2.20, Math.round((ps + 0.01) * 100) / 100);
                               lastZoomBracketRef.current = Math.round(nextScale * 100);
                               const vw = typeof window !== 'undefined' ? window.innerWidth : 1200;
                               const vh = typeof window !== 'undefined' ? window.innerHeight : 800;
-                              const newX = Math.round((vw / 2) - ((vw / 2) - p.x) * (nextScale / p.scale));
-                              const newY = Math.round(((vh + 12) / 2) - (((vh + 12) / 2) - p.y) * (nextScale / p.scale));
+                              const newX = Math.round((vw / 2) - ((vw / 2) - px) * (nextScale / ps));
+                              const newY = Math.round(((vh + 12) / 2) - (((vh + 12) / 2) - py) * (nextScale / ps));
                               return { x: newX, y: newY, scale: nextScale };
                             });
                           }}
                           onZoomOut={() => {
                             playSound('zoom');
                             setTransform((p) => {
-                              const nextScale = Math.max(0.25, Math.round((p.scale - 0.01) * 100) / 100);
+                              const ps = typeof p?.scale === 'number' && isFinite(p.scale) && p.scale > 0 ? p.scale : 0.65;
+                              const px = typeof p?.x === 'number' && isFinite(p.x) ? p.x : 0;
+                              const py = typeof p?.y === 'number' && isFinite(p.y) ? p.y : 0;
+                              const nextScale = Math.max(0.25, Math.round((ps - 0.01) * 100) / 100);
                               lastZoomBracketRef.current = Math.round(nextScale * 100);
                               const vw = typeof window !== 'undefined' ? window.innerWidth : 1200;
                               const vh = typeof window !== 'undefined' ? window.innerHeight : 800;
-                              const newX = Math.round((vw / 2) - ((vw / 2) - p.x) * (nextScale / p.scale));
-                              const newY = Math.round(((vh + 12) / 2) - (((vh + 12) / 2) - p.y) * (nextScale / p.scale));
+                              const newX = Math.round((vw / 2) - ((vw / 2) - px) * (nextScale / ps));
+                              const newY = Math.round(((vh + 12) / 2) - (((vh + 12) / 2) - py) * (nextScale / ps));
                               return { x: newX, y: newY, scale: nextScale };
                             });
                           }}
@@ -1901,7 +1999,7 @@ export default function App() {
                           );
                         })()}
                       </footer>
-                    </>
+                    </GraphErrorBoundary>
                   )}
                 </div>
               </ArchitecturalReveal>

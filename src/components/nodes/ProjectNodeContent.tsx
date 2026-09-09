@@ -63,6 +63,7 @@ export const ProjectNodeContent: React.FC<ProjectNodeContentProps> = ({
   // Canvas render loop with 3D projection and coordinate grid (optimized to pause when offscreen)
   useEffect(() => {
     let animFrame: number;
+    let disposed = false;
     let isVisible = true;
     let lastRenderTime = 0;
     const canvas = canvasRef.current;
@@ -76,7 +77,7 @@ export const ProjectNodeContent: React.FC<ProjectNodeContentProps> = ({
     let time = 0;
 
     const render = (now: number = performance.now()) => {
-      if (!isVisible) return;
+      if (disposed || !isVisible) return;
 
       if (now - lastRenderTime < minFrameInterval) {
         animFrame = requestAnimationFrame(render);
@@ -145,16 +146,20 @@ export const ProjectNodeContent: React.FC<ProjectNodeContentProps> = ({
 
       const pts = pointsRef.current;
       const projected = projectedRef.current;
-      const numPts = pts.length;
+      const numPts = pts ? pts.length : 0;
 
       if (numPts <= 0) {
         ctx.restore();
-        animFrame = requestAnimationFrame(render);
+        if (!disposed) {
+          animFrame = requestAnimationFrame(render);
+        }
         return;
       }
 
       for (let i = 0; i < numPts; i++) {
         const pt = pts[i];
+        if (!pt || typeof pt.x !== 'number' || !isFinite(pt.x) || typeof pt.y !== 'number' || !isFinite(pt.y)) continue;
+
         const osc = projectionMode === 'umap'
           ? Math.sin(time + pt.cluster) * 2
           : projectionMode === 'tsne'
@@ -163,7 +168,7 @@ export const ProjectNodeContent: React.FC<ProjectNodeContentProps> = ({
 
         const px = pt.x;
         const py = pt.y + osc;
-        const pz = pt.z;
+        const pz = typeof pt.z === 'number' && isFinite(pt.z) ? pt.z : 0;
 
         const rx1 = px * cosY - pz * sinY;
         const rz1 = px * sinY + pz * cosY;
@@ -187,7 +192,7 @@ export const ProjectNodeContent: React.FC<ProjectNodeContentProps> = ({
       for (let i = 0; i < numPts; i += step) {
         const p1 = projected[i];
         const p2 = projected[(i + 3) % numPts];
-        if (p1 && p2) {
+        if (p1 && p2 && isFinite(p1.x) && isFinite(p1.y) && isFinite(p2.x) && isFinite(p2.y)) {
           const dist = Math.hypot(p1.x - p2.x, p1.y - p2.y);
           if (dist < 70 && p1.cluster === p2.cluster) {
             ctx.strokeStyle = 'rgba(244, 63, 94, 0.16)';
@@ -202,7 +207,7 @@ export const ProjectNodeContent: React.FC<ProjectNodeContentProps> = ({
       // 4. Draw Embedding Points
       for (let i = 0; i < numPts; i++) {
         const pt = projected[i];
-        if (pt) {
+        if (pt && isFinite(pt.x) && isFinite(pt.y)) {
           ctx.fillStyle = clusterPalette[pt.cluster] || '#f43f5e';
           ctx.beginPath();
           ctx.arc(pt.x, pt.y, Math.max(0.8, pt.size), 0, Math.PI * 2);
@@ -211,11 +216,14 @@ export const ProjectNodeContent: React.FC<ProjectNodeContentProps> = ({
       }
 
       ctx.restore();
-      animFrame = requestAnimationFrame(render);
+      if (!disposed) {
+        animFrame = requestAnimationFrame(render);
+      }
     };
 
     // Pause when browser tab is inactive
     const handleVisibilityChange = () => {
+      if (disposed) return;
       if (document.hidden) {
         isVisible = false;
         cancelAnimationFrame(animFrame);
@@ -232,6 +240,7 @@ export const ProjectNodeContent: React.FC<ProjectNodeContentProps> = ({
     if (typeof IntersectionObserver !== 'undefined') {
       observer = new IntersectionObserver(
         (entries) => {
+          if (disposed) return;
           const entry = entries && entries[0];
           if (!entry) return;
           if (!entry.isIntersecting) {
@@ -251,6 +260,7 @@ export const ProjectNodeContent: React.FC<ProjectNodeContentProps> = ({
     render();
 
     return () => {
+      disposed = true;
       cancelAnimationFrame(animFrame);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       observer?.disconnect();

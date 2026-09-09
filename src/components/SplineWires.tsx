@@ -110,6 +110,10 @@ const SplineWiresComponent: React.FC<SplineWiresProps> = ({
 
 export const SplineWires = React.memo(SplineWiresComponent, (prev, next) => {
   if (
+    !prev?.pinPositions ||
+    !next?.pinPositions ||
+    !prev?.connections ||
+    !next?.connections ||
     prev.isMobile !== next.isMobile ||
     prev.isSimulating !== next.isSimulating ||
     prev.wireStyle !== next.wireStyle ||
@@ -123,6 +127,7 @@ export const SplineWires = React.memo(SplineWiresComponent, (prev, next) => {
   // Compare actual pin coordinates for the active connections
   for (let i = 0; i < next.connections.length; i++) {
     const conn = next.connections[i];
+    if (!conn) return false;
     const prevFrom = prev.pinPositions[conn.fromPinId];
     const nextFrom = next.pinPositions[conn.fromPinId];
     if (!prevFrom || !nextFrom || prevFrom.x !== nextFrom.x || prevFrom.y !== nextFrom.y) {

@@ -87,6 +87,10 @@ const GraphNodeComponent: React.FC<GraphNodeProps> = ({
   onDragStateChange,
   onDeleteVisitorNode,
 }) => {
+  if (!node || typeof node !== 'object' || typeof node.x !== 'number' || !isFinite(node.x) || typeof node.y !== 'number' || !isFinite(node.y)) {
+    return null;
+  }
+
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
@@ -593,6 +597,7 @@ const GraphNodeComponent: React.FC<GraphNodeProps> = ({
 };
 
 export const GraphNode = React.memo(GraphNodeComponent, (prev, next) => {
+  if (!prev?.node || !next?.node) return false;
   return (
     prev.node.x === next.node.x &&
     prev.node.y === next.node.y &&

@@ -284,10 +284,12 @@ export const MobileNodespace: React.FC<MobileNodespaceProps> = ({
     if (!isSwipingRef.current) return;
     isSwipingRef.current = false;
 
-    if (e.changedTouches.length === 1) {
-      const dx = e.changedTouches[0].clientX - touchStartRef.current.x;
-      const dy = e.changedTouches[0].clientY - touchStartRef.current.y;
-      const dt = Date.now() - touchStartRef.current.time;
+    if (e.changedTouches && e.changedTouches.length === 1 && touchStartRef.current) {
+      const startX = typeof touchStartRef.current.x === 'number' && isFinite(touchStartRef.current.x) ? touchStartRef.current.x : 0;
+      const startY = typeof touchStartRef.current.y === 'number' && isFinite(touchStartRef.current.y) ? touchStartRef.current.y : 0;
+      const dx = e.changedTouches[0].clientX - startX;
+      const dy = e.changedTouches[0].clientY - startY;
+      const dt = Date.now() - (touchStartRef.current.time || 0);
 
       // Ensure horizontal swipe is dominant and intentional
       if (Math.abs(dx) > 42 && Math.abs(dx) > Math.abs(dy) * 1.4 && dt < 600) {
