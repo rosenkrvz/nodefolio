@@ -108,6 +108,14 @@ body {
   }
 }
 
+@media (max-width: 639px) {
+  .cube-svg {
+    opacity: 0.42;
+    left: -15%;
+    top: -10%;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .cube-svg {
     animation: none;

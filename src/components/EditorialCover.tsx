@@ -145,7 +145,7 @@ const EditorialCoverComponent: React.FC<EditorialCoverProps> = ({
         visibility: (activeNavTab !== 'home' || isFullyOffscreen) ? 'hidden' : 'visible',
         willChange: isFullyOffscreen ? 'auto' : 'transform, opacity',
       }}
-      className={`absolute inset-0 w-full h-screen flex flex-col justify-between px-4 sm:px-12 md:px-16 pt-[calc(4.5rem+env(safe-area-inset-top,0px))] pb-[calc(1.5rem+env(safe-area-inset-bottom,0px))] select-none overflow-hidden z-20 bg-[#14171c] ${
+      className={`absolute inset-0 w-full h-screen h-[100dvh] flex flex-col justify-between px-4 sm:px-12 md:px-16 pt-[calc(4.25rem+env(safe-area-inset-top,0px))] pb-[calc(1.25rem+env(safe-area-inset-bottom,0px))] sm:pt-[calc(4.5rem+env(safe-area-inset-top,0px))] sm:pb-[calc(1.5rem+env(safe-area-inset-bottom,0px))] select-none overflow-hidden z-20 bg-[#14171c] ${
         isLifting ? 'border-b border-rose-500/50 shadow-[0_30px_70px_rgba(0,0,0,0.95)]' : ''
       }`}
     >
@@ -172,6 +172,12 @@ const EditorialCoverComponent: React.FC<EditorialCoverProps> = ({
         aria-hidden="true"
       />
 
+      {/* Mobile-specific Text Contrast Vignette: softens diagonal background behind typography while letting perimeter geometry breathe */}
+      <div
+        className="absolute inset-0 pointer-events-none bg-[radial-gradient(ellipse_at_30%_45%,rgba(20,23,28,0.85)_0%,rgba(20,23,28,0.4)_65%,transparent_100%)] sm:hidden z-0"
+        aria-hidden="true"
+      />
+
       {/* Subtle Coordinate Grid Overlay */}
       <div className="absolute inset-0 pointer-events-none bg-canvas-dots-overlay opacity-60 z-0" aria-hidden="true" />
 
@@ -193,37 +199,62 @@ const EditorialCoverComponent: React.FC<EditorialCoverProps> = ({
           opacity: isEntered ? eyebrowOpacity : (entryStage >= 1 ? eyebrowOpacity : 0),
           transition: isEntered ? 'none' : 'opacity 0.6s ease-out, transform 0.6s ease-out',
         }}
-        className="relative z-10 w-full max-w-7xl mx-auto flex items-center justify-between pb-4 border-b border-white/[0.08] text-xs font-body text-zinc-400"
+        className="relative z-10 w-full max-w-7xl mx-auto flex items-center justify-between pb-3 sm:pb-4 border-b border-white/[0.08] text-xs font-body text-zinc-400 shrink-0"
       >
-        <div className="flex items-center gap-3 tracking-[0.25em] uppercase font-medium">
+        {/* Desktop Eyebrow Left */}
+        <div className="hidden sm:flex items-center gap-3 tracking-[0.25em] uppercase font-medium">
           <BrandLogo variant="icon" size={16} className="text-rose-400 shrink-0" />
           <span className="font-semibold text-zinc-200">PORTFOLIO / 01</span>
           <span className="text-zinc-600">&bull;</span>
-          <span className="hidden sm:inline text-zinc-400">RESEARCH &bull; SYSTEMS</span>
+          <span className="text-zinc-400">RESEARCH &bull; SYSTEMS</span>
         </div>
 
-        <div className="flex items-center gap-3">
+        {/* Mobile Eyebrow Left: Editorial Publication Metadata */}
+        <div className="sm:hidden flex flex-col gap-0.5">
+          <div className="flex items-center gap-2 tracking-[0.22em] uppercase font-semibold text-zinc-200 text-[11px]">
+            <BrandLogo variant="icon" size={13} className="text-rose-400 shrink-0" />
+            <span>PORTFOLIO / 01</span>
+          </div>
+          <div className="flex items-center gap-1.5 text-[9px] tracking-[0.2em] font-medium uppercase text-rose-400/85">
+            <span>RESEARCH NOTEBOOK</span>
+            <span className="text-zinc-600">&bull;</span>
+            <span>SYSTEMS</span>
+          </div>
+        </div>
+
+        {/* Desktop Eyebrow Right */}
+        <div className="hidden sm:flex items-center gap-3">
           <span className="font-accent text-3xl leading-none text-rose-400/90 font-bold -mb-1">
             2026
           </span>
-          <span className="text-zinc-600 hidden sm:inline">&bull;</span>
-          <span className="hidden sm:inline tracking-widest text-zinc-400 font-medium">
+          <span className="text-zinc-600">&bull;</span>
+          <span className="tracking-widest text-zinc-400 font-medium">
             AI &bull; DATA SCIENCE
+          </span>
+        </div>
+
+        {/* Mobile Eyebrow Right: Year 2026 + Publication Tag */}
+        <div className="sm:hidden flex flex-col items-end">
+          <span className="font-accent text-3xl leading-none text-rose-400/90 font-bold">
+            2026
+          </span>
+          <span className="text-[8.5px] tracking-[0.16em] uppercase text-zinc-500 font-medium -mt-1">
+            COMPUTATION
           </span>
         </div>
       </div>
 
       {/* Hero Core Content: Monumental Asymmetric Editorial Layout */}
-      <div className="relative z-10 w-full max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-end my-auto py-2">
+      <div className="relative z-10 w-full max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-end mt-4 min-[360px]:mt-6 min-[390px]:mt-8 mb-auto sm:my-auto py-1 sm:py-2">
         {/* Left / Main Column: Huge Display Title & Statement (col-span-8) */}
         <div className="lg:col-span-8 flex flex-col items-start">
-          {/* Subtle Category Pillar */}
+          {/* Subtle Category Pillar (Desktop Only - on mobile, publication metadata is in the top layer) */}
           <div
             style={{
               opacity: isEntered || entryStage >= 2 ? 1 : 0,
               transition: isEntered ? 'none' : 'opacity 0.5s ease-out',
             }}
-            className="font-body text-xs font-semibold tracking-[0.3em] uppercase text-rose-400 mb-3 flex items-center gap-2"
+            className="hidden sm:flex font-body text-xs font-semibold tracking-[0.3em] uppercase text-rose-400 mb-3 items-center gap-2"
           >
             <span>RESEARCH NOTEBOOK</span>
             <span className="text-zinc-600">/</span>
@@ -233,7 +264,7 @@ const EditorialCoverComponent: React.FC<EditorialCoverProps> = ({
           </div>
 
           {/* Directionally Masked Monumental Display Name */}
-          <div className="overflow-hidden mb-4 sm:mb-5">
+          <div className="overflow-hidden mb-3 min-[360px]:mb-3.5 sm:mb-5">
             <h1
               style={{
                 transform:
@@ -245,10 +276,10 @@ const EditorialCoverComponent: React.FC<EditorialCoverProps> = ({
               }}
               className="leading-[0.92] select-none tracking-tight"
             >
-              <span className="block font-display text-4xl min-[360px]:text-5xl sm:text-7xl md:text-8xl font-black text-white tracking-[-0.03em] uppercase break-words">
+              <span className="block font-display text-[38px] min-[360px]:text-[44px] min-[390px]:text-[48px] min-[412px]:text-[52px] sm:text-7xl md:text-8xl font-black text-white tracking-[-0.03em] uppercase break-words">
                 SHUBHAM
               </span>
-              <span className="block font-display text-4xl min-[360px]:text-5xl sm:text-7xl md:text-8xl font-light text-zinc-400/90 tracking-[-0.02em] uppercase mt-1 break-words">
+              <span className="block font-display text-[28px] min-[360px]:text-[32px] min-[390px]:text-[35px] min-[412px]:text-[38px] sm:text-7xl md:text-8xl font-light text-zinc-400/80 sm:text-zinc-400/90 tracking-[0.16em] min-[360px]:tracking-[0.18em] sm:tracking-[-0.02em] uppercase mt-0.5 sm:mt-1 pl-0.5 sm:pl-0 break-words">
                 SHARMA
               </span>
             </h1>
@@ -261,7 +292,7 @@ const EditorialCoverComponent: React.FC<EditorialCoverProps> = ({
               transform: isEntered || entryStage >= 3 ? 'none' : 'translateY(16px)',
               transition: isEntered ? 'none' : 'opacity 0.7s ease-out, transform 0.7s ease-out',
             }}
-            className="font-display text-lg min-[360px]:text-xl sm:text-2xl md:text-3xl text-zinc-100 font-semibold tracking-tight leading-snug mb-3 sm:mb-4"
+            className="font-display text-[17px] min-[360px]:text-[19px] min-[390px]:text-[21px] sm:text-2xl md:text-3xl text-zinc-100 font-semibold tracking-tight leading-snug mb-2.5 min-[360px]:mb-3 sm:mb-4 max-w-[340px] sm:max-w-none"
           >
             I build things to understand how they work.
           </div>
@@ -273,7 +304,7 @@ const EditorialCoverComponent: React.FC<EditorialCoverProps> = ({
               transform: isEntered || entryStage >= 3 ? 'none' : 'translateY(16px)',
               transition: isEntered ? 'none' : 'opacity 0.7s ease-out 0.05s, transform 0.7s ease-out 0.05s',
             }}
-            className="font-body text-sm sm:text-lg text-zinc-300 font-normal leading-relaxed mb-6 sm:mb-8 max-w-xl"
+            className="font-body text-xs min-[360px]:text-[13px] min-[390px]:text-sm sm:text-lg text-zinc-300 font-normal leading-relaxed mb-4 min-[360px]:mb-5 sm:mb-8 max-w-[310px] min-[360px]:max-w-[340px] min-[390px]:max-w-[360px] sm:max-w-xl"
           >
             Exploring mathematics, data, machine learning and software through experiments, systems and things I can actually build.
           </p>
@@ -285,7 +316,7 @@ const EditorialCoverComponent: React.FC<EditorialCoverProps> = ({
               transform: isEntered || entryStage >= 3 ? 'none' : 'translateY(12px)',
               transition: isEntered ? 'none' : 'opacity 0.6s ease-out 0.1s, transform 0.6s ease-out 0.1s',
             }}
-            className="flex flex-wrap items-center gap-3 sm:gap-4 font-body w-full sm:w-auto"
+            className="flex items-center gap-2.5 min-[360px]:gap-3 sm:gap-4 font-body w-full sm:w-auto"
           >
             <button
               type="button"
@@ -293,10 +324,10 @@ const EditorialCoverComponent: React.FC<EditorialCoverProps> = ({
                 playSound('open');
                 onExplore();
               }}
-              className="w-full min-[380px]:w-auto justify-center px-5 sm:px-6 py-3 sm:py-3.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-semibold text-xs sm:text-sm tracking-wider uppercase transition-all shadow-[0_0_24px_rgba(225,29,72,0.4)] hover:shadow-[0_0_32px_rgba(225,29,72,0.6)] flex items-center gap-2 group active:scale-95 cursor-pointer"
+              className="flex-1 sm:flex-initial justify-center px-4 py-2.5 min-[360px]:px-5 min-[360px]:py-3 sm:px-6 sm:py-3.5 rounded-lg min-[360px]:rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-semibold text-[11.5px] min-[360px]:text-xs sm:text-sm tracking-wider uppercase transition-all shadow-[0_0_20px_rgba(225,29,72,0.35)] hover:shadow-[0_0_32px_rgba(225,29,72,0.6)] flex items-center gap-2 group active:scale-95 cursor-pointer"
             >
               <span>ENTER SYSTEM</span>
-              <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+              <ArrowRight className="w-3.5 h-3.5 min-[360px]:w-4 min-[360px]:h-4 transition-transform group-hover:translate-x-1" />
             </button>
 
             <button
@@ -305,10 +336,10 @@ const EditorialCoverComponent: React.FC<EditorialCoverProps> = ({
                 playSound('secondaryClick');
                 onViewWork();
               }}
-              className="w-full min-[380px]:w-auto justify-center px-5 sm:px-6 py-3 sm:py-3.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-zinc-200 hover:text-white border border-white/[0.12] hover:border-white/[0.25] font-semibold text-xs sm:text-sm tracking-wider uppercase transition-all active:scale-95 cursor-pointer flex items-center gap-2"
+              className="flex-1 sm:flex-initial justify-center px-4 py-2.5 min-[360px]:px-5 min-[360px]:py-3 sm:px-6 sm:py-3.5 rounded-lg min-[360px]:rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-zinc-200 hover:text-white border border-white/[0.12] hover:border-white/[0.25] font-semibold text-[11.5px] min-[360px]:text-xs sm:text-sm tracking-wider uppercase transition-all active:scale-95 cursor-pointer flex items-center gap-2"
             >
-              <Compass className="w-4 h-4 text-rose-400" />
-              <span>VIEW RESEARCH</span>
+              <Compass className="w-3.5 h-3.5 min-[360px]:w-4 min-[360px]:h-4 text-rose-400 shrink-0" />
+              <span className="whitespace-nowrap">VIEW RESEARCH</span>
             </button>
           </div>
         </div>
@@ -359,17 +390,17 @@ const EditorialCoverComponent: React.FC<EditorialCoverProps> = ({
           pointerEvents: bottomHintOpacity < 0.1 ? 'none' : 'auto',
           transition: isEntered ? 'none' : 'opacity 0.6s ease-out, transform 0.6s ease-out',
         }}
-        className="relative z-10 w-full max-w-7xl mx-auto flex items-center justify-between pt-6 border-t border-white/[0.08] text-xs font-body text-zinc-500"
+        className="relative z-10 w-full max-w-7xl mx-auto flex items-center justify-between pt-3.5 sm:pt-6 border-t border-white/[0.06] sm:border-white/[0.08] text-xs font-body text-zinc-500 mt-auto sm:mt-0 shrink-0"
       >
         <button
           type="button"
           onClick={onExplore}
-          className="flex items-center gap-2 tracking-[0.2em] uppercase font-semibold text-zinc-400 hover:text-white transition-colors cursor-pointer group focus:outline-none"
+          className="flex items-center gap-2 tracking-[0.18em] sm:tracking-[0.2em] uppercase text-[10.5px] min-[360px]:text-[11px] sm:text-xs font-medium sm:font-semibold text-zinc-400 hover:text-white transition-colors cursor-pointer group focus:outline-none"
           title="Scroll down to open the computational network"
         >
           <span className="w-2 h-2 rounded-full border border-zinc-400 group-hover:border-rose-500 group-hover:bg-rose-500 transition-colors inline-block" />
           <span>SCROLL TO ENTER SYSTEM</span>
-          <ChevronDown className="w-3.5 h-3.5 animate-bounce text-rose-400 group-hover:translate-y-0.5 transition-transform" />
+          <ChevronDown className="w-3 h-3 min-[360px]:w-3.5 min-[360px]:h-3.5 animate-bounce text-rose-400 group-hover:translate-y-0.5 transition-transform" />
         </button>
 
         <div className="hidden sm:flex items-center gap-4 text-[11px] font-body text-zinc-400 tracking-widest uppercase">
