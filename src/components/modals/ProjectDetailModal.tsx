@@ -36,28 +36,28 @@ export const ProjectDetailModal: React.FC<ProjectDetailModalProps> = ({ project,
       role="dialog"
       aria-modal="true"
       aria-label={`Project Case Study: ${project.title}`}
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/85 backdrop-blur-md animate-in fade-in duration-200 select-none font-body"
+      className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-6 bg-black/85 backdrop-blur-md animate-in fade-in duration-200 select-none font-body"
       onClick={onClose}
     >
       <div
-        className="relative w-full max-w-3xl max-h-[92vh] overflow-y-auto rounded-2xl bg-[#111419] border border-white/10 p-5 sm:p-8 shadow-2xl text-zinc-200"
+        className="relative w-full max-w-3xl max-h-[90dvh] sm:max-h-[92vh] overflow-y-auto overscroll-contain rounded-2xl bg-[#111419] border border-white/10 p-4 sm:p-8 shadow-2xl text-zinc-200 pb-[calc(env(safe-area-inset-bottom,0px)+20px)] sm:pb-8"
         onClick={(e) => e.stopPropagation()}
       >
         <button
           type="button"
           onClick={onClose}
           aria-label="Close case study"
-          className="absolute top-5 right-5 p-2 rounded-lg text-zinc-400 hover:text-white hover:bg-white/10 transition-colors z-10 cursor-pointer"
+          className="absolute top-4 sm:top-5 right-4 sm:right-5 p-2 rounded-lg text-zinc-400 hover:text-white hover:bg-white/10 transition-colors z-10 cursor-pointer"
         >
           <Close className="w-5 h-5" />
         </button>
 
         {/* Header Eyebrow & Title */}
-        <div className="mb-6">
+        <div className="mb-5 sm:mb-6 pr-8 sm:pr-0">
           <div className="flex items-center justify-between gap-2 mb-2">
             <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
-              <span className="font-body text-xs font-bold tracking-wider text-rose-400 uppercase">
+              <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse shrink-0" />
+              <span className="font-body text-[11px] sm:text-xs font-bold tracking-wider text-rose-400 uppercase">
                 Research Case Study • Machine Learning &amp; Representation
               </span>
             </div>
@@ -65,16 +65,16 @@ export const ProjectDetailModal: React.FC<ProjectDetailModalProps> = ({ project,
               topology • manifold
             </span>
           </div>
-          <h2 className="font-display text-3xl sm:text-4xl text-white font-bold tracking-wide uppercase">
+          <h2 className="font-display text-2xl sm:text-4xl text-white font-bold tracking-wide uppercase leading-tight">
             {project.title}
           </h2>
-          <p className="font-body text-base sm:text-lg text-zinc-300 mt-2 leading-relaxed max-w-2xl">
+          <p className="font-body text-sm sm:text-lg text-zinc-300 mt-1.5 sm:mt-2 leading-relaxed max-w-2xl">
             {project.tagline}
           </p>
         </div>
 
         {/* Visual Artifact Banner */}
-        <div className="relative aspect-[21/9] w-full rounded-xl overflow-hidden border border-white/10 mb-8 bg-[#090b0e]">
+        <div className="relative aspect-[21/9] min-h-[140px] w-full rounded-xl overflow-hidden border border-white/10 mb-6 sm:mb-8 bg-[#090b0e]">
           <img
             src={project.image}
             alt={project.title}
@@ -85,25 +85,25 @@ export const ProjectDetailModal: React.FC<ProjectDetailModalProps> = ({ project,
           />
           <div className="absolute inset-0 bg-gradient-to-t from-[#111419] via-black/20 to-transparent" />
           
-          <div className="absolute bottom-3 left-4 right-4 flex items-center justify-between">
-            <div className="px-2.5 py-1 rounded bg-black/70 backdrop-blur-sm border border-white/10 text-xs font-body font-medium text-zinc-300">
+          <div className="absolute bottom-2.5 sm:bottom-3 left-3 sm:left-4 right-3 sm:right-4 flex flex-wrap items-center justify-between gap-1.5">
+            <div className="px-2 py-0.5 sm:px-2.5 sm:py-1 rounded bg-black/70 backdrop-blur-sm border border-white/10 text-[10px] sm:text-xs font-body font-medium text-zinc-300">
               Artifact: Latent Space Traversal Map
             </div>
-            <div className="px-2.5 py-1 rounded bg-rose-950/80 backdrop-blur-sm border border-rose-500/40 text-xs font-body font-semibold text-rose-300">
+            <div className="px-2 py-0.5 sm:px-2.5 sm:py-1 rounded bg-rose-950/80 backdrop-blur-sm border border-rose-500/40 text-[10px] sm:text-xs font-body font-semibold text-rose-300">
               Interactive WebGL Accelerated
             </div>
           </div>
         </div>
 
         {/* Telemetry Metric Grid */}
-        <div className="grid grid-cols-3 gap-3 mb-8">
+        <div className="grid grid-cols-1 min-[360px]:grid-cols-3 gap-2 sm:gap-3 mb-6 sm:mb-8">
           {project.metrics.map((m, idx) => (
             <div
               key={idx}
-              className="p-3.5 rounded-xl bg-white/[0.03] border border-white/[0.06] text-center"
+              className="p-2.5 sm:p-3.5 rounded-xl bg-white/[0.03] border border-white/[0.06] text-center"
             >
-              <div className="text-xs font-body font-semibold text-zinc-400 uppercase tracking-wider">{m.label}</div>
-              <div className="text-base sm:text-lg font-display font-bold text-white mt-1">{m.value}</div>
+              <div className="text-[10px] sm:text-xs font-body font-semibold text-zinc-400 uppercase tracking-wider">{m.label}</div>
+              <div className="text-sm sm:text-lg font-display font-bold text-white mt-0.5 sm:mt-1">{m.value}</div>
             </div>
           ))}
         </div>
@@ -240,13 +240,13 @@ export const ProjectDetailModal: React.FC<ProjectDetailModalProps> = ({ project,
         </div>
 
         {/* Action Links */}
-        <div className="flex items-center gap-3 pt-6 mt-8 border-t border-white/[0.08]">
+        <div className="flex flex-wrap items-center gap-2.5 sm:gap-3 pt-5 sm:pt-6 mt-6 sm:mt-8 border-t border-white/[0.08]">
           {project.liveUrl && (
             <a
               href={project.liveUrl}
               target="_blank"
               rel="noreferrer"
-              className="flex-1 py-2.5 px-4 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-body font-semibold text-xs sm:text-sm transition-all text-center flex items-center justify-center gap-2"
+              className="flex-1 min-w-[180px] py-2.5 px-4 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-body font-semibold text-xs sm:text-sm transition-all text-center flex items-center justify-center gap-2"
             >
               <span>Explore Code Repository</span>
               <ExternalLink className="w-3.5 h-3.5" />
@@ -266,7 +266,7 @@ export const ProjectDetailModal: React.FC<ProjectDetailModalProps> = ({ project,
           <button
             type="button"
             onClick={onClose}
-            className="py-2.5 px-5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-zinc-300 text-xs sm:text-sm font-body font-semibold transition-colors border border-white/[0.06]"
+            className="py-2.5 px-5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-zinc-300 text-xs sm:text-sm font-body font-semibold transition-colors border border-white/[0.06] cursor-pointer"
           >
             Close
           </button>

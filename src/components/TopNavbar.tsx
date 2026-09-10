@@ -70,9 +70,9 @@ const TopNavbarComponent: React.FC<TopNavbarProps> = ({
 
   return (
     <>
-      <header className="fixed top-0 inset-x-0 h-14 sm:h-16 z-50 flex items-center justify-between px-3 sm:px-8 md:px-12 bg-[#090b10]/95 backdrop-blur-md border-b border-white/[0.08] pointer-events-auto select-none font-body pt-[env(safe-area-inset-top,0px)]">
+      <header className="fixed top-0 inset-x-0 h-[calc(3.5rem+env(safe-area-inset-top,0px))] sm:h-16 z-50 flex items-center justify-between px-3 sm:px-8 md:px-12 bg-[#090b10]/95 backdrop-blur-md border-b border-white/[0.08] pointer-events-auto select-none font-body pt-[env(safe-area-inset-top,0px)]">
         {/* Brand Identity / Geometric SS Monogram */}
-        <div className="flex items-center gap-2.5 sm:gap-6 min-w-0">
+        <div className="flex items-center gap-2 sm:gap-6 min-w-0">
           <button
             type="button"
             onClick={() => {
@@ -92,7 +92,7 @@ const TopNavbarComponent: React.FC<TopNavbarProps> = ({
                 </span>
                 <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse shrink-0" />
               </div>
-              <span className="font-body text-[9px] sm:text-[10px] font-semibold text-zinc-400 tracking-[0.16em] sm:tracking-[0.2em] uppercase block mt-0.5 truncate">
+              <span className="font-body text-[9px] sm:text-[10px] font-semibold text-zinc-400 tracking-[0.16em] sm:tracking-[0.2em] uppercase hidden min-[360px]:block mt-0.5 truncate">
                 COMPUTATION &bull; RESEARCH
               </span>
             </div>
@@ -177,7 +177,7 @@ const TopNavbarComponent: React.FC<TopNavbarProps> = ({
         </div>
 
         {/* Mobile Minimal Section Pill */}
-        <div className="md:hidden flex items-center px-1">
+        <div className="hidden min-[400px]:flex md:hidden items-center px-1">
           <span className="text-[10px] font-tech font-bold text-zinc-300 bg-white/[0.06] border border-white/10 px-2 py-0.5 rounded-full uppercase tracking-wider">
             {activeNavTab === 'projects' ? 'RESEARCH' : activeNavTab === 'network' ? 'NETWORK' : activeNavTab === 'notebook' ? 'CHRONICLE' : 'COVER'}
           </span>
@@ -265,7 +265,7 @@ const TopNavbarComponent: React.FC<TopNavbarProps> = ({
 
       {/* Mobile Navigation Drawer */}
       {isMobileMenuOpen && (
-        <div className="fixed inset-x-0 top-14 sm:top-16 z-40 bg-[#090b10]/98 backdrop-blur-2xl border-b border-white/10 p-4 md:hidden animate-in slide-in-from-top-2 duration-150 font-body shadow-2xl">
+        <div className="fixed inset-x-0 top-[calc(3.5rem+env(safe-area-inset-top,0px))] sm:top-16 z-40 bg-[#090b10]/98 backdrop-blur-2xl border-b border-white/10 p-4 md:hidden animate-in slide-in-from-top-2 duration-150 font-body shadow-2xl pb-[calc(env(safe-area-inset-bottom,0px)+16px)]">
           <nav className="flex flex-col gap-1 text-sm uppercase tracking-widest font-semibold text-zinc-300">
             <button
               type="button"

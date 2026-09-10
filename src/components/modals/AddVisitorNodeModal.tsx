@@ -130,17 +130,17 @@ export const AddVisitorNodeModal: React.FC<AddVisitorNodeModalProps> = ({
       <div className="absolute inset-0 bg-[#090b10]/85 backdrop-blur-md" onClick={onClose} />
 
       <div
-        className="relative w-full max-w-lg rounded-t-3xl sm:rounded-2xl bg-[#0c0e14] border-t sm:border border-white/[0.14] shadow-2xl p-5 sm:p-6 z-10 font-body text-zinc-200 max-h-[92vh] overflow-y-auto pb-[calc(env(safe-area-inset-bottom,0px)+20px)] sm:pb-6 animate-in slide-in-from-bottom-3 sm:slide-in-from-bottom-0 duration-200"
+        className="relative w-full max-w-lg rounded-t-3xl sm:rounded-2xl bg-[#0c0e14] border-t sm:border border-white/[0.14] shadow-2xl p-4 sm:p-6 z-10 font-body text-zinc-200 max-h-[90dvh] overflow-y-auto overscroll-contain pb-[calc(env(safe-area-inset-bottom,0px)+20px)] sm:pb-6 animate-in slide-in-from-bottom-3 sm:slide-in-from-bottom-0 duration-200"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Mobile Pull Handle */}
-        <div className="sm:hidden w-10 h-1 rounded-full bg-white/20 mx-auto -mt-1 mb-4 shrink-0" />
+        <div className="sm:hidden w-10 h-1 rounded-full bg-white/20 mx-auto -mt-1 mb-3.5 shrink-0" />
 
         {/* Header reticle */}
         <div className="flex items-center justify-between border-b border-white/[0.08] pb-3 mb-4 sm:mb-5">
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
-            <span className="font-tech text-xs font-bold text-rose-400 uppercase tracking-widest">
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse shrink-0" />
+            <span className="font-tech text-[10px] sm:text-xs font-bold text-rose-400 uppercase tracking-wider sm:tracking-widest truncate">
               WORKSPACE SYNTHESIZER // ADD NODE
             </span>
           </div>
@@ -148,7 +148,7 @@ export const AddVisitorNodeModal: React.FC<AddVisitorNodeModalProps> = ({
             type="button"
             onClick={onClose}
             aria-label="Close add node modal"
-            className="w-10 h-10 sm:w-8 sm:h-8 flex items-center justify-center rounded-xl sm:rounded-lg text-zinc-400 hover:text-white hover:bg-white/[0.08] transition-colors cursor-pointer"
+            className="w-10 h-10 sm:w-8 sm:h-8 flex items-center justify-center rounded-xl sm:rounded-lg text-zinc-400 hover:text-white hover:bg-white/[0.08] transition-colors cursor-pointer shrink-0"
           >
             <Close className="w-4 h-4" />
           </button>

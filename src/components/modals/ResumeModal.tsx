@@ -123,7 +123,7 @@ export const ResumeModal: React.FC<ResumeModalProps> = ({ isOpen, onClose, nodes
       role="dialog"
       aria-modal="true"
       aria-label="Curriculum Vitae / Specification"
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 select-none font-body"
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 select-none font-body"
     >
       {/* Deep dark backdrop with subtle dots overlay */}
       <div
@@ -167,7 +167,7 @@ export const ResumeModal: React.FC<ResumeModalProps> = ({ isOpen, onClose, nodes
               : 'none',
           willChange: 'transform, opacity',
         }}
-        className="relative w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-2xl bg-[#0c0e14] border border-white/[0.14] shadow-[0_30px_90px_rgba(0,0,0,0.95),0_0_40px_rgba(225,29,72,0.12)] p-6 sm:p-8 text-zinc-200 z-10 resume-paper"
+        className="relative w-full max-w-3xl max-h-[88dvh] sm:max-h-[90vh] overflow-y-auto overscroll-contain rounded-2xl bg-[#0c0e14] border border-white/[0.14] shadow-[0_30px_90px_rgba(0,0,0,0.95),0_0_40px_rgba(225,29,72,0.12)] p-4 sm:p-8 text-zinc-200 z-10 resume-paper pb-[calc(env(safe-area-inset-bottom,0px)+24px)] sm:pb-8"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Top Crimson Laser Horizon Indicator */}
@@ -191,22 +191,23 @@ export const ResumeModal: React.FC<ResumeModalProps> = ({ isOpen, onClose, nodes
             transition:
               'opacity 260ms ease 40ms, transform 260ms cubic-bezier(0.16, 1, 0.3, 1) 40ms',
           }}
-          className="flex items-center justify-between pb-4 mb-6 border-b border-white/[0.08]"
+          className="flex items-center justify-between pb-3 sm:pb-4 mb-4 sm:mb-6 border-b border-white/[0.08] gap-2"
         >
-          <div className="flex items-center gap-2.5">
-            <span className="w-2 h-2 rounded-full bg-rose-500 shadow-[0_0_8px_#f43f5e] animate-pulse" />
-            <span className="text-xs font-body font-bold text-rose-400 tracking-[0.22em] uppercase">
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="w-2 h-2 rounded-full bg-rose-500 shadow-[0_0_8px_#f43f5e] animate-pulse shrink-0" />
+            <span className="text-[10px] sm:text-xs font-body font-bold text-rose-400 tracking-[0.16em] sm:tracking-[0.22em] uppercase truncate">
               Curriculum Vitae / Specification
             </span>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             <button
               type="button"
               onClick={handlePrint}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/[0.06] hover:bg-white/[0.12] active:scale-95 text-zinc-200 text-xs font-body font-semibold transition-all border border-white/[0.08] cursor-pointer"
+              aria-label="Print or export CV to PDF"
+              className="flex items-center gap-1 sm:gap-1.5 px-2.5 py-1.5 sm:px-3 sm:py-1.5 rounded-lg bg-white/[0.06] hover:bg-white/[0.12] active:scale-95 text-zinc-200 text-[11px] sm:text-xs font-body font-semibold transition-all border border-white/[0.08] cursor-pointer"
             >
               <Printer className="w-3.5 h-3.5 text-rose-400" />
-              <span>Print / PDF</span>
+              <span className="hidden min-[360px]:inline">Print / PDF</span>
             </button>
             <button
               type="button"
@@ -227,16 +228,16 @@ export const ResumeModal: React.FC<ResumeModalProps> = ({ isOpen, onClose, nodes
             transition:
               'opacity 280ms ease 80ms, transform 280ms cubic-bezier(0.16, 1, 0.3, 1) 80ms',
           }}
-          className="mb-6 pb-6 border-b border-white/[0.08]"
+          className="mb-5 sm:mb-6 pb-5 sm:pb-6 border-b border-white/[0.08]"
         >
-          <h2 className="font-display text-3xl sm:text-4xl text-white font-bold tracking-wide uppercase">
+          <h2 className="font-display text-2xl sm:text-4xl text-white font-bold tracking-tight uppercase leading-tight">
             {profileNode?.name}
           </h2>
-          <p className="font-body text-base text-rose-400 font-semibold mt-1">{profileNode?.role}</p>
-          <p className="font-body text-xs text-zinc-400 font-medium mt-1">
+          <p className="font-body text-sm sm:text-base text-rose-400 font-semibold mt-1">{profileNode?.role}</p>
+          <p className="font-body text-[11px] sm:text-xs text-zinc-400 font-medium mt-1 break-words">
             {profileNode?.location} • {profileNode?.email}
           </p>
-          <p className="font-body text-sm sm:text-base text-zinc-200 mt-3 max-w-2xl leading-relaxed">
+          <p className="font-body text-xs sm:text-base text-zinc-200 mt-2.5 sm:mt-3 max-w-2xl leading-relaxed">
             {profileNode?.bio}
           </p>
         </div>
@@ -249,23 +250,23 @@ export const ResumeModal: React.FC<ResumeModalProps> = ({ isOpen, onClose, nodes
             transition:
               'opacity 300ms ease 120ms, transform 300ms cubic-bezier(0.16, 1, 0.3, 1) 120ms',
           }}
-          className="mb-6"
+          className="mb-5 sm:mb-6"
         >
-          <div className="flex items-center gap-2 text-sm font-display text-white font-bold uppercase tracking-wider mb-3">
+          <div className="flex items-center gap-2 text-xs sm:text-sm font-display text-white font-bold uppercase tracking-wider mb-3">
             <BookOpen className="w-4 h-4 text-rose-400" />
             <span>Academic &amp; Theoretical Foundation</span>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
             {credNode.map((c) => (
               <div
                 key={c.id}
-                className="p-3.5 rounded-xl bg-white/[0.03] border border-white/[0.06] hover:border-white/[0.12] transition-colors"
+                className="p-3 sm:p-3.5 rounded-xl bg-white/[0.03] border border-white/[0.06] hover:border-white/[0.12] transition-colors"
               >
-                <div className="font-body text-sm font-semibold text-zinc-100">{c.title}</div>
-                <div className="font-body text-xs text-zinc-400 mt-0.5 font-medium">
+                <div className="font-body text-xs sm:text-sm font-semibold text-zinc-100">{c.title}</div>
+                <div className="font-body text-[11px] sm:text-xs text-zinc-400 mt-0.5 font-medium">
                   {c.issuer} • {c.issueDate}
                 </div>
-                <p className="font-body text-xs sm:text-[13px] text-zinc-300 mt-2 leading-relaxed">
+                <p className="font-body text-xs sm:text-[13px] text-zinc-300 mt-1.5 sm:mt-2 leading-relaxed">
                   {c.description}
                 </p>
               </div>
@@ -283,7 +284,7 @@ export const ResumeModal: React.FC<ResumeModalProps> = ({ isOpen, onClose, nodes
           }}
           className="mb-2"
         >
-          <div className="flex items-center gap-2 text-sm font-display text-white font-bold uppercase tracking-wider mb-3">
+          <div className="flex items-center gap-2 text-xs sm:text-sm font-display text-white font-bold uppercase tracking-wider mb-3">
             <Layers className="w-4 h-4 text-rose-400" />
             <span>Technical Capabilities</span>
           </div>
@@ -291,7 +292,7 @@ export const ResumeModal: React.FC<ResumeModalProps> = ({ isOpen, onClose, nodes
             {[...modelsSkills, ...systemsSkills].map((s) => (
               <span
                 key={s.name}
-                className="px-2.5 py-1 rounded-lg text-xs font-body font-semibold bg-white/[0.04] hover:bg-white/[0.08] text-zinc-200 border border-white/[0.08] hover:border-white/[0.16] transition-colors"
+                className="px-2.5 py-1 rounded-lg text-[11px] sm:text-xs font-body font-semibold bg-white/[0.04] hover:bg-white/[0.08] text-zinc-200 border border-white/[0.08] hover:border-white/[0.16] transition-colors"
               >
                 {s.name}
               </span>

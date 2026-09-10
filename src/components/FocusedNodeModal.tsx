@@ -332,7 +332,7 @@ export const FocusedNodeModal: React.FC<FocusedNodeModalProps> = ({
               : 'none',
           willChange: 'transform, opacity',
         }}
-        className="relative w-full max-w-4xl max-h-[92vh] sm:max-h-[90vh] flex flex-col rounded-t-[28px] sm:rounded-[26px] bg-[#0c0e14] border-t sm:border border-white/[0.14] shadow-[0_30px_90px_rgba(0,0,0,0.95),0_0_40px_rgba(225,29,72,0.12)] z-10 font-body overflow-hidden pb-[calc(env(safe-area-inset-bottom,0px)+8px)] sm:pb-0"
+        className="relative w-full max-w-4xl max-h-[90dvh] sm:max-h-[90vh] flex flex-col rounded-t-[28px] sm:rounded-[26px] bg-[#0c0e14] border-t sm:border border-white/[0.14] shadow-[0_30px_90px_rgba(0,0,0,0.95),0_0_40px_rgba(225,29,72,0.12)] z-10 font-body overflow-hidden pb-[calc(env(safe-area-inset-bottom,0px)+12px)] sm:pb-0"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Mobile Pull Handle */}
@@ -351,7 +351,7 @@ export const FocusedNodeModal: React.FC<FocusedNodeModalProps> = ({
         <div className="absolute bottom-3 right-3 w-2 h-2 border-b border-r border-rose-500/40 pointer-events-none" />
 
         {/* ═══════════ UNIFIED INSPECTION HEADER ═══════════ */}
-        <header className="shrink-0 px-6 sm:px-8 pt-6 pb-5 border-b border-white/[0.08] bg-white/[0.01]">
+        <header className="shrink-0 px-4 sm:px-8 pt-4 sm:pt-6 pb-3.5 sm:pb-5 border-b border-white/[0.08] bg-white/[0.01]">
           {/* Metadata Eyebrow Row */}
           <div
             style={{
@@ -359,11 +359,11 @@ export const FocusedNodeModal: React.FC<FocusedNodeModalProps> = ({
               transform: isContentVisible ? 'translateY(0)' : 'translateY(5px)',
               transition: 'opacity 260ms ease 40ms, transform 260ms cubic-bezier(0.16, 1, 0.3, 1) 40ms',
             }}
-            className="flex items-center justify-between gap-4 mb-3"
+            className="flex items-center justify-between gap-4 mb-2.5 sm:mb-3"
           >
             <div className="flex items-center gap-2.5 min-w-0">
               <span
-                className={`w-2 h-2 rounded-full ${
+                className={`w-2 h-2 rounded-full shrink-0 ${
                   status.pulse
                     ? 'bg-rose-500 shadow-[0_0_8px_#f43f5e] animate-pulse'
                     : 'bg-rose-500 shadow-[0_0_6px_#f43f5e]'
@@ -407,11 +407,11 @@ export const FocusedNodeModal: React.FC<FocusedNodeModalProps> = ({
             className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-2"
           >
             <div>
-              <h2 className="font-display text-2xl sm:text-3xl md:text-4xl text-white font-bold tracking-tight uppercase leading-none">
+              <h2 className="font-display text-xl sm:text-3xl md:text-4xl text-white font-bold tracking-tight uppercase leading-tight break-words">
                 {node.title}
               </h2>
               {node.subtitle && (
-                <p className="font-body text-xs sm:text-sm text-zinc-400 font-medium mt-1.5 tracking-wide">
+                <p className="font-body text-xs sm:text-sm text-zinc-400 font-medium mt-1 tracking-wide">
                   {node.subtitle}
                 </p>
               )}
@@ -435,7 +435,7 @@ export const FocusedNodeModal: React.FC<FocusedNodeModalProps> = ({
             transform: isContentVisible ? 'translateY(0)' : 'translateY(6px)',
             transition: 'opacity 300ms ease 130ms, transform 300ms cubic-bezier(0.16, 1, 0.3, 1) 130ms',
           }}
-          className="flex-1 overflow-y-auto px-6 sm:px-8 py-6 space-y-6"
+          className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-4 sm:px-8 py-4 sm:py-6 space-y-5 sm:space-y-6"
         >
           {/* -------------------------------------------------------------
               1. PROFILE NODE ARTIFACT VIEW

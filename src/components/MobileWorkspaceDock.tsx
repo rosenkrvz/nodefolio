@@ -32,9 +32,9 @@ export const MobileWorkspaceDock: React.FC<MobileWorkspaceDockProps> = ({
   return (
     <nav
       aria-label="Mobile node navigation and workspace controls"
-      className="fixed bottom-[calc(env(safe-area-inset-bottom,0px)+38px)] inset-x-0 z-30 pointer-events-auto flex justify-center px-3"
+      className="fixed bottom-[calc(env(safe-area-inset-bottom,0px)+34px)] inset-x-0 z-30 pointer-events-auto flex justify-center px-3"
     >
-      <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-[#0c0e14]/94 border border-white/15 backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.85)] max-w-sm w-full justify-between select-none">
+      <div className="flex items-center gap-1 sm:gap-1.5 p-1 rounded-2xl bg-[#0c0e14]/94 border border-white/15 backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.85)] max-w-sm w-full justify-between select-none">
         {/* Previous Node Button: 44px min touch target */}
         <button
           type="button"
@@ -59,11 +59,11 @@ export const MobileWorkspaceDock: React.FC<MobileWorkspaceDockProps> = ({
           }}
           title="Open research network node index"
           aria-label={`Open research node index. Currently at node ${indexStr}.`}
-          className="flex-1 h-11 min-h-[44px] px-2 flex items-center justify-center gap-1.5 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] active:bg-white/[0.18] border border-white/10 text-white transition-all cursor-pointer font-tech font-bold uppercase tracking-wider text-xs"
+          className="flex-1 h-11 min-h-[44px] px-1.5 sm:px-2 flex items-center justify-center gap-1 sm:gap-1.5 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] active:bg-white/[0.18] border border-white/10 text-white transition-all cursor-pointer font-tech font-bold uppercase tracking-wider text-[11px] sm:text-xs"
         >
           <Layers className="w-3.5 h-3.5 text-rose-400 shrink-0" />
-          <span className="text-zinc-300 text-[11px]">NODE</span>
-          <span className="text-rose-400 font-mono text-xs">{indexStr}</span>
+          <span className="text-zinc-300 text-[10px] sm:text-[11px] hidden min-[350px]:inline">NODE</span>
+          <span className="text-rose-400 font-mono text-[11px] sm:text-xs">{indexStr}</span>
         </button>
 
         {/* Next Node Button: 44px min touch target */}

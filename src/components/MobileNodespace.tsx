@@ -335,7 +335,7 @@ export const MobileNodespace: React.FC<MobileNodespaceProps> = ({
       aria-label="Mobile Focused Computational Node Navigator"
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
-      className="w-full h-full relative overflow-hidden select-none touch-pan-y bg-[#090b10] flex flex-col items-center justify-center pt-16 pb-28"
+      className="w-full h-full relative overflow-hidden select-none touch-pan-y bg-[#090b10] flex flex-col items-center justify-center pt-2 sm:pt-4 pb-24 sm:pb-28"
     >
       {/* Subtle Spatial Canvas Background Grid */}
       {gridVisible && (
@@ -440,85 +440,55 @@ export const MobileNodespace: React.FC<MobileNodespaceProps> = ({
         )}
       </svg>
 
-      {/* ═══════════ GHOST NEIGHBOR SILHOUETTES AT SCREEN EDGES ═══════════ */}
-      {/* Left Ghost Silhouette */}
-      {leftTarget && (
-        <div
-          onClick={() => navigateToNode(leftTarget.node.id, 'left', leftTarget.connection?.id)}
-          className="absolute -left-12 top-1/2 -translate-y-1/2 w-16 h-64 rounded-r-2xl border-r border-y border-white/[0.08] bg-[#0c0e14]/40 backdrop-blur-[2px] pointer-events-auto cursor-pointer hover:border-rose-500/40 transition-colors z-0 flex items-center justify-end pr-1 opacity-40 hover:opacity-80"
-          title={`Jump to ${leftTarget.node.title}`}
-          aria-label={`Jump to ${leftTarget.node.title}`}
-        >
-          <span className="[writing-mode:vertical-rl] rotate-180 text-[9px] font-tech text-zinc-400 uppercase tracking-widest truncate max-h-40">
-            {leftTarget.node.title}
-          </span>
-        </div>
-      )}
-
-      {/* Right Ghost Silhouette */}
-      {rightTarget && (
-        <div
-          onClick={() => navigateToNode(rightTarget.node.id, 'right', rightTarget.connection?.id)}
-          className="absolute -right-12 top-1/2 -translate-y-1/2 w-16 h-64 rounded-l-2xl border-l border-y border-white/[0.08] bg-[#0c0e14]/40 backdrop-blur-[2px] pointer-events-auto cursor-pointer hover:border-rose-500/40 transition-colors z-0 flex items-center justify-start pl-1 opacity-40 hover:opacity-80"
-          title={`Jump to ${rightTarget.node.title}`}
-          aria-label={`Jump to ${rightTarget.node.title}`}
-        >
-          <span className="[writing-mode:vertical-rl] text-[9px] font-tech text-zinc-400 uppercase tracking-widest truncate max-h-40">
-            {rightTarget.node.title}
-          </span>
-        </div>
-      )}
-
-      {/* ═══════════ DIRECTIONAL GRAPH NAVIGATION INDICATORS ═══════════ */}
-      {/* Top Directional Indicator */}
-      {topTarget && (
-        <div className="absolute top-18 inset-x-0 z-20 flex justify-center pointer-events-auto">
-          <button
-            type="button"
-            onClick={() => navigateToNode(topTarget.node.id, 'up', topTarget.connection?.id)}
-            aria-label={`Navigate up to ${topTarget.node.title}`}
-            className="group min-h-[44px] px-3.5 flex items-center gap-1.5 rounded-full bg-[#0c0e14]/90 border border-white/12 hover:border-rose-500/60 shadow-[0_4px_16px_rgba(0,0,0,0.6)] backdrop-blur-md transition-all cursor-pointer"
-          >
-            <span className="text-rose-400 font-mono text-xs group-hover:-translate-y-0.5 transition-transform">
-              &uarr;
-            </span>
-            <span className="text-[10px] sm:text-[11px] font-tech font-bold text-zinc-300 group-hover:text-white uppercase tracking-wider truncate max-w-[200px]">
-              {topTarget.node.title}
-            </span>
-            {topTarget.connection?.label && (
-              <span className="text-[9px] font-mono text-rose-400/80 hidden min-[360px]:inline">
-                [{topTarget.connection.label}]
-              </span>
-            )}
-          </button>
-        </div>
-      )}
-
       {/* Main Focus Stage Container */}
-      <div className="relative w-full flex-1 flex flex-col items-center justify-center px-4 max-w-lg z-10">
-        {/* Left Directional Quick Anchor (44px min touch area) */}
+      <div className="relative w-full flex-1 flex flex-col items-center justify-center px-1 sm:px-4 max-w-lg z-10 min-h-0">
+        {/* Top Directional Indicator (cleanly positioned in-flow above the card) */}
+        {topTarget && (
+          <div className="mb-2 shrink-0 z-20 flex justify-center pointer-events-auto">
+            <button
+              type="button"
+              onClick={() => navigateToNode(topTarget.node.id, 'up', topTarget.connection?.id)}
+              aria-label={`Navigate up to ${topTarget.node.title}`}
+              className="group min-h-[38px] px-3.5 flex items-center gap-1.5 rounded-full bg-[#0c0e14]/94 border border-white/12 hover:border-rose-500/60 shadow-[0_4px_16px_rgba(0,0,0,0.6)] backdrop-blur-md transition-all cursor-pointer"
+            >
+              <span className="text-rose-400 font-mono text-xs group-hover:-translate-y-0.5 transition-transform">
+                &uarr;
+              </span>
+              <span className="text-[10px] sm:text-[11px] font-tech font-bold text-zinc-300 group-hover:text-white uppercase tracking-wider truncate max-w-[170px] sm:max-w-[220px]">
+                {topTarget.node.title}
+              </span>
+              {topTarget.connection?.label && (
+                <span className="text-[9px] font-mono text-rose-400/80 hidden min-[360px]:inline">
+                  [{topTarget.connection.label}]
+                </span>
+              )}
+            </button>
+          </div>
+        )}
+
+        {/* Left Directional Quick Anchor (44px min touch area in dedicated gutter) */}
         {leftTarget && (
           <button
             type="button"
             onClick={() => navigateToNode(leftTarget.node.id, 'left', leftTarget.connection?.id)}
             aria-label={`Navigate to previous node: ${leftTarget.node.title}`}
-            className="group absolute -left-2 sm:-left-4 top-1/2 -translate-y-1/2 z-20 min-w-[44px] min-h-[44px] flex items-center justify-center p-1 cursor-pointer focus:outline-none"
+            className="group absolute -left-1 sm:-left-3 top-1/2 -translate-y-1/2 z-20 min-w-[44px] min-h-[44px] flex items-center justify-center p-1 cursor-pointer focus:outline-none"
           >
-            <div className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center rounded-full bg-[#0c0e14]/92 border border-white/12 group-hover:border-rose-500/70 group-active:scale-90 shadow-[0_4px_16px_rgba(0,0,0,0.7)] backdrop-blur-md transition-all">
+            <div className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center rounded-full bg-[#0c0e14]/94 border border-white/12 group-hover:border-rose-500/70 group-active:scale-90 shadow-[0_4px_16px_rgba(0,0,0,0.7)] backdrop-blur-md transition-all">
               <ChevronLeft className="w-4 h-4 text-zinc-300 group-hover:text-rose-400 group-hover:-translate-x-0.5 transition-all" />
             </div>
           </button>
         )}
 
-        {/* Right Directional Quick Anchor (44px min touch area) */}
+        {/* Right Directional Quick Anchor (44px min touch area in dedicated gutter) */}
         {rightTarget && (
           <button
             type="button"
             onClick={() => navigateToNode(rightTarget.node.id, 'right', rightTarget.connection?.id)}
             aria-label={`Navigate to next node: ${rightTarget.node.title || 'next node'}`}
-            className="group absolute -right-2 sm:-right-4 top-1/2 -translate-y-1/2 z-20 min-w-[44px] min-h-[44px] flex items-center justify-center p-1 cursor-pointer focus:outline-none"
+            className="group absolute -right-1 sm:-right-3 top-1/2 -translate-y-1/2 z-20 min-w-[44px] min-h-[44px] flex items-center justify-center p-1 cursor-pointer focus:outline-none"
           >
-            <div className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center rounded-full bg-[#0c0e14]/92 border border-white/12 group-hover:border-rose-500/70 group-active:scale-90 shadow-[0_4px_16px_rgba(0,0,0,0.7)] backdrop-blur-md transition-all">
+            <div className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center rounded-full bg-[#0c0e14]/94 border border-white/12 group-hover:border-rose-500/70 group-active:scale-90 shadow-[0_4px_16px_rgba(0,0,0,0.7)] backdrop-blur-md transition-all">
               <ChevronRight className="w-4 h-4 text-zinc-300 group-hover:text-rose-400 group-hover:translate-x-0.5 transition-all" />
             </div>
           </button>
@@ -532,7 +502,7 @@ export const MobileNodespace: React.FC<MobileNodespaceProps> = ({
               ? `${activeNode.accentColor}33`
               : 'rgba(255, 255, 255, 0.12)',
           }}
-          className={`w-[88vw] max-w-[420px] min-w-[280px] rounded-2xl bg-[#0b0d12]/95 border backdrop-blur-2xl shadow-[0_12px_48px_rgba(0,0,0,0.92)] font-body text-zinc-200 overflow-hidden transition-all duration-300 ease-out z-10 ${getTransformClasses()}`}
+          className={`w-[calc(100vw-72px)] max-w-[420px] min-w-[270px] max-h-[calc(100dvh-180px)] sm:max-h-[min(580px,calc(100dvh-180px))] flex flex-col rounded-2xl bg-[#0b0d12]/95 border backdrop-blur-2xl shadow-[0_12px_48px_rgba(0,0,0,0.92)] font-body text-zinc-200 overflow-hidden transition-all duration-300 ease-out z-10 ${getTransformClasses()}`}
         >
           {/* Card Top Horizon Laser Accent Line */}
           <div
@@ -602,7 +572,7 @@ export const MobileNodespace: React.FC<MobileNodespaceProps> = ({
           )}
 
           {/* ═══════════ RICH NODE INTERNAL BODY CONTENT ═══════════ */}
-          <div className="p-4 max-h-[52vh] overflow-y-auto">
+          <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-3.5 sm:p-4">
             {/* 1. Profile Node Content */}
             {activeNode.category === 'profile' && activeNode.profile && (
               <ProfileNodeContent
@@ -707,19 +677,19 @@ export const MobileNodespace: React.FC<MobileNodespaceProps> = ({
           </div>
         </article>
 
-        {/* Bottom Directional Indicator (if secondary connected node exists) */}
+        {/* Bottom Directional Indicator (positioned in flow below the card) */}
         {bottomTarget && (
-          <div className="absolute -bottom-10 inset-x-0 z-20 flex justify-center pointer-events-auto">
+          <div className="mt-2 shrink-0 z-20 flex justify-center pointer-events-auto">
             <button
               type="button"
               onClick={() => navigateToNode(bottomTarget.node.id, 'down', bottomTarget.connection?.id)}
               aria-label={`Navigate down to ${bottomTarget.node.title}`}
-              className="group min-h-[44px] px-3.5 flex items-center gap-1.5 rounded-full bg-[#0c0e14]/90 border border-white/12 hover:border-rose-500/60 shadow-[0_4px_16px_rgba(0,0,0,0.6)] backdrop-blur-md transition-all cursor-pointer"
+              className="group min-h-[38px] px-3.5 flex items-center gap-1.5 rounded-full bg-[#0c0e14]/94 border border-white/12 hover:border-rose-500/60 shadow-[0_4px_16px_rgba(0,0,0,0.6)] backdrop-blur-md transition-all cursor-pointer"
             >
               <span className="text-rose-400 font-mono text-xs group-hover:translate-y-0.5 transition-transform">
                 &darr;
               </span>
-              <span className="text-[10px] sm:text-[11px] font-tech font-bold text-zinc-300 group-hover:text-white uppercase tracking-wider truncate max-w-[200px]">
+              <span className="text-[10px] sm:text-[11px] font-tech font-bold text-zinc-300 group-hover:text-white uppercase tracking-wider truncate max-w-[170px] sm:max-w-[220px]">
                 {bottomTarget.node?.title || 'Node'}
               </span>
             </button>

@@ -496,7 +496,7 @@ export const ChronicleView: React.FC<ChronicleViewProps> = ({
               <div className="overflow-hidden mb-5">
                 <h1
                   style={{
-                    transform:
+                  transform:
                       reducedMotion || entryStage >= 2 ? 'translateY(0)' : 'translateY(100%)',
                     opacity: reducedMotion || entryStage >= 2 ? 1 : 0,
                     transition:
@@ -504,10 +504,10 @@ export const ChronicleView: React.FC<ChronicleViewProps> = ({
                   }}
                   className="leading-[0.9] select-none tracking-tight"
                 >
-                  <span className="block font-display text-5xl sm:text-7xl md:text-8xl font-black text-white tracking-[-0.03em] uppercase">
+                  <span className="block font-display text-4xl min-[360px]:text-5xl sm:text-7xl md:text-8xl font-black text-white tracking-[-0.03em] uppercase break-words">
                     COMPUTATIONAL
                   </span>
-                  <span className="block font-display text-5xl sm:text-7xl md:text-8xl font-light text-zinc-400/90 tracking-[-0.02em] uppercase mt-1">
+                  <span className="block font-display text-4xl min-[360px]:text-5xl sm:text-7xl md:text-8xl font-light text-zinc-400/90 tracking-[-0.02em] uppercase mt-1 break-words">
                     CHRONICLE
                   </span>
                 </h1>
@@ -532,7 +532,7 @@ export const ChronicleView: React.FC<ChronicleViewProps> = ({
                   transform: reducedMotion || entryStage >= 3 ? 'none' : 'translateY(12px)',
                   transition: 'opacity 0.6s ease-out 0.1s, transform 0.6s ease-out 0.1s',
                 }}
-                className="flex flex-wrap items-center gap-4 font-body"
+                className="flex flex-wrap items-center gap-3 sm:gap-4 font-body w-full sm:w-auto"
               >
                 <button
                   type="button"
@@ -540,7 +540,7 @@ export const ChronicleView: React.FC<ChronicleViewProps> = ({
                     playSound('click');
                     onBackToCanvas();
                   }}
-                  className="px-6 py-3.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-zinc-200 hover:text-white border border-white/[0.12] hover:border-white/[0.25] font-semibold text-xs sm:text-sm tracking-wider uppercase transition-all active:scale-95 cursor-pointer flex items-center gap-2 group"
+                  className="w-full min-[400px]:w-auto justify-center px-5 sm:px-6 py-3 sm:py-3.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-zinc-200 hover:text-white border border-white/[0.12] hover:border-white/[0.25] font-semibold text-xs sm:text-sm tracking-wider uppercase transition-all active:scale-95 cursor-pointer flex items-center gap-2 group"
                 >
                   <ArrowLeft className="w-4 h-4 text-rose-400 transition-transform group-hover:-translate-x-1" />
                   <span>BACK TO CANVAS</span>
@@ -549,7 +549,7 @@ export const ChronicleView: React.FC<ChronicleViewProps> = ({
                 <a
                   href="#chronicle-ledger"
                   onClick={() => playSound('secondaryClick')}
-                  className="px-6 py-3.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-semibold text-xs sm:text-sm tracking-wider uppercase transition-all shadow-[0_0_24px_rgba(244,63,94,0.35)] hover:shadow-[0_0_32px_rgba(244,63,94,0.55)] flex items-center gap-2 group active:scale-95 cursor-pointer"
+                  className="w-full min-[400px]:w-auto justify-center px-5 sm:px-6 py-3 sm:py-3.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-semibold text-xs sm:text-sm tracking-wider uppercase transition-all shadow-[0_0_24px_rgba(244,63,94,0.35)] hover:shadow-[0_0_32px_rgba(244,63,94,0.55)] flex items-center gap-2 group active:scale-95 cursor-pointer"
                 >
                   <span>EXPLORE CHRONICLE</span>
                   <ChevronDown className="w-4 h-4 transition-transform group-hover:translate-y-0.5" />
@@ -586,7 +586,7 @@ export const ChronicleView: React.FC<ChronicleViewProps> = ({
                 ))}
               </div>
 
-              <div className="p-3 rounded-lg bg-white/[0.02] border border-white/[0.06] text-right max-w-[280px]">
+              <div className="pt-4 border-t border-white/[0.06] max-w-[240px]">
                 <p className="font-tech text-[10px] text-zinc-400 uppercase tracking-widest leading-normal">
                   All mathematical diagrams and kernel schematics are verified against working computational codebases.
                 </p>
@@ -603,7 +603,7 @@ export const ChronicleView: React.FC<ChronicleViewProps> = ({
           opacity: entryStage >= 4 ? 1 : 0,
           transition: 'opacity 0.6s ease-out',
         }}
-        className="sticky top-16 z-30 shadow-2xl"
+        className="sticky top-[calc(3.5rem+env(safe-area-inset-top,0px))] sm:top-16 z-30 shadow-2xl"
       >
         <ChronicleTimelineAxis
           phases={timelinePhases}
@@ -652,7 +652,7 @@ export const ChronicleView: React.FC<ChronicleViewProps> = ({
 
 
       {/* ═══════════ CLOSING COLOPHON & ARCHIVE STAMP ═══════════ */}
-      <footer className="relative z-10 max-w-7xl mx-auto px-4 sm:px-8 md:px-12 mt-8 pb-24">
+      <footer className="relative z-10 max-w-7xl mx-auto px-4 sm:px-8 md:px-12 mt-8 pb-[calc(env(safe-area-inset-bottom,0px)+32px)] sm:pb-24">
         <div className="pt-10 border-t border-white/[0.08] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
           <div className="flex items-center gap-3 font-body text-xs tracking-[0.25em] uppercase text-zinc-400">
             <BrandLogo variant="icon" size={14} className="text-rose-400 shrink-0" />

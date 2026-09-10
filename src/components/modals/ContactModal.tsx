@@ -55,12 +55,12 @@ export const ContactModal: React.FC<ContactModalProps> = ({ isOpen, onClose, ema
       role="dialog"
       aria-modal="true"
       aria-label="Direct Communication & Inquiry"
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/85 backdrop-blur-xl animate-in fade-in duration-200 select-none font-body"
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/85 backdrop-blur-xl animate-in fade-in duration-200 select-none font-body"
       onClick={onClose}
     >
       {/* Outer Glow Halo */}
       <div
-        className="relative w-full max-w-xl rounded-3xl bg-[#14171d]/95 backdrop-blur-2xl border border-white/10 shadow-[0_25px_60px_rgba(0,0,0,0.9),0_0_50px_rgba(225,29,72,0.15)] p-6 sm:p-8 text-zinc-200"
+        className="relative w-full max-w-xl max-h-[90dvh] overflow-y-auto overscroll-contain rounded-2xl sm:rounded-3xl bg-[#14171d]/95 backdrop-blur-2xl border border-white/10 shadow-[0_25px_60px_rgba(0,0,0,0.9),0_0_50px_rgba(225,29,72,0.15)] p-4 sm:p-8 text-zinc-200 pb-[calc(env(safe-area-inset-bottom,0px)+20px)] sm:pb-8"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Close Button */}
@@ -68,20 +68,20 @@ export const ContactModal: React.FC<ContactModalProps> = ({ isOpen, onClose, ema
           type="button"
           onClick={onClose}
           aria-label="Close contact dialog"
-          className="absolute top-5 right-5 p-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.1] text-zinc-400 hover:text-white border border-white/10 transition-colors cursor-pointer"
+          className="absolute top-4 sm:top-5 right-4 sm:right-5 p-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.1] text-zinc-400 hover:text-white border border-white/10 transition-colors cursor-pointer"
         >
           <Close className="w-5 h-5" />
         </button>
 
         {/* Protocol Header */}
-        <div className="mb-6">
+        <div className="mb-5 sm:mb-6 pr-8 sm:pr-0">
           <div className="flex items-center gap-2 mb-2">
-            <span className="w-2 h-2 rounded-full bg-rose-500 shadow-[0_0_8px_#f43f5e] animate-pulse" />
-            <span className="text-[11px] font-body font-bold text-rose-400 tracking-[0.25em] uppercase">
+            <span className="w-2 h-2 rounded-full bg-rose-500 shadow-[0_0_8px_#f43f5e] animate-pulse shrink-0" />
+            <span className="text-[10px] sm:text-[11px] font-body font-bold text-rose-400 tracking-[0.25em] uppercase">
               COMMUNICATION PROTOCOL &bull; GATEWAY 01
             </span>
           </div>
-          <h3 className="font-display text-2xl sm:text-3xl text-white font-bold tracking-wide uppercase">
+          <h3 className="font-display text-xl sm:text-3xl text-white font-bold tracking-wide uppercase leading-tight">
             Direct Inquiries
           </h3>
           <p className="font-body text-xs sm:text-sm text-zinc-300 mt-1 leading-relaxed max-w-md">
@@ -90,17 +90,17 @@ export const ContactModal: React.FC<ContactModalProps> = ({ isOpen, onClose, ema
         </div>
 
         {/* Tactile Coordinates Card */}
-        <div className="p-4 rounded-2xl bg-black/50 border border-white/[0.08] shadow-inner mb-6 space-y-2">
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="w-10 h-10 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 flex items-center justify-center shrink-0 shadow-sm">
+        <div className="p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-black/50 border border-white/[0.08] shadow-inner mb-5 sm:mb-6 space-y-2.5">
+          <div className="flex flex-col min-[400px]:flex-row min-[400px]:items-center justify-between gap-2.5">
+            <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 flex items-center justify-center shrink-0 shadow-sm">
                 <Mail className="w-4 h-4" />
               </div>
               <div className="min-w-0">
-                <div className="text-[10px] font-body font-semibold text-zinc-400 uppercase tracking-widest">
+                <div className="text-[9px] sm:text-[10px] font-body font-semibold text-zinc-400 uppercase tracking-widest">
                   Direct Email Coordinate
                 </div>
-                <div className="text-sm sm:text-[15px] font-body font-bold text-white tracking-wide truncate mt-0.5">
+                <div className="text-xs sm:text-[15px] font-body font-bold text-white tracking-wide truncate mt-0.5">
                   {email}
                 </div>
               </div>
@@ -109,7 +109,7 @@ export const ContactModal: React.FC<ContactModalProps> = ({ isOpen, onClose, ema
             <button
               type="button"
               onClick={handleCopyEmail}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/[0.06] hover:bg-white/[0.12] text-white text-xs font-body font-semibold transition-all shrink-0 border border-white/[0.1] active:scale-95 cursor-pointer"
+              className="flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/[0.06] hover:bg-white/[0.12] text-white text-xs font-body font-semibold transition-all shrink-0 border border-white/[0.1] active:scale-95 cursor-pointer self-start min-[400px]:self-auto"
             >
               {copied ? (
                 <>
@@ -125,12 +125,12 @@ export const ContactModal: React.FC<ContactModalProps> = ({ isOpen, onClose, ema
             </button>
           </div>
 
-          <div className="flex items-center justify-between text-[11px] font-body text-zinc-400 pt-2 border-t border-white/[0.05]">
+          <div className="flex flex-wrap items-center justify-between gap-1 text-[10px] sm:text-[11px] font-body text-zinc-400 pt-2 border-t border-white/[0.05]">
             <span className="flex items-center gap-1 text-zinc-400">
-              <ShieldCheck className="w-3 h-3 text-rose-400" />
+              <ShieldCheck className="w-3 h-3 text-rose-400 shrink-0" />
               <span>Direct encrypted route</span>
             </span>
-            <span className="text-zinc-400">Typical turnaround &bull; 24h</span>
+            <span className="text-zinc-500">Typical turnaround &bull; 24h</span>
           </div>
         </div>
 
