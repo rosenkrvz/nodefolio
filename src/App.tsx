@@ -1390,8 +1390,8 @@ export default function App() {
     const availH = Math.max(300, vh - 140);
     const maxFitScale = Math.min(availW / groupW, availH / groupH);
 
-    // Zoom scale: 0.72 for Research tab (zoomed in & readable to the naked eye), 0.60 for Network tab
-    const defaultScale = preset === 'project' ? 0.72 : (preset === 'network' ? 0.60 : Math.min(0.48, Number((maxFitScale * 0.94).toFixed(2))));
+    // Zoom scale: 0.62 for Research tab (matching canonical framing), 0.60 for Network tab
+    const defaultScale = preset === 'project' ? 0.62 : (preset === 'network' ? 0.60 : Math.min(0.48, Number((maxFitScale * 0.94).toFixed(2))));
     const targetDesired = desiredScale !== undefined ? desiredScale : defaultScale;
     const minScaleFloor = preset === 'project' ? 0.62 : 0.32;
     const targetScale = Math.min(targetDesired, Math.max(minScaleFloor, Number(maxFitScale.toFixed(2))));
@@ -1409,8 +1409,8 @@ export default function App() {
       const desiredRow1ScreenY = Math.max(90, Math.min(130, Math.round(vh * 0.13)));
       y = Math.round(desiredRow1ScreenY - 380 * targetScale);
     } else if (preset === 'project') {
-      // Subtle upward optical compensation for research 2x2 grid
-      y -= Math.round(vh * 0.035);
+      // Optical compensation for research cluster
+      y -= Math.round(vh * 0.02);
     }
 
     setTransform({ x, y, scale: targetScale });
@@ -1764,7 +1764,8 @@ export default function App() {
         onToggleSimulate={() => setIsSimulating(!isSimulating)}
         onResetGraph={handleResetGraph}
         onOpenContact={() => setIsContactOpen(true)}
-        onOpenResume={() => setIsResumeOpen(true)}
+        onOpenResume={handleOpenResumeModal}
+        isResumeOpen={isResumeOpen}
         onFocusClock={() => handleFocusNode('node-clock')}
         activeView={activeView}
         onToggleView={setActiveView}
@@ -2080,10 +2081,7 @@ export default function App() {
 
       <ResumeModal
         isOpen={isResumeOpen}
-        onClose={() => {
-          playSound('close');
-          setIsResumeOpen(false);
-        }}
+        onClose={() => setIsResumeOpen(false)}
         nodes={nodes}
       />
 

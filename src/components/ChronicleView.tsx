@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { ArrowLeft, ArrowUpRight, ChevronDown } from './icons';
-import { LabNoteSection } from './LabNoteSection';
 import { playSound } from '../lib/sound';
 import { BrandLogo } from './ui/BrandLogo';
 import { ChronicleMilestoneArtifact } from './chronicle/ChronicleArtifacts';
@@ -651,19 +650,6 @@ export const ChronicleView: React.FC<ChronicleViewProps> = ({
         </div>
       </main>
 
-      {/* ═══════════ LAB NOTE SPECIMEN SECTION ═══════════ */}
-      <section className="relative z-10 max-w-7xl mx-auto px-4 sm:px-8 md:px-12 py-12 border-t border-white/[0.08]">
-        <div className="mb-8 flex items-center justify-between">
-          <div className="flex items-center gap-2.5 font-tech text-xs tracking-[0.25em] text-zinc-400 uppercase">
-            <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
-            <span className="font-semibold text-zinc-200">LAB NOTE SPECIMEN ARCHIVE</span>
-          </div>
-          <span className="font-tech text-[10px] text-zinc-400 uppercase tracking-widest">
-            SPECIMEN // 001
-          </span>
-        </div>
-        <LabNoteSection />
-      </section>
 
       {/* ═══════════ CLOSING COLOPHON & ARCHIVE STAMP ═══════════ */}
       <footer className="relative z-10 max-w-7xl mx-auto px-4 sm:px-8 md:px-12 mt-8 pb-24">

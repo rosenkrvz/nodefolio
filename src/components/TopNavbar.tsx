@@ -11,6 +11,7 @@ interface TopNavbarProps {
   onResetGraph: () => void;
   onOpenContact: () => void;
   onOpenResume?: () => void;
+  isResumeOpen?: boolean;
   onFocusClock?: () => void;
   activeView: 'canvas' | 'list' | 'timeline';
   onToggleView: (view: 'canvas' | 'list' | 'timeline') => void;
@@ -26,6 +27,7 @@ const TopNavbarComponent: React.FC<TopNavbarProps> = ({
   onResetGraph,
   onOpenContact,
   onOpenResume,
+  isResumeOpen = false,
   onFocusClock,
   activeView,
   onToggleView,
@@ -157,11 +159,16 @@ const TopNavbarComponent: React.FC<TopNavbarProps> = ({
             {onOpenResume && (
               <button
                 type="button"
+                id="nav-cv-btn"
                 onClick={() => {
                   playSound('nav');
                   onOpenResume();
                 }}
-                className="px-3 py-1.5 rounded-lg hover:text-white hover:bg-white/[0.04] transition-colors cursor-pointer"
+                className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
+                  isResumeOpen
+                    ? 'text-white bg-white/[0.08]'
+                    : 'hover:text-white hover:bg-white/[0.04]'
+                }`}
               >
                 CV
               </button>
@@ -304,7 +311,9 @@ const TopNavbarComponent: React.FC<TopNavbarProps> = ({
                   setIsMobileMenuOpen(false);
                   onOpenResume();
                 }}
-                className="px-4 py-3 rounded-xl text-left hover:bg-white/[0.06] hover:text-white transition-colors cursor-pointer"
+                className={`px-4 py-3 rounded-xl text-left transition-colors cursor-pointer ${
+                  isResumeOpen ? 'bg-white/10 text-white font-bold' : 'hover:bg-white/[0.06] hover:text-white'
+                }`}
               >
                 CV / Resume
               </button>

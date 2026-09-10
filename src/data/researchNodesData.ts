@@ -1,19 +1,23 @@
 import { NodeData, Connection } from '../types';
 
 export const RESEARCH_CORE_COORDINATES: Record<string, { x: number; y: number }> = {
-  // Row 1 (Engineering & Systems Architecture)
-  'node-models': { x: 480, y: 280 },
-  'node-systems': { x: 960, y: 280 },
+  // Identity Anchor: Upper-left tier
+  'node-profile': { x: 140, y: 140 },
 
-  // Row 2 (Theory & Interactive Artifact)
-  'node-profile': { x: 480, y: 740 },
-  'node-project': { x: 960, y: 740 },
+  // Generative Architectures: Center-left, lower tier
+  'node-models': { x: 560, y: 480 },
+
+  // Neural Systems & Data: Center-right, lower tier (aligned with models)
+  'node-systems': { x: 1020, y: 480 },
+
+  // Latent Graph Visualizer: Right column, vertically spanning
+  'node-project': { x: 1480, y: 260 },
 };
 
 export const EXPANDED_RESEARCH_NODES: NodeData[] = [];
 
 export const RESEARCH_CONNECTIONS: Connection[] = [
-  // Top Stream: Models -> Systems (Horizontal Left-to-Right)
+  // 1. Horizontal Pipeline: Models -> Systems
   {
     id: 'conn-models-systems',
     fromNodeId: 'node-models',
@@ -24,7 +28,7 @@ export const RESEARCH_CONNECTIONS: Connection[] = [
     label: 'tensor.pipeline',
     animated: true,
   },
-  // Left Vertical Stream: Profile -> Models (Vertical Bottom-to-Top)
+  // 2. Downward Stream: Profile -> Models
   {
     id: 'conn-prof-models',
     fromNodeId: 'node-profile',
@@ -35,24 +39,24 @@ export const RESEARCH_CONNECTIONS: Connection[] = [
     label: 'representation.manifold',
     animated: true,
   },
-  // Bottom Horizontal Stream: Profile -> Interactive Visualizer (Horizontal Left-to-Right)
+  // 3. Transverse Stream: Profile -> Interactive Visualizer (Upper path)
   {
     id: 'conn-profile-project',
     fromNodeId: 'node-profile',
     fromPinId: 'pin-prof-project',
     toNodeId: 'node-project',
-    toPinId: 'pin-in-project',
+    toPinId: 'pin-in-project-systems',
     color: '#f43f5e',
     label: 'latent.projection',
     animated: true,
   },
-  // Right Vertical Stream: Systems -> Interactive Visualizer Convergence (Vertical Top-to-Bottom)
+  // 4. Convergence Stream: Systems -> Interactive Visualizer
   {
     id: 'conn-systems-project',
     fromNodeId: 'node-systems',
     fromPinId: 'pin-systems-project',
     toNodeId: 'node-project',
-    toPinId: 'pin-in-project-systems',
+    toPinId: 'pin-in-project',
     color: '#e11d48',
     label: 'inference.graph',
     animated: true,

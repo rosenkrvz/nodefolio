@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { ArrowRight, ChevronDown, Compass } from './icons';
 import { playSound } from '../lib/sound';
 import { BrandLogo } from './ui/BrandLogo';
@@ -16,9 +16,51 @@ const EditorialCoverComponent: React.FC<EditorialCoverProps> = ({
   onExplore,
   onViewWork,
 }) => {
-  const prefersReducedMotion =
-    typeof window !== 'undefined' &&
-    window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const [entryStage, setEntryStage] = useState(0);
+  const [isEntered, setIsEntered] = useState(false);
+  const [reducedMotion, setReducedMotion] = useState(false);
+
+  // Check prefers-reduced-motion
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    setReducedMotion(mediaQuery.matches);
+
+    const handler = (e: MediaQueryListEvent) => setReducedMotion(e.matches);
+    mediaQuery.addEventListener('change', handler);
+    return () => mediaQuery.removeEventListener('change', handler);
+  }, []);
+
+  // Coordinated Page Entry Reveal Sequence matching the Chronicle page (~800ms total)
+  useEffect(() => {
+    // If reduced motion is requested or user is already scrolled / on another tab, settle immediately
+    if (reducedMotion || scrollProgress > 0.02 || activeNavTab !== 'home') {
+      setEntryStage(4);
+      setIsEntered(true);
+      return;
+    }
+
+    const t1 = setTimeout(() => setEntryStage(1), 50);   // Top Eyebrow & Brand Anchor
+    const t2 = setTimeout(() => setEntryStage(2), 200);  // Title Mask Reveal + Category Pillar
+    const t3 = setTimeout(() => setEntryStage(3), 450);  // Statement, Description, Buttons, Specs
+    const t4 = setTimeout(() => setEntryStage(4), 750);  // Bottom Scroll Cue
+    const t5 = setTimeout(() => setIsEntered(true), 900); // Fully settled, clear transitions for scroll
+
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(t3);
+      clearTimeout(t4);
+      clearTimeout(t5);
+    };
+  }, [reducedMotion]);
+
+  // Immediately settle entry animation if user initiates scroll or tab change before timers complete
+  useEffect(() => {
+    if ((scrollProgress > 0.02 || activeNavTab !== 'home') && !isEntered) {
+      setEntryStage(4);
+      setIsEntered(true);
+    }
+  }, [scrollProgress, activeNavTab, isEntered]);
 
   // Multi-Phase Continuous Hermite Transition Choreography:
   // Step 1 [0.00 - 0.12]: Grounded Stability & Bottom Cue Retraction
@@ -52,7 +94,7 @@ const EditorialCoverComponent: React.FC<EditorialCoverProps> = ({
   let scale = 1;
   let translateYPercent = 0;
 
-  if (prefersReducedMotion) {
+  if (reducedMotion) {
     opacity = scrollProgress < 0.5 ? 1 : Math.max(0, 1 - (scrollProgress - 0.5) / 0.3);
     blur = 0;
     scale = 1;
@@ -137,8 +179,9 @@ const EditorialCoverComponent: React.FC<EditorialCoverProps> = ({
       {/* Top Editorial Eyebrow & Issue Stamp (Parallax Sub-layer) */}
       <div
         style={{
-          transform: `translate3d(0, ${eyebrowTranslateY.toFixed(1)}px, 0)`,
-          opacity: eyebrowOpacity,
+          transform: `translate3d(0, ${(eyebrowTranslateY + (isEntered || entryStage >= 1 ? 0 : -12)).toFixed(1)}px, 0)`,
+          opacity: isEntered ? eyebrowOpacity : (entryStage >= 1 ? eyebrowOpacity : 0),
+          transition: isEntered ? 'none' : 'opacity 0.6s ease-out, transform 0.6s ease-out',
         }}
         className="relative z-10 w-full max-w-7xl mx-auto flex items-center justify-between text-xs font-body text-zinc-400 uppercase tracking-[0.25em]"
       >
@@ -165,7 +208,14 @@ const EditorialCoverComponent: React.FC<EditorialCoverProps> = ({
         {/* Left Column: Bold Architectural Name & Personal Editorial Statement */}
         <div className="lg:col-span-8 flex flex-col items-start max-w-2xl">
           {/* Professional Category Pillar */}
-          <div className="font-body text-xs sm:text-sm font-semibold tracking-[0.35em] uppercase text-rose-400 mb-4 flex items-center gap-2">
+          <div
+            style={{
+              opacity: isEntered || entryStage >= 2 ? 1 : 0,
+              transform: isEntered || entryStage >= 2 ? 'none' : 'translateY(-6px)',
+              transition: isEntered ? 'none' : 'opacity 0.5s ease-out, transform 0.5s ease-out',
+            }}
+            className="font-body text-xs sm:text-sm font-semibold tracking-[0.35em] uppercase text-rose-400 mb-4 flex items-center gap-2"
+          >
             <span>AI</span>
             <span className="text-zinc-600">/</span>
             <span>DATA</span>
@@ -173,28 +223,61 @@ const EditorialCoverComponent: React.FC<EditorialCoverProps> = ({
             <span>SYSTEMS</span>
           </div>
 
-          {/* Primary Satoshi Display Title */}
-          <h1 className="leading-[0.92] mb-6 select-none tracking-tight">
-            <span className="block font-display text-5xl sm:text-7xl md:text-8xl font-black text-white tracking-[-0.03em] uppercase">
-              SHUBHAM
-            </span>
-            <span className="block font-display text-5xl sm:text-7xl md:text-8xl font-light text-zinc-400/90 tracking-[-0.02em] uppercase mt-1">
-              SHARMA
-            </span>
-          </h1>
+          {/* Directionally Masked Monumental Display Title */}
+          <div className="overflow-hidden mb-6">
+            <h1
+              style={{
+                transform:
+                  isEntered || entryStage >= 2 ? 'translateY(0)' : 'translateY(100%)',
+                opacity: isEntered || entryStage >= 2 ? 1 : 0,
+                transition: isEntered
+                  ? 'none'
+                  : 'transform 0.8s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.8s ease-out',
+              }}
+              className="leading-[0.92] select-none tracking-tight"
+            >
+              <span className="block font-display text-5xl sm:text-7xl md:text-8xl font-black text-white tracking-[-0.03em] uppercase">
+                SHUBHAM
+              </span>
+              <span className="block font-display text-5xl sm:text-7xl md:text-8xl font-light text-zinc-400/90 tracking-[-0.02em] uppercase mt-1">
+                SHARMA
+              </span>
+            </h1>
+          </div>
 
           {/* Core Personal Statement */}
-          <div className="font-display text-xl sm:text-2xl md:text-3xl text-zinc-100 font-semibold tracking-tight leading-snug mb-4">
+          <div
+            style={{
+              opacity: isEntered || entryStage >= 3 ? 1 : 0,
+              transform: isEntered || entryStage >= 3 ? 'none' : 'translateY(16px)',
+              transition: isEntered ? 'none' : 'opacity 0.7s ease-out, transform 0.7s ease-out',
+            }}
+            className="font-display text-xl sm:text-2xl md:text-3xl text-zinc-100 font-semibold tracking-tight leading-snug mb-4"
+          >
             I build things to understand how they work.
           </div>
 
           {/* Human-written Supporting Copy */}
-          <p className="font-body text-base sm:text-lg text-zinc-300 font-normal leading-relaxed mb-8 max-w-xl">
+          <p
+            style={{
+              opacity: isEntered || entryStage >= 3 ? 1 : 0,
+              transform: isEntered || entryStage >= 3 ? 'none' : 'translateY(16px)',
+              transition: isEntered ? 'none' : 'opacity 0.7s ease-out 0.05s, transform 0.7s ease-out 0.05s',
+            }}
+            className="font-body text-base sm:text-lg text-zinc-300 font-normal leading-relaxed mb-8 max-w-xl"
+          >
             Exploring mathematics, data, machine learning and software through experiments, systems and things I can actually build.
           </p>
 
           {/* Editorial Actions */}
-          <div className="flex flex-wrap items-center gap-4 font-body">
+          <div
+            style={{
+              opacity: isEntered || entryStage >= 3 ? 1 : 0,
+              transform: isEntered || entryStage >= 3 ? 'none' : 'translateY(12px)',
+              transition: isEntered ? 'none' : 'opacity 0.6s ease-out 0.1s, transform 0.6s ease-out 0.1s',
+            }}
+            className="flex flex-wrap items-center gap-4 font-body"
+          >
             <button
               type="button"
               onClick={() => {
@@ -224,8 +307,9 @@ const EditorialCoverComponent: React.FC<EditorialCoverProps> = ({
         {/* Right Column: Negative Space & Editorial Spec Column (Parallax Sub-layer) */}
         <div
           style={{
-            transform: `translate3d(0, ${specsTranslateY.toFixed(1)}px, 0)`,
-            opacity: specsOpacity,
+            transform: `translate3d(0, ${(specsTranslateY + (isEntered || entryStage >= 3 ? 0 : 16)).toFixed(1)}px, 0)`,
+            opacity: isEntered ? specsOpacity : (entryStage >= 3 ? specsOpacity : 0),
+            transition: isEntered ? 'none' : 'opacity 0.7s ease-out 0.08s, transform 0.7s ease-out 0.08s',
           }}
           className="hidden lg:flex lg:col-span-4 flex-col items-end text-right space-y-8 pl-8"
         >
@@ -261,9 +345,10 @@ const EditorialCoverComponent: React.FC<EditorialCoverProps> = ({
       {/* Bottom Editorial Footer & Scroll Instruction (Step 1 Micro-Hint Fade) */}
       <div
         style={{
-          opacity: bottomHintOpacity,
-          transform: `translate3d(0, ${bottomHintTranslateY.toFixed(1)}px, 0)`,
+          opacity: isEntered ? bottomHintOpacity : (entryStage >= 4 ? bottomHintOpacity : 0),
+          transform: `translate3d(0, ${(bottomHintTranslateY + (isEntered || entryStage >= 4 ? 0 : 10)).toFixed(1)}px, 0)`,
           pointerEvents: bottomHintOpacity < 0.1 ? 'none' : 'auto',
+          transition: isEntered ? 'none' : 'opacity 0.6s ease-out, transform 0.6s ease-out',
         }}
         className="relative z-10 w-full max-w-7xl mx-auto flex items-center justify-between pt-6 border-t border-white/[0.08] text-xs font-body text-zinc-500"
       >
