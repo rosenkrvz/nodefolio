@@ -97,7 +97,13 @@ const GraphNodeComponent: React.FC<GraphNodeProps> = ({
   const [isOriginExpanding, setIsOriginExpanding] = useState(false);
   const isDraggingRef = useRef(false);
   const isResizingRef = useRef(false);
+  const isMouseDownRef = useRef(false);
+  const hasActuallyDraggedRef = useRef(false);
+  const dragStartClientPosRef = useRef({ x: 0, y: 0 });
   const dragStartPosRef = useRef({ x: 0, y: 0 });
+  const touchStartPosRef = useRef({ x: 0, y: 0 });
+  const touchHasDraggedRef = useRef(false);
+  const lastTouchTapRef = useRef<{ time: number; x: number; y: number }>({ time: 0, x: 0, y: 0 });
   const nodeRef = useRef<HTMLDivElement>(null);
   const cardElementId = useId();
 
@@ -112,6 +118,46 @@ const GraphNodeComponent: React.FC<GraphNodeProps> = ({
     setTimeout(() => setIsOriginExpanding(false), 450);
     onOpenFocusedNode?.(node);
   }, [node, onOpenFocusedNode]);
+
+  const handleDoubleClick = useCallback((e: React.MouseEvent) => {
+    // Avoid opening modal if clicking interactive controls or resize handles
+    const target = e.target as HTMLElement;
+    if (
+      ['BUTTON', 'INPUT', 'SELECT', 'A', 'TEXTAREA'].includes(target.tagName) ||
+      target.closest('button') ||
+      target.closest('a') ||
+      target.closest('input') ||
+      target.closest('select') ||
+      target.closest('.port-pin') ||
+      target.closest('.resize-handle') ||
+      target.closest('[data-resize-handle]') ||
+      target.closest('.group\\/side-resize') ||
+      target.closest('.group\\/corner-resize')
+    ) {
+      return;
+    }
+
+    // Exclude deliberate resize sides and corners geometrically
+    if (nodeRef.current) {
+      const rect = nodeRef.current.getBoundingClientRect();
+      const clickX = e.clientX - rect.left;
+      const clickY = e.clientY - rect.top;
+      const fromRight = rect.width - clickX;
+      const fromBottom = rect.height - clickY;
+
+      // Bottom-right corner resize zone: within 28px of right and bottom edges
+      const isBottomRightCorner = fromRight <= 28 && fromBottom <= 28;
+      // Right side resize zone: within 16px of right edge
+      const isRightSide = fromRight <= 16;
+
+      if (isBottomRightCorner || isRightSide) {
+        return;
+      }
+    }
+
+    e.stopPropagation();
+    handleOpenFocus(e);
+  }, [handleOpenFocus]);
 
   // Deliberate Side / Corner Resize Mouse Handler
   const handleResizeMouseDown = (e: React.MouseEvent, direction: 'right' | 'corner') => {
@@ -169,7 +215,7 @@ const GraphNodeComponent: React.FC<GraphNodeProps> = ({
     window.addEventListener('touchend', handleTouchEnd);
   };
 
-  // Mouse drag handler
+  // Mouse drag handler with threshold to preserve clean double-click gestures
   const handleMouseDown = (e: React.MouseEvent) => {
     if (e.button !== 0) return;
 
@@ -180,20 +226,40 @@ const GraphNodeComponent: React.FC<GraphNodeProps> = ({
       target.closest('button') ||
       target.closest('a') ||
       target.closest('.port-pin') ||
-      target.closest('.resize-handle')
+      target.closest('.resize-handle') ||
+      target.closest('[data-resize-handle]') ||
+      target.closest('.group\\/side-resize') ||
+      target.closest('.group\\/corner-resize')
     ) {
       return;
     }
 
     e.stopPropagation();
-    isDraggingRef.current = true;
-    setIsDragging(true);
-    onDragStateChange?.(node.id, true);
+    isMouseDownRef.current = true;
+    hasActuallyDraggedRef.current = false;
+    dragStartClientPosRef.current = { x: e.clientX, y: e.clientY };
     dragStartPosRef.current = { x: e.clientX, y: e.clientY };
     onSelectNode?.(node.id);
 
     const handleMouseMove = (moveEvent: MouseEvent) => {
-      if (!isDraggingRef.current) return;
+      if (!isMouseDownRef.current) return;
+
+      const clientDx = moveEvent.clientX - dragStartClientPosRef.current.x;
+      const clientDy = moveEvent.clientY - dragStartClientPosRef.current.y;
+
+      // Only engage drag if movement exceeds threshold (prevents micro-movements on double-click from dragging)
+      if (!hasActuallyDraggedRef.current) {
+        if (Math.hypot(clientDx, clientDy) > 4) {
+          hasActuallyDraggedRef.current = true;
+          isDraggingRef.current = true;
+          setIsDragging(true);
+          onDragStateChange?.(node.id, true);
+          dragStartPosRef.current = { x: moveEvent.clientX, y: moveEvent.clientY };
+        } else {
+          return;
+        }
+      }
+
       const s = scaleRef.current || 1;
       const dx = (moveEvent.clientX - dragStartPosRef.current.x) / s;
       const dy = (moveEvent.clientY - dragStartPosRef.current.y) / s;
@@ -204,9 +270,12 @@ const GraphNodeComponent: React.FC<GraphNodeProps> = ({
     };
 
     const handleMouseUp = () => {
-      isDraggingRef.current = false;
-      setIsDragging(false);
-      onDragStateChange?.(node.id, false);
+      isMouseDownRef.current = false;
+      if (hasActuallyDraggedRef.current) {
+        isDraggingRef.current = false;
+        setIsDragging(false);
+        onDragStateChange?.(node.id, false);
+      }
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
     };
@@ -215,7 +284,7 @@ const GraphNodeComponent: React.FC<GraphNodeProps> = ({
     window.addEventListener('mouseup', handleMouseUp);
   };
 
-  // Touch drag support for mobile / tablets
+  // Touch drag & double-tap support for mobile / tablets
   const handleTouchStart = (e: React.TouchEvent) => {
     if (e.touches.length !== 1) return;
     const target = e.target as HTMLElement;
@@ -224,25 +293,43 @@ const GraphNodeComponent: React.FC<GraphNodeProps> = ({
       target.closest('button') ||
       target.closest('a') ||
       target.closest('.port-pin') ||
-      target.closest('.resize-handle')
+      target.closest('.resize-handle') ||
+      target.closest('[data-resize-handle]') ||
+      target.closest('.group\\/side-resize') ||
+      target.closest('.group\\/corner-resize')
     ) {
       return;
     }
 
     const touch = e.touches[0];
-    isDraggingRef.current = true;
-    setIsDragging(true);
-    onDragStateChange?.(node.id, true);
+    touchStartPosRef.current = { x: touch.clientX, y: touch.clientY };
     dragStartPosRef.current = { x: touch.clientX, y: touch.clientY };
+    touchHasDraggedRef.current = false;
     onSelectNode?.(node.id);
 
     const handleTouchMove = (moveEvent: TouchEvent) => {
-      if (!isDraggingRef.current || moveEvent.touches.length !== 1) return;
-      // Prevent browser default page scrolling while dragging node
+      if (moveEvent.touches.length !== 1) return;
+      const t = moveEvent.touches[0];
+      const dist = Math.hypot(
+        t.clientX - touchStartPosRef.current.x,
+        t.clientY - touchStartPosRef.current.y
+      );
+
+      if (!touchHasDraggedRef.current) {
+        if (dist > 6) {
+          touchHasDraggedRef.current = true;
+          isDraggingRef.current = true;
+          setIsDragging(true);
+          onDragStateChange?.(node.id, true);
+          dragStartPosRef.current = { x: t.clientX, y: t.clientY };
+        } else {
+          return;
+        }
+      }
+
       if (moveEvent.cancelable) {
         moveEvent.preventDefault();
       }
-      const t = moveEvent.touches[0];
       const s = scaleRef.current || 1;
       const dx = (t.clientX - dragStartPosRef.current.x) / s;
       const dy = (t.clientY - dragStartPosRef.current.y) / s;
@@ -252,10 +339,51 @@ const GraphNodeComponent: React.FC<GraphNodeProps> = ({
       }
     };
 
-    const handleTouchEnd = () => {
-      isDraggingRef.current = false;
-      setIsDragging(false);
-      onDragStateChange?.(node.id, false);
+    const handleTouchEnd = (endEvent: TouchEvent) => {
+      if (touchHasDraggedRef.current) {
+        isDraggingRef.current = false;
+        setIsDragging(false);
+        onDragStateChange?.(node.id, false);
+      } else {
+        // Detect intentional double tap on touchscreen
+        const touchEnd = endEvent.changedTouches[0];
+        if (touchEnd) {
+          // Check if touch target is a resize handle
+          const targetEl = document.elementFromPoint(touchEnd.clientX, touchEnd.clientY);
+          if (
+            targetEl?.closest('.resize-handle') ||
+            targetEl?.closest('[data-resize-handle]') ||
+            targetEl?.closest('.group\\/side-resize') ||
+            targetEl?.closest('.group\\/corner-resize')
+          ) {
+            return;
+          }
+
+          if (nodeRef.current) {
+            const rect = nodeRef.current.getBoundingClientRect();
+            const touchX = touchEnd.clientX - rect.left;
+            const touchY = touchEnd.clientY - rect.top;
+            const fromRight = rect.width - touchX;
+            const fromBottom = rect.height - touchY;
+            if ((fromRight <= 28 && fromBottom <= 28) || fromRight <= 16) {
+              return;
+            }
+          }
+
+          const now = Date.now();
+          const dt = now - lastTouchTapRef.current.time;
+          const dist = Math.hypot(
+            touchEnd.clientX - lastTouchTapRef.current.x,
+            touchEnd.clientY - lastTouchTapRef.current.y
+          );
+          if (dt > 0 && dt < 320 && dist < 25) {
+            handleOpenFocus();
+            lastTouchTapRef.current = { time: 0, x: 0, y: 0 };
+          } else {
+            lastTouchTapRef.current = { time: now, x: touchEnd.clientX, y: touchEnd.clientY };
+          }
+        }
+      }
       window.removeEventListener('touchmove', handleTouchMove);
       window.removeEventListener('touchend', handleTouchEnd);
     };
@@ -273,6 +401,8 @@ const GraphNodeComponent: React.FC<GraphNodeProps> = ({
       id={`graph-node-${node.id}`}
       onMouseDown={handleMouseDown}
       onTouchStart={handleTouchStart}
+      onDoubleClick={handleDoubleClick}
+      title="Double-click to open detailed artifact"
       style={{
         transform: `translate(${node.x}px, ${node.y}px)`,
         width: `${node.width}px`,
@@ -294,6 +424,7 @@ const GraphNodeComponent: React.FC<GraphNodeProps> = ({
     >
       {/* Node Container Card with Dark Neumorphic Aesthetic */}
       <div
+        onDoubleClick={handleDoubleClick}
         style={{
           transition: isDragging ? 'none' : undefined,
         }}
@@ -315,7 +446,7 @@ const GraphNodeComponent: React.FC<GraphNodeProps> = ({
         <div
           onMouseDown={handleMouseDown}
           onTouchStart={handleTouchStart}
-          onDoubleClick={() => handleOpenFocus()}
+          onDoubleClick={handleDoubleClick}
           className={`flex items-center justify-between px-4 py-3 ${
             node.shape === 'capsule'
               ? 'rounded-t-[36px]'
@@ -527,8 +658,13 @@ const GraphNodeComponent: React.FC<GraphNodeProps> = ({
             <div
               onMouseDown={(e) => handleResizeMouseDown(e, 'right')}
               onTouchStart={(e) => handleResizeTouchStart(e, 'right')}
+              onDoubleClick={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+              }}
+              data-resize-handle="side"
               title="Drag side to resize node width"
-              className="absolute -right-2 top-4 bottom-4 w-4 z-30 cursor-ew-resize flex items-center justify-center group/side-resize"
+              className="resize-handle resize-handle-side absolute -right-2 top-4 bottom-4 w-4 z-30 cursor-ew-resize flex items-center justify-center group/side-resize"
             >
               {/* Subtle hover hairline indicator */}
               <div className="w-[3px] h-12 rounded-full bg-white/20 group-hover/side-resize:bg-rose-500/80 group-hover/side-resize:shadow-[0_0_8px_#f43f5e] transition-all duration-150" />
@@ -562,8 +698,13 @@ const GraphNodeComponent: React.FC<GraphNodeProps> = ({
             <div
               onMouseDown={(e) => handleResizeMouseDown(e, 'corner')}
               onTouchStart={(e) => handleResizeTouchStart(e, 'corner')}
+              onDoubleClick={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+              }}
+              data-resize-handle="corner"
               title="Drag corner to resize node square"
-              className="absolute -bottom-2 -right-2 w-7 h-7 z-30 cursor-nwse-resize flex items-center justify-center group/corner-resize"
+              className="resize-handle resize-handle-corner absolute -bottom-2 -right-2 w-7 h-7 z-30 cursor-nwse-resize flex items-center justify-center group/corner-resize"
             >
               {/* Standard OS Diagonal Window Resize Arrow: ⤡ */}
               <div

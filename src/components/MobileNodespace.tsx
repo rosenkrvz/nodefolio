@@ -258,6 +258,51 @@ export const MobileNodespace: React.FC<MobileNodespaceProps> = ({
   // ════════════════ TOUCH SWIPE GESTURE SUPPORT ════════════════
   const touchStartRef = useRef<{ x: number; y: number; time: number }>({ x: 0, y: 0, time: 0 });
   const isSwipingRef = useRef<boolean>(false);
+  const lastCardTapRef = useRef<{ time: number; x: number; y: number }>({ time: 0, x: 0, y: 0 });
+
+  const handleCardDoubleClick = useCallback((e: React.MouseEvent) => {
+    const target = e.target as HTMLElement;
+    if (
+      ['BUTTON', 'INPUT', 'SELECT', 'A', 'TEXTAREA'].includes(target.tagName) ||
+      target.closest('button') ||
+      target.closest('a') ||
+      target.closest('input') ||
+      target.closest('.port-pin')
+    ) {
+      return;
+    }
+    playSound('open');
+    onOpenFocusedNode(activeNode);
+  }, [activeNode, onOpenFocusedNode]);
+
+  const handleCardTouchEnd = useCallback((e: React.TouchEvent) => {
+    const target = e.target as HTMLElement;
+    if (
+      ['BUTTON', 'INPUT', 'SELECT', 'A', 'TEXTAREA'].includes(target.tagName) ||
+      target.closest('button') ||
+      target.closest('a') ||
+      target.closest('input') ||
+      target.closest('.port-pin')
+    ) {
+      return;
+    }
+    if (e.changedTouches && e.changedTouches.length === 1) {
+      const touch = e.changedTouches[0];
+      const now = Date.now();
+      const dt = now - lastCardTapRef.current.time;
+      const dist = Math.hypot(
+        touch.clientX - lastCardTapRef.current.x,
+        touch.clientY - lastCardTapRef.current.y
+      );
+      if (dt > 0 && dt < 320 && dist < 25) {
+        playSound('open');
+        onOpenFocusedNode(activeNode);
+        lastCardTapRef.current = { time: 0, x: 0, y: 0 };
+      } else {
+        lastCardTapRef.current = { time: now, x: touch.clientX, y: touch.clientY };
+      }
+    }
+  }, [activeNode, onOpenFocusedNode]);
 
   const handleTouchStart = (e: React.TouchEvent) => {
     const target = e.target as HTMLElement;
@@ -496,13 +541,17 @@ export const MobileNodespace: React.FC<MobileNodespaceProps> = ({
 
         {/* ═══════════ THE PRIMARY FOCUSED NODE CARD ═══════════ */}
         <article
-          aria-label={`Focused computational research node: ${activeNode.title}`}
+          id={`graph-node-${activeNode.id}`}
+          aria-label={`Focused computational research node: ${activeNode.title}. Double-click to open.`}
+          title="Double-click to open detailed artifact"
+          onDoubleClick={handleCardDoubleClick}
+          onTouchEnd={handleCardTouchEnd}
           style={{
             borderColor: activeNode.accentColor
               ? `${activeNode.accentColor}33`
               : 'rgba(255, 255, 255, 0.12)',
           }}
-          className={`w-[calc(100vw-72px)] max-w-[420px] min-w-[270px] max-h-[calc(100dvh-180px)] sm:max-h-[min(580px,calc(100dvh-180px))] flex flex-col rounded-2xl bg-[#0b0d12]/95 border backdrop-blur-2xl shadow-[0_12px_48px_rgba(0,0,0,0.92)] font-body text-zinc-200 overflow-hidden transition-all duration-300 ease-out z-10 ${getTransformClasses()}`}
+          className={`w-[calc(100vw-72px)] max-w-[420px] min-w-[270px] max-h-[calc(100dvh-180px)] sm:max-h-[min(580px,calc(100dvh-180px))] flex flex-col rounded-2xl bg-[#0b0d12]/95 border backdrop-blur-2xl shadow-[0_12px_48px_rgba(0,0,0,0.92)] font-body text-zinc-200 overflow-hidden transition-all duration-300 ease-out z-10 cursor-pointer ${getTransformClasses()}`}
         >
           {/* Card Top Horizon Laser Accent Line */}
           <div
@@ -515,7 +564,10 @@ export const MobileNodespace: React.FC<MobileNodespaceProps> = ({
           />
 
           {/* Node Header Row */}
-          <header className="px-4 py-3.5 border-b border-white/[0.08] bg-white/[0.02] flex items-center justify-between gap-2.5">
+          <header
+            onDoubleClick={handleCardDoubleClick}
+            className="px-4 py-3.5 border-b border-white/[0.08] bg-white/[0.02] flex items-center justify-between gap-2.5 cursor-pointer"
+          >
             <div className="flex items-center gap-2.5 min-w-0">
               {/* Category Icon Badge */}
               <div className="w-7 h-7 rounded-lg bg-white/[0.06] border border-white/10 flex items-center justify-center shrink-0">
