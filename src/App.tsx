@@ -97,7 +97,7 @@ const loadSavedNodeDimensions = (): Record<string, { width: number; x?: number }
           if (typeof w === 'number' && isFinite(w) && !isNaN(w) && w >= 220 && w <= 700) {
             valid[id] = {
               width: Math.round(w),
-              x: typeof x === 'number' && isFinite(x) && !isNaN(x) && x >= 50 && x <= 4200 ? Math.round(x) : undefined,
+              x: typeof x === 'number' && isFinite(x) && !isNaN(x) && x >= -20000 && x <= 20000 ? Math.round(x) : undefined,
             };
           }
         }
@@ -935,9 +935,12 @@ export default function App() {
           const nextNodes = prevNodes.map((n) => {
             const d = deltas[n.id];
             if (!d || (d.dx === 0 && d.dy === 0)) return n;
+            const rawX = n.x + d.dx;
+            const rawY = n.y + d.dy;
+            if (!isFinite(rawX) || isNaN(rawX) || !isFinite(rawY) || isNaN(rawY)) return n;
             hasChanges = true;
-            const nextX = Math.round(Math.max(50, Math.min(4200, n.x + d.dx)));
-            const nextY = Math.round(Math.max(50, Math.min(4200, n.y + d.dy)));
+            const nextX = Math.round(Math.max(-20000, Math.min(20000, rawX)));
+            const nextY = Math.round(Math.max(-20000, Math.min(20000, rawY)));
             return { ...n, x: nextX, y: nextY };
           });
           return hasChanges ? nextNodes : prevNodes;
@@ -964,7 +967,7 @@ export default function App() {
             hasChanges = true;
             const updated = { ...n, width: Math.round(w) };
             if (typeof r.x === 'number' && isFinite(r.x) && !isNaN(r.x)) {
-              updated.x = Math.max(50, Math.min(4200 - updated.width, Math.round(r.x)));
+              updated.x = Math.max(-20000, Math.min(20000 - updated.width, Math.round(r.x)));
             }
             return updated;
           });

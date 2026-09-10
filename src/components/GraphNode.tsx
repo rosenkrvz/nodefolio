@@ -188,7 +188,7 @@ const GraphNodeComponent: React.FC<GraphNodeProps> = ({
     if (isClock) {
       const nextW = node.width < 270 ? 320 : node.width < 340 ? 360 : 240;
       const deltaW = nextW - node.width;
-      const nextX = Math.max(50, Math.min(4200 - nextW, Math.round(node.x - deltaW / 2)));
+      const nextX = Math.max(-20000, Math.min(20000 - nextW, Math.round(node.x - deltaW / 2)));
       onNodeResizeRef.current?.(node.id, nextW, nextX);
       onNodePinchEndRef.current?.(node.id, nextW, nextX);
       return;
@@ -196,7 +196,7 @@ const GraphNodeComponent: React.FC<GraphNodeProps> = ({
     // S (300) -> M (420) -> L (580) -> S (300)
     const nextWidth = node.width < 360 ? 430 : node.width < 500 ? 580 : 300;
     const deltaW = nextWidth - node.width;
-    const nextX = Math.max(50, Math.min(4200 - nextWidth, Math.round(node.x - deltaW / 2)));
+    const nextX = Math.max(-20000, Math.min(20000 - nextWidth, Math.round(node.x - deltaW / 2)));
     onNodeResizeRef.current?.(node.id, nextWidth, nextX);
     onNodePinchEndRef.current?.(node.id, nextWidth, nextX);
   }, [node.id, node.width, node.x, isClock]);
@@ -232,7 +232,7 @@ const GraphNodeComponent: React.FC<GraphNodeProps> = ({
     // Center-anchored spatial scaling: preserve visual center of the node
     const deltaWidth = newWidth - pinchStartWidthRef.current;
     let newX = Math.round(pinchStartXRef.current - deltaWidth / 2);
-    newX = Math.max(50, Math.min(4200 - newWidth, newX));
+    newX = Math.max(-20000, Math.min(20000 - newWidth, newX));
 
     setPinchLiveWidth(newWidth);
     onNodeResizeRef.current?.(node.id, newWidth, newX);
