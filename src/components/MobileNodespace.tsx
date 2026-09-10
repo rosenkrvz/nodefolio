@@ -30,6 +30,8 @@ import {
   Compass,
   Cpu,
   FileText,
+  ChevronLeft,
+  ChevronRight,
 } from './icons';
 
 interface MobileNodespaceProps {
@@ -499,16 +501,11 @@ export const MobileNodespace: React.FC<MobileNodespaceProps> = ({
           <button
             type="button"
             onClick={() => navigateToNode(leftTarget.node.id, 'left', leftTarget.connection?.id)}
-            aria-label={`Navigate left to ${leftTarget.node.title}`}
-            className="group absolute -left-1 sm:-left-3 top-1/2 -translate-y-1/2 z-20 min-w-[44px] min-h-[44px] flex items-center justify-start p-1 cursor-pointer focus:outline-none"
+            aria-label={`Navigate to previous node: ${leftTarget.node.title}`}
+            className="group absolute -left-2 sm:-left-4 top-1/2 -translate-y-1/2 z-20 min-w-[44px] min-h-[44px] flex items-center justify-center p-1 cursor-pointer focus:outline-none"
           >
-            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#0c0e14]/92 border border-white/12 group-hover:border-rose-500/70 group-active:scale-95 shadow-[0_4px_16px_rgba(0,0,0,0.7)] backdrop-blur-md transition-all">
-              <span className="text-rose-400 font-mono text-xs group-hover:-translate-x-0.5 transition-transform">
-                &larr;
-              </span>
-              <span className="text-[10px] font-tech font-bold text-zinc-300 group-hover:text-white uppercase tracking-wider truncate max-w-[90px] sm:max-w-[120px] hidden min-[360px]:inline">
-                {leftTarget.node.title ? leftTarget.node.title.split(' ')[0] : 'Node'}
-              </span>
+            <div className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center rounded-full bg-[#0c0e14]/92 border border-white/12 group-hover:border-rose-500/70 group-active:scale-90 shadow-[0_4px_16px_rgba(0,0,0,0.7)] backdrop-blur-md transition-all">
+              <ChevronLeft className="w-4 h-4 text-zinc-300 group-hover:text-rose-400 group-hover:-translate-x-0.5 transition-all" />
             </div>
           </button>
         )}
@@ -518,16 +515,11 @@ export const MobileNodespace: React.FC<MobileNodespaceProps> = ({
           <button
             type="button"
             onClick={() => navigateToNode(rightTarget.node.id, 'right', rightTarget.connection?.id)}
-            aria-label={`Navigate right to ${rightTarget.node.title || 'next node'}`}
-            className="group absolute -right-1 sm:-right-3 top-1/2 -translate-y-1/2 z-20 min-w-[44px] min-h-[44px] flex items-center justify-end p-1 cursor-pointer focus:outline-none"
+            aria-label={`Navigate to next node: ${rightTarget.node.title || 'next node'}`}
+            className="group absolute -right-2 sm:-right-4 top-1/2 -translate-y-1/2 z-20 min-w-[44px] min-h-[44px] flex items-center justify-center p-1 cursor-pointer focus:outline-none"
           >
-            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#0c0e14]/92 border border-white/12 group-hover:border-rose-500/70 group-active:scale-95 shadow-[0_4px_16px_rgba(0,0,0,0.7)] backdrop-blur-md transition-all">
-              <span className="text-[10px] font-tech font-bold text-zinc-300 group-hover:text-white uppercase tracking-wider truncate max-w-[90px] sm:max-w-[120px] hidden min-[360px]:inline">
-                {rightTarget.node.title ? rightTarget.node.title.split(' ')[0] : 'Node'}
-              </span>
-              <span className="text-rose-400 font-mono text-xs group-hover:translate-x-0.5 transition-transform">
-                &rarr;
-              </span>
+            <div className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center rounded-full bg-[#0c0e14]/92 border border-white/12 group-hover:border-rose-500/70 group-active:scale-90 shadow-[0_4px_16px_rgba(0,0,0,0.7)] backdrop-blur-md transition-all">
+              <ChevronRight className="w-4 h-4 text-zinc-300 group-hover:text-rose-400 group-hover:translate-x-0.5 transition-all" />
             </div>
           </button>
         )}
