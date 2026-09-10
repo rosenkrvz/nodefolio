@@ -12,7 +12,10 @@ export interface ChronicleMilestone {
   category: string;
   title: string;
   thesis: string;
-  description: string;
+  context: string;
+  experiment: string;
+  observation: string;
+  keyLearnings: string;
   tags: string[];
   status: 'active' | 'verified' | 'deployed' | 'foundation';
   statusLabel: string;
@@ -33,17 +36,19 @@ const MILESTONES: ChronicleMilestone[] = [
     phase: 'PHASE 05',
     category: 'GENERATIVE ARCHITECTURES & LATENT DYNAMICS',
     title: 'High-Dimensional Latent Manifold Traversal & Geodesics',
-    thesis: 'Investigating Riemannian metric geometry and geodesic trajectory interpolation across score-based diffusion latent representations.',
-    description:
-      'Exploring how diffusion latent representations can be structured as continuous Riemannian manifolds rather than flat Euclidean spaces. Developing interactive WebGL projections to visually and computationally verify interpolation smoothness, curvature consistency, and perceptual drift.',
-    tags: ['PyTorch', 'Vector Field ODEs', 'Riemannian Manifolds', 'Score Matching', 'WebGL Projection'],
+    thesis: 'Investigating Riemannian metric geometry and geodesic trajectory interpolation across continuous diffusion latent representations.',
+    context: 'High-dimensional latent spaces in generative models are often treated as flat Euclidean geometries, which ignores the distortion induced by deep non-linear decoder networks.',
+    experiment: 'Built an interactive WebGL projection workspace to simulate spherical and Riemannian geodesic paths across 512-dimensional latent spaces, evaluating interpolation smoothness against linear Euclidean baselines.',
+    observation: 'Linear Euclidean interpolation frequently traverses low-probability sparse regions, causing perceptual distortion. Curvature-aware spherical and geodesic interpolations maintain semantic fidelity across trajectories.',
+    keyLearnings: 'Connected differential geometry and score matching vector fields to practical visualization tools for high-dimensional neural representations.',
+    tags: ['PyTorch', 'Vector Fields', 'Riemannian Manifolds', 'Score Matching', 'WebGL Projection'],
     status: 'active',
-    statusLabel: 'ACTIVE INVESTIGATION',
+    statusLabel: 'ACTIVE STUDY',
     linkedNodeId: 'node-project',
     metrics: [
       { label: 'Topology', value: 'Non-Euclidean' },
-      { label: 'Compute', value: 'CUDA / WebGL' },
-      { label: 'State', value: 'Benchmarking' },
+      { label: 'Compute', value: 'WebGL / Canvas' },
+      { label: 'Status', value: 'Interactive' },
     ],
   },
   {
@@ -54,18 +59,20 @@ const MILESTONES: ChronicleMilestone[] = [
     subTopic: 'KV-Cache Dynamics',
     phase: 'PHASE 04',
     category: 'ATTENTION MECHANISMS & COMPUTE KERNELS',
-    title: 'Self-Attention Kernel Optimization & KV-Cache Dynamics',
-    thesis: 'Dissecting memory-bandwidth bottlenecks in transformer inference through tiled matrix algebra and cache eviction strategies.',
-    description:
-      'Constructed custom FlashAttention-inspired tiled GPU kernels to analyze memory hierarchy access patterns during sequence scaling. Evaluated KV-cache compression and dynamic eviction policies to reduce peak VRAM allocation without sacrificing attention entropy.',
-    tags: ['Triton', 'CUDA', 'PyTorch', 'FlashAttention', 'Memory Hierarchy', 'KV Cache'],
+    title: 'Self-Attention Memory Hierarchy & KV-Cache Dynamics',
+    thesis: 'Dissecting memory-bandwidth bottlenecks in transformer inference through tiled matrix algebra and cache management experiments.',
+    context: 'Transformer sequence scaling is constrained by memory bandwidth rather than pure computational capacity due to repeated round-trips between GPU global memory (HBM) and on-chip SRAM.',
+    experiment: 'Implemented tiled matrix multiplication and simplified FlashAttention-style forward passes in PyTorch and Triton to profile latency and memory traffic during long-context evaluation.',
+    observation: 'Fusing online softmax computation into the outer tiled loop eliminates the need to materialize the quadratic N x N attention matrix in GPU global memory, drastically reducing memory IO overhead.',
+    keyLearnings: 'Modern deep learning algorithms must be designed with explicit awareness of hardware memory hierarchies; mathematical formulation and physical execution are inseparable.',
+    tags: ['PyTorch', 'Triton', 'FlashAttention', 'Memory Hierarchy', 'KV Cache', 'Tiled Matrix'],
     status: 'verified',
-    statusLabel: 'VERIFIED EXPERIMENT',
+    statusLabel: 'VERIFIED BENCHMARK',
     linkedNodeId: 'node-models',
     metrics: [
-      { label: 'Throughput', value: 'IO-Aware' },
-      { label: 'Kernels', value: 'Tiled SRAM' },
-      { label: 'Artifact', value: 'Code Published' },
+      { label: 'Bottleneck', value: 'Memory IO' },
+      { label: 'Tiling', value: 'On-Chip SRAM' },
+      { label: 'Status', value: 'Benchmarked' },
     ],
   },
   {
@@ -77,17 +84,19 @@ const MILESTONES: ChronicleMilestone[] = [
     phase: 'PHASE 03',
     category: 'REPRESENTATION LEARNING & EMBEDDING GEOMETRY',
     title: 'Hyperspherical Uniformity & Contrastive Representation Spaces',
-    thesis: 'Empirical study of alignment and uniformity in multi-modal contrastive formulations under hard-negative mining.',
-    description:
-      'Investigated embedding collapse and dimensional shrinkage in self-supervised representation models. Implemented InfoNCE loss variants with adaptive temperature scaling to enforce hyperspherical uniformity across heterogeneous data distributions.',
-    tags: ['Metric Spaces', 'Contrastive Learning', 'Hyperspherical Uniformity', 'InfoNCE', 'Latent Clusters'],
+    thesis: 'Empirical study of alignment and uniformity properties in multi-modal contrastive formulations under temperature scaling.',
+    context: 'Self-supervised representation models risk representation collapse and dimensional shrinkage, where embeddings collapse along low-dimensional subspaces instead of utilizing full hypersphere capacity.',
+    experiment: 'Evaluated InfoNCE loss formulations across synthetic and image embedding benchmarks, monitoring hyperspherical uniformity and singular value decay under varying temperatures.',
+    observation: 'Low temperature hyperparameters aggressively separate negative samples to enforce uniformity but increase gradient variance; adaptive temperature schedules yield smoother cluster separation without collapse.',
+    keyLearnings: 'Balancing positive pair alignment with uniform negative distribution across the unit hypersphere is fundamental for robust embedding spaces.',
+    tags: ['Metric Spaces', 'Contrastive Learning', 'Hyperspherical Uniformity', 'InfoNCE', 'Embeddings'],
     status: 'verified',
-    statusLabel: 'RESEARCH COMPLETE',
+    statusLabel: 'STUDY COMPLETE',
     linkedNodeId: 'node-models',
     metrics: [
       { label: 'Loss Metric', value: 'InfoNCE' },
-      { label: 'Space', value: 'Hypersphere' },
-      { label: 'Empirical', value: 'Complete' },
+      { label: 'Geometry', value: 'Unit Sphere' },
+      { label: 'Status', value: 'Completed' },
     ],
   },
   {
@@ -99,17 +108,19 @@ const MILESTONES: ChronicleMilestone[] = [
     phase: 'PHASE 02',
     category: 'MATHEMATICAL & PROBABILISTIC FOUNDATIONS',
     title: 'Convex Optimization, Probability & Statistical Machine Learning',
-    thesis: 'Rigorous theoretical coursework and algorithmic problem-solving across linear algebra, multivariate calculus, and statistical inference.',
-    description:
-      'Comprehensive study of convex optimization (Lagrangian duality, KKT conditions, subgradient descent, proximal operators) and probabilistic inference (expectation-maximization, Markov random fields, variational bounds). Dedicated to understanding ML from core mathematical axioms.',
-    tags: ['Linear Algebra', 'Convex Optimization', 'Probability Theory', 'Bayesian Inference', 'Measure Theory'],
+    thesis: 'Rigorous academic coursework and foundational study across linear algebra, multivariate calculus, and statistical inference.',
+    context: 'Deep learning abstractions often obscure the underlying mathematical principles that govern gradient convergence, regularization, and probabilistic uncertainty.',
+    experiment: 'Completed formal derivations and numerical implementations of convex optimization methods (Lagrangian duality, KKT conditions, proximal operators) and probabilistic inference (EM algorithm, Bayesian bounds).',
+    observation: 'Locally quadratic approximations of loss surfaces explain why adaptive optimizers (Adam, RMSProp) stabilize training in ill-conditioned valleys where standard SGD oscillates.',
+    keyLearnings: 'A thorough mathematical foundation in linear algebra and multivariable optimization provides the essential tools to evaluate and implement complex machine learning literature.',
+    tags: ['Linear Algebra', 'Convex Optimization', 'Probability Theory', 'Bayesian Inference', 'Multivariate'],
     status: 'foundation',
     statusLabel: 'FORMAL RIGOR',
     linkedNodeId: 'node-credentials',
     metrics: [
-      { label: 'Domain', value: 'Statistical Theory' },
-      { label: 'Focus', value: 'Convex / Duality' },
-      { label: 'Foundation', value: 'Academic' },
+      { label: 'Domain', value: 'Optimization' },
+      { label: 'Method', value: 'KKT Duality' },
+      { label: 'Status', value: 'Coursework' },
     ],
   },
   {
@@ -121,17 +132,19 @@ const MILESTONES: ChronicleMilestone[] = [
     phase: 'PHASE 01',
     category: 'SYSTEMS ARCHITECTURE & AUTOGRAD ENGINE',
     title: 'First Principles: Computational Graphs & Reverse-Mode Autodiff',
-    thesis: 'Building an automatic differentiation engine and backward tape from scratch to ground intuitive mechanics of backpropagation.',
-    description:
-      'Constructed a lightweight scalar and tensor autograd engine in pure Python/C++. Built topological DAG sorting, reverse-mode gradient accumulation, and operator overloads to demystify neural network optimization from foundational graph theory.',
+    thesis: 'Building an automatic differentiation engine and backward execution tape from scratch to ground intuitive mechanics of backpropagation.',
+    context: 'Relying exclusively on high-level framework abstractions creates an illusion of understanding without grasping topological graph sorting and backward tape accumulation.',
+    experiment: 'Constructed a lightweight scalar and tensor autograd engine from scratch in Python with a C++ extension. Implemented DAG topological sorting, dynamic tape recording, and reverse-mode derivative propagation.',
+    observation: 'Backpropagation is mathematically straightforward—an ordered chain-rule traversal along a directed acyclic graph—while the engineering challenge lies in memory management and broadcast bookkeeping.',
+    keyLearnings: 'Demystified how modern tensor frameworks allocate activation memory during the forward pass and reclaim intermediate tensors during backward passes.',
     tags: ['Computational Graphs', 'Reverse-Mode Autodiff', 'DAG Topological Sort', 'Autograd Tape', 'C++ / Python'],
     status: 'deployed',
     statusLabel: 'SYSTEM BUILT',
     linkedNodeId: 'node-systems',
     metrics: [
       { label: 'Engine', value: 'From Scratch' },
-      { label: 'Paradigms', value: 'DAG Tape' },
-      { label: 'Result', value: 'Core Intuition' },
+      { label: 'Architecture', value: 'DAG Tape' },
+      { label: 'Status', value: 'Built & Tested' },
     ],
   },
 ];
@@ -139,6 +152,9 @@ const MILESTONES: ChronicleMilestone[] = [
 interface ChronicleViewProps {
   onBackToCanvas: () => void;
   onFocusNodeOnCanvas?: (nodeId: string) => void;
+  activePhaseId?: string;
+  onActivePhaseChange?: (phaseId: string) => void;
+  onOpenResearchCanvas3D?: (phaseId: string) => void;
 }
 
 interface EditorialResearchEntryProps {
@@ -146,6 +162,7 @@ interface EditorialResearchEntryProps {
   numeral: string;
   reducedMotion: boolean;
   onFocusNodeOnCanvas?: (nodeId: string) => void;
+  onOpenResearchCanvas3D?: (phaseId: string) => void;
   prevPhase?: { id: string; phase: string } | null;
   nextPhase?: { id: string; phase: string } | null;
   onSelectPhase?: (phaseId: string) => void;
@@ -153,13 +170,14 @@ interface EditorialResearchEntryProps {
 
 /**
  * Editorial Research Entry Component
- * High-end architectural layout with asymmetric columns, bespoke visual artifact,
- * and prominent typography for the active selected phase.
+ * Technical Field Notebook & Build Log layout with structured problem context,
+ * implementation artifact, concrete observations, and direct canvas node jump.
  */
 const EditorialResearchEntry: React.FC<EditorialResearchEntryProps> = ({
   item,
   numeral,
   onFocusNodeOnCanvas,
+  onOpenResearchCanvas3D,
   prevPhase,
   nextPhase,
   onSelectPhase,
@@ -168,7 +186,7 @@ const EditorialResearchEntry: React.FC<EditorialResearchEntryProps> = ({
     <article
       id={`milestone-${item.id}`}
       onMouseEnter={() => playSound('hover')}
-      className="relative group scroll-mt-28 pb-12 pt-8 border-b border-white/[0.08] transition-colors duration-300 bg-gradient-to-b from-rose-500/[0.03] to-transparent rounded-2xl p-6 sm:p-8"
+      className="relative group scroll-mt-28 pb-10 pt-7 border-b border-white/[0.08] transition-colors duration-300 bg-gradient-to-b from-rose-500/[0.02] to-transparent rounded-2xl p-5 sm:p-8"
     >
       {/* Active Phase Crimson Laser Accent Top Rule */}
       <div className="absolute top-0 inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-rose-500 to-transparent shadow-[0_0_14px_#f43f5e]" />
@@ -199,29 +217,68 @@ const EditorialResearchEntry: React.FC<EditorialResearchEntryProps> = ({
           </div>
 
           {/* Category Pillar */}
-          <div className="pt-2 font-tech text-[9px] uppercase tracking-[0.25em] text-zinc-400 max-w-[200px] leading-relaxed">
+          <div className="pt-1 font-tech text-[9.5px] uppercase tracking-[0.25em] text-zinc-400 max-w-[220px] leading-relaxed">
             {item.category}
           </div>
         </div>
 
-        {/* Center Column: Monumental Headline & Narrative (col-span-5) */}
+        {/* Center Column: Field Notebook Log & Findings (col-span-5) */}
         <div className="lg:col-span-5 space-y-5">
           {/* Title */}
           <h2 className="font-display text-2xl sm:text-3xl font-bold tracking-tight uppercase leading-[1.12] text-white">
             {item.title}
           </h2>
 
-          {/* Thesis quote with surgical accent rule */}
-          <div className="relative pl-4 border-l-2 border-rose-500/60">
-            <p className="font-body text-sm sm:text-[15px] text-zinc-200 font-medium leading-relaxed italic">
+          {/* Core Thesis / Question */}
+          <div className="relative pl-4 border-l-2 border-rose-500/60 bg-white/[0.015] py-2.5 pr-3 rounded-r-lg">
+            <p className="font-body text-sm sm:text-[14.5px] text-zinc-200 font-medium leading-relaxed italic">
               "{item.thesis}"
             </p>
           </div>
 
-          {/* Deep Narrative Description */}
-          <p className="font-body text-sm text-zinc-400 leading-relaxed font-normal">
-            {item.description}
-          </p>
+          {/* Structured Field Notebook Sections */}
+          <div className="space-y-4 pt-1">
+            {/* 01: Context & Problem */}
+            <div className="space-y-1">
+              <div className="font-tech text-[10px] tracking-[0.22em] text-rose-400 uppercase font-bold">
+                01 // CONTEXT &amp; PROBLEM
+              </div>
+              <p className="font-body text-xs sm:text-sm text-zinc-300 leading-relaxed font-normal">
+                {item.context}
+              </p>
+            </div>
+
+            {/* 02: Experiment & Implementation */}
+            <div className="space-y-1">
+              <div className="font-tech text-[10px] tracking-[0.22em] text-rose-400 uppercase font-bold">
+                02 // EXPERIMENT &amp; IMPLEMENTATION
+              </div>
+              <p className="font-body text-xs sm:text-sm text-zinc-300 leading-relaxed font-normal">
+                {item.experiment}
+              </p>
+            </div>
+
+            {/* 03: Concrete Observation */}
+            <div className="space-y-1 bg-white/[0.02] p-3 rounded-lg border border-white/[0.06]">
+              <div className="font-tech text-[10px] tracking-[0.22em] text-zinc-300 uppercase font-bold flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+                <span>03 // COMPUTATIONAL OBSERVATION</span>
+              </div>
+              <p className="font-body text-xs sm:text-[13px] text-zinc-300 leading-relaxed font-normal">
+                {item.observation}
+              </p>
+            </div>
+
+            {/* 04: Key Takeaway */}
+            <div className="space-y-1">
+              <div className="font-tech text-[10px] tracking-[0.22em] text-rose-400 uppercase font-bold">
+                04 // CORE TAKEAWAYS
+              </div>
+              <p className="font-body text-xs sm:text-sm text-zinc-300 leading-relaxed font-normal">
+                {item.keyLearnings}
+              </p>
+            </div>
+          </div>
 
           {/* Tech stack pills */}
           <div className="flex flex-wrap items-center gap-1.5 pt-2">
@@ -251,7 +308,7 @@ const EditorialResearchEntry: React.FC<EditorialResearchEntryProps> = ({
               <div className="grid grid-cols-3 gap-2 pb-3 border-b border-white/[0.06]">
                 {item.metrics.map((m, mIdx) => (
                   <div key={mIdx} className="space-y-0.5">
-                    <span className="block font-tech text-[8px] uppercase tracking-wider text-zinc-400">
+                    <span className="block font-tech text-[8.5px] uppercase tracking-wider text-zinc-400">
                       {m.label}
                     </span>
                     <span className="block font-tech text-xs font-semibold text-zinc-200 truncate">
@@ -262,23 +319,25 @@ const EditorialResearchEntry: React.FC<EditorialResearchEntryProps> = ({
               </div>
             )}
 
-            {/* Inspect Node Interaction */}
-            {item.linkedNodeId && onFocusNodeOnCanvas && (
-              <button
-                type="button"
-                onClick={() => {
-                  playSound('select');
-                  onFocusNodeOnCanvas(item.linkedNodeId!);
-                }}
-                className="w-full py-2 px-3 rounded-lg bg-white/[0.03] hover:bg-rose-500/10 border border-white/[0.08] hover:border-rose-500/40 font-body text-xs tracking-wider uppercase text-zinc-300 hover:text-rose-300 font-semibold group/link cursor-pointer focus:outline-none transition-all flex items-center justify-between"
-              >
-                <div className="flex items-center gap-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
-                  <span>INSPECT NODE ON CANVAS</span>
-                </div>
-                <ArrowUpRight className="w-3.5 h-3.5 text-rose-400 transition-transform group-hover/link:translate-x-0.5 group-hover/link:-translate-y-0.5" />
-              </button>
-            )}
+            {/* Inspect Node Interaction -> 3D Research Canvas */}
+            <button
+              type="button"
+              onClick={() => {
+                playSound('select');
+                if (onOpenResearchCanvas3D) {
+                  onOpenResearchCanvas3D(item.id);
+                } else if (item.linkedNodeId && onFocusNodeOnCanvas) {
+                  onFocusNodeOnCanvas(item.linkedNodeId);
+                }
+              }}
+              className="w-full py-2.5 px-3.5 rounded-xl bg-rose-950/40 hover:bg-rose-600/20 border border-rose-500/40 hover:border-rose-500/70 font-body text-xs tracking-wider uppercase text-rose-300 hover:text-white font-semibold group/link cursor-pointer focus:outline-none transition-all flex items-center justify-between shadow-[0_0_14px_rgba(225,29,72,0.15)] active:scale-[0.98]"
+            >
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
+                <span>INSPECT NODE ON CANVAS</span>
+              </div>
+              <ArrowUpRight className="w-4 h-4 text-rose-400 transition-transform group-hover/link:translate-x-0.5 group-hover/link:-translate-y-0.5" />
+            </button>
           </div>
         </div>
       </div>
@@ -329,12 +388,23 @@ const EditorialResearchEntry: React.FC<EditorialResearchEntryProps> = ({
 export const ChronicleView: React.FC<ChronicleViewProps> = ({
   onBackToCanvas,
   onFocusNodeOnCanvas,
+  activePhaseId: controlledPhaseId,
+  onActivePhaseChange,
+  onOpenResearchCanvas3D,
 }) => {
   const [entryStage, setEntryStage] = useState(0);
-  const [activePhaseId, setActivePhaseId] = useState<string>('m1');
-  const [displayedPhaseId, setDisplayedPhaseId] = useState<string>('m1');
+  const [internalPhaseId, setInternalPhaseId] = useState<string>(controlledPhaseId || 'm1');
+  const activePhaseId = controlledPhaseId || internalPhaseId;
+  const [displayedPhaseId, setDisplayedPhaseId] = useState<string>(controlledPhaseId || 'm1');
   const [isTransitioning, setIsTransitioning] = useState<boolean>(false);
   const [reducedMotion, setReducedMotion] = useState(false);
+
+  // Synchronize when controlled phase changes
+  useEffect(() => {
+    if (controlledPhaseId && controlledPhaseId !== internalPhaseId) {
+      setInternalPhaseId(controlledPhaseId);
+    }
+  }, [controlledPhaseId]);
 
   // Check prefers-reduced-motion
   useEffect(() => {
@@ -414,7 +484,8 @@ export const ChronicleView: React.FC<ChronicleViewProps> = ({
 
   // Select milestone from axis or stepper
   const handleSelectPhase = (phaseId: string) => {
-    setActivePhaseId(phaseId);
+    setInternalPhaseId(phaseId);
+    onActivePhaseChange?.(phaseId);
     const targetEl = document.getElementById('chronicle-ledger');
     if (targetEl) {
       const rect = targetEl.getBoundingClientRect();
@@ -643,6 +714,7 @@ export const ChronicleView: React.FC<ChronicleViewProps> = ({
             numeral={displayedNumeral}
             reducedMotion={reducedMotion}
             onFocusNodeOnCanvas={onFocusNodeOnCanvas}
+            onOpenResearchCanvas3D={onOpenResearchCanvas3D}
             prevPhase={prevMilestone ? { id: prevMilestone.id, phase: prevMilestone.phase } : null}
             nextPhase={nextMilestone ? { id: nextMilestone.id, phase: nextMilestone.phase } : null}
             onSelectPhase={handleSelectPhase}

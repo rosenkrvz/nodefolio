@@ -145,7 +145,7 @@ const EditorialCoverComponent: React.FC<EditorialCoverProps> = ({
         visibility: (activeNavTab !== 'home' || isFullyOffscreen) ? 'hidden' : 'visible',
         willChange: isFullyOffscreen ? 'auto' : 'transform, opacity',
       }}
-      className={`absolute inset-0 w-full h-screen h-[100dvh] flex flex-col justify-between px-4 sm:px-12 md:px-16 pt-[calc(4.25rem+env(safe-area-inset-top,0px))] pb-[calc(1.25rem+env(safe-area-inset-bottom,0px))] sm:pt-[calc(4.5rem+env(safe-area-inset-top,0px))] sm:pb-[calc(1.5rem+env(safe-area-inset-bottom,0px))] select-none overflow-hidden z-20 bg-[#14171c] ${
+      className={`absolute inset-0 w-full max-w-full h-full min-h-full min-h-[100dvh] flex flex-col justify-between px-4 sm:px-12 md:px-16 pt-[calc(4.25rem+env(safe-area-inset-top,0px))] pb-[calc(1.25rem+env(safe-area-inset-bottom,0px))] sm:pt-[calc(4.5rem+env(safe-area-inset-top,0px))] sm:pb-[calc(1.5rem+env(safe-area-inset-bottom,0px))] select-none overflow-hidden z-20 bg-[#14171c] ${
         isLifting ? 'border-b border-rose-500/50 shadow-[0_30px_70px_rgba(0,0,0,0.95)]' : ''
       }`}
     >
@@ -154,10 +154,10 @@ const EditorialCoverComponent: React.FC<EditorialCoverProps> = ({
         style={{
           transform: `translate3d(0, ${bgDriftPercent.toFixed(2)}%, 0)`,
         }}
-        className="absolute inset-0 pointer-events-none overflow-hidden z-0"
+        className="absolute inset-0 w-full max-w-full h-full pointer-events-none overflow-hidden z-0"
         aria-hidden="true"
       >
-        <div className="pattern-bg">
+        <div className="pattern-bg w-full max-w-full h-full">
           <div className="cube-svg" />
         </div>
       </div>
@@ -168,7 +168,7 @@ const EditorialCoverComponent: React.FC<EditorialCoverProps> = ({
           opacity: isEntered || entryStage >= 1 ? 0.38 : 0,
           transition: isEntered ? 'none' : 'opacity 0.8s ease-out',
         }}
-        className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[350px] bg-rose-900/25 rounded-full blur-[120px] pointer-events-none z-0"
+        className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] sm:w-[600px] h-[260px] sm:h-[350px] max-w-full bg-rose-900/25 rounded-full blur-[90px] sm:blur-[120px] pointer-events-none z-0"
         aria-hidden="true"
       />
 
@@ -355,14 +355,14 @@ const EditorialCoverComponent: React.FC<EditorialCoverProps> = ({
         >
           <div className="space-y-2.5">
             <span className="font-accent text-3xl leading-none text-rose-400/80 block">
-              RESEARCH DOMAINS
+              AREAS OF STUDY &amp; FOCUS
             </span>
             {[
               'STATISTICAL LEARNING',
-              'GENERATIVE MODELS',
-              'LATENT TOPOLOGY',
-              'DISTRIBUTED PIPELINES',
-              'HIGH-DIMENSIONAL TENSORS',
+              'GENERATIVE ARCHITECTURES',
+              'LATENT TOPOLOGY & MANIFOLDS',
+              'COMPUTATIONAL PIPELINES',
+              'TENSOR OPTIMIZATION',
             ].map((tag) => (
               <div
                 key={tag}
@@ -375,7 +375,7 @@ const EditorialCoverComponent: React.FC<EditorialCoverProps> = ({
 
           <div className="pt-6 border-t border-white/[0.08] max-w-[220px]">
             <p className="font-body text-xs text-zinc-400 leading-relaxed uppercase tracking-wider">
-              Available for select research and machine learning engineering collaborations.
+              Open for software engineering roles, machine learning systems, and technical collaborations.
             </p>
             <div className="w-8 h-0.5 bg-rose-500 mt-3 ml-auto" />
           </div>

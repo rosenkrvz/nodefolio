@@ -282,7 +282,7 @@ export const ResumeModal: React.FC<ResumeModalProps> = ({ isOpen, onClose, nodes
             transition:
               'opacity 320ms ease 160ms, transform 320ms cubic-bezier(0.16, 1, 0.3, 1) 160ms',
           }}
-          className="mb-2"
+          className="mb-5 sm:mb-6"
         >
           <div className="flex items-center gap-2 text-xs sm:text-sm font-display text-white font-bold uppercase tracking-wider mb-3">
             <Layers className="w-4 h-4 text-rose-400" />
@@ -297,6 +297,65 @@ export const ResumeModal: React.FC<ResumeModalProps> = ({ isOpen, onClose, nodes
                 {s.name}
               </span>
             ))}
+          </div>
+        </div>
+
+        {/* Featured Research & Systems */}
+        <div
+          style={{
+            opacity: isContentVisible ? 1 : 0,
+            transform: isContentVisible ? 'translateY(0)' : 'translateY(14px)',
+            transition:
+              'opacity 340ms ease 200ms, transform 340ms cubic-bezier(0.16, 1, 0.3, 1) 200ms',
+          }}
+          className="mb-2"
+        >
+          <div className="flex items-center gap-2 text-xs sm:text-sm font-display text-white font-bold uppercase tracking-wider mb-3">
+            <BookOpen className="w-4 h-4 text-rose-400" />
+            <span>Featured Research &amp; Projects</span>
+          </div>
+          <div className="space-y-3">
+            <div className="p-3.5 rounded-xl bg-white/[0.03] border border-white/[0.06]">
+              <div className="flex justify-between items-baseline">
+                <span className="font-display text-xs sm:text-sm font-bold text-white uppercase tracking-wider">
+                  Latent Graph Visualizer
+                </span>
+                <span className="font-body text-[10px] sm:text-xs text-rose-400 font-semibold uppercase">
+                  Interactive Manifold Explorer
+                </span>
+              </div>
+              <p className="font-body text-xs sm:text-[13px] text-zinc-300 mt-1.5 leading-relaxed">
+                Interactive computational workspace mapping continuous latent spaces to discrete topological clusters. Parametric traversal, dimensionality reduction (UMAP/t-SNE), and WebGL manifold projection.
+              </p>
+              <div className="flex flex-wrap gap-1 mt-2">
+                {['PyTorch', 'WebGL', 'UMAP', 't-SNE', 'Embedding Topology'].map((t) => (
+                  <span key={t} className="px-2 py-0.5 rounded bg-white/[0.04] text-[10px] text-zinc-400 font-tech">
+                    {t}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            <div className="p-3.5 rounded-xl bg-white/[0.03] border border-white/[0.06]">
+              <div className="flex justify-between items-baseline">
+                <span className="font-display text-xs sm:text-sm font-bold text-white uppercase tracking-wider">
+                  First-Principles Autograd Engine
+                </span>
+                <span className="font-body text-[10px] sm:text-xs text-rose-400 font-semibold uppercase">
+                  Reverse-Mode Tape
+                </span>
+              </div>
+              <p className="font-body text-xs sm:text-[13px] text-zinc-300 mt-1.5 leading-relaxed">
+                Constructed scalar and tensor autograd engine from scratch in Python with C++ extension. Built dynamic DAG topological sort and reverse-mode derivative accumulation.
+              </p>
+              <div className="flex flex-wrap gap-1 mt-2">
+                {['Python', 'C++', 'DAG Topological Sort', 'Autograd Tape', 'Memory Management'].map((t) => (
+                  <span key={t} className="px-2 py-0.5 rounded bg-white/[0.04] text-[10px] text-zinc-400 font-tech">
+                    {t}
+                  </span>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       </div>

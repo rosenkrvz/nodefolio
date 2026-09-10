@@ -18,9 +18,11 @@ import { CertificateModal } from './components/modals/CertificateModal';
 import { ProjectDetailModal } from './components/modals/ProjectDetailModal';
 import { ContactModal } from './components/modals/ContactModal';
 import { ResumeModal } from './components/modals/ResumeModal';
+import { PrintCVDocument } from './components/cv/PrintCVDocument';
 import { AddVisitorNodeModal } from './components/modals/AddVisitorNodeModal';
 import { InspectorListView } from './components/InspectorListView';
 import { ChronicleView } from './components/ChronicleView';
+import { ResearchCanvas3D } from './components/canvas3d/ResearchCanvas3D';
 import { playSound } from './lib/sound';
 import { useIsMobile } from './hooks/useIsMobile';
 import { MobileNodespace } from './components/MobileNodespace';
@@ -205,6 +207,8 @@ export default function App() {
   const [activePreset, setActivePreset] = useState<string>(initialTab === 'projects' ? 'project' : 'network');
   const [connections, setConnections] = useState<Connection[]>(ALL_INITIAL_CONNECTIONS);
   const [isAddNodeOpen, setIsAddNodeOpen] = useState<boolean>(false);
+  const [activeResearchCanvasPhase, setActiveResearchCanvasPhase] = useState<string | null>(null);
+  const [chronicleActivePhaseId, setChronicleActivePhaseId] = useState<string>('m1');
 
   // Graph Data State partitioned by preset so Network positions remain completely independent of Research positions
   const [nodesByPreset, setNodesByPreset] = useState<{
@@ -1878,7 +1882,7 @@ export default function App() {
       />
 
       {/* CONTINUOUS SCROLL-DRIVEN ARCHITECTURE */}
-      <main className="relative w-full max-w-full overflow-x-clip">
+      <main className="relative w-full max-w-full bg-[#14171c]">
         {activeView === 'timeline' ? (
           /* Editorial Chronicle Journal View */
           <div className="relative w-full min-h-screen z-20 pointer-events-auto">
@@ -1888,6 +1892,13 @@ export default function App() {
               }}
               onFocusNodeOnCanvas={(nodeId) => {
                 handleFocusNode(nodeId);
+              }}
+              activePhaseId={chronicleActivePhaseId}
+              onActivePhaseChange={(phaseId) => {
+                setChronicleActivePhaseId(phaseId);
+              }}
+              onOpenResearchCanvas3D={(phaseId) => {
+                setActiveResearchCanvasPhase(phaseId);
               }}
             />
           </div>
@@ -1907,10 +1918,10 @@ export default function App() {
           /* SECTION 01 + 02: Canvas Viewport (Cover + Neural Workspace) */
           <div
             ref={scrollContainerRef}
-            className="relative w-full h-[220vh]"
+            className="relative w-full max-w-full h-[220vh] bg-[#14171c]"
           >
-            {/* Sticky 100vh Viewport Stage */}
-            <div className="sticky top-0 w-full h-screen overflow-hidden">
+            {/* Sticky 100vh/100dvh Viewport Stage */}
+            <div className="sticky top-0 w-full max-w-full h-screen h-[100dvh] overflow-hidden bg-[#14171c]">
               {/* SECTION 02: Computational Neural Workspace (Base Layer) */}
               <ArchitecturalReveal scrollProgress={scrollProgress}>
                 <div
@@ -1918,7 +1929,7 @@ export default function App() {
                     opacity: activeNavTab !== 'home' ? 1 : (scrollProgress >= 0.10 ? Math.min(1, Math.pow((scrollProgress - 0.10) / 0.40, 1.2)) : 0),
                     pointerEvents: (activeNavTab !== 'home' || scrollProgress >= 0.80) ? 'auto' : 'none',
                   }}
-                  className="absolute inset-0 w-full h-screen pt-14 sm:pt-16 z-10"
+                  className="absolute inset-0 w-full max-w-full h-full pt-14 sm:pt-16 z-10"
                 >
                   {isMobile ? (
                     <MobileNodespace
@@ -1933,7 +1944,6 @@ export default function App() {
                       onOpenResumeModal={handleOpenResumeModal}
                       onOpenFocusedNode={handleOpenFocusedNode}
                       onDeleteVisitorNode={handleDeleteVisitorNode}
-                      onOpenAddNode={() => setIsAddNodeOpen(true)}
                       isSimulating={isSimulating}
                       wireStyle={wireStyle}
                       showGrid={showGrid}
@@ -2139,6 +2149,12 @@ export default function App() {
           setNodeOriginRect(null);
           setSelectedProject(p);
         }}
+        onOpenResearchCanvas3D={(phaseId) => {
+          playSound('open');
+          setFocusedNode(null);
+          setNodeOriginRect(null);
+          setActiveResearchCanvasPhase(phaseId || 'phase-05');
+        }}
         onOpenCertificateDetail={(c) => {
           playSound('open');
           setFocusedNode(null);
@@ -2173,7 +2189,23 @@ export default function App() {
           playSound('close');
           setSelectedProject(null);
         }}
+        onOpenResearchCanvas3D={(phaseId) => {
+          playSound('open');
+          setSelectedProject(null);
+          setActiveResearchCanvasPhase(phaseId || 'phase-05');
+        }}
       />
+
+      {/* Dedicated 3D Research Canvas Subsystem */}
+      {activeResearchCanvasPhase && (
+        <ResearchCanvas3D
+          initialPhaseId={activeResearchCanvasPhase}
+          onExit={(savedChronicleId) => {
+            setChronicleActivePhaseId(savedChronicleId);
+            setActiveResearchCanvasPhase(null);
+          }}
+        />
+      )}
 
       <ContactModal
         isOpen={isContactOpen}
@@ -2189,6 +2221,9 @@ export default function App() {
         onClose={() => setIsResumeOpen(false)}
         nodes={nodes}
       />
+
+      {/* Production Print A4 CV Document (Hidden on screen, active in @media print) */}
+      <PrintCVDocument nodes={nodes} />
 
       <AddVisitorNodeModal
         isOpen={isAddNodeOpen}

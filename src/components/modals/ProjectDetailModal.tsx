@@ -10,14 +10,16 @@ import {
   Cpu,
   BarChart,
   CheckCircle,
+  ArrowUpRight,
 } from '../icons';
 
 interface ProjectDetailModalProps {
   project: ProjectItem | null;
   onClose: () => void;
+  onOpenResearchCanvas3D?: (phaseId?: string) => void;
 }
 
-export const ProjectDetailModal: React.FC<ProjectDetailModalProps> = ({ project, onClose }) => {
+export const ProjectDetailModal: React.FC<ProjectDetailModalProps> = ({ project, onClose, onOpenResearchCanvas3D }) => {
   useEffect(() => {
     if (!project) return;
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -85,13 +87,27 @@ export const ProjectDetailModal: React.FC<ProjectDetailModalProps> = ({ project,
           />
           <div className="absolute inset-0 bg-gradient-to-t from-[#111419] via-black/20 to-transparent" />
           
-          <div className="absolute bottom-2.5 sm:bottom-3 left-3 sm:left-4 right-3 sm:right-4 flex flex-wrap items-center justify-between gap-1.5">
+          <div className="absolute bottom-2.5 sm:bottom-3 left-3 sm:left-4 right-3 sm:right-4 flex flex-wrap items-center justify-between gap-2">
             <div className="px-2 py-0.5 sm:px-2.5 sm:py-1 rounded bg-black/70 backdrop-blur-sm border border-white/10 text-[10px] sm:text-xs font-body font-medium text-zinc-300">
               Artifact: Latent Space Traversal Map
             </div>
-            <div className="px-2 py-0.5 sm:px-2.5 sm:py-1 rounded bg-rose-950/80 backdrop-blur-sm border border-rose-500/40 text-[10px] sm:text-xs font-body font-semibold text-rose-300">
-              Interactive WebGL Accelerated
-            </div>
+            {onOpenResearchCanvas3D ? (
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  onOpenResearchCanvas3D('phase-05');
+                }}
+                className="px-2.5 py-1 rounded bg-rose-600 hover:bg-rose-500 backdrop-blur-sm text-white text-[10px] sm:text-xs font-body font-semibold flex items-center gap-1.5 transition-all shadow-[0_0_12px_rgba(225,29,72,0.5)] cursor-pointer active:scale-95"
+              >
+                <span>Inspect 3D Manifold</span>
+                <ArrowUpRight className="w-3 h-3" />
+              </button>
+            ) : (
+              <div className="px-2 py-0.5 sm:px-2.5 sm:py-1 rounded bg-rose-950/80 backdrop-blur-sm border border-rose-500/40 text-[10px] sm:text-xs font-body font-semibold text-rose-300">
+                Interactive WebGL Accelerated
+              </div>
+            )}
           </div>
         </div>
 

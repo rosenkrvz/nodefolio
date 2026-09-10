@@ -36,7 +36,7 @@ const ArchitecturalRevealComponent: React.FC<ArchitecturalRevealProps> = ({
   }
 
   return (
-    <div className="absolute inset-0 w-full h-screen overflow-hidden select-none z-10">
+    <div className="absolute inset-0 w-full max-w-full h-full h-[100dvh] overflow-hidden select-none z-10 bg-[#14171c]">
       {/* Underlying Computational System Workspace Canvas */}
       <div
         style={{

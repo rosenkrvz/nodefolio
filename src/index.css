@@ -13,8 +13,22 @@
   --font-tech: 'Satoshi', sans-serif;
 }
 
+html,
+body,
+#root {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  background-color: #14171c;
+}
+
 html {
+  color-scheme: dark;
   touch-action: manipulation;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 body {
@@ -24,7 +38,17 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   width: 100%;
-  overflow-x: clip;
+  max-width: 100%;
+  overflow-x: hidden;
+  position: relative;
+  min-height: 100%;
+  min-height: 100dvh;
+}
+
+#root {
+  min-height: 100%;
+  min-height: 100dvh;
+  position: relative;
 }
 
 .font-display {
@@ -175,6 +199,11 @@ body {
 }
 
 /* Custom scrollbars */
+html {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.14) transparent;
+}
+
 ::-webkit-scrollbar {
   width: 5px;
   height: 5px;
@@ -188,6 +217,17 @@ body {
 }
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(225, 29, 72, 0.45);
+}
+
+@media (max-width: 768px) {
+  html, body, #root, * {
+    scrollbar-width: none !important;
+  }
+  ::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+  }
 }
 
 /* Mechanical Analog Clock Styling from User Prompt */
@@ -317,26 +357,182 @@ body {
   }
 }
 
-/* Print Optimization */
-@media print {
-  body {
-    background: #ffffff !important;
-    color: #000000 !important;
-  }
+/* ==========================================================================
+   PRODUCTION PRINT SYSTEM — A4 CURRICULUM VITAE
+   ========================================================================== */
 
-  header,
-  aside,
-  #graph-workspace,
-  .bottom-telemetry-bar,
-  button {
+@page {
+  size: A4 portrait;
+  margin: 10mm 12mm 10mm 12mm;
+}
+
+/* Hide print-only document during screen rendering */
+@media screen {
+  .print-cv-root {
     display: none !important;
   }
+}
 
-  .modal-content,
-  .resume-paper {
+/* Dedicated Print Media Rules */
+@media print {
+  /* 1. Base Document Reset: Eliminate all screen-specific viewport and color traps */
+  *,
+  *::before,
+  *::after {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
     box-shadow: none !important;
-    border: none !important;
+    text-shadow: none !important;
+  }
+
+  html,
+  body {
     width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+    background-color: #ffffff !important;
+    color: #111827 !important;
+    font-size: 10pt;
+    line-height: 1.4;
+  }
+
+  #root {
+    width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    position: static !important;
+    transform: none !important;
+    background: #ffffff !important;
+    background-color: #ffffff !important;
+  }
+
+  /* 2. Hide ALL Screen UI: Navbars, Graph Workspace, Modals, Backdrops, Buttons, Controls */
+  header:not(.print-cv-header),
+  nav,
+  main,
+  footer:not(.print-cv-footer),
+  aside,
+  button,
+  .screen-only,
+  #graph-workspace,
+  .bottom-telemetry-bar,
+  .sticky,
+  [role="dialog"],
+  .modal-backdrop,
+  #mobile-focused-node-navigator,
+  .pattern-bg,
+  .cube-svg,
+  .dock-container,
+  ::-webkit-scrollbar {
+    display: none !important;
+    visibility: hidden !important;
+  }
+
+  .print-cv-header {
+    display: block !important;
+    visibility: visible !important;
+  }
+
+  .print-cv-footer {
+    display: flex !important;
+    visibility: visible !important;
+  }
+
+  /* 3. Render Dedicated Print CV Document with natural flow */
+  .print-cv-root {
+    display: block !important;
+    visibility: visible !important;
+    position: static !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+    background-color: #ffffff !important;
+    color: #18181b !important;
+  }
+
+  /* Ensure print typography uses established fonts with print-safe fallbacks */
+  .print-cv-root h1,
+  .print-cv-root h2,
+  .print-cv-root h3,
+  .print-cv-root .font-display {
+    font-family: 'Josefin Sans', system-ui, -apple-system, sans-serif !important;
+  }
+
+  .print-cv-root,
+  .print-cv-root p,
+  .print-cv-root span,
+  .print-cv-root li,
+  .print-cv-root .font-body {
+    font-family: 'Satoshi', system-ui, -apple-system, sans-serif !important;
+  }
+
+  /* 4. Color adjustments for high-contrast crisp print */
+  .print-cv-root a {
+    color: #111827 !important;
+    text-decoration: underline !important;
+  }
+
+  .print-cv-root .text-rose-700,
+  .print-cv-root .text-rose-600 {
+    color: #be123c !important;
+  }
+
+  .print-cv-root .bg-rose-600 {
+    background-color: #be123c !important;
+  }
+
+  .print-cv-root .border-zinc-300 {
+    border-color: #d4d4d8 !important;
+  }
+
+  .print-cv-root .border-zinc-200 {
+    border-color: #e4e4e7 !important;
+  }
+
+  .print-cv-root .border-zinc-150 {
+    border-color: #ececee !important;
+  }
+
+  .print-cv-root .bg-zinc-100 {
+    background-color: #f4f4f5 !important;
+  }
+
+  /* 5. Natural Pagination Controls */
+  .print-avoid-break {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  .print-heading {
+    break-after: avoid !important;
+    page-break-after: avoid !important;
+  }
+
+  .print-break-before-page {
+    break-before: page !important;
+    page-break-before: always !important;
+  }
+
+  .print-cv-section {
+    break-inside: auto !important;
   }
 }
 

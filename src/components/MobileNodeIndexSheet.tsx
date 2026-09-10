@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { NodeData } from '../types';
-import { Close, ChevronRight, Plus, Layers } from './icons';
+import { Close, ChevronRight, Layers } from './icons';
 import { playSound } from '../lib/sound';
 
 interface MobileNodeIndexSheetProps {
@@ -9,7 +9,6 @@ interface MobileNodeIndexSheetProps {
   nodes: NodeData[];
   selectedNodeId: string | null;
   onSelectNode: (nodeId: string) => void;
-  onOpenAddNode?: () => void;
 }
 
 function getNodeDescription(node: NodeData): string {
@@ -47,7 +46,6 @@ export const MobileNodeIndexSheet: React.FC<MobileNodeIndexSheetProps> = ({
   nodes,
   selectedNodeId,
   onSelectNode,
-  onOpenAddNode,
 }) => {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -176,23 +174,6 @@ export const MobileNodeIndexSheet: React.FC<MobileNodeIndexSheetProps> = ({
             );
           })}
         </div>
-
-        {/* Footer Action: Add Visitor Note */}
-        {onOpenAddNode && (
-          <div className="pt-3 mt-2 border-t border-white/[0.08] shrink-0">
-            <button
-              type="button"
-              onClick={() => {
-                onClose();
-                onOpenAddNode();
-              }}
-              className="w-full min-h-[44px] flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-rose-500/15 hover:bg-rose-500/25 active:bg-rose-500/35 border border-rose-500/30 text-rose-300 hover:text-white text-xs font-tech font-bold uppercase tracking-wider transition-all cursor-pointer shadow-sm"
-            >
-              <Plus className="w-4 h-4" />
-              <span>Leave a Visitor Field Note</span>
-            </button>
-          </div>
-        )}
       </div>
     </div>
   );

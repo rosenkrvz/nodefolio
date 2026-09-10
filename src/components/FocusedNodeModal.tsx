@@ -26,7 +26,6 @@ import {
   Terminal,
   Sliders,
   Compass,
-  Sparkles,
   BarChart,
   Trash,
 } from './icons';
@@ -42,6 +41,7 @@ interface FocusedNodeModalProps {
   onOpenResume?: () => void;
   onFocusNode?: (nodeId: string) => void;
   onDeleteVisitorNode?: (id: string) => void;
+  onOpenResearchCanvas3D?: (phaseId?: string) => void;
 }
 
 export const FocusedNodeModal: React.FC<FocusedNodeModalProps> = ({
@@ -55,6 +55,7 @@ export const FocusedNodeModal: React.FC<FocusedNodeModalProps> = ({
   onOpenResume,
   onFocusNode,
   onDeleteVisitorNode,
+  onOpenResearchCanvas3D,
 }) => {
   const chassisRef = useRef<HTMLDivElement>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -670,16 +671,34 @@ export const FocusedNodeModal: React.FC<FocusedNodeModalProps> = ({
                   ))}
                 </div>
 
-                {onOpenProjectDetail && (
-                  <button
-                    type="button"
-                    onClick={() => onOpenProjectDetail(node.project!)}
-                    className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-semibold text-xs tracking-wider uppercase transition-all shadow-[0_0_16px_rgba(225,29,72,0.35)] active:scale-95 cursor-pointer shrink-0"
-                  >
-                    <span>Inspect Full Case Study</span>
-                    <ArrowUpRight className="w-3.5 h-3.5" />
-                  </button>
-                )}
+                <div className="flex flex-wrap items-center gap-2">
+                  {onOpenResearchCanvas3D && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        playSound('select');
+                        onClose();
+                        onOpenResearchCanvas3D('phase-05');
+                      }}
+                      className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-black/80 hover:bg-rose-950/60 border border-rose-500/50 hover:border-rose-500 text-rose-300 hover:text-white font-semibold text-xs tracking-wider uppercase transition-all shadow-[0_0_14px_rgba(225,29,72,0.25)] active:scale-95 cursor-pointer shrink-0"
+                    >
+                      <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
+                      <span>INSPECT 3D ARTIFACT</span>
+                      <ArrowUpRight className="w-3.5 h-3.5 text-rose-400" />
+                    </button>
+                  )}
+
+                  {onOpenProjectDetail && (
+                    <button
+                      type="button"
+                      onClick={() => onOpenProjectDetail(node.project!)}
+                      className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-semibold text-xs tracking-wider uppercase transition-all shadow-[0_0_16px_rgba(225,29,72,0.35)] active:scale-95 cursor-pointer shrink-0"
+                    >
+                      <span>Inspect Full Case Study</span>
+                      <ArrowUpRight className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           )}

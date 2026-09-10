@@ -25,7 +25,6 @@ import {
   BarChart,
   Binary,
   Database,
-  Sparkles,
   Terminal,
   Compass,
   Cpu,
@@ -46,7 +45,6 @@ interface MobileNodespaceProps {
   onOpenResumeModal: () => void;
   onOpenFocusedNode: (node: NodeData) => void;
   onDeleteVisitorNode: (id: string) => void;
-  onOpenAddNode: () => void;
   isSimulating: boolean;
   wireStyle: 'glow' | 'minimal' | 'cyber';
   showGrid?: boolean;
@@ -65,7 +63,7 @@ const CATEGORY_ICON_MAP: Record<string, React.ReactNode> = {
   evaluation: <Binary className="w-3.5 h-3.5 text-rose-400" />,
   vectors: <Database className="w-3.5 h-3.5 text-rose-400" />,
   vision: <Eye className="w-3.5 h-3.5 text-rose-400" />,
-  generative: <Sparkles className="w-3.5 h-3.5 text-rose-400" />,
+  generative: <Binary className="w-3.5 h-3.5 text-rose-400" />,
   software: <Terminal className="w-3.5 h-3.5 text-rose-400" />,
   experiment: <Compass className="w-3.5 h-3.5 text-rose-400" />,
   computational: <Cpu className="w-3.5 h-3.5 text-rose-400" />,
@@ -86,7 +84,6 @@ export const MobileNodespace: React.FC<MobileNodespaceProps> = ({
   onOpenResumeModal,
   onOpenFocusedNode,
   onDeleteVisitorNode,
-  onOpenAddNode,
   isSimulating: _isSimulating,
   wireStyle: _wireStyle,
   showGrid = true,
@@ -551,7 +548,7 @@ export const MobileNodespace: React.FC<MobileNodespaceProps> = ({
               ? `${activeNode.accentColor}33`
               : 'rgba(255, 255, 255, 0.12)',
           }}
-          className={`w-[calc(100vw-72px)] max-w-[420px] min-w-[270px] max-h-[calc(100dvh-180px)] sm:max-h-[min(580px,calc(100dvh-180px))] flex flex-col rounded-2xl bg-[#0b0d12]/95 border backdrop-blur-2xl shadow-[0_12px_48px_rgba(0,0,0,0.92)] font-body text-zinc-200 overflow-hidden transition-all duration-300 ease-out z-10 cursor-pointer ${getTransformClasses()}`}
+          className={`w-[calc(100%-40px)] sm:w-[calc(100%-72px)] max-w-[420px] min-w-[270px] max-h-[calc(100dvh-180px)] sm:max-h-[min(580px,calc(100dvh-180px))] flex flex-col rounded-2xl bg-[#0b0d12]/95 border backdrop-blur-2xl shadow-[0_12px_48px_rgba(0,0,0,0.92)] font-body text-zinc-200 overflow-hidden transition-all duration-300 ease-out z-10 cursor-pointer ${getTransformClasses()}`}
         >
           {/* Card Top Horizon Laser Accent Line */}
           <div
@@ -758,7 +755,6 @@ export const MobileNodespace: React.FC<MobileNodespaceProps> = ({
         currentNodeIndex={activeIndex + 1}
         totalNodes={nodes.length}
         onOpenIndex={() => setIsIndexOpen(true)}
-        onOpenAddNode={onOpenAddNode}
         showGrid={gridVisible}
         onToggleGrid={() => setGridVisible((v) => !v)}
       />
@@ -782,7 +778,6 @@ export const MobileNodespace: React.FC<MobileNodespaceProps> = ({
         onSelectNode={(id) => {
           navigateToNode(id, 'direct');
         }}
-        onOpenAddNode={onOpenAddNode}
       />
     </div>
   );

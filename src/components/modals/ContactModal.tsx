@@ -43,10 +43,10 @@ export const ContactModal: React.FC<ContactModalProps> = ({ isOpen, onClose, ema
   };
 
   const quickSubjects = [
-    'Research Collaboration',
-    'Generative Models',
-    'Neural Infrastructure',
-    'Technical Advisory',
+    'Engineering Role',
+    'ML & Systems Projects',
+    'Technical Collaboration',
+    'Academic / Research Study',
     'General Inquiry',
   ];
 
@@ -78,14 +78,14 @@ export const ContactModal: React.FC<ContactModalProps> = ({ isOpen, onClose, ema
           <div className="flex items-center gap-2 mb-2">
             <span className="w-2 h-2 rounded-full bg-rose-500 shadow-[0_0_8px_#f43f5e] animate-pulse shrink-0" />
             <span className="text-[10px] sm:text-[11px] font-body font-bold text-rose-400 tracking-[0.25em] uppercase">
-              COMMUNICATION PROTOCOL &bull; GATEWAY 01
+              COMMUNICATION &bull; CONNECT
             </span>
           </div>
           <h3 className="font-display text-xl sm:text-3xl text-white font-bold tracking-wide uppercase leading-tight">
             Direct Inquiries
           </h3>
           <p className="font-body text-xs sm:text-sm text-zinc-300 mt-1 leading-relaxed max-w-md">
-            Available for machine learning research collaborations, systems engineering, and technical advisory.
+            Open for software engineering roles, machine learning systems projects, and technical collaborations.
           </p>
         </div>
 

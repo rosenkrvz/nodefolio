@@ -1,5 +1,5 @@
 import React from 'react';
-import { Plus, Layers, Grid, ChevronLeft, ChevronRight } from './icons';
+import { Layers, Grid, ChevronLeft, ChevronRight } from './icons';
 import { playSound } from '../lib/sound';
 
 interface MobileWorkspaceDockProps {
@@ -10,7 +10,6 @@ interface MobileWorkspaceDockProps {
   currentNodeIndex: number;
   totalNodes: number;
   onOpenIndex: () => void;
-  onOpenAddNode?: () => void;
   showGrid?: boolean;
   onToggleGrid?: () => void;
 }
@@ -23,7 +22,6 @@ export const MobileWorkspaceDock: React.FC<MobileWorkspaceDockProps> = ({
   currentNodeIndex,
   totalNodes,
   onOpenIndex,
-  onOpenAddNode,
   showGrid = true,
   onToggleGrid,
 }) => {
@@ -101,22 +99,6 @@ export const MobileWorkspaceDock: React.FC<MobileWorkspaceDockProps> = ({
             }`}
           >
             <Grid className="w-4 h-4" />
-          </button>
-        )}
-
-        {/* Add Visitor Field Note: 44px min touch target */}
-        {onOpenAddNode && (
-          <button
-            type="button"
-            onClick={() => {
-              playSound('open');
-              onOpenAddNode();
-            }}
-            title="Add field note"
-            aria-label="Add visitor field note"
-            className="w-11 h-11 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl bg-rose-500/20 hover:bg-rose-500/30 active:bg-rose-500/40 border border-rose-500/40 text-rose-300 hover:text-white transition-all cursor-pointer shrink-0"
-          >
-            <Plus className="w-4 h-4" />
           </button>
         )}
       </div>

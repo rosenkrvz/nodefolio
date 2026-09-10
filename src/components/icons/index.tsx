@@ -42,7 +42,6 @@ import {
   File02 as UntitledFile02,
   ShieldTick as UntitledShieldTick,
   Globe01 as UntitledGlobe01,
-  Stars01 as UntitledStars01,
   GitCommit as UntitledGitCommit,
   BarChart01 as UntitledBarChart01,
   Dataflow01 as UntitledDataflow01,
@@ -127,7 +126,6 @@ export const Building = createIcon(UntitledBuilding01);
 export const FileText = createIcon(UntitledFile02);
 export const ShieldCheck = createIcon(UntitledShieldTick);
 export const Globe = createIcon(UntitledGlobe01);
-export const Sparkles = createIcon(UntitledStars01);
 export const GitCommit = createIcon(UntitledGitCommit);
 export const BarChart = createIcon(UntitledBarChart01);
 export const Binary = createIcon(UntitledDataflow01);
@@ -243,7 +241,6 @@ export const Icon = {
   FileText,
   ShieldCheck,
   Globe,
-  Sparkles,
   GitCommit,
   BarChart,
   Binary,
