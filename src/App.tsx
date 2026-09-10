@@ -78,6 +78,71 @@ const loadSavedVisitorNodes = (): NodeData[] => {
   return [];
 };
 
+const NODE_DIMENSIONS_KEY = 'nodefolio_node_dimensions';
+const NODE_DIMENSIONS_VERSION = 'v1';
+const NODE_DIMENSIONS_VER_KEY = 'nodefolio_node_dimensions_ver';
+
+const loadSavedNodeDimensions = (): Record<string, { width: number; x?: number }> => {
+  if (typeof window === 'undefined') return {};
+  try {
+    const raw = localStorage.getItem(NODE_DIMENSIONS_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw);
+    if (parsed && typeof parsed === 'object') {
+      const valid: Record<string, { width: number; x?: number }> = {};
+      for (const [id, val] of Object.entries(parsed)) {
+        if (val && typeof val === 'object') {
+          const w = (val as any).width;
+          const x = (val as any).x;
+          if (typeof w === 'number' && isFinite(w) && !isNaN(w) && w >= 220 && w <= 700) {
+            valid[id] = {
+              width: Math.round(w),
+              x: typeof x === 'number' && isFinite(x) && !isNaN(x) && x >= 50 && x <= 4200 ? Math.round(x) : undefined,
+            };
+          }
+        }
+      }
+      return valid;
+    }
+  } catch (e) {
+    console.error('Failed to load saved node dimensions', e);
+  }
+  return {};
+};
+
+const saveNodeDimension = (nodeId: string, width: number, x?: number) => {
+  if (typeof window === 'undefined') return;
+  try {
+    if (typeof width !== 'number' || !isFinite(width) || isNaN(width) || width < 220 || width > 700) {
+      return;
+    }
+    const current = loadSavedNodeDimensions();
+    current[nodeId] = {
+      width: Math.round(width),
+      x: typeof x === 'number' && isFinite(x) && !isNaN(x) ? Math.round(x) : current[nodeId]?.x,
+    };
+    localStorage.setItem(NODE_DIMENSIONS_KEY, JSON.stringify(current));
+    localStorage.setItem(NODE_DIMENSIONS_VER_KEY, NODE_DIMENSIONS_VERSION);
+  } catch (e) {
+    console.error('Failed to persist node dimension', e);
+  }
+};
+
+const applySavedDimensions = (nodeList: NodeData[]): NodeData[] => {
+  const saved = loadSavedNodeDimensions();
+  return nodeList.map((n) => {
+    const dim = saved[n.id];
+    if (dim) {
+      return {
+        ...n,
+        width: dim.width,
+        x: typeof dim.x === 'number' ? dim.x : n.x,
+      };
+    }
+    return n;
+  });
+};
+
 const RESEARCH_NODE_IDS = new Set([
   'node-profile',
   'node-models',
@@ -85,15 +150,15 @@ const RESEARCH_NODE_IDS = new Set([
   'node-project',
 ]);
 
-const ALL_NETWORK_NODES: NodeData[] = [...INITIAL_NODES];
-const ALL_RESEARCH_NODES: NodeData[] = [
+const ALL_NETWORK_NODES: NodeData[] = applySavedDimensions([...INITIAL_NODES]);
+const ALL_RESEARCH_NODES: NodeData[] = applySavedDimensions([
   ...INITIAL_NODES
     .filter((n) => RESEARCH_NODE_IDS.has(n.id))
     .map((n) =>
       RESEARCH_CORE_COORDINATES[n.id] ? { ...n, ...RESEARCH_CORE_COORDINATES[n.id] } : n
     ),
   ...EXPANDED_RESEARCH_NODES.filter((n) => RESEARCH_NODE_IDS.has(n.id)),
-];
+]);
 const ALL_INITIAL_NODES: NodeData[] = ALL_RESEARCH_NODES;
 const ALL_INITIAL_CONNECTIONS: Connection[] = [...INITIAL_CONNECTIONS, ...RESEARCH_CONNECTIONS];
 
@@ -224,7 +289,7 @@ export default function App() {
   // RAF batching refs for high-frequency pointer moves and resizes
   const pendingDragDeltasRef = useRef<Record<string, { dx: number; dy: number }>>({});
   const dragRafIdRef = useRef<number | null>(null);
-  const pendingResizeRef = useRef<Record<string, number>>({});
+  const pendingResizeRef = useRef<Record<string, { width: number; x?: number }>>({});
   const resizeRafIdRef = useRef<number | null>(null);
 
   // Deterministic harmonic drift personality configs for organic, controlled workspace life
@@ -881,23 +946,48 @@ export default function App() {
     }
   }, [setNodes]);
 
-  // Deliberate Node Square Edge Resize Handler - RAF throttled
-  const handleNodeResize = useCallback((nodeId: string, newWidth: number) => {
-    pendingResizeRef.current[nodeId] = newWidth;
+  // Deliberate Node Square Edge & Tablet Two-Finger Pinch Resize Handler - RAF throttled
+  const handleNodeResize = useCallback((nodeId: string, newWidth: number, newX?: number) => {
+    pendingResizeRef.current[nodeId] = { width: newWidth, x: newX };
     if (resizeRafIdRef.current === null) {
       resizeRafIdRef.current = window.requestAnimationFrame(() => {
         resizeRafIdRef.current = null;
         const resizes = pendingResizeRef.current;
         pendingResizeRef.current = {};
         setNodes((prevNodes) => {
-          return prevNodes.map((n) => {
-            const w = resizes[n.id];
-            return w !== undefined ? { ...n, width: w } : n;
+          let hasChanges = false;
+          const nextNodes = prevNodes.map((n) => {
+            const r = resizes[n.id];
+            if (!r) return n;
+            const w = r.width;
+            if (typeof w !== 'number' || !isFinite(w) || isNaN(w) || w < 200 || w > 1200) return n;
+            hasChanges = true;
+            const updated = { ...n, width: Math.round(w) };
+            if (typeof r.x === 'number' && isFinite(r.x) && !isNaN(r.x)) {
+              updated.x = Math.max(50, Math.min(4200 - updated.width, Math.round(r.x)));
+            }
+            return updated;
           });
+          return hasChanges ? nextNodes : prevNodes;
         });
       });
     }
   }, [setNodes]);
+
+  // Persist node dimensions on two-finger resize settle
+  const handleNodePinchEnd = useCallback((nodeId: string, finalWidth: number, finalX?: number) => {
+    saveNodeDimension(nodeId, finalWidth, finalX);
+    // If visitor node, keep visitor storage updated as well
+    setNodesByPreset((prev) => {
+      const visitorOnly = prev.project.filter((n) => n.category === 'visitor');
+      if (visitorOnly.length > 0) {
+        try {
+          localStorage.setItem(VISITOR_STORAGE_KEY, JSON.stringify(visitorOnly));
+        } catch (e) {}
+      }
+      return prev;
+    });
+  }, []);
 
   // Visitor node creation with local persistence and auto-focus
   const handleAddVisitorNode = useCallback((newNode: NodeData) => {
@@ -1157,7 +1247,18 @@ export default function App() {
     }
 
     if (e.touches.length === 2) {
-      // 2-finger pinch zoom initiation
+      // Distinguish NODE RESIZE from CANVAS PINCH-ZOOM:
+      // If any active touch on the screen is associated with a node card, suppress canvas zoom so the node resizes instead!
+      const isAnyTouchOnNode = Array.from(e.touches).some((t) => {
+        const el = document.elementFromPoint(t.clientX, t.clientY);
+        return el && (el.closest('.node-card') || el.closest('[id^="graph-node-"]'));
+      });
+
+      if (isAnyTouchOnNode) {
+        return;
+      }
+
+      // 2-finger pinch zoom initiation on empty canvas
       isPanningRef.current = false;
       isPinchingRef.current = true;
       const t1 = e.touches[0];
@@ -1881,6 +1982,7 @@ export default function App() {
                               onSelectNode={handleSelectNode}
                               onNodeDrag={handleNodeDrag}
                               onNodeResize={handleNodeResize}
+                              onNodePinchEnd={handleNodePinchEnd}
                               onDragStateChange={handleDragStateChange}
                               onDeleteVisitorNode={handleDeleteVisitorNode}
                               onOpenCertificateModal={handleOpenCertificateModal}

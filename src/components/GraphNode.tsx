@@ -40,7 +40,8 @@ interface GraphNodeProps {
   isDimmed?: boolean;
   onSelectNode?: (nodeId: string) => void;
   onNodeDrag: (nodeId: string, deltaX: number, deltaY: number) => void;
-  onNodeResize?: (nodeId: string, newWidth: number) => void;
+  onNodeResize?: (nodeId: string, newWidth: number, newX?: number) => void;
+  onNodePinchEnd?: (nodeId: string, finalWidth: number, finalX?: number) => void;
   onOpenCertificateModal: (cert: CertificateItem) => void;
   onOpenProjectModal: (proj: ProjectItem) => void;
   onOpenContactModal: () => void;
@@ -79,6 +80,7 @@ const GraphNodeComponent: React.FC<GraphNodeProps> = ({
   onSelectNode,
   onNodeDrag,
   onNodeResize,
+  onNodePinchEnd,
   onOpenCertificateModal,
   onOpenProjectModal,
   onOpenContactModal,
@@ -94,9 +96,13 @@ const GraphNodeComponent: React.FC<GraphNodeProps> = ({
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
+  const [isPinchResizing, setIsPinchResizing] = useState(false);
+  const [pinchLiveWidth, setPinchLiveWidth] = useState<number | null>(null);
   const [isOriginExpanding, setIsOriginExpanding] = useState(false);
+
   const isDraggingRef = useRef(false);
   const isResizingRef = useRef(false);
+  const isPinchResizingRef = useRef(false);
   const isMouseDownRef = useRef(false);
   const hasActuallyDraggedRef = useRef(false);
   const dragStartClientPosRef = useRef({ x: 0, y: 0 });
@@ -104,13 +110,28 @@ const GraphNodeComponent: React.FC<GraphNodeProps> = ({
   const touchStartPosRef = useRef({ x: 0, y: 0 });
   const touchHasDraggedRef = useRef(false);
   const lastTouchTapRef = useRef<{ time: number; x: number; y: number }>({ time: 0, x: 0, y: 0 });
+  const wasPinchGestureRef = useRef(false);
+
+  const pinchStartDistRef = useRef(0);
+  const pinchStartWidthRef = useRef(0);
+  const pinchStartXRef = useRef(0);
+  const pinchActiveTouchesRef = useRef<{ id1: number; id2: number } | null>(null);
+
   const nodeRef = useRef<HTMLDivElement>(null);
   const cardElementId = useId();
 
   const onNodeDragRef = useRef(onNodeDrag);
   onNodeDragRef.current = onNodeDrag;
+  const onNodeResizeRef = useRef(onNodeResize);
+  onNodeResizeRef.current = onNodeResize;
+  const onNodePinchEndRef = useRef(onNodePinchEnd);
+  onNodePinchEndRef.current = onNodePinchEnd;
   const scaleRef = useRef(scale);
   scaleRef.current = scale;
+
+  const isClock = node.category === 'clock';
+  const minNodeWidth = isClock ? 220 : 260;
+  const maxNodeWidth = isClock ? 380 : 680;
 
   const handleOpenFocus = useCallback((e?: React.MouseEvent) => {
     e?.stopPropagation();
@@ -120,6 +141,8 @@ const GraphNodeComponent: React.FC<GraphNodeProps> = ({
   }, [node, onOpenFocusedNode]);
 
   const handleDoubleClick = useCallback((e: React.MouseEvent) => {
+    if (wasPinchGestureRef.current) return;
+
     // Avoid opening modal if clicking interactive controls or resize handles
     const target = e.target as HTMLElement;
     if (
@@ -158,6 +181,147 @@ const GraphNodeComponent: React.FC<GraphNodeProps> = ({
     e.stopPropagation();
     handleOpenFocus(e);
   }, [handleOpenFocus]);
+
+  // Accessible Size Cycling Fallback
+  const handleCycleNodeSize = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (isClock) {
+      const nextW = node.width < 270 ? 320 : node.width < 340 ? 360 : 240;
+      const deltaW = nextW - node.width;
+      const nextX = Math.max(50, Math.min(4200 - nextW, Math.round(node.x - deltaW / 2)));
+      onNodeResizeRef.current?.(node.id, nextW, nextX);
+      onNodePinchEndRef.current?.(node.id, nextW, nextX);
+      return;
+    }
+    // S (300) -> M (420) -> L (580) -> S (300)
+    const nextWidth = node.width < 360 ? 430 : node.width < 500 ? 580 : 300;
+    const deltaW = nextWidth - node.width;
+    const nextX = Math.max(50, Math.min(4200 - nextWidth, Math.round(node.x - deltaW / 2)));
+    onNodeResizeRef.current?.(node.id, nextWidth, nextX);
+    onNodePinchEndRef.current?.(node.id, nextWidth, nextX);
+  }, [node.id, node.width, node.x, isClock]);
+
+  // ============================================================
+  // TABLET TWO-FINGER PINCH-TO-RESIZE ENGINE
+  // ============================================================
+  const endPinchResize = useCallback(() => {
+    if (!isPinchResizingRef.current) return;
+    isPinchResizingRef.current = false;
+    setIsPinchResizing(false);
+    pinchActiveTouchesRef.current = null;
+    const finalW = pinchLiveWidth ?? node.width;
+    setPinchLiveWidth(null);
+    onNodePinchEndRef.current?.(node.id, finalW, node.x);
+
+    // Suppress clicks/double-taps immediately following a pinch resize gesture
+    wasPinchGestureRef.current = true;
+    setTimeout(() => {
+      wasPinchGestureRef.current = false;
+    }, 400);
+  }, [node.id, node.width, node.x, pinchLiveWidth]);
+
+  const updatePinchResize = useCallback((t1: { clientX: number; clientY: number }, t2: { clientX: number; clientY: number }) => {
+    if (!isPinchResizingRef.current) return;
+    const currentDist = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
+    const startDist = Math.max(15, pinchStartDistRef.current);
+    const scaleFactor = currentDist / startDist;
+
+    let newWidth = Math.round(pinchStartWidthRef.current * scaleFactor);
+    newWidth = Math.max(minNodeWidth, Math.min(maxNodeWidth, newWidth));
+
+    // Center-anchored spatial scaling: preserve visual center of the node
+    const deltaWidth = newWidth - pinchStartWidthRef.current;
+    let newX = Math.round(pinchStartXRef.current - deltaWidth / 2);
+    newX = Math.max(50, Math.min(4200 - newWidth, newX));
+
+    setPinchLiveWidth(newWidth);
+    onNodeResizeRef.current?.(node.id, newWidth, newX);
+  }, [minNodeWidth, maxNodeWidth, node.id]);
+
+  const startPinchResize = useCallback((
+    t1: { clientX: number; clientY: number; identifier: number },
+    t2: { clientX: number; clientY: number; identifier: number }
+  ) => {
+    const dist = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
+    if (dist < 15) return;
+
+    // Disengage any active single-touch drag immediately
+    if (isDraggingRef.current) {
+      isDraggingRef.current = false;
+      setIsDragging(false);
+      onDragStateChange?.(node.id, false);
+    }
+    touchHasDraggedRef.current = false;
+
+    isPinchResizingRef.current = true;
+    setIsPinchResizing(true);
+    wasPinchGestureRef.current = true;
+    pinchStartDistRef.current = dist;
+    pinchStartWidthRef.current = node.width;
+    pinchStartXRef.current = node.x;
+    pinchActiveTouchesRef.current = { id1: t1.identifier, id2: t2.identifier };
+    setPinchLiveWidth(node.width);
+
+    onSelectNode?.(node.id);
+
+    // Global touch listeners while pinch gesture is active
+    const handleGlobalTouchMove = (moveEvt: TouchEvent) => {
+      if (!isPinchResizingRef.current) return;
+      if (moveEvt.cancelable) {
+        moveEvt.preventDefault();
+      }
+      const touches = moveEvt.touches;
+      if (touches.length < 2) {
+        endPinchResize();
+        cleanupListeners();
+        return;
+      }
+      const pair = pinchActiveTouchesRef.current;
+      let active1: Touch | undefined;
+      let active2: Touch | undefined;
+      if (pair) {
+        active1 = Array.from(touches).find((t) => t.identifier === pair.id1);
+        active2 = Array.from(touches).find((t) => t.identifier === pair.id2);
+      }
+      if (!active1 || !active2) {
+        active1 = touches[0];
+        active2 = touches[1];
+      }
+      updatePinchResize(active1, active2);
+    };
+
+    const handleGlobalTouchEnd = (endEvt: TouchEvent) => {
+      if (endEvt.touches.length < 2) {
+        endPinchResize();
+        cleanupListeners();
+      }
+    };
+
+    const cleanupListeners = () => {
+      window.removeEventListener('touchmove', handleGlobalTouchMove);
+      window.removeEventListener('touchend', handleGlobalTouchEnd);
+      window.removeEventListener('touchcancel', handleGlobalTouchEnd);
+    };
+
+    window.addEventListener('touchmove', handleGlobalTouchMove, { passive: false });
+    window.addEventListener('touchend', handleGlobalTouchEnd);
+    window.addEventListener('touchcancel', handleGlobalTouchEnd);
+  }, [node.id, node.width, node.x, onSelectNode, onDragStateChange, updatePinchResize, endPinchResize]);
+
+  // Orientation change and window blur cleanup safety
+  useEffect(() => {
+    const handleAbort = () => {
+      if (isPinchResizingRef.current) {
+        endPinchResize();
+      }
+    };
+    window.addEventListener('orientationchange', handleAbort);
+    window.addEventListener('blur', handleAbort);
+    return () => {
+      window.removeEventListener('orientationchange', handleAbort);
+      window.removeEventListener('blur', handleAbort);
+    };
+  }, [endPinchResize]);
 
   // Deliberate Side / Corner Resize Mouse Handler
   const handleResizeMouseDown = (e: React.MouseEvent, direction: 'right' | 'corner') => {
@@ -284,8 +448,16 @@ const GraphNodeComponent: React.FC<GraphNodeProps> = ({
     window.addEventListener('mouseup', handleMouseUp);
   };
 
-  // Touch drag & double-tap support for mobile / tablets
+  // Touch drag & tablet two-finger pinch support
   const handleTouchStart = (e: React.TouchEvent) => {
+    // If two or more touches start on this node, engage tablet pinch resize immediately
+    if (e.touches.length >= 2) {
+      e.stopPropagation();
+      if (e.cancelable) e.preventDefault();
+      startPinchResize(e.touches[0], e.touches[1]);
+      return;
+    }
+
     if (e.touches.length !== 1) return;
     const target = e.target as HTMLElement;
     if (
@@ -307,7 +479,32 @@ const GraphNodeComponent: React.FC<GraphNodeProps> = ({
     touchHasDraggedRef.current = false;
     onSelectNode?.(node.id);
 
+    // Watch for a second finger arriving either on the node or within its spatial proximity
+    const handleWindowTouchStart = (winEvt: TouchEvent) => {
+      if (winEvt.touches.length >= 2 && nodeRef.current) {
+        const rect = nodeRef.current.getBoundingClientRect();
+        const margin = 80; // Allow fingers slightly outside or across edges
+        const t2 = Array.from(winEvt.touches).find((t) => t.identifier !== touch.identifier);
+        if (t2) {
+          const inBounds =
+            t2.clientX >= rect.left - margin &&
+            t2.clientX <= rect.right + margin &&
+            t2.clientY >= rect.top - margin &&
+            t2.clientY <= rect.bottom + margin;
+
+          if (inBounds) {
+            if (winEvt.cancelable) winEvt.preventDefault();
+            winEvt.stopPropagation();
+            window.removeEventListener('touchstart', handleWindowTouchStart);
+            startPinchResize(touch, t2);
+          }
+        }
+      }
+    };
+    window.addEventListener('touchstart', handleWindowTouchStart, { passive: false });
+
     const handleTouchMove = (moveEvent: TouchEvent) => {
+      if (isPinchResizingRef.current) return;
       if (moveEvent.touches.length !== 1) return;
       const t = moveEvent.touches[0];
       const dist = Math.hypot(
@@ -340,6 +537,15 @@ const GraphNodeComponent: React.FC<GraphNodeProps> = ({
     };
 
     const handleTouchEnd = (endEvent: TouchEvent) => {
+      window.removeEventListener('touchstart', handleWindowTouchStart);
+      window.removeEventListener('touchmove', handleTouchMove);
+      window.removeEventListener('touchend', handleTouchEnd);
+
+      if (wasPinchGestureRef.current) {
+        lastTouchTapRef.current = { time: 0, x: 0, y: 0 };
+        return;
+      }
+
       if (touchHasDraggedRef.current) {
         isDraggingRef.current = false;
         setIsDragging(false);
@@ -422,11 +628,28 @@ const GraphNodeComponent: React.FC<GraphNodeProps> = ({
         onSelectNode?.(node.id);
       }}
     >
+      {/* Live Tablet Resize HUD Indicator Badge */}
+      {isPinchResizing && (
+        <div className="absolute -top-9 left-1/2 -translate-x-1/2 z-50 pointer-events-none animate-in fade-in zoom-in-95 duration-150 flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#0d0e14]/95 border border-rose-500/70 shadow-[0_0_20px_rgba(244,63,94,0.45)] text-[11px] font-mono font-medium text-rose-300 tracking-wider backdrop-blur-md whitespace-nowrap">
+          <span className="text-rose-400 text-xs animate-pulse">↔</span>
+          <span>{pinchLiveWidth ?? node.width}PX</span>
+          <span className="text-[9px] text-zinc-400 uppercase tracking-widest pl-1 border-l border-white/10">TABLET RESIZE</span>
+        </div>
+      )}
+
+      {/* Subtle Lateral Hairline Guides while Pinch Resizing */}
+      {isPinchResizing && (
+        <>
+          <div className="absolute inset-y-6 -left-1 w-0.5 rounded-full bg-rose-500 shadow-[0_0_10px_rgba(244,63,94,0.9)] pointer-events-none animate-pulse" />
+          <div className="absolute inset-y-6 -right-1 w-0.5 rounded-full bg-rose-500 shadow-[0_0_10px_rgba(244,63,94,0.9)] pointer-events-none animate-pulse" />
+        </>
+      )}
+
       {/* Node Container Card with Dark Neumorphic Aesthetic */}
       <div
         onDoubleClick={handleDoubleClick}
         style={{
-          transition: isDragging ? 'none' : undefined,
+          transition: isDragging || isPinchResizing ? 'none' : undefined,
         }}
         className={`${
           node.shape === 'capsule'
@@ -435,7 +658,9 @@ const GraphNodeComponent: React.FC<GraphNodeProps> = ({
             ? 'rounded-2xl rotate-[-1deg]'
             : 'rounded-[30px]'
         } node-card transition-all duration-300 ${
-          isOriginExpanding
+          isPinchResizing
+            ? 'ring-2 ring-rose-500 shadow-[0_0_35px_rgba(244,63,94,0.65)] border-rose-500/90'
+            : isOriginExpanding
             ? 'ring-2 ring-rose-500 shadow-[0_0_35px_rgba(244,63,94,0.6)] border-rose-500/80 scale-[1.015]'
             : isSelected
             ? 'node-card-active ring-1 ring-rose-500/40 shadow-[0_0_30px_rgba(225,29,72,0.25)]'
@@ -474,6 +699,19 @@ const GraphNodeComponent: React.FC<GraphNodeProps> = ({
           </div>
 
           <div className="flex items-center gap-1 shrink-0">
+            {/* Accessible Size Step Button for Tablets & Keyboards */}
+            {onNodeResize && (
+              <button
+                type="button"
+                onClick={handleCycleNodeSize}
+                className="p-1 rounded-md text-zinc-400 hover:text-rose-400 hover:bg-rose-500/20 transition-all cursor-pointer"
+                title={`Cycle size: ${node.width < 340 ? 'S → M' : node.width < 460 ? 'M → L' : 'L → S'}`}
+                aria-label="Cycle node size"
+              >
+                <Sliders className="w-3.5 h-3.5 text-zinc-400 hover:text-rose-400 transition-colors" />
+              </button>
+            )}
+
             {/* Open Focused Artifact Modal */}
             {onOpenFocusedNode && (
               <button
