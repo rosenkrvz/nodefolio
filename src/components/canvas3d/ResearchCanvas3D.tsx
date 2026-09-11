@@ -36,6 +36,23 @@ import {
 } from '../icons';
 import { useSound } from '../../lib/sound/useSound';
 
+// ─── Cinematic Orbit / Turntable Icon ─────────────────────────────────────────
+const OrbitIcon: React.FC<{ className?: string }> = ({ className = 'w-4 h-4' }) => (
+  <svg
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.5"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={className}
+  >
+    <circle cx="12" cy="12" r="3" />
+    <ellipse cx="12" cy="12" rx="8.5" ry="3.5" transform="rotate(-30 12 12)" />
+    <path d="M19 8.5l2-1.5-1 2.5" />
+  </svg>
+);
+
 interface ResearchCanvas3DProps {
   initialPhaseId?: string;
   onExit: (currentPhaseChronicleId: string) => void;
@@ -131,7 +148,7 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
   const [isLoadingGeometry, setIsLoadingGeometry] = useState<boolean>(true);
   const [loadProgress, setLoadProgress] = useState<number>(0);
   const [showIntroCard, setShowIntroCard] = useState<boolean>(true);
-  const [activeTool, setActiveTool] = useState<'orbit' | 'inspect' | 'layers'>('orbit');
+  const [isAutoRotate, setIsAutoRotate] = useState<boolean>(false);
   const [showLayersMenu, setShowLayersMenu] = useState<boolean>(false);
   const [showAnnotations, setShowAnnotations] = useState<boolean>(false);
   const [activeLayers, setActiveLayers] = useState<Record<LayerType, boolean>>({
@@ -141,6 +158,14 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
     grid: true,
     annotations: false,
   });
+
+  // Keep Three.js OrbitControls auto-rotate synchronized
+  useEffect(() => {
+    if (controlsRef.current) {
+      controlsRef.current.autoRotate = isAutoRotate;
+      controlsRef.current.autoRotateSpeed = 1.2;
+    }
+  }, [isAutoRotate]);
 
   // Performance System State
   const [qualityMode, setQualityMode] = useState<'auto' | QualityTier>('auto');
@@ -1080,36 +1105,38 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
         aria-label="Canvas Exploration Tools"
         className="hidden md:flex flex-col gap-1.5 absolute left-4 top-1/2 -translate-y-1/2 z-30 p-1.5 rounded-2xl bg-black/85 backdrop-blur-xl border border-white/15 shadow-2xl pointer-events-auto"
       >
+        {/* Tool 1: Cinematic Turntable / Auto-Rotate */}
         <button
           type="button"
           onClick={() => {
-            playSound('click');
-            setActiveTool('orbit');
+            playSound('toggle');
+            setIsAutoRotate((prev) => !prev);
           }}
-          title="Orbit / Rotate View"
+          title={isAutoRotate ? 'Pause Turntable Auto-Rotate' : 'Cinematic Turntable (Auto-Rotate)'}
           className={`p-2.5 rounded-xl transition-all cursor-pointer ${
-            activeTool === 'orbit'
+            isAutoRotate
+              ? 'bg-rose-600 text-white shadow-[0_0_12px_rgba(225,29,72,0.5)]'
+              : 'text-zinc-400 hover:text-white hover:bg-white/10'
+          }`}
+        >
+          <OrbitIcon className="w-4 h-4" />
+        </button>
+
+        {/* Tool 2: Phase Overview & Specification Info Card */}
+        <button
+          type="button"
+          onClick={() => {
+            playSound('toggle');
+            setShowIntroCard((prev) => !prev);
+          }}
+          title={showIntroCard ? 'Hide Phase Specification' : 'Show Phase Specification'}
+          className={`p-2.5 rounded-xl transition-all cursor-pointer ${
+            showIntroCard
               ? 'bg-rose-600 text-white shadow-[0_0_12px_rgba(225,29,72,0.5)]'
               : 'text-zinc-400 hover:text-white hover:bg-white/10'
           }`}
         >
           <Compass className="w-4 h-4" />
-        </button>
-
-        <button
-          type="button"
-          onClick={() => {
-            playSound('click');
-            setActiveTool('inspect');
-          }}
-          title="Inspect / Select Objects"
-          className={`p-2.5 rounded-xl transition-all cursor-pointer ${
-            activeTool === 'inspect'
-              ? 'bg-rose-600 text-white shadow-[0_0_12px_rgba(225,29,72,0.5)]'
-              : 'text-zinc-400 hover:text-white hover:bg-white/10'
-          }`}
-        >
-          <Eye className="w-4 h-4" />
         </button>
 
         <div className="relative">
@@ -1212,7 +1239,7 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
       </nav>
 
       {/* Contextual Introduction Card (Minimizes on first interaction) */}
-      {showIntroCard ? (
+      {showIntroCard && (
         <aside
           role="region"
           aria-label="Phase Context Introduction"
@@ -1251,16 +1278,6 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
             EXPLORE ARTIFACT
           </button>
         </aside>
-      ) : (
-        <button
-          type="button"
-          onClick={() => setShowIntroCard(true)}
-          title="Open Context Introduction"
-          className="hidden md:flex items-center gap-1.5 absolute left-18 top-20 z-30 px-3 py-1.5 rounded-xl bg-black/80 backdrop-blur-md border border-white/15 text-zinc-400 hover:text-white text-xs font-tech uppercase tracking-wider transition-all cursor-pointer pointer-events-auto"
-        >
-          <Compass className="w-3.5 h-3.5 text-rose-400" />
-          <span>INFO</span>
-        </button>
       )}
 
       {/* 3D Orientation Gizmo (Bottom-Left Corner) */}
