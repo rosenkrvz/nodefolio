@@ -194,6 +194,8 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
   const activeArtifactRef = useRef<PhaseArtifactInstance | null>(null);
   const animFrameIdRef = useRef<number | null>(null);
   const phaseBtnRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+  const layersMenuRef = useRef<HTMLDivElement>(null);
+  const layersBtnRef = useRef<HTMLButtonElement>(null);
 
   // Smooth camera focusing transition
   const cameraFocusTarget = useRef<{
@@ -247,6 +249,28 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
     };
   }, []);
 
+  // ── Auto-close Visual Layers Menu when clicking outside ───────────────────
+  useEffect(() => {
+    if (!showLayersMenu) return;
+
+    const handlePointerDownOutside = (e: PointerEvent) => {
+      const target = e.target as Node;
+      if (
+        layersMenuRef.current &&
+        !layersMenuRef.current.contains(target) &&
+        layersBtnRef.current &&
+        !layersBtnRef.current.contains(target)
+      ) {
+        setShowLayersMenu(false);
+      }
+    };
+
+    window.addEventListener('pointerdown', handlePointerDownOutside);
+    return () => {
+      window.removeEventListener('pointerdown', handlePointerDownOutside);
+    };
+  }, [showLayersMenu]);
+
   // ── Keyboard Shortcuts: R for Reset, Left/Right for Phases, Esc for Exit ───
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -257,6 +281,10 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
         handleResetView();
       } else if (e.key === 'Escape') {
         e.preventDefault();
+        if (showLayersMenu) {
+          setShowLayersMenu(false);
+          return;
+        }
         onExit(currentPhaseMeta.chronicleId);
       } else if (e.key === 'ArrowRight') {
         e.preventDefault();
@@ -1025,11 +1053,14 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
 
         <div className="relative">
           <button
+            ref={layersBtnRef}
             type="button"
             onClick={() => {
               playSound('click');
-              setShowLayersMenu(!showLayersMenu);
+              setShowLayersMenu((prev) => !prev);
             }}
+            aria-expanded={showLayersMenu}
+            aria-haspopup="dialog"
             title="Toggle Visual Layers"
             className={`p-2.5 rounded-xl transition-all cursor-pointer ${
               showLayersMenu
@@ -1040,28 +1071,58 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
             <Layers className="w-4 h-4" />
           </button>
 
-          {/* Interactive Layers Menu Popover */}
-          {showLayersMenu && (
-            <div className="absolute left-full ml-3 top-0 w-52 p-3 rounded-xl bg-black/95 backdrop-blur-xl border border-white/15 shadow-2xl z-40 space-y-2 text-xs">
-              <div className="text-[10px] font-tech text-zinc-400 uppercase tracking-wider font-semibold border-b border-white/10 pb-1.5">
-                VISUAL LAYERS
+          {/* Interactive Layers Menu Popover with Smooth Cinematic Animation */}
+          <div
+            ref={layersMenuRef}
+            role="dialog"
+            aria-label="Visual Layers Configuration"
+            aria-hidden={!showLayersMenu}
+            className={`absolute left-full ml-3 top-0 w-52 p-3.5 rounded-2xl bg-black/95 backdrop-blur-2xl border border-white/15 shadow-[0_16px_40px_rgba(0,0,0,0.75),0_0_16px_rgba(225,29,72,0.15)] z-40 space-y-2.5 text-xs origin-top-left transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] select-none ${
+              showLayersMenu
+                ? 'opacity-100 scale-100 translate-x-0 pointer-events-auto'
+                : 'opacity-0 scale-90 -translate-x-3 pointer-events-none'
+            }`}
+          >
+            <div className="flex items-center justify-between border-b border-white/10 pb-2">
+              <div className="flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
+                <span className="text-[10px] font-tech text-zinc-300 uppercase tracking-widest font-bold">
+                  VISUAL LAYERS
+                </span>
               </div>
+              <span className="font-mono text-[9px] text-zinc-500 bg-white/[0.04] px-1.5 py-0.5 rounded border border-white/[0.08]">
+                {Object.values(activeLayers).filter(Boolean).length}/5
+              </span>
+            </div>
+
+            <div className="space-y-1">
               {(['geometry', 'trajectories', 'clusters', 'grid', 'annotations'] as const).map((layer) => (
                 <label
                   key={layer}
-                  className="flex items-center justify-between text-zinc-300 hover:text-white cursor-pointer py-0.5 select-none"
+                  className="flex items-center justify-between text-zinc-300 hover:text-white cursor-pointer py-1 px-1.5 rounded-lg hover:bg-white/[0.06] transition-colors select-none group"
                 >
-                  <span className="capitalize">{layer}</span>
+                  <div className="flex items-center gap-2">
+                    <span
+                      className="w-1.5 h-1.5 rounded-full transition-all duration-200"
+                      style={{
+                        backgroundColor: activeLayers[layer] ? '#f43f5e' : 'rgba(255,255,255,0.2)',
+                        boxShadow: activeLayers[layer] ? '0 0 6px #f43f5e' : 'none',
+                      }}
+                    />
+                    <span className="capitalize font-medium text-xs tracking-wide group-hover:text-white">
+                      {layer}
+                    </span>
+                  </div>
                   <input
                     type="checkbox"
                     checked={activeLayers[layer]}
                     onChange={() => handleToggleLayer(layer)}
-                    className="accent-rose-500 w-3.5 h-3.5 cursor-pointer"
+                    className="accent-rose-500 w-3.5 h-3.5 cursor-pointer rounded transition-transform active:scale-90"
                   />
                 </label>
               ))}
             </div>
-          )}
+          </div>
         </div>
 
         <button
