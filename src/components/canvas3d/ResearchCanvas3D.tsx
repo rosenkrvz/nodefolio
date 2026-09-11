@@ -14,7 +14,7 @@ import { createPhase02Optimization } from './phases/Phase02Optimization';
 import { createPhase03MetricSpaces } from './phases/Phase03MetricSpaces';
 import { createPhase04Attention } from './phases/Phase04Attention';
 import { createPhase05LatentManifold } from './phases/Phase05LatentManifold';
-import { RotateCcw, Close as X, Layers, Compass, Cpu, Activity, ArrowUpRight } from '../icons';
+import { RotateCcw, Close as X, Layers, Compass, Cpu, Activity, ArrowUpRight, Grip } from '../icons';
 import { playSound } from '../../lib/sound';
 
 interface ResearchCanvas3DProps {
@@ -97,6 +97,159 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
   // Interaction State
   const [hoveredItem, setHoveredItem] = useState<InspectableItem | null>(null);
   const [selectedItem, setSelectedItem] = useState<InspectableItem | null>(null);
+
+  // Desktop Draggable Artifact Specification Panel State
+  const [isDesktop, setIsDesktop] = useState<boolean>(() => {
+    return typeof window !== 'undefined' ? window.innerWidth >= 768 : true;
+  });
+
+  const [specPos, setSpecPos] = useState<{ x: number; y: number } | null>(() => {
+    if (typeof window === 'undefined') return null;
+    try {
+      const stored = localStorage.getItem('nodefolio_spec_pos');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (
+          typeof parsed.x === 'number' &&
+          typeof parsed.y === 'number' &&
+          parsed.x >= 10 &&
+          parsed.x < window.innerWidth - 100 &&
+          parsed.y >= 50 &&
+          parsed.y < window.innerHeight - 100
+        ) {
+          return { x: parsed.x, y: parsed.y };
+        }
+      }
+    } catch {
+      // Ignore
+    }
+    return null;
+  });
+
+  const [isDraggingSpec, setIsDraggingSpec] = useState<boolean>(false);
+  const specPanelRef = useRef<HTMLElement | null>(null);
+  const specDragOffsetRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+  const isDraggingSpecRef = useRef<boolean>(false);
+
+  useEffect(() => {
+    const handleResize = () => {
+      const desktop = window.innerWidth >= 768;
+      setIsDesktop(desktop);
+      if (desktop) {
+        setSpecPos((prev) => {
+          if (!prev) return null;
+          const panelEl = specPanelRef.current;
+          const width = panelEl ? panelEl.offsetWidth : 320;
+          const height = panelEl ? panelEl.offsetHeight : 240;
+          const maxX = Math.max(16, window.innerWidth - width - 16);
+          const maxY = Math.max(72, window.innerHeight - height - 80);
+          if (prev.x > maxX || prev.y > maxY) {
+            return {
+              x: Math.min(prev.x, maxX),
+              y: Math.min(prev.y, maxY),
+            };
+          }
+          return prev;
+        });
+      }
+    };
+    window.addEventListener('resize', handleResize, { passive: true });
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  const handleSpecPointerDown = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    // Only drag on desktop and primary mouse button
+    if (window.innerWidth < 768 || e.button !== 0) return;
+    if ((e.target as HTMLElement).closest('button')) return;
+
+    e.preventDefault();
+    e.stopPropagation();
+
+    const panel = specPanelRef.current;
+    if (!panel) return;
+
+    const rect = panel.getBoundingClientRect();
+    specDragOffsetRef.current = {
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top,
+    };
+
+    isDraggingSpecRef.current = true;
+    setIsDraggingSpec(true);
+
+    const onPointerMove = (moveEv: PointerEvent) => {
+      if (!isDraggingSpecRef.current) return;
+      moveEv.preventDefault();
+      moveEv.stopPropagation();
+
+      const panelEl = specPanelRef.current;
+      const width = panelEl ? panelEl.offsetWidth : 320;
+      const height = panelEl ? panelEl.offsetHeight : 240;
+
+      const minX = 16;
+      const maxX = Math.max(minX, window.innerWidth - width - 16);
+      const minY = 72;
+      const maxY = Math.max(minY, window.innerHeight - height - 80);
+
+      const targetX = moveEv.clientX - specDragOffsetRef.current.x;
+      const targetY = moveEv.clientY - specDragOffsetRef.current.y;
+
+      const clampedX = Math.round(Math.max(minX, Math.min(maxX, targetX)));
+      const clampedY = Math.round(Math.max(minY, Math.min(maxY, targetY)));
+
+      setSpecPos({ x: clampedX, y: clampedY });
+    };
+
+    const onPointerUp = (upEv: PointerEvent) => {
+      if (!isDraggingSpecRef.current) return;
+      isDraggingSpecRef.current = false;
+      setIsDraggingSpec(false);
+
+      window.removeEventListener('pointermove', onPointerMove);
+      window.removeEventListener('pointerup', onPointerUp);
+      window.removeEventListener('pointercancel', onPointerUp);
+
+      const panelEl = specPanelRef.current;
+      const width = panelEl ? panelEl.offsetWidth : 320;
+      const height = panelEl ? panelEl.offsetHeight : 240;
+      const minX = 16;
+      const maxX = Math.max(minX, window.innerWidth - width - 16);
+      const minY = 72;
+      const maxY = Math.max(minY, window.innerHeight - height - 80);
+
+      const targetX = upEv.clientX - specDragOffsetRef.current.x;
+      const targetY = upEv.clientY - specDragOffsetRef.current.y;
+      const finalX = Math.round(Math.max(minX, Math.min(maxX, targetX)));
+      const finalY = Math.round(Math.max(minY, Math.min(maxY, targetY)));
+
+      const finalPos = { x: finalX, y: finalY };
+      setSpecPos(finalPos);
+      try {
+        localStorage.setItem('nodefolio_spec_pos', JSON.stringify(finalPos));
+      } catch {
+        // Ignore
+      }
+      playSound('secondaryClick');
+    };
+
+    window.addEventListener('pointermove', onPointerMove, { passive: false });
+    window.addEventListener('pointerup', onPointerUp, { passive: false });
+    window.addEventListener('pointercancel', onPointerUp, { passive: false });
+  }, []);
+
+  const handleResetSpecPos = useCallback((e?: React.MouseEvent) => {
+    if (e) {
+      e.stopPropagation();
+      e.preventDefault();
+    }
+    setSpecPos(null);
+    try {
+      localStorage.removeItem('nodefolio_spec_pos');
+    } catch {
+      // Ignore
+    }
+    playSound('click');
+  }, []);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
@@ -760,21 +913,61 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
 
       {/* -------------------------------------------------------------------
           RIGHT / BOTTOM: Phase Specification Panel (Hidden when inspecting object)
+          (Desktop: Draggable anywhere across viewport on PC; Mobile: Bottom sheet)
          ------------------------------------------------------------------- */}
       {!selectedItem && (
         <aside
-          className={`fixed md:absolute inset-x-3 md:inset-x-auto md:right-6 bottom-[calc(env(safe-area-inset-bottom,0px)+74px)] md:bottom-24 md:max-w-xs p-4 rounded-2xl md:rounded-xl bg-black/85 backdrop-blur-xl border border-white/15 text-zinc-300 pointer-events-auto transition-all duration-300 z-20 ${
-            showTechnicalDetails ? 'block' : 'hidden md:block'
-          }`}
+          ref={specPanelRef}
+          style={
+            isDesktop && specPos
+              ? {
+                  left: `${specPos.x}px`,
+                  top: `${specPos.y}px`,
+                  right: 'auto',
+                  bottom: 'auto',
+                }
+              : undefined
+          }
+          className={`fixed md:absolute inset-x-3 md:inset-x-auto ${
+            isDesktop && specPos ? '' : 'md:right-6 md:bottom-24'
+          } bottom-[calc(env(safe-area-inset-bottom,0px)+74px)] md:bottom-auto md:w-80 md:max-w-xs p-4 rounded-2xl md:rounded-xl bg-black/85 backdrop-blur-xl border border-white/15 text-zinc-300 pointer-events-auto z-20 ${
+            isDraggingSpec
+              ? 'ring-1 ring-rose-500/50 shadow-[0_16px_48px_rgba(0,0,0,0.95),0_0_24px_rgba(225,29,72,0.25)] transition-none'
+              : 'shadow-[0_12px_36px_rgba(0,0,0,0.75)] transition-all duration-300'
+          } ${showTechnicalDetails ? 'block' : 'hidden md:block'}`}
         >
-          <div className="flex items-center justify-between border-b border-white/10 pb-2 mb-2.5">
-            <span className="font-body text-[10px] font-bold tracking-[0.2em] text-zinc-400 uppercase flex items-center gap-1.5">
-              <Compass className="w-3.5 h-3.5 text-rose-400" />
+          {/* Draggable Header Handle */}
+          <div
+            onPointerDown={handleSpecPointerDown}
+            onDoubleClick={handleResetSpecPos}
+            title={isDesktop ? 'Drag to reposition • Double-click to reset' : undefined}
+            className={`flex items-center justify-between border-b border-white/10 pb-2 mb-2.5 select-none ${
+              isDesktop ? 'cursor-grab active:cursor-grabbing group' : ''
+            }`}
+          >
+            <span className="font-body text-[10px] font-bold tracking-[0.2em] text-zinc-400 uppercase flex items-center gap-1.5 group-hover:text-zinc-200 transition-colors">
+              {isDesktop ? (
+                <Grip className="w-3.5 h-3.5 text-zinc-500 group-hover:text-rose-400 transition-colors" />
+              ) : (
+                <Compass className="w-3.5 h-3.5 text-rose-400" />
+              )}
               <span>ARTIFACT SPECIFICATION</span>
             </span>
-            <span className="font-body text-[10px] font-semibold text-rose-400 uppercase">
-              {currentPhaseMeta.year}
-            </span>
+            <div className="flex items-center gap-1.5">
+              {specPos && isDesktop && (
+                <button
+                  type="button"
+                  onClick={handleResetSpecPos}
+                  title="Reset to default position"
+                  className="p-1 rounded text-zinc-500 hover:text-rose-400 hover:bg-white/5 transition-colors cursor-pointer"
+                >
+                  <RotateCcw className="w-3 h-3" />
+                </button>
+              )}
+              <span className="font-body text-[10px] font-semibold text-rose-400 uppercase">
+                {currentPhaseMeta.year}
+              </span>
+            </div>
           </div>
 
           <div className="space-y-2 text-xs font-body">
