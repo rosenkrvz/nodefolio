@@ -53,17 +53,20 @@ export const ResearchEntryLoader: React.FC<ResearchEntryLoaderProps> = ({
     return () => clearTimeout(safetyTimer);
   }, [isSceneReady, error]);
 
+  const onTransitionCompleteRef = useRef(onTransitionComplete);
+  onTransitionCompleteRef.current = onTransitionComplete;
+
   // Trigger smooth fade-out when BOTH minimum duration has elapsed AND scene is ready
   useEffect(() => {
     if (minTimeElapsed && isSceneReady && !error && !timedOutError && !isFadingOut) {
       setIsFadingOut(true);
       const exitTimer = setTimeout(() => {
-        onTransitionComplete();
-      }, prefersReducedMotion ? 150 : 400);
+        onTransitionCompleteRef.current?.();
+      }, prefersReducedMotion ? 150 : 350);
 
       return () => clearTimeout(exitTimer);
     }
-  }, [minTimeElapsed, isSceneReady, error, timedOutError, isFadingOut, onTransitionComplete, prefersReducedMotion]);
+  }, [minTimeElapsed, isSceneReady, error, timedOutError, isFadingOut, prefersReducedMotion]);
 
   const activeError = error || timedOutError;
 

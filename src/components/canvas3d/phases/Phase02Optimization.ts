@@ -212,6 +212,26 @@ export function createPhase02Optimization(quality: QualityTier = 'high'): PhaseA
   // 6. Register Inspectable Objects
   const inspectables: { mesh: THREE.Object3D; data: InspectableItem }[] = [
     {
+      mesh: surfaceMesh,
+      data: {
+        id: 'opt-surface',
+        name: 'Convex Loss Surface',
+        symbol: 'f(θ)',
+        type: 'OBJECTIVE LANDSCAPE',
+        role: 'Anisotropic Quadratic Paraboloid',
+        dimension: 'f: ℝ² → ℝ',
+        properties: {
+          'Loss Function': 'f(x, z) = 0.14(x² + 1.8z²)',
+          'Hessian Matrix': 'diag([0.280, 0.504]) ≻ 0',
+          'Curvature Ratio': 'κ = 1.80 (Anisotropic)',
+          'Global Minimum': 'θ* = [0, 0], f(θ*) = 0',
+          'Topology': 'Strictly Convex Well',
+        },
+        description: 'Continuous 3D loss surface with anisotropic quadratic curvature. The steepest descent gradient trajectory traverses orthogonal to the contour isolines toward the global minimum.',
+        worldPosition: new THREE.Vector3(0, 1.8, 0),
+      },
+    },
+    {
       mesh: minMarker,
       data: {
         id: 'opt-minimum',
@@ -276,9 +296,14 @@ export function createPhase02Optimization(quality: QualityTier = 'high'): PhaseA
   const onSelectObject = (item: InspectableItem | null) => {
     if (!item) {
       surfaceMat.opacity = 0.94;
+      surfaceMat.emissiveIntensity = 0.35;
       trajMat.opacity = 0.88;
       minMarkerMat.emissiveIntensity = 0.85;
       descentParticleMat.emissiveIntensity = 0.95;
+    } else if (item.id === 'opt-surface') {
+      surfaceMat.opacity = 0.98;
+      surfaceMat.emissiveIntensity = 0.65;
+      trajMat.opacity = 0.92;
     } else if (item.id === 'opt-minimum') {
       minMarkerMat.emissiveIntensity = 1.4;
       surfaceMat.opacity = 0.85;

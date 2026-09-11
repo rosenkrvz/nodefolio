@@ -426,11 +426,15 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.dampingFactor = 0.08;
-    controls.maxDistance = 45;
-    controls.minDistance = 3.5;
+    controls.maxDistance = 55;
+    controls.minDistance = 2.0;
+    controls.enableRotate = true;
+    controls.rotateSpeed = 0.9;
+    controls.enableZoom = true;
+    controls.zoomSpeed = 1.0;
     controls.enablePan = true;
     controls.panSpeed = 0.9;
-    controls.enabled = !isInitialEntryLoading;
+    controls.enabled = true;
     controlsRef.current = controls;
 
     // 5. Lighting Architecture: Scientific key, fill, and rim illumination
@@ -463,6 +467,8 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
 
     // 6. Interaction Event Handlers (Raycasting & Picking)
     const raycaster = new THREE.Raycaster();
+    raycaster.params.Line = { threshold: 0.35 };
+    raycaster.params.Points = { threshold: 0.35 };
     const pointer = new THREE.Vector2();
     let isDraggingCanvas = false;
     let dragStartPos = { x: 0, y: 0 };
@@ -749,6 +755,14 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
     }
   };
 
+  const handleEntryTransitionComplete = useCallback(() => {
+    setIsInitialEntryLoading(false);
+    if (controlsRef.current) {
+      controlsRef.current.enabled = true;
+      controlsRef.current.update();
+    }
+  }, []);
+
   // ── Drag Handlers for Specification HUD on Desktop ─────────────────────────
   const handleSpecPointerDown = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
     if (window.innerWidth < 768 || e.button !== 0) return;
@@ -891,12 +905,7 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
             setInitAttempt((prev) => prev + 1);
           }}
           onAbort={() => onExit(currentPhaseMeta.chronicleId)}
-          onTransitionComplete={() => {
-            setIsInitialEntryLoading(false);
-            if (controlsRef.current) {
-              controlsRef.current.enabled = true;
-            }
-          }}
+          onTransitionComplete={handleEntryTransitionComplete}
         />
       )}
 
