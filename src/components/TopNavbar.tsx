@@ -70,7 +70,7 @@ const TopNavbarComponent: React.FC<TopNavbarProps> = ({
 
   return (
     <>
-      <header className="fixed top-0 inset-x-0 h-[calc(3.5rem+env(safe-area-inset-top,0px))] sm:h-16 z-50 flex items-center justify-between px-3 sm:px-8 md:px-12 bg-[#090b10]/95 backdrop-blur-md border-b border-white/[0.08] pointer-events-auto select-none font-body pt-[env(safe-area-inset-top,0px)]">
+      <header className="fixed top-0 inset-x-0 h-[calc(3.25rem+env(safe-area-inset-top,0px))] sm:h-16 z-50 flex items-center justify-between px-3 sm:px-8 md:px-12 bg-[#090b10]/95 backdrop-blur-md border-b border-white/[0.08] pointer-events-auto select-none font-body pt-[env(safe-area-inset-top,0px)]">
         {/* Brand Identity / Geometric SS Monogram */}
         <div className="flex items-center gap-2 sm:gap-6 min-w-0">
           <button
@@ -177,14 +177,14 @@ const TopNavbarComponent: React.FC<TopNavbarProps> = ({
         </div>
 
         {/* Mobile Minimal Section Pill */}
-        <div className="hidden min-[400px]:flex md:hidden items-center px-1">
+        <div className="hidden min-[420px]:flex md:hidden items-center px-1">
           <span className="text-[10px] font-tech font-bold text-zinc-300 bg-white/[0.06] border border-white/10 px-2 py-0.5 rounded-full uppercase tracking-wider">
             {activeNavTab === 'projects' ? 'RESEARCH' : activeNavTab === 'network' ? 'WORK' : activeNavTab === 'notebook' ? 'LAB' : 'HOME'}
           </span>
         </div>
 
         {/* Right Controls */}
-        <div className="flex items-center gap-1.5 sm:gap-3 text-xs shrink-0">
+        <div className="flex items-center gap-2 sm:gap-3 text-xs shrink-0">
           {/* Clock Button (Desktop / Tablet) */}
           {onFocusClock && (
             <button
@@ -206,7 +206,7 @@ const TopNavbarComponent: React.FC<TopNavbarProps> = ({
             type="button"
             onClick={toggleMute}
             aria-label={isMuted ? 'Unmute interface sound' : 'Mute interface sound'}
-            className={`w-10 h-10 sm:w-auto sm:h-auto sm:p-2 flex items-center justify-center rounded-xl sm:rounded-lg border transition-colors cursor-pointer ${
+            className={`w-9 h-9 sm:w-auto sm:h-auto sm:p-2 min-h-[40px] min-w-[40px] sm:min-h-0 sm:min-w-0 flex items-center justify-center rounded-xl sm:rounded-lg border transition-colors cursor-pointer active:scale-95 ${
               isMuted
                 ? 'bg-white/[0.02] text-zinc-500 border-white/[0.06] hover:text-zinc-300'
                 : 'bg-white/[0.03] hover:bg-white/[0.06] text-zinc-300 hover:text-white border-white/[0.08]'
@@ -252,7 +252,7 @@ const TopNavbarComponent: React.FC<TopNavbarProps> = ({
               setIsMobileMenuOpen(!isMobileMenuOpen);
             }}
             aria-label={isMobileMenuOpen ? 'Close navigation menu' : 'Open navigation menu'}
-            className="md:hidden w-10 h-10 flex items-center justify-center rounded-xl bg-white/[0.04] text-zinc-300 hover:text-white border border-white/10 transition-colors cursor-pointer"
+            className="md:hidden w-9 h-9 min-h-[40px] min-w-[40px] flex items-center justify-center rounded-xl bg-white/[0.04] text-zinc-300 hover:text-white border border-white/10 transition-colors cursor-pointer active:scale-95"
           >
             {isMobileMenuOpen ? (
               <Close className="w-4 h-4" />
@@ -265,7 +265,7 @@ const TopNavbarComponent: React.FC<TopNavbarProps> = ({
 
       {/* Mobile Navigation Drawer */}
       {isMobileMenuOpen && (
-        <div className="fixed inset-x-0 top-[calc(3.5rem+env(safe-area-inset-top,0px))] sm:top-16 z-40 bg-[#090b10]/98 backdrop-blur-2xl border-b border-white/10 p-4 md:hidden animate-in slide-in-from-top-2 duration-150 font-body shadow-2xl pb-[calc(env(safe-area-inset-bottom,0px)+16px)]">
+        <div className="fixed inset-x-0 top-[calc(3.25rem+env(safe-area-inset-top,0px))] sm:top-16 z-40 bg-[#090b10]/98 backdrop-blur-2xl border-b border-white/10 p-4 md:hidden animate-in slide-in-from-top-2 duration-150 font-body shadow-2xl pb-[calc(env(safe-area-inset-bottom,0px)+16px)]">
           <nav className="flex flex-col gap-1 text-sm uppercase tracking-widest font-semibold text-zinc-300">
             <button
               type="button"
