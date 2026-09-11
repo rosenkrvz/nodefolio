@@ -315,6 +315,14 @@ export function createPhase04Attention(quality: QualityTier = 'high'): PhaseArti
     { id: 'head-peak', label: 'Softmax Energy Beam', sublabel: 'Affinity weight = 0.88', position: new THREE.Vector3(0, 0, 0) },
   ];
 
+  const dispose = () => {
+    disposables.forEach((d) => {
+      try {
+        d.dispose();
+      } catch {}
+    });
+  };
+
   return {
     group,
     update,

@@ -144,8 +144,8 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
     Array<{ id: string; label: string; sublabel?: string; screenX: number; screenY: number; visible: boolean }>
   >([]);
 
-  // Orientation Gizmo Matrix State
-  const [gizmoTransform, setGizmoTransform] = useState<string>('');
+  // Orientation Gizmo Ref (direct DOM style update to eliminate 60fps React re-renders)
+  const gizmoElRef = useRef<HTMLDivElement | null>(null);
 
   // Draggable Specification HUD State
   const [specPos, setSpecPos] = useState<{ x: number; y: number } | null>(() => {
@@ -586,11 +586,11 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
           setProjectedAnnotations(proj);
         }
 
-        // Calculate 3D orientation gizmo transform matrix
-        const m = camera.matrixWorldInverse;
-        setGizmoTransform(
-          `matrix3d(${m.elements[0]}, ${m.elements[1]}, ${m.elements[2]}, 0, ${m.elements[4]}, ${m.elements[5]}, ${m.elements[6]}, 0, ${m.elements[8]}, ${m.elements[9]}, ${m.elements[10]}, 0, 0, 0, 0, 1)`
-        );
+        // Calculate 3D orientation gizmo transform matrix directly on ref (zero React state overhead)
+        if (gizmoElRef.current) {
+          const m = camera.matrixWorldInverse;
+          gizmoElRef.current.style.transform = `matrix3d(${m.elements[0]}, ${m.elements[1]}, ${m.elements[2]}, 0, ${m.elements[4]}, ${m.elements[5]}, ${m.elements[6]}, 0, ${m.elements[8]}, ${m.elements[9]}, ${m.elements[10]}, 0, 0, 0, 0, 1)`;
+        }
       }
 
       renderer.render(scene, camera);
@@ -1108,8 +1108,9 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
       >
         <div className="relative w-12 h-12 flex items-center justify-center rounded-xl bg-black/60 backdrop-blur-md border border-white/10">
           <div
+            ref={gizmoElRef}
             className="w-8 h-8 relative transform-gpu"
-            style={{ transform: gizmoTransform, transformStyle: 'preserve-3d' }}
+            style={{ transformStyle: 'preserve-3d' }}
           >
             {/* X Axis (Red) */}
             <div className="absolute top-1/2 left-1/2 w-4 h-0.5 bg-rose-500 origin-left" />

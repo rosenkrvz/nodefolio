@@ -400,6 +400,14 @@ export function createPhase01Autograd(quality: QualityTier = 'high'): PhaseArtif
     { id: 'loss', label: 'Objective Loss L', sublabel: 'Adjoint Seed ∂L/∂L = 1.0', position: nodes[8].pos.clone().add(new THREE.Vector3(0, 0.55, 0)) },
   ];
 
+  const dispose = () => {
+    disposables.forEach((d) => {
+      try {
+        d.dispose();
+      } catch {}
+    });
+  };
+
   return {
     group,
     update,

@@ -513,11 +513,12 @@ export function createPhase05LatentManifold(quality: QualityTier = 'high'): Phas
 
   const toggleLayer = (layer: LayerType, visible: boolean) => {
     if (layer === 'geometry') {
-      manifoldMesh.visible = visible;
-      wireframeMesh.visible = visible;
+      surfaceMesh.visible = visible;
+      wireMesh.visible = visible;
+      isocurveGroup.visible = visible;
     } else if (layer === 'clusters') {
       coreMeshes.forEach((m) => { m.visible = visible; });
-      haloMeshes.forEach((m) => { m.visible = visible; });
+      clusterGroup.visible = visible;
     } else if (layer === 'trajectories') {
       highway1Line.visible = visible;
       particle1.visible = visible;
@@ -528,10 +529,36 @@ export function createPhase05LatentManifold(quality: QualityTier = 'high'): Phas
   };
 
   const getAnnotations = (): SpatialAnnotation[] => [
-    { id: 'cluster-vl', label: 'Semantic Cluster 01', sublabel: 'Vision-Language Latent', position: clusters[0]?.pos.clone().add(new THREE.Vector3(0, 0.6, 0)) || new THREE.Vector3(-4.8, 1.2, -2.4) },
-    { id: 'cluster-diffusion', label: 'Diffusion Basin', sublabel: 'Negative Entropy Well', position: clusters[1]?.pos.clone().add(new THREE.Vector3(0, 0.6, 0)) || new THREE.Vector3(4.5, 0.8, 3.2) },
+    {
+      id: 'cluster-vl',
+      label: 'Semantic Cluster Mode α',
+      sublabel: 'Source Prior Cluster',
+      position: new THREE.Vector3(
+        clusterDefinitions[0].x,
+        evalManifoldHeight(clusterDefinitions[0].x, clusterDefinitions[0].z) + 0.6,
+        clusterDefinitions[0].z
+      ),
+    },
+    {
+      id: 'cluster-diffusion',
+      label: 'Semantic Cluster Mode β',
+      sublabel: 'Target Attractor Cluster',
+      position: new THREE.Vector3(
+        clusterDefinitions[1].x,
+        evalManifoldHeight(clusterDefinitions[1].x, clusterDefinitions[1].z) + 0.6,
+        clusterDefinitions[1].z
+      ),
+    },
     { id: 'geodesic-flow', label: 'Geodesic ODE Flow', sublabel: 'Minimum Energy Path', position: new THREE.Vector3(0, 1.2, 0) },
   ];
+
+  const dispose = () => {
+    disposables.forEach((d) => {
+      try {
+        d.dispose();
+      } catch {}
+    });
+  };
 
   return {
     group,

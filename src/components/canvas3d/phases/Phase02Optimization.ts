@@ -330,6 +330,14 @@ export function createPhase02Optimization(quality: QualityTier = 'high'): PhaseA
     { id: 'theta-star', label: 'Global Minimum θ*', sublabel: '∇f(θ*) = 0, Loss = 0.00', position: new THREE.Vector3(0, 0.6, 0) },
   ];
 
+  const dispose = () => {
+    disposables.forEach((d) => {
+      try {
+        d.dispose();
+      } catch {}
+    });
+  };
+
   return {
     group,
     update,

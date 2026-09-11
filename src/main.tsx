@@ -9,13 +9,14 @@ interface ErrorBoundaryProps {
 
 interface ErrorBoundaryState {
   hasError: boolean;
+  error?: Error | null;
 }
 
 class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
-  public override state: ErrorBoundaryState = { hasError: false };
+  public override state: ErrorBoundaryState = { hasError: false, error: null };
 
-  static getDerivedStateFromError(): ErrorBoundaryState {
-    return { hasError: true };
+  static getDerivedStateFromError(error: Error): ErrorBoundaryState {
+    return { hasError: true, error };
   }
 
   override componentDidCatch(error: Error, errorInfo: ErrorInfo) {
@@ -26,6 +27,7 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
     try {
       localStorage.removeItem('nodefolio_visitor_notes');
       localStorage.removeItem('nodefolio_visitor_version');
+      localStorage.removeItem('nodefolio_spec_pos');
     } catch {}
     window.location.reload();
   };
@@ -33,8 +35,9 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   handleRecover = () => {
     try {
       localStorage.removeItem('nodefolio_visitor_notes');
+      localStorage.removeItem('nodefolio_spec_pos');
     } catch {}
-    this.setState({ hasError: false });
+    this.setState({ hasError: false, error: null });
   };
 
   override render() {
@@ -45,9 +48,17 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
           <h1 className="font-mono text-sm uppercase tracking-widest text-zinc-300 font-semibold mb-2">
             Session Recovery
           </h1>
-          <p className="font-mono text-xs text-zinc-500 max-w-md mb-6 leading-relaxed">
+          <p className="font-mono text-xs text-zinc-500 max-w-md mb-4 leading-relaxed">
             A temporary workspace interruption occurred. You can resume session execution or reload the interface.
           </p>
+          {this.state.error && (
+            <div className="max-w-xl w-full text-left bg-black/80 border border-rose-500/30 rounded-xl p-4 mb-6 font-mono text-xs text-rose-300 overflow-auto max-h-48 select-text">
+              <div className="font-bold text-rose-400 mb-1">{this.state.error.name}: {this.state.error.message}</div>
+              {this.state.error.stack && (
+                <div className="text-[10px] text-zinc-400 whitespace-pre-wrap">{this.state.error.stack}</div>
+              )}
+            </div>
+          )}
           <div className="flex items-center gap-3">
             <button
               type="button"

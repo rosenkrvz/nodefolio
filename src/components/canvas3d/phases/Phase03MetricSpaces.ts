@@ -354,6 +354,14 @@ export function createPhase03MetricSpaces(quality: QualityTier = 'high'): PhaseA
     { id: 'negative', label: 'Negative Sample x⁻', sublabel: 'Uniformly Repelled', position: negativePos.clone().multiplyScalar(1.15) },
   ];
 
+  const dispose = () => {
+    disposables.forEach((d) => {
+      try {
+        d.dispose();
+      } catch {}
+    });
+  };
+
   return {
     group,
     update,
