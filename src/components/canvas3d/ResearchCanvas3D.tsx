@@ -956,18 +956,12 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
       className="fixed inset-0 z-50 w-screen h-screen h-[100dvh] overflow-hidden bg-[#07090e] select-none text-zinc-100 font-body"
       style={{ touchAction: 'none' }}
     >
-      {/* 3D Scene Viewport & Research Instrument Stage (Revealed ONLY after entry loader completes) */}
+      {/* 3D WebGL Canvas Viewport */}
       <div
-        className={`absolute inset-0 w-full h-full transition-opacity duration-700 ease-out ${
-          isInitialEntryLoading ? 'opacity-0 pointer-events-none' : 'opacity-100 pointer-events-auto'
-        }`}
-      >
-        {/* 3D WebGL Canvas Viewport */}
-        <div
-          ref={containerRef}
-          className="absolute inset-0 w-full h-full cursor-grab active:cursor-grabbing"
-          style={{ touchAction: 'none' }}
-        />
+        ref={containerRef}
+        className="absolute inset-0 w-full h-full cursor-grab active:cursor-grabbing"
+        style={{ touchAction: 'none' }}
+      />
 
         {/* Ambient Vignette & Spatial Atmosphere */}
         <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(ellipse_at_center,transparent_40%,rgba(7,9,14,0.78)_100%)]" />
@@ -1561,7 +1555,6 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
           </div>
         </div>
       </nav>
-      </div>
 
       {/* ── Dedicated Full-Screen Research Entry System (Section-to-Research) ── */}
       {isInitialEntryLoading && (
