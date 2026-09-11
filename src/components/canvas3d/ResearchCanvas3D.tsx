@@ -156,28 +156,28 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.dampingFactor = 0.08;
-    controls.minDistance = 3.5;
-    controls.maxDistance = 30;
-    controls.maxPolarAngle = Math.PI / 2 + 0.15; // prevent going completely beneath floor
+    controls.minDistance = 5.0;
+    controls.maxDistance = 28;
+    controls.maxPolarAngle = Math.PI / 2 + 0.05; // prevent going completely beneath floor
     controls.touches = {
       ONE: THREE.TOUCH.ROTATE,
       TWO: THREE.TOUCH.DOLLY_PAN,
     };
     controlsRef.current = controls;
 
-    // 5. Lighting
-    const ambientLight = new THREE.AmbientLight(0x1e293b, 1.4);
+    // 5. Scientific Laboratory Lighting (Balanced, soft highlights without glare blowout)
+    const ambientLight = new THREE.AmbientLight(0x1e293b, 1.2);
     scene.add(ambientLight);
 
-    const dirLight = new THREE.DirectionalLight(0xffffff, 1.8);
+    const dirLight = new THREE.DirectionalLight(0xffffff, 1.5);
     dirLight.position.set(8, 14, 10);
     scene.add(dirLight);
 
-    const crimsonLight = new THREE.PointLight(0xe11d48, 3.2, 35);
+    const crimsonLight = new THREE.PointLight(0xe11d48, 2.4, 35);
     crimsonLight.position.set(-6, 8, -4);
     scene.add(crimsonLight);
 
-    const fillLight = new THREE.PointLight(0x38bdf8, 1.2, 25);
+    const fillLight = new THREE.PointLight(0x38bdf8, 1.0, 25);
     fillLight.position.set(6, -4, 6);
     scene.add(fillLight);
 
