@@ -953,56 +953,44 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
   return (
     <div
       id="research-3d-canvas"
-      className="fixed inset-0 z-50 w-screen h-screen h-[100dvh] overflow-hidden bg-[#07090e] select-none text-zinc-100 font-body animate-in fade-in duration-500 ease-out"
+      className="fixed inset-0 z-50 w-screen h-screen h-[100dvh] overflow-hidden bg-[#07090e] select-none text-zinc-100 font-body"
       style={{ touchAction: 'none' }}
     >
-      {/* 3D WebGL Canvas Viewport */}
+      {/* 3D Scene Viewport & Research Instrument Stage (Revealed ONLY after entry loader completes) */}
       <div
-        ref={containerRef}
-        className="absolute inset-0 w-full h-full cursor-grab active:cursor-grabbing"
-        style={{ touchAction: 'none' }}
-      />
-
-      {/* Ambient Vignette & Spatial Atmosphere */}
-      <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(ellipse_at_center,transparent_40%,rgba(7,9,14,0.78)_100%)]" />
-
-      {/* ── Technical Minimal Loader (for fast in-canvas phase transitions) ── */}
-      {!isInitialEntryLoading && isLoadingGeometry && (
-        <div className="absolute inset-0 z-40 flex items-center justify-center bg-[#07090e]/75 backdrop-blur-md transition-opacity duration-200 pointer-events-none">
-          <div className="px-5 py-4 rounded-xl bg-black/85 border border-white/10 shadow-2xl flex flex-col items-center gap-2 max-w-xs text-center">
-            <span className="font-tech text-[10px] tracking-[0.25em] text-rose-400 font-semibold uppercase animate-pulse">
-              INITIALIZING RESEARCH ARTIFACT // PHASE {currentPhaseMeta.numeral}
-            </span>
-            <div className="w-48 h-1.5 bg-white/10 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-gradient-to-r from-rose-600 to-rose-400 transition-all duration-150 rounded-full"
-                style={{ width: `${loadProgress}%` }}
-              />
-            </div>
-            <span className="font-mono text-[10px] text-zinc-400">{currentPhaseMeta.title}</span>
-          </div>
-        </div>
-      )}
-
-      {/* ── Dedicated Full-Screen Research Entry System (Section-to-Research) ── */}
-      {isInitialEntryLoading && (
-        <ResearchEntryLoader
-          isSceneReady={isSceneReady}
-          phaseTitle={currentPhaseMeta.title}
-          phaseNumeral={currentPhaseMeta.numeral}
-          minDurationMs={1200}
-          error={sceneInitError}
-          onRetry={() => {
-            setSceneInitError(null);
-            setIsSceneReady(false);
-            setInitAttempt((prev) => prev + 1);
-          }}
-          onAbort={() => onExit(currentPhaseMeta.chronicleId)}
-          onTransitionComplete={handleEntryTransitionComplete}
+        className={`absolute inset-0 w-full h-full transition-opacity duration-700 ease-out ${
+          isInitialEntryLoading ? 'opacity-0 pointer-events-none' : 'opacity-100 pointer-events-auto'
+        }`}
+      >
+        {/* 3D WebGL Canvas Viewport */}
+        <div
+          ref={containerRef}
+          className="absolute inset-0 w-full h-full cursor-grab active:cursor-grabbing"
+          style={{ touchAction: 'none' }}
         />
-      )}
 
-      {/* ── Floating Hover Micro-Label ────────────────────────────────────── */}
+        {/* Ambient Vignette & Spatial Atmosphere */}
+        <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(ellipse_at_center,transparent_40%,rgba(7,9,14,0.78)_100%)]" />
+
+        {/* ── Technical Minimal Loader (for fast in-canvas phase transitions) ── */}
+        {!isInitialEntryLoading && isLoadingGeometry && (
+          <div className="absolute inset-0 z-40 flex items-center justify-center bg-[#07090e]/75 backdrop-blur-md transition-opacity duration-200 pointer-events-none">
+            <div className="px-5 py-4 rounded-xl bg-black/85 border border-white/10 shadow-2xl flex flex-col items-center gap-2 max-w-xs text-center">
+              <span className="font-tech text-[10px] tracking-[0.25em] text-rose-400 font-semibold uppercase animate-pulse">
+                INITIALIZING RESEARCH ARTIFACT // PHASE {currentPhaseMeta.numeral}
+              </span>
+              <div className="w-48 h-1.5 bg-white/10 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-gradient-to-r from-rose-600 to-rose-400 transition-all duration-150 rounded-full"
+                  style={{ width: `${loadProgress}%` }}
+                />
+              </div>
+              <span className="font-mono text-[10px] text-zinc-400">{currentPhaseMeta.title}</span>
+            </div>
+          </div>
+        )}
+
+        {/* ── Floating Hover Micro-Label ────────────────────────────────────── */}
       {hoveredItem && hoverLabelPos && !selectedItem && (
         <div
           className="fixed pointer-events-none z-30 px-2.5 py-1 rounded-md bg-black/90 border border-rose-500/40 shadow-lg text-[11px] text-zinc-200 transform -translate-x-1/2 -translate-y-9 transition-transform"
@@ -1573,6 +1561,25 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
           </div>
         </div>
       </nav>
+      </div>
+
+      {/* ── Dedicated Full-Screen Research Entry System (Section-to-Research) ── */}
+      {isInitialEntryLoading && (
+        <ResearchEntryLoader
+          isSceneReady={isSceneReady}
+          phaseTitle={currentPhaseMeta.title}
+          phaseNumeral={currentPhaseMeta.numeral}
+          minDurationMs={1200}
+          error={sceneInitError}
+          onRetry={() => {
+            setSceneInitError(null);
+            setIsSceneReady(false);
+            setInitAttempt((prev) => prev + 1);
+          }}
+          onAbort={() => onExit(currentPhaseMeta.chronicleId)}
+          onTransitionComplete={handleEntryTransitionComplete}
+        />
+      )}
     </div>
   );
 };

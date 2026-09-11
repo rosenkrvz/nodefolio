@@ -84,9 +84,7 @@ export const ResearchEntryLoader: React.FC<ResearchEntryLoaderProps> = ({
       aria-label="Initializing Research Environment"
       aria-live="polite"
       className={`fixed inset-0 z-50 flex flex-col items-center justify-between bg-[#07090e] text-white select-none transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] will-change-[opacity,transform] ${
-        !hasEntered
-          ? 'opacity-0 scale-[1.015]'
-          : isFadingOut
+        isFadingOut
           ? 'opacity-0 pointer-events-none scale-[0.985] blur-[2px]'
           : 'opacity-100 pointer-events-auto scale-100 blur-none'
       }`}
