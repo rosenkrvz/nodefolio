@@ -392,7 +392,10 @@ const GraphNodeComponent: React.FC<GraphNodeProps> = ({
       target.closest('.resize-handle') ||
       target.closest('[data-resize-handle]') ||
       target.closest('.group\\/side-resize') ||
-      target.closest('.group\\/corner-resize')
+      target.closest('.group\\/corner-resize') ||
+      target.closest('canvas') ||
+      target.closest('[data-no-node-drag]') ||
+      target.closest('[data-interactive-canvas]')
     ) {
       return;
     }
@@ -467,7 +470,10 @@ const GraphNodeComponent: React.FC<GraphNodeProps> = ({
       target.closest('.resize-handle') ||
       target.closest('[data-resize-handle]') ||
       target.closest('.group\\/side-resize') ||
-      target.closest('.group\\/corner-resize')
+      target.closest('.group\\/corner-resize') ||
+      target.closest('canvas') ||
+      target.closest('[data-no-node-drag]') ||
+      target.closest('[data-interactive-canvas]')
     ) {
       return;
     }
