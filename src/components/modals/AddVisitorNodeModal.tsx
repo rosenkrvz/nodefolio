@@ -137,11 +137,11 @@ export const AddVisitorNodeModal: React.FC<AddVisitorNodeModalProps> = ({
         <div className="sm:hidden w-10 h-1 rounded-full bg-white/20 mx-auto -mt-1 mb-3.5 shrink-0" />
 
         {/* Header reticle */}
-        <div className="flex items-center justify-between border-b border-white/[0.08] pb-3 mb-4 sm:mb-5">
+        <div className="flex items-center justify-between border-b border-white/[0.08] pb-3 mb-3 sm:mb-4">
           <div className="flex items-center gap-2 min-w-0">
             <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse shrink-0" />
             <span className="font-tech text-[10px] sm:text-xs font-bold text-rose-400 uppercase tracking-wider sm:tracking-widest truncate">
-              WORKSPACE SYNTHESIZER // ADD NODE
+              RESEARCH GRAPH // COMMUNITY EASTER EGG NOTE
             </span>
           </div>
           <button
@@ -153,6 +153,12 @@ export const AddVisitorNodeModal: React.FC<AddVisitorNodeModalProps> = ({
             <Close className="w-4 h-4" />
           </button>
         </div>
+
+        {/* Easter Egg Subtitle Info */}
+        <p className="text-[11px] font-body text-zinc-400 leading-relaxed mb-4 p-2.5 rounded-xl bg-white/[0.03] border border-white/[0.06]">
+          <span className="text-rose-400 font-semibold font-tech uppercase tracking-wider">LIVE FIRESTORE BACKEND &bull; </span>
+          Notes added here are broadcast to all visitors in real-time as an interactive community easter egg across the Research canvas.
+        </p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {error && (

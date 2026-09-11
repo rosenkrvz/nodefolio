@@ -79,7 +79,7 @@ const CanvasControlsDockComponent: React.FC<CanvasControlsDockProps> = ({
             type="button"
             onClick={onOpenAddNode}
             className="w-8 h-8 rounded-lg flex items-center justify-center text-rose-400 hover:text-white bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/40 transition-colors cursor-pointer"
-            title="Add Your Own Research Note"
+            title="Add Your Own Research Node (Community Easter Egg)"
           >
             <Plus className="w-4 h-4" />
           </button>

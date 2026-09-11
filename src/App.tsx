@@ -27,6 +27,11 @@ import { playSound } from './lib/sound';
 import { useIsMobile } from './hooks/useIsMobile';
 import { MobileNodespace } from './components/MobileNodespace';
 import { GraphErrorBoundary } from './components/GraphErrorBoundary';
+import {
+  subscribeToCommunityVisitorNodes,
+  saveCommunityVisitorNode,
+  deleteCommunityVisitorNode,
+} from './lib/firebase';
 
 const VISITOR_STORAGE_KEY = 'nodefolio_visitor_notes';
 const VISITOR_STORAGE_VERSION = 'v2';
@@ -59,6 +64,8 @@ const loadSavedVisitorNodes = (): NodeData[] => {
         validNodes.push({
           ...item,
           id: String(item.id),
+          title: String(item.title || item.visitorData?.name ? `${item.visitorData.name}'s Note` : 'Research Note'),
+          subtitle: String(item.subtitle || 'COMMUNITY NOTE'),
           x,
           y,
           width: typeof item.width === 'number' && isFinite(item.width) ? item.width : 270,
@@ -210,17 +217,37 @@ export default function App() {
   const [activeResearchCanvasPhase, setActiveResearchCanvasPhase] = useState<string | null>(null);
   const [chronicleActivePhaseId, setChronicleActivePhaseId] = useState<string>('m1');
 
-  // Graph Data State partitioned by preset so Network positions remain completely independent of Research positions
+  // Graph Data State:
+  // - Network tab contains strictly official portfolio nodes (no visitor notes, no add button)
+  // - Research tab contains the comprehensive research ecosystem + community easter egg visitor notes
   const [nodesByPreset, setNodesByPreset] = useState<{
     network: NodeData[];
     project: NodeData[];
   }>(() => {
     const savedVisitors = loadSavedVisitorNodes();
     return {
-      network: [...ALL_NETWORK_NODES, ...savedVisitors],
+      network: [...ALL_NETWORK_NODES],
       project: [...ALL_RESEARCH_NODES, ...savedVisitors],
     };
   });
+
+  // Real-time Firestore synchronization for community visitor nodes (Easter egg on Research tab)
+  useEffect(() => {
+    const unsubscribe = subscribeToCommunityVisitorNodes((firestoreNodes) => {
+      if (!Array.isArray(firestoreNodes)) return;
+      setNodesByPreset((prev) => {
+        const officialResearch = prev.project.filter((n) => n.category !== 'visitor');
+        return {
+          ...prev,
+          project: [...officialResearch, ...firestoreNodes],
+        };
+      });
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, []);
 
   const currentTabKey = activePreset === 'project' || activePreset === 'all' ? 'project' : 'network';
   const currentTabKeyRef = useRef(currentTabKey);
@@ -996,21 +1023,19 @@ export default function App() {
     });
   }, []);
 
-  // Visitor node creation with local persistence and auto-focus
+  // Visitor node creation with local persistence, Firestore sync, and auto-focus (Research tab exclusive)
   const handleAddVisitorNode = useCallback((newNode: NodeData) => {
     setNodesByPreset((prev) => {
-      const nextNetwork = [...prev.network, newNode];
-      const nextProject = [...prev.project, newNode];
-      try {
-        const visitorOnly = nextProject.filter((n) => n.category === 'visitor');
-        localStorage.setItem(VISITOR_STORAGE_KEY, JSON.stringify(visitorOnly));
-      } catch (e) {
-        console.error('Failed to persist visitor node', e);
-      }
+      const nextProject = [...prev.project.filter((n) => n.id !== newNode.id), newNode];
       return {
-        network: nextNetwork,
+        ...prev,
         project: nextProject,
       };
+    });
+
+    // Save to Firestore real-time backend & local cache
+    saveCommunityVisitorNode(newNode).catch((err) => {
+      console.info('[Firestore] Background sync notice:', err);
     });
 
     // Immediately select and highlight the newly added visitor node
@@ -1041,30 +1066,29 @@ export default function App() {
     });
   }, []);
 
-  // Visitor node removal with storage sync
+  // Visitor node removal with Firestore sync
   const handleDeleteVisitorNode = useCallback((nodeId: string) => {
     playSound('close');
     setNodesByPreset((prev) => {
-      const nextNetwork = prev.network.filter((n) => n.id !== nodeId);
       const nextProject = prev.project.filter((n) => n.id !== nodeId);
-      try {
-        const visitorOnly = nextProject.filter((n) => n.category === 'visitor');
-        localStorage.setItem(VISITOR_STORAGE_KEY, JSON.stringify(visitorOnly));
-      } catch (e) {
-        console.error('Failed to update visitor nodes in storage', e);
-      }
       return {
-        network: nextNetwork,
+        ...prev,
         project: nextProject,
       };
+    });
+
+    deleteCommunityVisitorNode(nodeId).catch((err) => {
+      console.info('[Firestore] Background delete notice:', err);
     });
   }, []);
 
   // Filter nodes & connections based on active preset
   const filteredNodes = useMemo(() => {
     return nodes.filter((n) => {
-      // Community visitor notes are always preserved across active workspaces (Network & Research)
-      if (n.category === 'visitor') return true;
+      // Community easter egg visitor notes are kept exclusively for the Research tab
+      if (n.category === 'visitor') {
+        return activePreset === 'project' || activePreset === 'all';
+      }
 
       if (activePreset === 'all') return true;
       if (activePreset === 'network') {
@@ -1092,7 +1116,7 @@ export default function App() {
         return ['node-profile', 'node-credentials', 'node-inference', 'node-eval'].includes(n.id);
       }
       if (activePreset === 'project') {
-        // Research tab: showcases the comprehensive computational ecosystem including visitor notes
+        // Research tab: showcases the comprehensive computational ecosystem including community visitor notes
         return true;
       }
       return true;
@@ -1695,7 +1719,7 @@ export default function App() {
     playSound('secondaryClick');
     const savedVisitors = loadSavedVisitorNodes();
     setNodesByPreset({
-      network: [...ALL_NETWORK_NODES, ...savedVisitors],
+      network: [...ALL_NETWORK_NODES],
       project: [...ALL_RESEARCH_NODES, ...savedVisitors],
     });
     setConnections(ALL_INITIAL_CONNECTIONS);
@@ -2062,7 +2086,11 @@ export default function App() {
                             setIsSimulating(!isSimulating);
                           }}
                           onReturnToCover={handleReturnToCover}
-                          onOpenAddNode={() => setIsAddNodeOpen(true)}
+                          onOpenAddNode={
+                            (currentTabKey === 'project' || activeNavTab === 'projects' || activePreset === 'project')
+                              ? () => setIsAddNodeOpen(true)
+                              : undefined
+                          }
                         />
                       </div>
 
