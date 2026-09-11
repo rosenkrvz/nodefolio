@@ -1515,7 +1515,7 @@ export default function App() {
 
       const usable = getUsableCanvasViewport(vw, vh, true);
       const x = Math.round(usable.usableCenterX - focalCenterX * mobileScale);
-      const y = Math.round(usable.usableCenterY - focalCenterY * mobileScale);
+      const y = Math.round(usable.usableCenterY - focalCenterY * mobileScale - vh * 0.035);
 
       setTransform({ x, y, scale: mobileScale });
       return;
@@ -1578,24 +1578,32 @@ export default function App() {
       targetScale = Math.max(MIN_GRAPH_SCALE, Math.min(MAX_GRAPH_SCALE, Number(autoComputed.toFixed(2))));
     }
 
-    // Precise visual workspace centering
+    // Precise visual workspace centering with intentional upward elevation ("sit a tad bit higher")
     const x = Math.round(usable.usableCenterX - graphCenterX * targetScale);
-    let y = Math.round(usable.usableCenterY - graphCenterY * targetScale);
 
+    // Intentional upward elevation offset so square nodes connected by splines sit higher on screen
+    const elevationOffset = preset === 'project'
+      ? Math.round(vh * 0.055)
+      : (preset === 'network' ? Math.round(vh * 0.050) : Math.round(vh * 0.045));
+
+    let y = Math.round(usable.usableCenterY - graphCenterY * targetScale - elevationOffset);
+
+    // Symmetrical safety clamps to guarantee no node ever slips behind or too close to the top navbar
     if (preset === 'network') {
-      // Symmetrically balance Row 1 under navbar when vertical height permits
-      const row1ScreenY = y + 380 * targetScale;
-      const minRow1Y = usable.topInset + 16;
-      const idealRow1Y = Math.max(minRow1Y, Math.min(usable.topInset + 48, Math.round(vh * 0.13)));
-
-      if (row1ScreenY < minRow1Y) {
+      const minRow1Y = usable.topInset + 20;
+      if (y + 380 * targetScale < minRow1Y) {
         y = Math.round(minRow1Y - 380 * targetScale);
-      } else if (usable.usableHeight > graphHeight * targetScale + 90) {
-        y = Math.round(idealRow1Y - 380 * targetScale);
       }
     } else if (preset === 'project') {
-      // Optical compensation for 4-node research architecture
-      y -= Math.round(vh * 0.012);
+      const minProfileY = usable.topInset + 20;
+      if (y + 140 * targetScale < minProfileY) {
+        y = Math.round(minProfileY - 140 * targetScale);
+      }
+    } else {
+      const minGraphY = usable.topInset + 16;
+      if (y + minY * targetScale < minGraphY) {
+        y = Math.round(minGraphY - minY * targetScale);
+      }
     }
 
     setTransform({ x, y, scale: targetScale });
