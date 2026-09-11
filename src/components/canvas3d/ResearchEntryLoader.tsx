@@ -21,6 +21,7 @@ export const ResearchEntryLoader: React.FC<ResearchEntryLoaderProps> = ({
   onAbort,
   onTransitionComplete,
 }) => {
+  const [hasEntered, setHasEntered] = useState<boolean>(false);
   const [minTimeElapsed, setMinTimeElapsed] = useState(false);
   const [isFadingOut, setIsFadingOut] = useState(false);
   const [timedOutError, setTimedOutError] = useState<string | null>(null);
@@ -31,6 +32,14 @@ export const ResearchEntryLoader: React.FC<ResearchEntryLoaderProps> = ({
     window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   const effectiveMinDuration = prefersReducedMotion ? 300 : minDurationMs;
+
+  // Trigger smooth cinematic entrance fade-in on mount
+  useEffect(() => {
+    const frameId = requestAnimationFrame(() => {
+      setHasEntered(true);
+    });
+    return () => cancelAnimationFrame(frameId);
+  }, []);
 
   // Minimum presentation timer
   useEffect(() => {
@@ -74,8 +83,12 @@ export const ResearchEntryLoader: React.FC<ResearchEntryLoaderProps> = ({
     <div
       aria-label="Initializing Research Environment"
       aria-live="polite"
-      className={`fixed inset-0 z-50 flex flex-col items-center justify-between bg-[#07090e] text-white select-none transition-opacity duration-400 ease-out ${
-        isFadingOut ? 'opacity-0 pointer-events-none' : 'opacity-100 pointer-events-auto'
+      className={`fixed inset-0 z-50 flex flex-col items-center justify-between bg-[#07090e] text-white select-none transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] will-change-[opacity,transform] ${
+        !hasEntered
+          ? 'opacity-0 scale-[1.015]'
+          : isFadingOut
+          ? 'opacity-0 pointer-events-none scale-[0.985] blur-[2px]'
+          : 'opacity-100 pointer-events-auto scale-100 blur-none'
       }`}
       style={{
         paddingTop: 'max(24px, env(safe-area-inset-top, 24px))',
@@ -179,9 +192,15 @@ export const ResearchEntryLoader: React.FC<ResearchEntryLoaderProps> = ({
       `}</style>
 
       {/* Ambient background atmosphere matching Research visual language */}
-      <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(ellipse_at_center,rgba(225,29,72,0.06)_0%,transparent_65%)]" />
       <div
-        className="absolute inset-0 pointer-events-none opacity-25"
+        className={`absolute inset-0 pointer-events-none bg-[radial-gradient(ellipse_at_center,rgba(225,29,72,0.08)_0%,transparent_65%)] transition-opacity duration-1000 ease-out ${
+          hasEntered && !isFadingOut ? 'opacity-100' : 'opacity-0'
+        }`}
+      />
+      <div
+        className={`absolute inset-0 pointer-events-none transition-opacity duration-700 ease-out ${
+          hasEntered && !isFadingOut ? 'opacity-25' : 'opacity-0'
+        }`}
         style={{
           backgroundImage:
             'linear-gradient(to right, rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.03) 1px, transparent 1px)',
@@ -190,7 +209,11 @@ export const ResearchEntryLoader: React.FC<ResearchEntryLoaderProps> = ({
       />
 
       {/* Top Telemetry Header */}
-      <div className="relative z-10 w-full max-w-4xl px-6 flex items-center justify-between">
+      <div
+        className={`relative z-10 w-full max-w-4xl px-6 flex items-center justify-between transition-all duration-600 delay-75 ease-[cubic-bezier(0.16,1,0.3,1)] transform-gpu ${
+          hasEntered && !isFadingOut ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'
+        }`}
+      >
         <div className="flex items-center gap-3">
           <div className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-pulse shadow-[0_0_8px_rgba(244,63,94,0.6)]" />
           <div className="flex flex-col">
@@ -210,7 +233,11 @@ export const ResearchEntryLoader: React.FC<ResearchEntryLoaderProps> = ({
       </div>
 
       {/* Center Stage: User-Provided Animation or Error Fallback */}
-      <div className="relative z-10 flex flex-col items-center justify-center text-center px-4 max-w-lg">
+      <div
+        className={`relative z-10 flex flex-col items-center justify-center text-center px-4 max-w-lg transition-all duration-700 delay-150 ease-[cubic-bezier(0.16,1,0.3,1)] transform-gpu ${
+          hasEntered && !isFadingOut ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-6 scale-95'
+        }`}
+      >
         {activeError ? (
           /* Error Fallback Card */
           <div className="p-6 rounded-2xl bg-zinc-900/90 border border-rose-500/30 shadow-2xl backdrop-blur-xl max-w-md w-full animate-fade-in">
@@ -291,7 +318,11 @@ export const ResearchEntryLoader: React.FC<ResearchEntryLoaderProps> = ({
       </div>
 
       {/* Bottom Telemetry Footer */}
-      <div className="relative z-10 w-full max-w-4xl px-6 flex items-center justify-between text-[10px] font-mono text-zinc-500">
+      <div
+        className={`relative z-10 w-full max-w-4xl px-6 flex items-center justify-between text-[10px] font-mono text-zinc-500 transition-all duration-600 delay-200 ease-[cubic-bezier(0.16,1,0.3,1)] transform-gpu ${
+          hasEntered && !isFadingOut ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+        }`}
+      >
         <div className="flex items-center gap-2">
           <span>SPATIAL COMPUTATION</span>
           <span>&bull;</span>

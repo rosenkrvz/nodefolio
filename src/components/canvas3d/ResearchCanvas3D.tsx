@@ -953,7 +953,7 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
   return (
     <div
       id="research-3d-canvas"
-      className="fixed inset-0 z-50 w-screen h-screen h-[100dvh] overflow-hidden bg-[#07090e] select-none text-zinc-100 font-body"
+      className="fixed inset-0 z-50 w-screen h-screen h-[100dvh] overflow-hidden bg-[#07090e] select-none text-zinc-100 font-body animate-in fade-in duration-500 ease-out"
       style={{ touchAction: 'none' }}
     >
       {/* 3D WebGL Canvas Viewport */}
