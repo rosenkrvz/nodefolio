@@ -1259,7 +1259,7 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
         }
         className={`fixed md:absolute inset-x-3 md:inset-x-auto ${
           isDesktop && specPos ? '' : 'md:right-6 md:top-20'
-        } bottom-[calc(env(safe-area-inset-bottom,0px)+78px)] md:bottom-auto md:w-84 md:max-w-sm max-h-[50vh] md:max-h-[76vh] overflow-y-auto no-scrollbar p-4 sm:p-5 rounded-2xl bg-black/90 backdrop-blur-xl border ${
+        } bottom-[calc(env(safe-area-inset-bottom,0px)+78px)] md:bottom-auto md:w-80 md:max-w-xs max-h-[50vh] md:max-h-[76vh] overflow-y-auto no-scrollbar p-3.5 sm:p-4 rounded-xl bg-black/90 backdrop-blur-xl border ${
           selectedItem ? 'border-rose-500/60 shadow-[0_16px_48px_rgba(225,29,72,0.2)]' : 'border-white/15 shadow-2xl'
         } text-zinc-300 pointer-events-auto z-30 ${
           isDraggingSpec ? 'transition-none cursor-grabbing ring-1 ring-rose-500/50' : 'transition-all duration-200'
@@ -1351,43 +1351,31 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
             </div>
           </div>
         ) : (
-          <div className="space-y-2.5 text-xs">
-            <div>
-              <span className="text-[10px] text-zinc-400 uppercase tracking-wider block font-semibold font-tech">
-                OBJECT TOPOLOGY
+          <div className="space-y-2 text-xs">
+            <div className="flex items-center justify-between text-xs py-1 border-b border-white/[0.06]">
+              <span className="text-[10px] font-tech text-zinc-400 uppercase font-semibold">TOPOLOGY</span>
+              <span className="text-zinc-200 font-medium text-right truncate max-w-[170px]">
+                {currentPhaseMeta.objectType}
               </span>
-              <span className="text-white font-medium">{currentPhaseMeta.objectType}</span>
             </div>
 
-            <div>
-              <span className="text-[10px] text-zinc-400 uppercase tracking-wider block font-semibold font-tech">
-                MATHEMATICAL BACKEND
+            <div className="flex items-center justify-between text-xs py-1 border-b border-white/[0.06]">
+              <span className="text-[10px] font-tech text-zinc-400 uppercase font-semibold">BACKEND</span>
+              <span className="text-zinc-200 font-medium text-right truncate max-w-[170px]">
+                {currentPhaseMeta.computeBackend}
               </span>
-              <span className="text-zinc-200">{currentPhaseMeta.computeBackend}</span>
             </div>
 
             {currentPhaseMeta.metricsSummary && (
-              <div className="grid grid-cols-3 gap-1.5 pt-1">
+              <div className="grid grid-cols-3 gap-1.5 pt-1.5">
                 {currentPhaseMeta.metricsSummary.map((m, idx) => (
-                  <div key={idx} className="p-2 rounded-lg bg-white/[0.04] border border-white/[0.06] text-center">
+                  <div key={idx} className="p-2 rounded-xl bg-white/[0.03] border border-white/[0.06] text-center">
                     <span className="text-[9px] text-zinc-400 uppercase block font-semibold truncate">{m.label}</span>
-                    <span className="text-[11px] text-zinc-100 font-mono font-semibold block mt-0.5">{m.value}</span>
+                    <span className="text-[11px] text-zinc-100 font-mono font-semibold block mt-0.5 truncate">{m.value}</span>
                   </div>
                 ))}
               </div>
             )}
-
-            <p className="text-[11px] text-zinc-300 leading-relaxed pt-1 border-t border-white/10">
-              {currentPhaseMeta.description}
-            </p>
-
-            <div className="flex flex-wrap gap-1 pt-1">
-              {currentPhaseMeta.tags.map((tag, idx) => (
-                <span key={idx} className="px-2 py-0.5 rounded bg-white/[0.05] text-[10px] text-zinc-400 font-mono">
-                  #{tag}
-                </span>
-              ))}
-            </div>
           </div>
         )}
       </aside>
