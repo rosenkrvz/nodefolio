@@ -17,6 +17,7 @@ import { createPhase03MetricSpaces } from './phases/Phase03MetricSpaces';
 import { createPhase04Attention } from './phases/Phase04Attention';
 import { createPhase05LatentManifold } from './phases/Phase05LatentManifold';
 import { MiniArtifactPreview } from './MiniArtifactPreview';
+import { ResearchEntryLoader } from './ResearchEntryLoader';
 import {
   RotateCcw,
   Close as X,
@@ -36,6 +37,7 @@ import { playSound } from '../../lib/sound';
 interface ResearchCanvas3DProps {
   initialPhaseId?: string;
   onExit: (currentPhaseChronicleId: string) => void;
+  isInitialEntry?: boolean;
 }
 
 // ─── Hardware & Performance Diagnostics ──────────────────────────────────────
@@ -94,6 +96,7 @@ const computeOptimalFraming = (
 export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
   initialPhaseId,
   onExit,
+  isInitialEntry = true,
 }) => {
   const resolveInitialPhase = (): ResearchPhaseId => {
     if (!initialPhaseId) return 'phase-05';
@@ -107,6 +110,12 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
   const [activePhaseId, setActivePhaseId] = useState<ResearchPhaseId>(resolveInitialPhase());
   const currentPhaseIdRef = useRef<ResearchPhaseId>(activePhaseId);
   currentPhaseIdRef.current = activePhaseId;
+
+  // Dedicated Research Entry / Preloader State
+  const [isInitialEntryLoading, setIsInitialEntryLoading] = useState<boolean>(isInitialEntry !== false);
+  const [isSceneReady, setIsSceneReady] = useState<boolean>(false);
+  const [sceneInitError, setSceneInitError] = useState<string | null>(null);
+  const [initAttempt, setInitAttempt] = useState<number>(0);
 
   // Viewport & Device State
   const [isDesktop, setIsDesktop] = useState<boolean>(() => {
@@ -366,18 +375,24 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
     cameraRef.current = camera;
 
     // 3. WebGL Renderer with capped DPR for crisp high-framerate rendering
-    const renderer = new THREE.WebGLRenderer({
-      antialias: true,
-      powerPreference: 'high-performance',
-      alpha: false,
-    });
-    renderer.setSize(width, height);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2.0));
-    renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.08;
-    rendererRef.current = renderer;
-
-    container.appendChild(renderer.domElement);
+    let renderer: THREE.WebGLRenderer;
+    try {
+      renderer = new THREE.WebGLRenderer({
+        antialias: true,
+        powerPreference: 'high-performance',
+        alpha: false,
+      });
+      renderer.setSize(width, height);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2.0));
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 1.08;
+      rendererRef.current = renderer;
+      container.appendChild(renderer.domElement);
+    } catch (err: any) {
+      console.error('Failed to initialize WebGL renderer:', err);
+      setSceneInitError(err?.message || 'WebGL context could not be created.');
+      return;
+    }
 
     // 4. OrbitControls with smooth inertia
     const controls = new OrbitControls(camera, renderer.domElement);
@@ -387,6 +402,7 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
     controls.minDistance = 3.5;
     controls.enablePan = true;
     controls.panSpeed = 0.9;
+    controls.enabled = !isInitialEntryLoading;
     controlsRef.current = controls;
 
     // 5. Lighting Architecture: Scientific key, fill, and rim illumination
@@ -407,6 +423,15 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
 
     // Initial artifact load
     switchArtifact(currentPhaseIdRef.current, activeTier);
+
+    // Initial frame render to stabilize WebGL pipeline & signal scene readiness
+    try {
+      renderer.render(scene, camera);
+      setIsSceneReady(true);
+    } catch (err: any) {
+      console.error('Initial frame render error:', err);
+      setSceneInitError(err?.message || 'Failed to render initial 3D frame.');
+    }
 
     // 6. Interaction Event Handlers (Raycasting & Picking)
     const raycaster = new THREE.Raycaster();
@@ -617,7 +642,7 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
         container.removeChild(renderer.domElement);
       }
     };
-  }, []);
+  }, [initAttempt]);
 
   // Handle phase switching from state changes
   const handleSelectPhase = (phaseId: ResearchPhaseId) => {
@@ -806,8 +831,8 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
       {/* Ambient Vignette & Spatial Atmosphere */}
       <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(ellipse_at_center,transparent_40%,rgba(7,9,14,0.78)_100%)]" />
 
-      {/* ── Technical Minimal Loader ───────────────────────────────────────── */}
-      {isLoadingGeometry && (
+      {/* ── Technical Minimal Loader (for fast in-canvas phase transitions) ── */}
+      {!isInitialEntryLoading && isLoadingGeometry && (
         <div className="absolute inset-0 z-40 flex items-center justify-center bg-[#07090e]/75 backdrop-blur-md transition-opacity duration-200 pointer-events-none">
           <div className="px-5 py-4 rounded-xl bg-black/85 border border-white/10 shadow-2xl flex flex-col items-center gap-2 max-w-xs text-center">
             <span className="font-tech text-[10px] tracking-[0.25em] text-rose-400 font-semibold uppercase animate-pulse">
@@ -822,6 +847,29 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
             <span className="font-mono text-[10px] text-zinc-400">{currentPhaseMeta.title}</span>
           </div>
         </div>
+      )}
+
+      {/* ── Dedicated Full-Screen Research Entry System (Section-to-Research) ── */}
+      {isInitialEntryLoading && (
+        <ResearchEntryLoader
+          isSceneReady={isSceneReady}
+          phaseTitle={currentPhaseMeta.title}
+          phaseNumeral={currentPhaseMeta.numeral}
+          minDurationMs={1200}
+          error={sceneInitError}
+          onRetry={() => {
+            setSceneInitError(null);
+            setIsSceneReady(false);
+            setInitAttempt((prev) => prev + 1);
+          }}
+          onAbort={() => onExit(currentPhaseMeta.chronicleId)}
+          onTransitionComplete={() => {
+            setIsInitialEntryLoading(false);
+            if (controlsRef.current) {
+              controlsRef.current.enabled = true;
+            }
+          }}
+        />
       )}
 
       {/* ── Floating Hover Micro-Label ────────────────────────────────────── */}

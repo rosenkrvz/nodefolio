@@ -236,7 +236,9 @@ export default function App() {
   const [activePreset, setActivePreset] = useState<string>(initialTab === 'projects' ? 'project' : 'network');
   const [connections, setConnections] = useState<Connection[]>(ALL_INITIAL_CONNECTIONS);
   const [isAddNodeOpen, setIsAddNodeOpen] = useState<boolean>(false);
-  const [activeResearchCanvasPhase, setActiveResearchCanvasPhase] = useState<string | null>(null);
+  const [activeResearchCanvasPhase, setActiveResearchCanvasPhase] = useState<string | null>(
+    () => (initialTab === 'projects' ? 'phase-05' : null)
+  );
   const [chronicleActivePhaseId, setChronicleActivePhaseId] = useState<string>('m1');
 
   // Graph Data State:
@@ -381,6 +383,7 @@ export default function App() {
   activeViewRef.current = activeView;
   const isProgrammaticScrollRef = useRef(false);
   const handleSelectNavTabRef = useRef<((tab: 'home' | 'network' | 'projects' | 'lab' | 'notebook' | 'about') => void) | null>(null);
+  const previousTabRef = useRef<'home' | 'network' | 'lab' | 'notebook' | 'about'>('network');
 
   // ─── URL Hash Routing Effects ──────────────────────────────────────────────
   // 1. Sync URL hash bar whenever the active nav tab changes
@@ -1871,6 +1874,11 @@ export default function App() {
   const handleSelectNavTab = useCallback((tab: 'home' | 'network' | 'projects' | 'lab' | 'notebook' | 'about') => {
     setActiveNavTab(tab);
 
+    if (tab !== 'projects') {
+      setActiveResearchCanvasPhase(null);
+      previousTabRef.current = tab;
+    }
+
     if (tab === 'home') {
       handleReturnToCover();
     } else if (tab === 'network') {
@@ -1902,6 +1910,9 @@ export default function App() {
       centerViewForPreset('project', 0.70);
       isProgrammaticScrollRef.current = true;
       setTimeout(() => { isProgrammaticScrollRef.current = false; }, 500);
+
+      // Open dedicated 3D Research Canvas with entry sequence
+      setActiveResearchCanvasPhase((prev) => prev || 'phase-05');
 
       if (wasOnTimeline) {
         // Coming from Chronicle — skip scroll animation, land instantly in workspace
@@ -2301,9 +2312,11 @@ export default function App() {
       {activeResearchCanvasPhase && (
         <ResearchCanvas3D
           initialPhaseId={activeResearchCanvasPhase}
+          isInitialEntry={true}
           onExit={(savedChronicleId) => {
             setChronicleActivePhaseId(savedChronicleId);
             setActiveResearchCanvasPhase(null);
+            handleSelectNavTab(previousTabRef.current || 'network');
           }}
         />
       )}
