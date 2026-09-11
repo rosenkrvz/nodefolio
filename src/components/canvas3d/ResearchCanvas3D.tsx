@@ -80,6 +80,8 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
   };
 
   const [activePhaseId, setActivePhaseId] = useState<ResearchPhaseId>(resolveInitialPhase());
+  const currentPhaseIdRef = useRef<ResearchPhaseId>(activePhaseId);
+  currentPhaseIdRef.current = activePhaseId;
   const [webGlSupported, setWebGlSupported] = useState<boolean>(true);
   const [isLoadingGeometry, setIsLoadingGeometry] = useState<boolean>(true);
   const [showTechnicalDetails, setShowTechnicalDetails] = useState<boolean>(false);
@@ -290,7 +292,7 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
     scene.add(fillLight);
 
     // Initial artifact load
-    switchArtifact(activePhaseId, activeTier);
+    switchArtifact(currentPhaseIdRef.current, activeTier);
 
     // Resize & Orientation Change Handler
     const handleResize = () => {
@@ -488,7 +490,7 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
         container.removeChild(renderer.domElement);
       }
     };
-  }, [activeTier, switchArtifact, activePhaseId]);
+  }, [activeTier, switchArtifact]);
 
   // Smooth camera focus on specific 3D coordinate
   const handleFocusCamera = (targetCoord: THREE.Vector3) => {
