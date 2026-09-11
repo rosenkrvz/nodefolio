@@ -33,6 +33,7 @@ import {
   Grid,
   VolumeMax,
   VolumeX,
+  Search,
 } from '../icons';
 import { useSound } from '../../lib/sound/useSound';
 
@@ -1055,6 +1056,26 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
           <span className="hidden lg:inline-flex items-center px-1.5 py-0.5 rounded bg-white/[0.05] border border-white/[0.08] text-[9px] font-mono text-zinc-400 uppercase tracking-wider">
             {currentPhaseMeta.dimension}
           </span>
+
+          <span className="h-3.5 w-px bg-white/15 mx-0.5" />
+
+          {/* Relocated Info Button with Magnifying Glass */}
+          <button
+            type="button"
+            onClick={() => {
+              playSound('toggle');
+              setShowIntroCard((prev) => !prev);
+            }}
+            title={showIntroCard ? 'Hide Phase Specification' : 'View Phase Specification'}
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-tech uppercase tracking-wider transition-all cursor-pointer active:scale-95 ${
+              showIntroCard
+                ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40 shadow-[0_0_10px_rgba(244,63,94,0.3)] font-semibold'
+                : 'bg-white/[0.05] hover:bg-white/10 text-zinc-300 hover:text-white border border-white/[0.08]'
+            }`}
+          >
+            <Search className="w-3.5 h-3.5 text-rose-400" />
+            <span>INFO</span>
+          </button>
         </div>
 
         {/* Center: Precision Real-time Diagnostics & Quality Selector */}
@@ -1188,7 +1209,7 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
           }}
           title={showIntroCard ? 'Hide Phase Specification' : 'Show Phase Specification'}
         >
-          <Compass className="w-4 h-4" />
+          <Search className="w-4 h-4" />
         </ToolRailButton>
 
         <div className="relative">
