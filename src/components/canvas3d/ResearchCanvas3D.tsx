@@ -1094,11 +1094,11 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
         <aside
           role="region"
           aria-label="Phase Context Introduction"
-          className="absolute left-4 sm:left-18 top-16 sm:top-20 z-30 max-w-xs sm:max-w-sm p-4 sm:p-5 rounded-2xl bg-black/90 backdrop-blur-xl border border-white/15 shadow-2xl pointer-events-auto transition-all animate-in fade-in slide-in-from-left-4 duration-300"
+          className="absolute left-4 sm:left-18 top-16 sm:top-20 z-30 w-72 sm:w-80 p-3.5 sm:p-4 rounded-xl bg-black/90 backdrop-blur-xl border border-white/15 shadow-2xl pointer-events-auto transition-all animate-in fade-in slide-in-from-left-4 duration-300"
         >
-          <div className="flex items-center justify-between border-b border-white/10 pb-2 mb-3">
+          <div className="flex items-center justify-between border-b border-white/10 pb-2 mb-2.5">
             <span className="font-tech text-[10px] font-bold tracking-[0.2em] text-rose-400 uppercase">
-              RESEARCH SPECIFICATION // {currentPhaseMeta.numeral}
+              PHASE {currentPhaseMeta.numeral} // SPECIFICATION
             </span>
             <button
               type="button"
@@ -1109,33 +1109,25 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
             </button>
           </div>
 
-          <h2 className="font-display text-base sm:text-lg font-bold text-white uppercase leading-tight mb-1">
+          <h2 className="font-display text-sm sm:text-base font-bold text-white uppercase leading-tight mb-0.5">
             {currentPhaseMeta.title}
           </h2>
-          <p className="text-xs text-rose-300 font-semibold mb-2">{currentPhaseMeta.topic}</p>
+          <p className="text-[11px] text-rose-300/90 font-semibold mb-2">{currentPhaseMeta.topic}</p>
 
           <p className="text-[11px] text-zinc-300 leading-relaxed mb-3">
             {currentPhaseMeta.description}
           </p>
 
-          {currentPhaseMeta.equation && (
-            <div className="p-2 rounded-lg bg-white/[0.04] border border-white/[0.08] font-mono text-[10px] text-zinc-300 mb-3 overflow-x-auto select-all">
-              {currentPhaseMeta.equation}
-            </div>
-          )}
-
-          <div className="flex items-center justify-between pt-2 border-t border-white/10">
-            <button
-              type="button"
-              onClick={() => {
-                playSound('click');
-                setShowIntroCard(false);
-              }}
-              className="w-full py-2 px-3 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold uppercase tracking-wider transition-all shadow-[0_0_12px_rgba(225,29,72,0.4)] cursor-pointer text-center"
-            >
-              EXPLORE ARTIFACT
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={() => {
+              playSound('click');
+              setShowIntroCard(false);
+            }}
+            className="w-full py-2 px-3 rounded-lg bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold uppercase tracking-wider transition-all shadow-[0_0_12px_rgba(225,29,72,0.4)] cursor-pointer text-center"
+          >
+            EXPLORE ARTIFACT
+          </button>
         </aside>
       ) : (
         <button

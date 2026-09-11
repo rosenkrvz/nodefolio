@@ -77,7 +77,7 @@ export const RESEARCH_PHASES: PhaseMetadata[] = [
     topology: 'Discrete Topological Tape',
     computeBackend: 'C++ Tape / Python Extension',
     description:
-      'A 3D topological computational graph tracing forward scalar and matrix operations, with continuous animated reverse-mode gradient backpropagation along adjoint edges.',
+      'Topological computational graph with continuous reverse-mode gradient backpropagation along adjoint edges.',
     equation: 'v_i = \\text{op}(u_j), \\quad \\bar{u}_j = \\sum_{i} \\bar{v}_i \\frac{\\partial v_i}{\\partial u_j}',
     metricsSummary: [
       { label: 'Graph Nodes', value: '10 Nodes' },
@@ -100,7 +100,7 @@ export const RESEARCH_PHASES: PhaseMetadata[] = [
     topology: 'Strictly Convex Paraboloid',
     computeBackend: 'KKT Duality / Lagrangian',
     description:
-      'A continuous 3D convex objective loss landscape featuring contour isolines, global minimum stationary point θ*, and an active gradient descent trajectory converging along the steepest descent vector.',
+      'Continuous 3D loss surface with contour isolines and a gradient descent convergence trajectory.',
     equation: 'f(\\theta) = 0.14(x^2 + 1.8z^2), \\quad \\theta_{t+1} = \\theta_t - \\eta \\nabla f(\\theta_t)',
     metricsSummary: [
       { label: 'Condition No.', value: 'κ = 1.80' },
@@ -123,7 +123,7 @@ export const RESEARCH_PHASES: PhaseMetadata[] = [
     topology: 'Curved Spherical Metric Space',
     computeBackend: 'InfoNCE / Contrastive',
     description:
-      'A 3D non-Euclidean metric space demonstrating contrastive representation dynamics: positive pair alignment tensions, negative repulsion force fields, and geodesic distance paths.',
+      'Hyperspherical metric space illustrating contrastive alignment and geodesic distance dynamics.',
     equation: '\\mathcal{L}_{InfoNCE} = -\\log \\frac{\\exp(q \\cdot k_+ / \\tau)}{\\sum_i \\exp(q \\cdot k_i / \\tau)}',
     metricsSummary: [
       { label: 'Manifold', value: 'Unit Sphere S²' },
@@ -146,7 +146,7 @@ export const RESEARCH_PHASES: PhaseMetadata[] = [
     topology: 'Bipartite Softmax Routing',
     computeBackend: 'On-Chip SRAM / Tiled Kernels',
     description:
-      'A 3D multi-head self-attention kernel architecture visualizing parallel Query and Key token planes, dynamic softmax attention intensity beams, and fast SRAM tiled routing pulses.',
+      'Self-attention kernel architecture with parallel Q/K token planes and softmax routing.',
     equation: '\\text{Attention}(Q, K, V) = \\text{softmax}\\left(\\frac{QK^T}{\\sqrt{d_k}}\\right)V',
     metricsSummary: [
       { label: 'Attention Heads', value: '8 Heads' },
@@ -169,7 +169,7 @@ export const RESEARCH_PHASES: PhaseMetadata[] = [
     topology: 'Non-Euclidean Metric Sheet M',
     computeBackend: 'CUDA / WebGL Vector ODEs',
     description:
-      'The flagship 3D research artifact: an undulating continuous Riemannian manifold surface with embedded semantic clusters, geodesic trajectory paths, and local tangent space frames.',
+      'Continuous Riemannian manifold surface with embedded semantic clusters and geodesic paths.',
     equation: 'g_{ij} = \\left\\langle \\frac{\\partial r}{\\partial u^i}, \\frac{\\partial r}{\\partial u^j} \\right\\rangle, \\quad \\frac{\\mathrm{d}^2 u^k}{\\mathrm{d}s^2} + \\Gamma_{ij}^k \\frac{\\mathrm{d}u^i}{\\mathrm{d}s}\\frac{\\mathrm{d}u^j}{\\mathrm{d}s} = 0',
     metricsSummary: [
       { label: 'Intrinsic Dim.', value: 'd = 3 (Embedded)' },
