@@ -24,12 +24,29 @@ export interface PhaseMetadata {
   tags: string[];
 }
 
+export type QualityTier = 'high' | 'medium' | 'low';
+
+export interface InspectableItem {
+  id: string;
+  name: string;
+  symbol?: string;
+  type: string;
+  role: string;
+  dimension: string;
+  properties: Record<string, string | number>;
+  description: string;
+  worldPosition: THREE.Vector3;
+}
+
 export interface PhaseArtifactInstance {
   group: THREE.Group;
   update: (time: number, delta: number) => void;
   dispose: () => void;
   defaultCameraPosition: [number, number, number];
   defaultTarget: [number, number, number];
+  getInspectableObjects?: () => { mesh: THREE.Object3D; data: InspectableItem }[];
+  onSelectObject?: (item: InspectableItem | null) => void;
+  onHoverObject?: (item: InspectableItem | null) => void;
 }
 
 export const RESEARCH_PHASES: PhaseMetadata[] = [
