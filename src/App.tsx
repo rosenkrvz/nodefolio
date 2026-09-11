@@ -160,14 +160,14 @@ const RESEARCH_NODE_IDS = new Set([
 ]);
 
 const ALL_NETWORK_NODES: NodeData[] = applySavedDimensions([...INITIAL_NODES]);
-const ALL_RESEARCH_NODES: NodeData[] = applySavedDimensions([
+const ALL_RESEARCH_NODES: NodeData[] = [
   ...INITIAL_NODES
     .filter((n) => RESEARCH_NODE_IDS.has(n.id))
-    .map((n) =>
-      RESEARCH_CORE_COORDINATES[n.id] ? { ...n, ...RESEARCH_CORE_COORDINATES[n.id] } : n
-    ),
-  ...EXPANDED_RESEARCH_NODES.filter((n) => RESEARCH_NODE_IDS.has(n.id)),
-]);
+    .map((n) => ({
+      ...n,
+      ...(RESEARCH_CORE_COORDINATES[n.id] || {}),
+    })),
+];
 const ALL_INITIAL_NODES: NodeData[] = ALL_RESEARCH_NODES;
 const ALL_INITIAL_CONNECTIONS: Connection[] = [...INITIAL_CONNECTIONS, ...RESEARCH_CONNECTIONS];
 
@@ -1116,8 +1116,8 @@ export default function App() {
         return ['node-profile', 'node-credentials', 'node-inference', 'node-eval'].includes(n.id);
       }
       if (activePreset === 'project') {
-        // Research tab: showcases the comprehensive computational ecosystem including community visitor notes
-        return true;
+        // Research tab: strictly the 4 canonical research nodes (visitor nodes handled above)
+        return RESEARCH_NODE_IDS.has(n.id);
       }
       return true;
     });
@@ -1522,10 +1522,10 @@ export default function App() {
     const availH = Math.max(300, vh - 140);
     const maxFitScale = Math.min(availW / groupW, availH / groupH);
 
-    // Zoom scale: 0.62 for Research tab (matching canonical framing), 0.60 for Network tab
-    const defaultScale = preset === 'project' ? 0.62 : (preset === 'network' ? 0.60 : Math.min(0.48, Number((maxFitScale * 0.94).toFixed(2))));
+    // Zoom scale: exactly 0.70 for Research tab matching the reference screenshot, 0.56 for Network tab
+    const defaultScale = preset === 'project' ? 0.70 : (preset === 'network' ? 0.56 : 0.60);
     const targetDesired = desiredScale !== undefined ? desiredScale : defaultScale;
-    const minScaleFloor = preset === 'project' ? 0.62 : 0.32;
+    const minScaleFloor = preset === 'project' ? 0.65 : 0.32;
     const targetScale = Math.min(targetDesired, Math.max(minScaleFloor, Number(maxFitScale.toFixed(2))));
 
     // Precision viewport center
@@ -1541,8 +1541,8 @@ export default function App() {
       const desiredRow1ScreenY = Math.max(90, Math.min(130, Math.round(vh * 0.13)));
       y = Math.round(desiredRow1ScreenY - 380 * targetScale);
     } else if (preset === 'project') {
-      // Optical compensation for research cluster
-      y -= Math.round(vh * 0.02);
+      // Optical compensation for 4-node research architecture
+      y -= Math.round(vh * 0.015);
     }
 
     setTransform({ x, y, scale: targetScale });
@@ -1827,7 +1827,7 @@ export default function App() {
       setActiveView('canvas');
       setActivePreset('project');
       setSelectedNodeId(null);
-      centerViewForPreset('project');
+      centerViewForPreset('project', 0.70);
       isProgrammaticScrollRef.current = true;
       setTimeout(() => { isProgrammaticScrollRef.current = false; }, 500);
 
