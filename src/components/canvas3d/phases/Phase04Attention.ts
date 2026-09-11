@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { PhaseArtifactInstance, QualityTier, InspectableItem } from '../types';
+import { PhaseArtifactInstance, QualityTier, InspectableItem, LayerType, SpatialAnnotation } from '../types';
 
 interface AttentionBeam {
   qIdx: number;
@@ -299,9 +299,21 @@ export function createPhase04Attention(quality: QualityTier = 'high'): PhaseArti
     });
   };
 
-  const dispose = () => {
-    disposables.forEach((d) => d.dispose());
+  const toggleLayer = (layer: LayerType, visible: boolean) => {
+    if (layer === 'geometry' || layer === 'clusters') {
+      qMeshes.forEach((m) => { m.visible = visible; });
+      kMeshes.forEach((m) => { m.visible = visible; });
+    } else if (layer === 'trajectories') {
+      beams.forEach((b) => { b.line.visible = visible; });
+      pulses.forEach((p) => { p.mesh.visible = visible; });
+    }
   };
+
+  const getAnnotations = (): SpatialAnnotation[] => [
+    { id: 'query-1', label: 'Query Token q₁', sublabel: 'Context Embedding', position: qMeshes[0]?.position.clone().add(new THREE.Vector3(0, 0.45, 0)) || new THREE.Vector3(-4.5, 2.5, 0) },
+    { id: 'key-1', label: 'Key Token k₁', sublabel: 'Target Value Projection', position: kMeshes[0]?.position.clone().add(new THREE.Vector3(0, -0.45, 0)) || new THREE.Vector3(-4.5, -2.5, 0) },
+    { id: 'head-peak', label: 'Softmax Energy Beam', sublabel: 'Affinity weight = 0.88', position: new THREE.Vector3(0, 0, 0) },
+  ];
 
   return {
     group,
@@ -311,5 +323,7 @@ export function createPhase04Attention(quality: QualityTier = 'high'): PhaseArti
     defaultTarget: [0, 0, 0],
     getInspectableObjects: () => inspectables,
     onSelectObject,
+    toggleLayer,
+    getAnnotations,
   };
 }

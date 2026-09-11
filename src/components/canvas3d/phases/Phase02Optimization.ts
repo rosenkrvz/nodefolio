@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { PhaseArtifactInstance, QualityTier, InspectableItem } from '../types';
+import { PhaseArtifactInstance, QualityTier, InspectableItem, LayerType, SpatialAnnotation } from '../types';
 
 export function createPhase02Optimization(quality: QualityTier = 'high'): PhaseArtifactInstance {
   const group = new THREE.Group();
@@ -310,9 +310,25 @@ export function createPhase02Optimization(quality: QualityTier = 'high'): PhaseA
     minRing.scale.set(scale, scale, scale);
   };
 
-  const dispose = () => {
-    disposables.forEach((d) => d.dispose());
+  const toggleLayer = (layer: LayerType, visible: boolean) => {
+    if (layer === 'geometry') {
+      surfaceMesh.visible = visible;
+      wireMesh.visible = visible;
+    } else if (layer === 'trajectories') {
+      trajLine.visible = visible;
+      descentParticle.visible = visible;
+      arrowHelper.visible = visible;
+    } else if (layer === 'clusters') {
+      minMarker.visible = visible;
+      minRing.visible = visible;
+    }
   };
+
+  const getAnnotations = (): SpatialAnnotation[] => [
+    { id: 'theta-init', label: 'Initial Parameter θ₀', sublabel: 'f(θ₀) = 5.64, Step 0', position: new THREE.Vector3(-6.2, 5.8, 4.2) },
+    { id: 'grad-descent', label: 'Steepest Descent ∇f(θ)', sublabel: 'η = 0.08, Linear Rate', position: new THREE.Vector3(-3.2, 2.8, 2.1) },
+    { id: 'theta-star', label: 'Global Minimum θ*', sublabel: '∇f(θ*) = 0, Loss = 0.00', position: new THREE.Vector3(0, 0.6, 0) },
+  ];
 
   return {
     group,
@@ -322,5 +338,7 @@ export function createPhase02Optimization(quality: QualityTier = 'high'): PhaseA
     defaultTarget: [0, 1.2, 0],
     getInspectableObjects: () => inspectables,
     onSelectObject,
+    toggleLayer,
+    getAnnotations,
   };
 }

@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { PhaseArtifactInstance, QualityTier, InspectableItem } from '../types';
+import { PhaseArtifactInstance, QualityTier, InspectableItem, LayerType, SpatialAnnotation } from '../types';
 
 export function createPhase05LatentManifold(quality: QualityTier = 'high'): PhaseArtifactInstance {
   const group = new THREE.Group();
@@ -511,9 +511,27 @@ export function createPhase05LatentManifold(quality: QualityTier = 'high'): Phas
     contactRingMat.opacity = 0.4 + Math.sin(time * 2.2) * 0.15;
   };
 
-  const dispose = () => {
-    disposables.forEach((d) => d.dispose());
+  const toggleLayer = (layer: LayerType, visible: boolean) => {
+    if (layer === 'geometry') {
+      manifoldMesh.visible = visible;
+      wireframeMesh.visible = visible;
+    } else if (layer === 'clusters') {
+      coreMeshes.forEach((m) => { m.visible = visible; });
+      haloMeshes.forEach((m) => { m.visible = visible; });
+    } else if (layer === 'trajectories') {
+      highway1Line.visible = visible;
+      particle1.visible = visible;
+      tangentArrow.visible = visible;
+    } else if (layer === 'grid') {
+      baseGrid.visible = visible;
+    }
   };
+
+  const getAnnotations = (): SpatialAnnotation[] => [
+    { id: 'cluster-vl', label: 'Semantic Cluster 01', sublabel: 'Vision-Language Latent', position: clusters[0]?.pos.clone().add(new THREE.Vector3(0, 0.6, 0)) || new THREE.Vector3(-4.8, 1.2, -2.4) },
+    { id: 'cluster-diffusion', label: 'Diffusion Basin', sublabel: 'Negative Entropy Well', position: clusters[1]?.pos.clone().add(new THREE.Vector3(0, 0.6, 0)) || new THREE.Vector3(4.5, 0.8, 3.2) },
+    { id: 'geodesic-flow', label: 'Geodesic ODE Flow', sublabel: 'Minimum Energy Path', position: new THREE.Vector3(0, 1.2, 0) },
+  ];
 
   return {
     group,
@@ -523,5 +541,7 @@ export function createPhase05LatentManifold(quality: QualityTier = 'high'): Phas
     defaultTarget: [0, -0.6, 0],
     getInspectableObjects: () => inspectables,
     onSelectObject,
+    toggleLayer,
+    getAnnotations,
   };
 }

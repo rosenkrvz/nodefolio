@@ -7,6 +7,15 @@ export type ResearchPhaseId =
   | 'phase-04'
   | 'phase-05';
 
+export type LayerType = 'geometry' | 'trajectories' | 'clusters' | 'grid' | 'annotations';
+
+export interface SpatialAnnotation {
+  id: string;
+  label: string;
+  sublabel?: string;
+  position: THREE.Vector3;
+}
+
 export interface PhaseMetadata {
   id: ResearchPhaseId;
   chronicleId: string; // 'm5', 'm4', 'm3', 'm2', 'm1'
@@ -21,6 +30,8 @@ export interface PhaseMetadata {
   topology: string;
   computeBackend: string;
   description: string;
+  equation?: string;
+  metricsSummary?: { label: string; value: string }[];
   tags: string[];
 }
 
@@ -47,6 +58,8 @@ export interface PhaseArtifactInstance {
   getInspectableObjects?: () => { mesh: THREE.Object3D; data: InspectableItem }[];
   onSelectObject?: (item: InspectableItem | null) => void;
   onHoverObject?: (item: InspectableItem | null) => void;
+  toggleLayer?: (layer: LayerType, visible: boolean) => void;
+  getAnnotations?: () => SpatialAnnotation[];
 }
 
 export const RESEARCH_PHASES: PhaseMetadata[] = [
@@ -65,6 +78,12 @@ export const RESEARCH_PHASES: PhaseMetadata[] = [
     computeBackend: 'C++ Tape / Python Extension',
     description:
       'A 3D topological computational graph tracing forward scalar and matrix operations, with continuous animated reverse-mode gradient backpropagation along adjoint edges.',
+    equation: 'v_i = \\text{op}(u_j), \\quad \\bar{u}_j = \\sum_{i} \\bar{v}_i \\frac{\\partial v_i}{\\partial u_j}',
+    metricsSummary: [
+      { label: 'Graph Nodes', value: '10 Nodes' },
+      { label: 'Adjoint Edges', value: '11 Directed' },
+      { label: 'Backward Pass', value: 'O(|V| + |E|)' },
+    ],
     tags: ['Computational Graphs', 'Reverse-Mode Autodiff', 'Topological Sort', 'Adjoint Sensitivity'],
   },
   {
@@ -82,6 +101,12 @@ export const RESEARCH_PHASES: PhaseMetadata[] = [
     computeBackend: 'KKT Duality / Lagrangian',
     description:
       'A continuous 3D convex objective loss landscape featuring contour isolines, global minimum stationary point θ*, and an active gradient descent trajectory converging along the steepest descent vector.',
+    equation: 'f(\\theta) = 0.14(x^2 + 1.8z^2), \\quad \\theta_{t+1} = \\theta_t - \\eta \\nabla f(\\theta_t)',
+    metricsSummary: [
+      { label: 'Condition No.', value: 'κ = 1.80' },
+      { label: 'Learning Rate', value: 'η = 0.08' },
+      { label: 'Convergence', value: 'Linear / O(1/k)' },
+    ],
     tags: ['Convex Optimization', 'Loss Landscapes', 'Gradient Descent', 'Stationary Points'],
   },
   {
@@ -99,6 +124,12 @@ export const RESEARCH_PHASES: PhaseMetadata[] = [
     computeBackend: 'InfoNCE / Contrastive',
     description:
       'A 3D non-Euclidean metric space demonstrating contrastive representation dynamics: positive pair alignment tensions, negative repulsion force fields, and geodesic distance paths.',
+    equation: '\\mathcal{L}_{InfoNCE} = -\\log \\frac{\\exp(q \\cdot k_+ / \\tau)}{\\sum_i \\exp(q \\cdot k_i / \\tau)}',
+    metricsSummary: [
+      { label: 'Manifold', value: 'Unit Sphere S²' },
+      { label: 'Temperature', value: 'τ = 0.07' },
+      { label: 'Alignment', value: 'Geodesic d(x, y)' },
+    ],
     tags: ['Metric Spaces', 'Contrastive Learning', 'Hyperspherical Geometry', 'Geodesic Distance'],
   },
   {
@@ -116,6 +147,12 @@ export const RESEARCH_PHASES: PhaseMetadata[] = [
     computeBackend: 'On-Chip SRAM / Tiled Kernels',
     description:
       'A 3D multi-head self-attention kernel architecture visualizing parallel Query and Key token planes, dynamic softmax attention intensity beams, and fast SRAM tiled routing pulses.',
+    equation: '\\text{Attention}(Q, K, V) = \\text{softmax}\\left(\\frac{QK^T}{\\sqrt{d_k}}\\right)V',
+    metricsSummary: [
+      { label: 'Attention Heads', value: '8 Heads' },
+      { label: 'Tile Geometry', value: 'Br × Bc (SRAM)' },
+      { label: 'Memory I/O', value: 'O(N) Flash Style' },
+    ],
     tags: ['Attention Mechanisms', 'Tiled Matrix Algebra', 'Softmax Routing', 'Memory Hierarchy'],
   },
   {
@@ -133,6 +170,12 @@ export const RESEARCH_PHASES: PhaseMetadata[] = [
     computeBackend: 'CUDA / WebGL Vector ODEs',
     description:
       'The flagship 3D research artifact: an undulating continuous Riemannian manifold surface with embedded semantic clusters, geodesic trajectory paths, and local tangent space frames.',
+    equation: 'g_{ij} = \\left\\langle \\frac{\\partial r}{\\partial u^i}, \\frac{\\partial r}{\\partial u^j} \\right\\rangle, \\quad \\frac{\\mathrm{d}^2 u^k}{\\mathrm{d}s^2} + \\Gamma_{ij}^k \\frac{\\mathrm{d}u^i}{\\mathrm{d}s}\\frac{\\mathrm{d}u^j}{\\mathrm{d}s} = 0',
+    metricsSummary: [
+      { label: 'Intrinsic Dim.', value: 'd = 3 (Embedded)' },
+      { label: 'Metric Tensor', value: 'g_ij (Riemannian)' },
+      { label: 'Geodesic ODE', value: 'RK4 Integrator' },
+    ],
     tags: ['Riemannian Manifolds', 'Diffusion Geodesics', 'Vector Field ODEs', 'Score Matching'],
   },
 ];

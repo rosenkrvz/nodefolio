@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { PhaseArtifactInstance, QualityTier, InspectableItem } from '../types';
+import { PhaseArtifactInstance, QualityTier, InspectableItem, LayerType, SpatialAnnotation } from '../types';
 
 export function createPhase03MetricSpaces(quality: QualityTier = 'high'): PhaseArtifactInstance {
   const group = new THREE.Group();
@@ -332,9 +332,27 @@ export function createPhase03MetricSpaces(quality: QualityTier = 'high'): PhaseA
     anchorMesh.scale.set(scale, scale, scale);
   };
 
-  const dispose = () => {
-    disposables.forEach((d) => d.dispose());
+  const toggleLayer = (layer: LayerType, visible: boolean) => {
+    if (layer === 'geometry') {
+      sphereMesh.visible = visible;
+      wireMesh.visible = visible;
+    } else if (layer === 'clusters') {
+      instancedPoints.visible = visible;
+      anchorMesh.visible = visible;
+      posMesh.visible = visible;
+      negMesh.visible = visible;
+    } else if (layer === 'trajectories') {
+      attractiveArc.visible = visible;
+      repulsiveArc.visible = visible;
+      pulseMesh.visible = visible;
+    }
   };
+
+  const getAnnotations = (): SpatialAnnotation[] => [
+    { id: 'anchor', label: 'Anchor Sample x', sublabel: 'Unit Norm ||x|| = 1.0', position: anchorPos.clone().multiplyScalar(1.15) },
+    { id: 'positive', label: 'Positive Pair x⁺', sublabel: 'cos(x, x⁺) = +0.892', position: positivePos.clone().multiplyScalar(1.15) },
+    { id: 'negative', label: 'Negative Sample x⁻', sublabel: 'Uniformly Repelled', position: negativePos.clone().multiplyScalar(1.15) },
+  ];
 
   return {
     group,
@@ -344,5 +362,7 @@ export function createPhase03MetricSpaces(quality: QualityTier = 'high'): PhaseA
     defaultTarget: [0, 0, 0],
     getInspectableObjects: () => inspectables,
     onSelectObject,
+    toggleLayer,
+    getAnnotations,
   };
 }

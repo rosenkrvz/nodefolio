@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { PhaseArtifactInstance, QualityTier, InspectableItem } from '../types';
+import { PhaseArtifactInstance, QualityTier, InspectableItem, LayerType, SpatialAnnotation } from '../types';
 
 interface DAGNode {
   id: string;
@@ -378,9 +378,27 @@ export function createPhase01Autograd(quality: QualityTier = 'high'): PhaseArtif
     });
   };
 
-  const dispose = () => {
-    disposables.forEach((d) => d.dispose());
+  const toggleLayer = (layer: LayerType, visible: boolean) => {
+    if (layer === 'trajectories') {
+      pulseParticles.forEach((p) => {
+        p.mesh.visible = visible;
+      });
+    } else if (layer === 'geometry') {
+      nodeMeshes.forEach((m) => {
+        m.visible = visible;
+      });
+      edges.forEach((e) => {
+        e.line.visible = visible;
+      });
+    }
   };
+
+  const getAnnotations = (): SpatialAnnotation[] => [
+    { id: 'w1', label: 'Weight Parameter w₁', sublabel: '∂L/∂w₁ = -0.428', position: nodes[0].pos.clone().add(new THREE.Vector3(0, 0.45, 0)) },
+    { id: 'x1', label: 'Input Feature x₁', sublabel: 'Activation Feed', position: nodes[1].pos.clone().add(new THREE.Vector3(0, 0.45, 0)) },
+    { id: 'add1', label: 'Summation v₃ = v₁ + v₂', sublabel: 'Linear Accumulator', position: nodes[6].pos.clone().add(new THREE.Vector3(0, 0.55, 0)) },
+    { id: 'loss', label: 'Objective Loss L', sublabel: 'Adjoint Seed ∂L/∂L = 1.0', position: nodes[8].pos.clone().add(new THREE.Vector3(0, 0.55, 0)) },
+  ];
 
   return {
     group,
@@ -390,5 +408,7 @@ export function createPhase01Autograd(quality: QualityTier = 'high'): PhaseArtif
     defaultTarget: [0, 0, 0],
     getInspectableObjects: () => inspectables,
     onSelectObject,
+    toggleLayer,
+    getAnnotations,
   };
 }
