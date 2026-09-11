@@ -53,6 +53,68 @@ const OrbitIcon: React.FC<{ className?: string }> = ({ className = 'w-4 h-4' }) 
   </svg>
 );
 
+// ─── GPU-Optimized Tool Rail Button with Slow Light-Up & Animated Aura ───────
+interface ToolRailButtonProps {
+  active?: boolean;
+  onClick: () => void;
+  title: string;
+  ariaExpanded?: boolean;
+  ariaHasPopup?: 'dialog';
+  children: React.ReactNode;
+}
+
+const ToolRailButton = React.forwardRef<HTMLButtonElement, ToolRailButtonProps>(
+  ({ active = false, onClick, title, ariaExpanded, ariaHasPopup, children }, ref) => {
+    return (
+      <button
+        ref={ref}
+        type="button"
+        onClick={onClick}
+        title={title}
+        aria-expanded={ariaExpanded}
+        aria-haspopup={ariaHasPopup}
+        className="relative p-2.5 rounded-xl cursor-pointer group select-none active:scale-95 will-change-transform transform-gpu"
+      >
+        {/* Layer 1: GPU-Accelerated Outer Bloom Halo (Animated Breathing Pulse) */}
+        <span
+          aria-hidden="true"
+          className={`absolute inset-[-4px] rounded-2xl bg-rose-500/35 blur-md pointer-events-none transform-gpu transition-opacity duration-700 ease-out ${
+            active ? 'opacity-100 animate-pulse' : 'opacity-0'
+          }`}
+        />
+
+        {/* Layer 2: GPU-Accelerated Core Light-Up Illumination Layer (Smooth 600ms Bloom) */}
+        <span
+          aria-hidden="true"
+          className={`absolute inset-0 rounded-xl bg-gradient-to-tr from-rose-600 via-rose-500 to-rose-400 pointer-events-none transform-gpu transition-all duration-600 ease-[cubic-bezier(0.16,1,0.3,1)] shadow-[0_0_18px_rgba(244,63,94,0.65),inset_0_1px_1.5px_rgba(255,255,255,0.4)] ring-1 ring-rose-400/60 ${
+            active ? 'opacity-100 scale-100' : 'opacity-0 scale-90'
+          }`}
+        />
+
+        {/* Layer 3: Hover Backdrop for Inactive State */}
+        <span
+          aria-hidden="true"
+          className={`absolute inset-0 rounded-xl bg-white/[0.08] pointer-events-none transition-opacity duration-300 ${
+            !active ? 'opacity-0 group-hover:opacity-100' : 'opacity-0'
+          }`}
+        />
+
+        {/* Layer 4: Icon with Photon Drop-Shadow & Subtle Scale Elevation */}
+        <span
+          className={`relative z-10 block transition-all duration-500 ease-out transform-gpu ${
+            active
+              ? 'text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.85)] scale-105'
+              : 'text-zinc-400 group-hover:text-zinc-100 scale-100'
+          }`}
+        >
+          {children}
+        </span>
+      </button>
+    );
+  }
+);
+ToolRailButton.displayName = 'ToolRailButton';
+
 interface ResearchCanvas3DProps {
   initialPhaseId?: string;
   onExit: (currentPhaseChronicleId: string) => void;
@@ -1106,58 +1168,43 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
         className="hidden md:flex flex-col gap-1.5 absolute left-4 top-1/2 -translate-y-1/2 z-30 p-1.5 rounded-2xl bg-black/85 backdrop-blur-xl border border-white/15 shadow-2xl pointer-events-auto"
       >
         {/* Tool 1: Cinematic Turntable / Auto-Rotate */}
-        <button
-          type="button"
+        <ToolRailButton
+          active={isAutoRotate}
           onClick={() => {
             playSound('toggle');
             setIsAutoRotate((prev) => !prev);
           }}
           title={isAutoRotate ? 'Pause Turntable Auto-Rotate' : 'Cinematic Turntable (Auto-Rotate)'}
-          className={`p-2.5 rounded-xl transition-all cursor-pointer ${
-            isAutoRotate
-              ? 'bg-rose-600 text-white shadow-[0_0_12px_rgba(225,29,72,0.5)]'
-              : 'text-zinc-400 hover:text-white hover:bg-white/10'
-          }`}
         >
           <OrbitIcon className="w-4 h-4" />
-        </button>
+        </ToolRailButton>
 
         {/* Tool 2: Phase Overview & Specification Info Card */}
-        <button
-          type="button"
+        <ToolRailButton
+          active={showIntroCard}
           onClick={() => {
             playSound('toggle');
             setShowIntroCard((prev) => !prev);
           }}
           title={showIntroCard ? 'Hide Phase Specification' : 'Show Phase Specification'}
-          className={`p-2.5 rounded-xl transition-all cursor-pointer ${
-            showIntroCard
-              ? 'bg-rose-600 text-white shadow-[0_0_12px_rgba(225,29,72,0.5)]'
-              : 'text-zinc-400 hover:text-white hover:bg-white/10'
-          }`}
         >
           <Compass className="w-4 h-4" />
-        </button>
+        </ToolRailButton>
 
         <div className="relative">
-          <button
+          <ToolRailButton
             ref={layersBtnRef}
-            type="button"
+            active={showLayersMenu}
             onClick={() => {
               playSound('click');
               setShowLayersMenu((prev) => !prev);
             }}
-            aria-expanded={showLayersMenu}
-            aria-haspopup="dialog"
+            ariaExpanded={showLayersMenu}
+            ariaHasPopup="dialog"
             title="Toggle Visual Layers"
-            className={`p-2.5 rounded-xl transition-all cursor-pointer ${
-              showLayersMenu
-                ? 'bg-rose-600 text-white shadow-[0_0_12px_rgba(225,29,72,0.5)]'
-                : 'text-zinc-400 hover:text-white hover:bg-white/10'
-            }`}
           >
             <Layers className="w-4 h-4" />
-          </button>
+          </ToolRailButton>
 
           {/* Interactive Layers Menu Popover with Smooth Cinematic Animation */}
           <div
@@ -1213,28 +1260,25 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
           </div>
         </div>
 
-        <button
-          type="button"
+        {/* Tool 4: 3D Annotations */}
+        <ToolRailButton
+          active={showAnnotations}
           onClick={() => handleToggleLayer('annotations')}
-          title="Toggle 3D Annotations"
-          className={`p-2.5 rounded-xl transition-all cursor-pointer ${
-            showAnnotations
-              ? 'bg-rose-600 text-white shadow-[0_0_12px_rgba(225,29,72,0.5)]'
-              : 'text-zinc-400 hover:text-white hover:bg-white/10'
-          }`}
+          title="Toggle 3D Coordinate Annotations"
         >
           <Grid className="w-4 h-4" />
-        </button>
+        </ToolRailButton>
 
         <div className="w-full h-px bg-white/10 my-0.5" />
 
+        {/* Tool 5: Reset Camera View */}
         <button
           type="button"
           onClick={handleResetView}
           title="Reset Camera View [R]"
-          className="p-2.5 rounded-xl text-zinc-400 hover:text-white hover:bg-white/10 transition-all cursor-pointer"
+          className="relative p-2.5 rounded-xl text-zinc-400 hover:text-white hover:bg-white/10 transition-all duration-300 cursor-pointer group active:scale-90 will-change-transform transform-gpu"
         >
-          <RotateCcw className="w-4 h-4" />
+          <RotateCcw className="w-4 h-4 transition-transform duration-300 group-hover:-rotate-45" />
         </button>
       </nav>
 
