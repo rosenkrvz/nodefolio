@@ -34,6 +34,10 @@ import {
   VolumeMax,
   VolumeX,
   Search,
+  ChevronDown,
+  ChevronUp,
+  ChevronLeft,
+  ChevronRight,
 } from '../icons';
 import { useSound } from '../../lib/sound/useSound';
 
@@ -155,16 +159,16 @@ const computeOptimalFraming = (
   const aspect = viewportW / viewportH;
 
   // In portrait/mobile, Three.js fixed vertical FOV narrows horizontal FOV; scale distance outward
-  const distanceScalar = isMobile ? Math.max(1.35, 1.15 / Math.sqrt(Math.max(aspect, 0.4))) : 1.24;
+  const distanceScalar = isMobile ? Math.max(1.20, 1.04 / Math.sqrt(Math.max(aspect, 0.4))) : 1.24;
   const dist = (radius * distanceScalar) / Math.sin(fovRad / 2);
 
-  // Optical compensation: offset target slightly left on desktop to balance right-side inspection HUD
-  const targetOffset = isMobile ? new THREE.Vector3(0, -0.3, 0) : new THREE.Vector3(-0.35, 0.15, 0);
+  // Optical compensation: center target on mobile phone since HUD is contextual; offset left on desktop
+  const targetOffset = isMobile ? new THREE.Vector3(0, 0, 0) : new THREE.Vector3(-0.35, 0.15, 0);
   const target = center.clone().add(targetOffset);
 
   // Pitch camera at a pleasing technical isometric angle
-  const pitchAngle = isMobile ? 0.38 : 0.44;
-  const yawAngle = isMobile ? 0.18 : 0.28;
+  const pitchAngle = isMobile ? 0.36 : 0.44;
+  const yawAngle = isMobile ? 0.20 : 0.28;
 
   const cameraPos = new THREE.Vector3(
     target.x + dist * Math.sin(yawAngle) * Math.cos(pitchAngle),
@@ -210,7 +214,10 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
   // UI States
   const [isLoadingGeometry, setIsLoadingGeometry] = useState<boolean>(true);
   const [loadProgress, setLoadProgress] = useState<number>(0);
-  const [showIntroCard, setShowIntroCard] = useState<boolean>(true);
+  const [showIntroCard, setShowIntroCard] = useState<boolean>(() => {
+    return typeof window !== 'undefined' ? window.innerWidth >= 768 : true;
+  });
+  const [mobileSheetOpen, setMobileSheetOpen] = useState<boolean>(false);
   const [isAutoRotate, setIsAutoRotate] = useState<boolean>(false);
   const [showLayersMenu, setShowLayersMenu] = useState<boolean>(false);
   const [showAnnotations, setShowAnnotations] = useState<boolean>(false);
@@ -645,6 +652,10 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
           setSelectedItem(match.data);
           activeArtifactRef.current.onSelectObject?.(match.data);
 
+          if (window.innerWidth < 768) {
+            setMobileSheetOpen(true);
+          }
+
           if (isDoubleTap) {
             handleFocusCamera(match.data.worldPosition);
           }
@@ -784,6 +795,18 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
     if (btn) {
       btn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
     }
+  };
+
+  const handlePrevPhase = () => {
+    const currIdx = RESEARCH_PHASES.findIndex((p) => p.id === activePhaseId);
+    const prevIdx = (currIdx - 1 + RESEARCH_PHASES.length) % RESEARCH_PHASES.length;
+    handleSelectPhase(RESEARCH_PHASES[prevIdx].id);
+  };
+
+  const handleNextPhase = () => {
+    const currIdx = RESEARCH_PHASES.findIndex((p) => p.id === activePhaseId);
+    const nextIdx = (currIdx + 1) % RESEARCH_PHASES.length;
+    handleSelectPhase(RESEARCH_PHASES[nextIdx].id);
   };
 
   // Smooth camera focus to specific world coordinate
@@ -1017,9 +1040,10 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
       {/* ───────────────────────────────────────────────────────────────────
           ZONE A: TOP RESEARCH INSTRUMENT HEADER (Cockpit Utility Bar)
          ─────────────────────────────────────────────────────────────────── */}
+      {/* ── DESKTOP & TABLET COCKPIT HEADER (≥ md: 768px+) ── */}
       <header
         aria-label="3D Research Canvas Navigation"
-        className="absolute top-0 inset-x-0 z-30 flex items-center justify-between px-3 sm:px-6 py-3 pointer-events-none"
+        className="hidden md:flex absolute top-0 inset-x-0 z-30 items-center justify-between px-3 sm:px-6 py-3 pointer-events-none"
         style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 12px)' }}
       >
         {/* Left: Unified Instrument Metadata Pod */}
@@ -1162,6 +1186,78 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
         </div>
       </header>
 
+      {/* ── PHONE-ONLY COMPACT COCKPIT HEADER (< md: < 768px) ── */}
+      <header
+        aria-label="Mobile 3D Research Navigation"
+        className="md:hidden absolute top-0 inset-x-0 z-30 flex items-center justify-between px-2.5 py-2 pointer-events-none"
+        style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 8px)' }}
+      >
+        {/* Left: Phase Numeral & Full Title */}
+        <div className="flex items-center gap-1.5 px-2.5 h-9 rounded-xl bg-zinc-950/90 backdrop-blur-2xl border border-white/15 shadow-[0_4px_20px_rgba(0,0,0,0.7)] pointer-events-auto select-none min-w-0">
+          <span className="relative flex h-2 w-2 shrink-0">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75" />
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500 shadow-[0_0_6px_#f43f5e]" />
+          </span>
+          <span className="font-tech text-[10px] font-bold tracking-[0.16em] text-rose-400 uppercase shrink-0">
+            PHASE {currentPhaseMeta.numeral}
+          </span>
+          <span className="h-3 w-px bg-white/15 shrink-0" />
+          <span className="font-display text-[11px] min-[360px]:text-xs font-semibold tracking-wide text-white uppercase truncate max-w-[140px] min-[360px]:max-w-[180px]">
+            {currentPhaseMeta.title}
+          </span>
+        </div>
+
+        {/* Right: Info Toggle, Audio & Exit */}
+        <div className="flex items-center gap-1 px-1.5 h-9 rounded-xl bg-zinc-950/90 backdrop-blur-2xl border border-white/15 shadow-[0_4px_20px_rgba(0,0,0,0.7)] pointer-events-auto select-none shrink-0 ml-1.5">
+          {/* Mobile Info Button (Toggles Bottom Sheet) */}
+          <button
+            type="button"
+            onClick={() => {
+              playSound('toggle');
+              setMobileSheetOpen((prev) => !prev);
+            }}
+            aria-label={mobileSheetOpen ? 'Close specification sheet' : 'Open specification sheet'}
+            className={`flex items-center gap-1 px-2 py-1 rounded-lg text-[10.5px] font-tech uppercase tracking-wider transition-all cursor-pointer active:scale-95 min-h-[30px] ${
+              mobileSheetOpen
+                ? 'bg-rose-500/25 text-rose-300 border border-rose-500/50 shadow-[0_0_10px_rgba(244,63,94,0.3)] font-semibold'
+                : 'bg-white/[0.06] text-zinc-300 hover:text-white border border-white/[0.08]'
+            }`}
+          >
+            <Search className="w-3 h-3 text-rose-400" />
+            <span>INFO</span>
+          </button>
+
+          {/* Audio Mute / Unmute Toggle */}
+          <button
+            type="button"
+            onClick={toggleMute}
+            aria-label={isMuted ? 'Unmute Audio' : 'Mute Audio'}
+            className="w-7 h-7 flex items-center justify-center rounded-lg text-zinc-400 hover:text-white hover:bg-white/[0.08] transition-colors cursor-pointer active:scale-95"
+          >
+            {isMuted ? (
+              <VolumeX className="w-3.5 h-3.5 text-zinc-500" />
+            ) : (
+              <VolumeMax className="w-3.5 h-3.5 text-rose-400" />
+            )}
+          </button>
+
+          <span className="h-3 w-px bg-white/15" />
+
+          {/* Exit Canvas */}
+          <button
+            type="button"
+            onClick={() => {
+              playSound('click');
+              onExit(currentPhaseMeta.chronicleId);
+            }}
+            aria-label="Exit 3D Research Canvas"
+            className="flex items-center justify-center w-7 h-7 rounded-lg bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/35 text-rose-300 hover:text-white transition-all cursor-pointer active:scale-95"
+          >
+            <X className="w-3.5 h-3.5 text-rose-400" />
+          </button>
+        </div>
+      </header>
+
       {/* ───────────────────────────────────────────────────────────────────
           ZONE B: LEFT FUNCTIONAL TOOL RAIL & INTRO CARD
          ─────────────────────────────────────────────────────────────────── */}
@@ -1285,12 +1381,12 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
         </button>
       </nav>
 
-      {/* Contextual Introduction Card (Minimizes on first interaction) */}
+      {/* Contextual Introduction Card (Desktop/Tablet Only — mobile uses bottom sheet) */}
       {showIntroCard && (
         <aside
           role="region"
           aria-label="Phase Context Introduction"
-          className="absolute left-4 sm:left-18 top-16 sm:top-20 z-30 w-72 sm:w-80 p-3.5 sm:p-4 rounded-xl bg-black/90 backdrop-blur-xl border border-white/15 shadow-2xl pointer-events-auto transition-all animate-in fade-in slide-in-from-left-4 duration-300"
+          className="hidden md:block absolute left-18 top-20 z-30 w-80 p-4 rounded-xl bg-black/90 backdrop-blur-xl border border-white/15 shadow-2xl pointer-events-auto transition-all animate-in fade-in slide-in-from-left-4 duration-300"
         >
           <div className="flex items-center justify-between border-b border-white/10 pb-2 mb-2.5">
             <span className="font-tech text-[10px] font-bold tracking-[0.2em] text-rose-400 uppercase">
@@ -1357,7 +1453,7 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
 
       {/* ───────────────────────────────────────────────────────────────────
           ZONE D: UNIFIED ARTIFACT INSPECTION PANEL (Right Zone)
-          (Desktop: Draggable anywhere across viewport; Mobile: Responsive Bottom Sheet)
+          (Desktop/Tablet: Draggable HUD; Phone uses contextual Bottom Sheet)
          ─────────────────────────────────────────────────────────────────── */}
       <aside
         ref={specPanelRef}
@@ -1373,9 +1469,9 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
               }
             : undefined
         }
-        className={`fixed md:absolute inset-x-3 md:inset-x-auto ${
-          isDesktop && specPos ? '' : 'md:right-6 md:top-20'
-        } bottom-[calc(env(safe-area-inset-bottom,0px)+78px)] md:bottom-auto md:w-80 md:max-w-xs max-h-[50vh] md:max-h-[76vh] overflow-y-auto no-scrollbar p-3.5 sm:p-4 rounded-xl bg-black/90 backdrop-blur-xl border ${
+        className={`hidden md:block absolute ${
+          isDesktop && specPos ? '' : 'right-6 top-20'
+        } w-80 max-w-xs max-h-[76vh] overflow-y-auto no-scrollbar p-4 rounded-xl bg-black/90 backdrop-blur-xl border ${
           selectedItem ? 'border-rose-500/60 shadow-[0_16px_48px_rgba(225,29,72,0.2)]' : 'border-white/15 shadow-2xl'
         } text-zinc-300 pointer-events-auto z-30 ${
           isDraggingSpec ? 'transition-none cursor-grabbing ring-1 ring-rose-500/50' : 'transition-all duration-200'
@@ -1496,12 +1592,199 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
         )}
       </aside>
 
+      {/* ── PHONE-ONLY FLOATING CONTROLS (< md) ── */}
+      <div className="md:hidden absolute right-3 bottom-[calc(env(safe-area-inset-bottom,0px)+74px)] z-20 flex flex-col items-end gap-2 pointer-events-none select-none">
+        <button
+          type="button"
+          onClick={handleResetView}
+          aria-label="Reset Camera View to Default"
+          title="Reset Camera"
+          className="pointer-events-auto flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-zinc-950/90 backdrop-blur-xl border border-white/15 text-zinc-200 hover:text-white shadow-[0_4px_16px_rgba(0,0,0,0.7)] active:scale-95 transition-all text-xs font-tech font-semibold tracking-wider cursor-pointer"
+        >
+          <RotateCcw className="w-3.5 h-3.5 text-rose-400" />
+          <span>RESET CAM</span>
+        </button>
+      </div>
+
+      {/* ── PHONE-ONLY CONTEXTUAL BOTTOM SHEET & PEEK HANDLE (< md) ── */}
+      {/* 1. Mobile Peek Handle when sheet is closed */}
+      {!mobileSheetOpen && (
+        <div className="md:hidden absolute inset-x-0 bottom-[calc(env(safe-area-inset-bottom,0px)+74px)] z-20 flex justify-center pointer-events-none">
+          <button
+            type="button"
+            onClick={() => {
+              playSound('toggle');
+              setMobileSheetOpen(true);
+            }}
+            aria-label="Open Specification & Metrics Drawer"
+            className="pointer-events-auto flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-black/85 backdrop-blur-md border border-white/15 text-zinc-300 hover:text-white shadow-[0_4px_20px_rgba(0,0,0,0.8)] active:scale-95 transition-all text-[10px] font-mono uppercase tracking-widest cursor-pointer"
+          >
+            <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
+            <span>{selectedItem ? 'COMPONENT INSPECT' : 'SPEC & METRICS'}</span>
+            <ChevronUp className="w-3 h-3 text-rose-400" />
+          </button>
+        </div>
+      )}
+
+      {/* 2. Backdrop Overlay when mobile sheet is open */}
+      {mobileSheetOpen && (
+        <div
+          onClick={() => {
+            playSound('toggle');
+            setMobileSheetOpen(false);
+          }}
+          className="md:hidden fixed inset-0 bg-black/60 backdrop-blur-[2px] z-30 animate-in fade-in duration-150"
+          aria-hidden="true"
+        />
+      )}
+
+      {/* 3. Mobile Contextual Bottom Sheet Drawer */}
+      {mobileSheetOpen && (
+        <aside
+          role="dialog"
+          aria-label="Phase Specification and Inspection Drawer"
+          className="md:hidden fixed inset-x-0 bottom-0 z-40 bg-zinc-950/98 backdrop-blur-2xl border-t border-white/15 rounded-t-2xl shadow-[0_-16px_48px_rgba(0,0,0,0.9)] max-h-[72vh] overflow-y-auto no-scrollbar pb-[calc(env(safe-area-inset-bottom,0px)+18px)] animate-in slide-in-from-bottom duration-200 pointer-events-auto select-none font-body"
+        >
+          {/* Drag Pill Handle */}
+          <div className="w-12 h-1 rounded-full bg-white/25 mx-auto mt-2.5 mb-1 cursor-pointer" onClick={() => setMobileSheetOpen(false)} />
+
+          <div className="p-4 space-y-3.5 text-zinc-300">
+            {/* Drawer Header */}
+            <div className="flex items-center justify-between border-b border-white/10 pb-2.5">
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-rose-500 shadow-[0_0_6px_#f43f5e]" />
+                <span className="font-tech text-xs font-bold tracking-[0.2em] text-rose-400 uppercase">
+                  {selectedItem ? 'COMPONENT INSPECTION' : `PHASE ${currentPhaseMeta.numeral} // SPECIFICATION`}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setMobileSheetOpen(false)}
+                aria-label="Close Specification Drawer"
+                className="w-7 h-7 flex items-center justify-center rounded-lg bg-white/[0.06] text-zinc-400 hover:text-white border border-white/10 active:scale-95 transition-all cursor-pointer"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+
+            {/* If an object in 3D is selected */}
+            {selectedItem ? (
+              <div className="space-y-3">
+                <div>
+                  <h3 className="font-display text-base font-bold text-white uppercase leading-tight">
+                    {selectedItem.name}
+                  </h3>
+                  <p className="text-xs text-rose-300 font-semibold mt-0.5">{selectedItem.role}</p>
+                  <span className="text-[10px] font-mono text-zinc-400 block mt-0.5">{selectedItem.dimension}</span>
+                </div>
+
+                {/* Properties Table */}
+                <div className="space-y-1 pt-1 border-t border-white/10 text-xs font-mono">
+                  {Object.entries(selectedItem.properties).map(([k, v]) => (
+                    <div key={k} className="flex items-baseline justify-between gap-2 py-1 border-b border-white/[0.04]">
+                      <span className="text-zinc-400 text-[10px] uppercase font-sans">{k}</span>
+                      <span className="text-zinc-100 font-semibold text-right">{v}</span>
+                    </div>
+                  ))}
+                </div>
+
+                <p className="text-xs text-zinc-300 leading-relaxed p-2.5 rounded-xl bg-white/[0.03] border border-white/[0.06]">
+                  {selectedItem.description}
+                </p>
+
+                {/* Focus / Clear Actions */}
+                <div className="flex items-center gap-2 pt-1 border-t border-white/10">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      handleFocusCamera(selectedItem.worldPosition);
+                      setMobileSheetOpen(false);
+                    }}
+                    className="flex-1 py-2.5 px-3 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-body text-xs font-semibold uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 shadow-[0_0_14px_rgba(225,29,72,0.4)] cursor-pointer active:scale-95"
+                  >
+                    <span>FOCUS IN 3D</span>
+                    <ArrowUpRight className="w-3.5 h-3.5" />
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedItem(null);
+                      activeArtifactRef.current?.onSelectObject?.(null);
+                    }}
+                    className="py-2.5 px-4 rounded-xl bg-white/[0.06] hover:bg-white/15 text-zinc-300 hover:text-white font-tech text-xs uppercase cursor-pointer transition-colors active:scale-95"
+                  >
+                    OVERVIEW
+                  </button>
+                </div>
+              </div>
+            ) : (
+              /* Global Phase Specification */
+              <div className="space-y-3">
+                <div>
+                  <h3 className="font-display text-base font-bold text-white uppercase leading-tight">
+                    {currentPhaseMeta.title}
+                  </h3>
+                  <p className="text-xs text-rose-300/90 font-semibold mt-0.5">{currentPhaseMeta.topic}</p>
+                </div>
+
+                <p className="text-xs text-zinc-300 leading-relaxed">
+                  {currentPhaseMeta.description}
+                </p>
+
+                {/* Technical Metadata Rows (No Truncation) */}
+                <div className="space-y-1.5 pt-2 border-t border-white/10 text-xs">
+                  <div className="flex flex-col gap-0.5 py-1 border-b border-white/[0.06]">
+                    <span className="text-[10px] font-tech text-zinc-400 uppercase font-semibold">TOPOLOGY</span>
+                    <span className="text-zinc-100 font-medium break-words">
+                      {currentPhaseMeta.objectType}
+                    </span>
+                  </div>
+
+                  <div className="flex flex-col gap-0.5 py-1 border-b border-white/[0.06]">
+                    <span className="text-[10px] font-tech text-zinc-400 uppercase font-semibold">COMPUTE BACKEND</span>
+                    <span className="text-zinc-100 font-medium break-words">
+                      {currentPhaseMeta.computeBackend}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Technical Metric Cards (Mobile Readable Grid) */}
+                {currentPhaseMeta.metricsSummary && (
+                  <div className="grid grid-cols-3 gap-1.5 pt-2">
+                    {currentPhaseMeta.metricsSummary.map((m, idx) => (
+                      <div key={idx} className="p-2 rounded-xl bg-white/[0.03] border border-white/[0.06] text-center">
+                        <span className="text-[9px] text-zinc-400 uppercase block font-semibold truncate">{m.label}</span>
+                        <span className="text-xs text-zinc-100 font-mono font-semibold block mt-1">{m.value}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Explore Artifact in 3D Button */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    playSound('click');
+                    setMobileSheetOpen(false);
+                  }}
+                  className="w-full py-2.5 px-4 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-body text-xs font-semibold uppercase tracking-wider transition-all shadow-[0_0_16px_rgba(225,29,72,0.4)] cursor-pointer text-center active:scale-[0.98] mt-2"
+                >
+                  EXPLORE IN 3D
+                </button>
+              </div>
+            )}
+          </div>
+        </aside>
+      )}
+
       {/* ───────────────────────────────────────────────────────────────────
           ZONE E: 5-PHASE RESEARCH NAVIGATOR (Bottom Zone)
          ─────────────────────────────────────────────────────────────────── */}
+      {/* Desktop & Tablet Phase Navigator (≥ md) */}
       <nav
         aria-label="Research Phase Navigator"
-        className="absolute bottom-0 inset-x-0 z-30 flex justify-center pointer-events-none px-2 sm:px-4"
+        className="hidden md:flex absolute bottom-0 inset-x-0 z-30 justify-center pointer-events-none px-2 sm:px-4"
         style={{
           paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 10px)',
           paddingLeft: 'calc(env(safe-area-inset-left, 0px) + 8px)',
@@ -1553,6 +1836,68 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
               );
             })}
           </div>
+        </div>
+      </nav>
+
+      {/* Phone-Only Phase Navigator (< md) */}
+      <nav
+        aria-label="Mobile Research Phase Navigator"
+        className="md:hidden absolute bottom-0 inset-x-0 z-30 flex items-center justify-center pointer-events-none px-2"
+        style={{
+          paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 8px)',
+          paddingLeft: 'calc(env(safe-area-inset-left, 0px) + 4px)',
+          paddingRight: 'calc(env(safe-area-inset-right, 0px) + 4px)',
+        }}
+      >
+        <div className="pointer-events-auto flex items-center gap-1 p-1 rounded-2xl bg-black/90 backdrop-blur-xl border border-white/15 shadow-[0_8px_32px_rgba(0,0,0,0.85)] max-w-full">
+          {/* Previous Phase Chevron */}
+          <button
+            type="button"
+            onClick={handlePrevPhase}
+            aria-label="Previous Research Phase"
+            className="w-8 h-10 flex items-center justify-center rounded-xl text-zinc-400 hover:text-white hover:bg-white/10 active:scale-90 transition-all cursor-pointer shrink-0"
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </button>
+
+          {/* Phase Track */}
+          <div className="flex items-center gap-1 overflow-x-auto scroll-smooth no-scrollbar touch-pan-x py-0.5">
+            {RESEARCH_PHASES.map((phase) => {
+              const isActive = phase.id === activePhaseId;
+              return (
+                <button
+                  key={phase.id}
+                  ref={(el) => {
+                    phaseBtnRefs.current[phase.id] = el;
+                  }}
+                  type="button"
+                  onClick={() => handleSelectPhase(phase.id)}
+                  className={`min-h-[42px] px-2.5 py-1 rounded-xl transition-all whitespace-nowrap shrink-0 cursor-pointer flex items-center gap-1.5 active:scale-95 ${
+                    isActive
+                      ? 'bg-rose-950/90 border border-rose-500/80 shadow-[0_0_14px_rgba(225,29,72,0.4)] text-white'
+                      : 'hover:bg-white/5 border border-transparent text-zinc-400'
+                  }`}
+                >
+                  <span className={`font-tech text-[10px] font-bold ${isActive ? 'text-rose-400' : 'text-zinc-500'}`}>
+                    {phase.numeral}
+                  </span>
+                  <span className={`font-display text-[11px] font-semibold uppercase tracking-wider ${isActive ? 'text-white' : 'text-zinc-300'}`}>
+                    {phase.shortName || phase.title}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Next Phase Chevron */}
+          <button
+            type="button"
+            onClick={handleNextPhase}
+            aria-label="Next Research Phase"
+            className="w-8 h-10 flex items-center justify-center rounded-xl text-zinc-400 hover:text-white hover:bg-white/10 active:scale-90 transition-all cursor-pointer shrink-0"
+          >
+            <ChevronRight className="w-4 h-4" />
+          </button>
         </div>
       </nav>
 
