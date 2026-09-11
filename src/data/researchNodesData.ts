@@ -14,6 +14,26 @@ export const RESEARCH_CORE_COORDINATES: Record<string, { x: number; y: number }>
   'node-project': { x: 1480, y: 260 },
 };
 
+export const NETWORK_CORE_COORDINATES: Record<string, { x: number; y: number; width?: number }> = {
+  // Column 1, Row 1: Identity & Researcher Profile Node
+  'node-profile': { x: 100, y: 380, width: 340 },
+
+  // Column 1, Row 2: Academic & Theoretical Foundation (under profile)
+  'node-credentials': { x: 100, y: 840, width: 340 },
+
+  // Column 2, Row 1: Generative Architectures
+  'node-models': { x: 560, y: 380, width: 340 },
+
+  // Column 3, Row 1: Neural Systems & Data Infrastructure
+  'node-systems': { x: 1020, y: 380, width: 340 },
+
+  // Column 4, Row 1: Latent Graph Visualizer (Interactive Exploration Artifact)
+  'node-project': { x: 1480, y: 380, width: 440 },
+
+  // Column 5, Row 1: System Chronometer Node (Clock)
+  'node-clock': { x: 2040, y: 380, width: 260 },
+};
+
 export const EXPANDED_RESEARCH_NODES: NodeData[] = [];
 
 export const RESEARCH_CONNECTIONS: Connection[] = [

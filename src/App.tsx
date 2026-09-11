@@ -6,7 +6,7 @@
 import React, { useState, useRef, useCallback, useMemo, useEffect } from 'react';
 import { NodeData, Connection, CertificateItem, ProjectItem, CanvasTransform, Pin } from './types';
 import { INITIAL_NODES, INITIAL_CONNECTIONS } from './data/portfolioData';
-import { EXPANDED_RESEARCH_NODES, RESEARCH_CONNECTIONS, RESEARCH_CORE_COORDINATES } from './data/researchNodesData';
+import { EXPANDED_RESEARCH_NODES, RESEARCH_CONNECTIONS, RESEARCH_CORE_COORDINATES, NETWORK_CORE_COORDINATES } from './data/researchNodesData';
 import { SplineWires } from './components/SplineWires';
 import { GraphNode } from './components/GraphNode';
 import { TopNavbar } from './components/TopNavbar';
@@ -159,7 +159,23 @@ const RESEARCH_NODE_IDS = new Set([
   'node-project',
 ]);
 
-const ALL_NETWORK_NODES: NodeData[] = applySavedDimensions([...INITIAL_NODES]);
+const NETWORK_NODE_IDS = new Set([
+  'node-profile',
+  'node-credentials',
+  'node-models',
+  'node-systems',
+  'node-project',
+  'node-clock',
+]);
+
+const ALL_NETWORK_NODES: NodeData[] = [
+  ...INITIAL_NODES
+    .filter((n) => NETWORK_NODE_IDS.has(n.id))
+    .map((n) => ({
+      ...n,
+      ...(NETWORK_CORE_COORDINATES[n.id] || {}),
+    })),
+];
 const ALL_RESEARCH_NODES: NodeData[] = [
   ...INITIAL_NODES
     .filter((n) => RESEARCH_NODE_IDS.has(n.id))
@@ -1522,10 +1538,10 @@ export default function App() {
     const availH = Math.max(300, vh - 140);
     const maxFitScale = Math.min(availW / groupW, availH / groupH);
 
-    // Zoom scale: exactly 0.70 for Research tab matching the reference screenshot, 0.56 for Network tab
-    const defaultScale = preset === 'project' ? 0.70 : (preset === 'network' ? 0.56 : 0.60);
+    // Zoom scale: exactly 0.70 for Research tab matching reference screenshot, 0.60 for Network tab
+    const defaultScale = preset === 'project' ? 0.70 : (preset === 'network' ? 0.60 : 0.60);
     const targetDesired = desiredScale !== undefined ? desiredScale : defaultScale;
-    const minScaleFloor = preset === 'project' ? 0.65 : 0.32;
+    const minScaleFloor = preset === 'project' ? 0.65 : (preset === 'network' ? 0.58 : 0.32);
     const targetScale = Math.min(targetDesired, Math.max(minScaleFloor, Number(maxFitScale.toFixed(2))));
 
     // Precision viewport center
@@ -1806,7 +1822,7 @@ export default function App() {
       setActiveView('canvas');
       setActivePreset('network');
       setSelectedNodeId(null);
-      centerViewForPreset('network');
+      centerViewForPreset('network', 0.60);
       isProgrammaticScrollRef.current = true;
       setTimeout(() => { isProgrammaticScrollRef.current = false; }, 500);
 

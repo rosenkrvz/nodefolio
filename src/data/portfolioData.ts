@@ -211,7 +211,7 @@ export const INITIAL_CONNECTIONS: Connection[] = [
     fromNodeId: 'node-systems',
     fromPinId: 'pin-systems-project',
     toNodeId: 'node-project',
-    toPinId: 'pin-in-project-systems',
+    toPinId: 'pin-in-project',
     color: '#f43f5e',
     label: 'latent.projection',
     animated: true,
