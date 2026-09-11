@@ -8,7 +8,6 @@ interface EditorialCoverProps {
   activeNavTab?: string;
   onExplore: () => void;
   onViewWork: () => void;
-  onViewCV?: () => void;
 }
 
 const EditorialCoverComponent: React.FC<EditorialCoverProps> = ({
@@ -16,7 +15,6 @@ const EditorialCoverComponent: React.FC<EditorialCoverProps> = ({
   activeNavTab = 'home',
   onExplore,
   onViewWork,
-  onViewCV,
 }) => {
   const [entryStage, setEntryStage] = useState(0);
   const [isEntered, setIsEntered] = useState(false);
@@ -32,12 +30,10 @@ const EditorialCoverComponent: React.FC<EditorialCoverProps> = ({
     return () => mediaQuery.removeEventListener('change', handler);
   }, []);
 
-  const isCoverTab = activeNavTab === 'home' || activeNavTab === 'cover';
-
   // Coordinated Page Entry Reveal Sequence matching the Chronicle page (~800ms total)
   useEffect(() => {
     // If reduced motion is requested or user is already scrolled / on another tab, settle immediately
-    if (reducedMotion || scrollProgress > 0.02 || !isCoverTab) {
+    if (reducedMotion || scrollProgress > 0.02 || activeNavTab !== 'home') {
       setEntryStage(4);
       setIsEntered(true);
       return;
@@ -56,15 +52,15 @@ const EditorialCoverComponent: React.FC<EditorialCoverProps> = ({
       clearTimeout(t4);
       clearTimeout(t5);
     };
-  }, [reducedMotion, isCoverTab]);
+  }, [reducedMotion]);
 
   // Immediately settle entry animation if user initiates scroll or tab change before timers complete
   useEffect(() => {
-    if ((scrollProgress > 0.02 || !isCoverTab) && !isEntered) {
+    if ((scrollProgress > 0.02 || activeNavTab !== 'home') && !isEntered) {
       setEntryStage(4);
       setIsEntered(true);
     }
-  }, [scrollProgress, isCoverTab, isEntered]);
+  }, [scrollProgress, activeNavTab, isEntered]);
 
   // Multi-Phase Continuous Hermite Transition Choreography:
   // Step 1 [0.00 - 0.12]: Grounded Stability & Bottom Cue Retraction
@@ -145,8 +141,8 @@ const EditorialCoverComponent: React.FC<EditorialCoverProps> = ({
         opacity,
         filter: blur >= 0.5 ? `blur(${blur.toFixed(1)}px)` : 'none',
         transform: `translate3d(0, ${translateYPercent.toFixed(2)}%, 0) scale(${scale.toFixed(4)})`,
-        pointerEvents: (!isCoverTab || scrollProgress >= 0.82) ? 'none' : 'auto',
-        visibility: (!isCoverTab || isFullyOffscreen) ? 'hidden' : 'visible',
+        pointerEvents: (activeNavTab !== 'home' || scrollProgress >= 0.82) ? 'none' : 'auto',
+        visibility: (activeNavTab !== 'home' || isFullyOffscreen) ? 'hidden' : 'visible',
         willChange: isFullyOffscreen ? 'auto' : 'transform, opacity',
       }}
       className={`absolute inset-0 w-full max-w-full h-full min-h-full min-h-[100dvh] flex flex-col justify-between px-4 sm:px-12 md:px-16 pt-[calc(4.25rem+env(safe-area-inset-top,0px))] pb-[calc(1.25rem+env(safe-area-inset-bottom,0px))] sm:pt-[calc(4.5rem+env(safe-area-inset-top,0px))] sm:pb-[calc(1.5rem+env(safe-area-inset-bottom,0px))] select-none overflow-hidden z-20 bg-[#14171c] ${
@@ -298,7 +294,7 @@ const EditorialCoverComponent: React.FC<EditorialCoverProps> = ({
             }}
             className="font-display text-[17px] min-[360px]:text-[19px] min-[390px]:text-[21px] sm:text-2xl md:text-3xl text-zinc-100 font-semibold tracking-tight leading-snug mb-2.5 min-[360px]:mb-3 sm:mb-4 max-w-[340px] sm:max-w-none"
           >
-            I build computational systems to understand how they work.
+            I build things to understand how they work.
           </div>
 
           {/* Human-written Supporting Copy */}
@@ -310,17 +306,17 @@ const EditorialCoverComponent: React.FC<EditorialCoverProps> = ({
             }}
             className="font-body text-xs min-[360px]:text-[13px] min-[390px]:text-sm sm:text-lg text-zinc-300 font-normal leading-relaxed mb-4 min-[360px]:mb-5 sm:mb-8 max-w-[310px] min-[360px]:max-w-[340px] min-[390px]:max-w-[360px] sm:max-w-xl"
           >
-            Data science and AI researcher exploring statistical learning, high-dimensional manifolds, autograd engines, and interactive visual computing.
+            Exploring mathematics, data, machine learning and software through experiments, systems and things I can actually build.
           </p>
 
-          {/* Editorial Actions: EXPLORE WORK, EXPLORE RESEARCH, VIEW CV */}
+          {/* Editorial Actions */}
           <div
             style={{
               opacity: isEntered || entryStage >= 3 ? 1 : 0,
               transform: isEntered || entryStage >= 3 ? 'none' : 'translateY(12px)',
               transition: isEntered ? 'none' : 'opacity 0.6s ease-out 0.1s, transform 0.6s ease-out 0.1s',
             }}
-            className="flex flex-wrap items-center gap-2.5 min-[360px]:gap-3 sm:gap-4 font-body w-full sm:w-auto"
+            className="flex items-center gap-2.5 min-[360px]:gap-3 sm:gap-4 font-body w-full sm:w-auto"
           >
             <button
               type="button"
@@ -330,7 +326,7 @@ const EditorialCoverComponent: React.FC<EditorialCoverProps> = ({
               }}
               className="flex-1 sm:flex-initial justify-center px-4 py-2.5 min-[360px]:px-5 min-[360px]:py-3 sm:px-6 sm:py-3.5 rounded-lg min-[360px]:rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-semibold text-[11.5px] min-[360px]:text-xs sm:text-sm tracking-wider uppercase transition-all shadow-[0_0_20px_rgba(225,29,72,0.35)] hover:shadow-[0_0_32px_rgba(225,29,72,0.6)] flex items-center gap-2 group active:scale-95 cursor-pointer"
             >
-              <span>EXPLORE WORK</span>
+              <span>ENTER SYSTEM</span>
               <ArrowRight className="w-3.5 h-3.5 min-[360px]:w-4 min-[360px]:h-4 transition-transform group-hover:translate-x-1" />
             </button>
 
@@ -343,25 +339,12 @@ const EditorialCoverComponent: React.FC<EditorialCoverProps> = ({
               className="flex-1 sm:flex-initial justify-center px-4 py-2.5 min-[360px]:px-5 min-[360px]:py-3 sm:px-6 sm:py-3.5 rounded-lg min-[360px]:rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-zinc-200 hover:text-white border border-white/[0.12] hover:border-white/[0.25] font-semibold text-[11.5px] min-[360px]:text-xs sm:text-sm tracking-wider uppercase transition-all active:scale-95 cursor-pointer flex items-center gap-2"
             >
               <Compass className="w-3.5 h-3.5 min-[360px]:w-4 min-[360px]:h-4 text-rose-400 shrink-0" />
-              <span className="whitespace-nowrap">EXPLORE RESEARCH</span>
+              <span className="whitespace-nowrap">VIEW RESEARCH</span>
             </button>
-
-            {onViewCV && (
-              <button
-                type="button"
-                onClick={() => {
-                  playSound('nav');
-                  onViewCV();
-                }}
-                className="hidden sm:inline-flex items-center px-4 py-3 sm:px-5 sm:py-3.5 rounded-lg sm:rounded-xl text-zinc-400 hover:text-white hover:bg-white/[0.04] text-[11.5px] sm:text-xs font-semibold tracking-wider uppercase transition-all cursor-pointer"
-              >
-                VIEW CV
-              </button>
-            )}
           </div>
         </div>
 
-        {/* Right Column: Negative Space & Capabilities Pillar */}
+        {/* Right Column: Negative Space & Editorial Spec Column (Parallax Sub-layer) */}
         <div
           style={{
             transform: `translate3d(0, ${(specsTranslateY + (isEntered || entryStage >= 3 ? 0 : 16)).toFixed(1)}px, 0)`,
@@ -372,14 +355,14 @@ const EditorialCoverComponent: React.FC<EditorialCoverProps> = ({
         >
           <div className="space-y-2.5">
             <span className="font-accent text-3xl leading-none text-rose-400/80 block">
-              AREAS OF CAPABILITY
+              AREAS OF STUDY &amp; FOCUS
             </span>
             {[
-              'DATA & COMPUTATIONAL SYSTEMS',
-              'AI & STATISTICAL LEARNING',
-              'HIGH-DIMENSIONAL VISUALIZATION',
-              'WEB & INTERACTIVE ENGINES',
-              'RESEARCH EXPERIMENTATION',
+              'STATISTICAL LEARNING',
+              'GENERATIVE ARCHITECTURES',
+              'LATENT TOPOLOGY & MANIFOLDS',
+              'COMPUTATIONAL PIPELINES',
+              'TENSOR OPTIMIZATION',
             ].map((tag) => (
               <div
                 key={tag}
@@ -392,7 +375,7 @@ const EditorialCoverComponent: React.FC<EditorialCoverProps> = ({
 
           <div className="pt-6 border-t border-white/[0.08] max-w-[220px]">
             <p className="font-body text-xs text-zinc-400 leading-relaxed uppercase tracking-wider">
-              Open for software engineering roles, machine learning systems, and research collaborations.
+              Open for software engineering roles, machine learning systems, and technical collaborations.
             </p>
             <div className="w-8 h-0.5 bg-rose-500 mt-3 ml-auto" />
           </div>
@@ -413,17 +396,17 @@ const EditorialCoverComponent: React.FC<EditorialCoverProps> = ({
           type="button"
           onClick={onExplore}
           className="flex items-center gap-2 tracking-[0.18em] sm:tracking-[0.2em] uppercase text-[10.5px] min-[360px]:text-[11px] sm:text-xs font-medium sm:font-semibold text-zinc-400 hover:text-white transition-colors cursor-pointer group focus:outline-none"
-          title="Scroll down to explore project index"
+          title="Scroll down to open the computational network"
         >
           <span className="w-2 h-2 rounded-full border border-zinc-400 group-hover:border-rose-500 group-hover:bg-rose-500 transition-colors inline-block" />
-          <span>SCROLL TO EXPLORE WORK</span>
+          <span>SCROLL TO ENTER SYSTEM</span>
           <ChevronDown className="w-3 h-3 min-[360px]:w-3.5 min-[360px]:h-3.5 animate-bounce text-rose-400 group-hover:translate-y-0.5 transition-transform" />
         </button>
 
         <div className="hidden sm:flex items-center gap-4 text-[11px] font-body text-zinc-400 tracking-widest uppercase">
           <span>SECTION 01: COVER</span>
           <span className="text-zinc-700">&bull;</span>
-          <span>SECTION 02: WORK (PROJECT INDEX)</span>
+          <span>SECTION 02: NEURAL WORKSPACE</span>
         </div>
       </div>
     </section>

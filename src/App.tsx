@@ -4,8 +4,8 @@
  */
 
 import React, { useState, useRef, useCallback, useMemo, useEffect } from 'react';
-import { NodeData, Connection, CertificateItem, ProjectItem, CanvasTransform, Pin, NavigationTab } from './types';
-import { INITIAL_NODES, INITIAL_CONNECTIONS, PORTFOLIO_PROJECTS } from './data/portfolioData';
+import { NodeData, Connection, CertificateItem, ProjectItem, CanvasTransform, Pin } from './types';
+import { INITIAL_NODES, INITIAL_CONNECTIONS } from './data/portfolioData';
 import { EXPANDED_RESEARCH_NODES, RESEARCH_CONNECTIONS, RESEARCH_CORE_COORDINATES, NETWORK_CORE_COORDINATES } from './data/researchNodesData';
 import { SplineWires } from './components/SplineWires';
 import { GraphNode } from './components/GraphNode';
@@ -22,7 +22,6 @@ import { PrintCVDocument } from './components/cv/PrintCVDocument';
 import { AddVisitorNodeModal } from './components/modals/AddVisitorNodeModal';
 import { InspectorListView } from './components/InspectorListView';
 import { ChronicleView } from './components/ChronicleView';
-import { LabView } from './components/LabView';
 import { ResearchCanvas3D } from './components/canvas3d/ResearchCanvas3D';
 import { playSound } from './lib/sound';
 import { useIsMobile } from './hooks/useIsMobile';
@@ -191,40 +190,28 @@ const ALL_INITIAL_CONNECTIONS: Connection[] = [...INITIAL_CONNECTIONS, ...RESEAR
 // ─── URL Hash Routing ─────────────────────────────────────────────────────────
 // Maps internal nav tabs to clean URL hash fragments for shareable, bookmarkable links.
 const TAB_TO_HASH: Record<string, string> = {
-  cover: '#cover',
   home: '#cover',
-  work: '#work',
-  network: '#work',
-  research: '#research',
+  network: '#network',
   projects: '#research',
+  notebook: '#chronicle_entries',
   lab: '#lab',
-  notebook: '#lab',
-  cv: '#cv',
-  about: '#cv',
-  contact: '#contact',
+  about: '#about',
 };
 
-const HASH_TO_TAB: Record<string, NavigationTab> = {
-  '#cover': 'cover',
-  '#home': 'cover',
-  '#work': 'work',
-  '#network': 'work', // backward compatibility
-  '#research': 'research',
-  '#projects': 'research', // backward compatibility
+const HASH_TO_TAB: Record<string, 'home' | 'network' | 'projects' | 'lab' | 'notebook' | 'about'> = {
+  '#cover': 'home',
+  '#network': 'network',
+  '#research': 'projects',
+  '#chronicle_entries': 'notebook',
   '#lab': 'lab',
-  '#chronicle': 'lab', // backward compatibility
-  '#chronicle_entries': 'lab', // backward compatibility
-  '#notebook': 'lab', // backward compatibility
-  '#cv': 'cv',
-  '#about': 'cv', // backward compatibility
-  '#contact': 'contact',
-  '': 'cover',
+  '#about': 'about',
+  '': 'home',
 };
 
-const getTabFromHash = (): NavigationTab => {
-  if (typeof window === 'undefined') return 'cover';
+const getTabFromHash = (): 'home' | 'network' | 'projects' | 'lab' | 'notebook' | 'about' => {
+  if (typeof window === 'undefined') return 'home';
   const hash = window.location.hash.toLowerCase();
-  return HASH_TO_TAB[hash] || 'cover';
+  return HASH_TO_TAB[hash] || 'home';
 };
 
 const updateHash = (tab: string) => {
@@ -235,50 +222,15 @@ const updateHash = (tab: string) => {
   }
 };
 
-const updateDocumentTitle = (tab: NavigationTab) => {
-  if (typeof document === 'undefined') return;
-  switch (tab) {
-    case 'cover':
-    case 'home':
-      document.title = 'Shubham Sharma — Computation & AI Portfolio';
-      break;
-    case 'work':
-    case 'network':
-      document.title = 'Shubham Sharma — Work & Computational Systems';
-      break;
-    case 'research':
-    case 'projects':
-      document.title = 'Shubham Sharma — 3D Research Canvas & Mathematical Foundations';
-      break;
-    case 'lab':
-    case 'notebook':
-      document.title = 'Shubham Sharma — Engineering Lab & Experiment Log';
-      break;
-    case 'cv':
-    case 'about':
-      document.title = 'Shubham Sharma — Curriculum Vitae & Professional Summary';
-      break;
-    case 'contact':
-      document.title = 'Shubham Sharma — Contact';
-      break;
-    default:
-      document.title = 'Shubham Sharma — Nodefolio';
-  }
-};
-
 export default function App() {
   // Navigation & Scroll State — initialize from URL hash for deep linking
   const initialTab = useMemo(() => getTabFromHash(), []);
-  const [activeNavTab, setActiveNavTab] = useState<NavigationTab>(initialTab);
+  const [activeNavTab, setActiveNavTab] = useState<'home' | 'network' | 'projects' | 'lab' | 'notebook' | 'about'>(initialTab);
   const [scrollProgress, setScrollProgress] = useState<number>(0);
-  const [activePreset, setActivePreset] = useState<string>(
-    initialTab === 'projects' || initialTab === 'research' ? 'project' : 'network'
-  );
+  const [activePreset, setActivePreset] = useState<string>(initialTab === 'projects' ? 'project' : 'network');
   const [connections, setConnections] = useState<Connection[]>(ALL_INITIAL_CONNECTIONS);
   const [isAddNodeOpen, setIsAddNodeOpen] = useState<boolean>(false);
-  const [activeResearchCanvasPhase, setActiveResearchCanvasPhase] = useState<string | null>(
-    initialTab === 'research' || initialTab === 'projects' ? 'phase-05' : null
-  );
+  const [activeResearchCanvasPhase, setActiveResearchCanvasPhase] = useState<string | null>(null);
   const [chronicleActivePhaseId, setChronicleActivePhaseId] = useState<string>('m1');
 
   // Graph Data State:
@@ -332,9 +284,7 @@ export default function App() {
     },
     []
   );
-  const [activeView, setActiveView] = useState<'canvas' | 'list' | 'timeline'>(
-    initialTab === 'notebook' || initialTab === 'lab' ? 'timeline' : 'canvas'
-  );
+  const [activeView, setActiveView] = useState<'canvas' | 'list' | 'timeline'>(initialTab === 'notebook' ? 'timeline' : 'canvas');
   const [isSimulating, setIsSimulating] = useState<boolean>(false);
   const [wireStyle, setWireStyle] = useState<'glow' | 'minimal' | 'cyber'>('glow');
   const [showGrid, setShowGrid] = useState<boolean>(true);
@@ -370,8 +320,8 @@ export default function App() {
     width: number;
     height: number;
   } | null>(null);
-  const [isContactOpen, setIsContactOpen] = useState(initialTab === 'contact');
-  const [isResumeOpen, setIsResumeOpen] = useState(initialTab === 'cv' || initialTab === 'about');
+  const [isContactOpen, setIsContactOpen] = useState(false);
+  const [isResumeOpen, setIsResumeOpen] = useState(false);
 
   // Scroll Container Ref
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -424,19 +374,18 @@ export default function App() {
   const activeViewRef = useRef(activeView);
   activeViewRef.current = activeView;
   const isProgrammaticScrollRef = useRef(false);
-  const handleSelectNavTabRef = useRef<((tab: NavigationTab) => void) | null>(null);
+  const handleSelectNavTabRef = useRef<((tab: 'home' | 'network' | 'projects' | 'lab' | 'notebook' | 'about') => void) | null>(null);
 
   // ─── URL Hash Routing Effects ──────────────────────────────────────────────
   // 1. Sync URL hash bar whenever the active nav tab changes
   useEffect(() => {
     updateHash(activeNavTab);
-    updateDocumentTitle(activeNavTab);
   }, [activeNavTab]);
 
   // 2. Deep-link mount: if the URL hash points to a workspace tab, scroll down to it on initial load
   useEffect(() => {
-    if (initialTab === 'home' || initialTab === 'cover' || initialTab === 'notebook' || initialTab === 'lab') return; // Cover and Lab stay at top
-    // For work, network, etc. — scroll down to workspace after layout settle
+    if (initialTab === 'home' || initialTab === 'notebook') return; // Cover stays at top; Chronicle already handles its own view
+    // For network, projects (research), lab — scroll down to workspace after a brief layout settle
     const timer = setTimeout(() => {
       isProgrammaticScrollRef.current = true;
       const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
@@ -711,13 +660,11 @@ export default function App() {
           isProgrammaticScrollRef.current = false;
 
           // Synchronize active navigation tab to the settled state
-          if (target === 1 && (activeNavTabRef.current === 'home' || activeNavTabRef.current === 'cover')) {
-            setActiveNavTab('work');
+          if (target === 1 && activeNavTabRef.current === 'home') {
+            setActiveNavTab('network');
             setActivePreset('network');
-            updateDocumentTitle('work');
-          } else if (target === 0 && activeNavTabRef.current !== 'home' && activeNavTabRef.current !== 'cover') {
-            setActiveNavTab('cover');
-            updateDocumentTitle('cover');
+          } else if (target === 0 && activeNavTabRef.current !== 'home') {
+            setActiveNavTab('home');
           }
         }
       };
@@ -913,13 +860,11 @@ export default function App() {
 
         // Automatically sync active tab indicator to scroll position only when manually scrolling
         if (!isProgrammaticScrollRef.current && !isSettling) {
-          if (currentProgressRef.current >= 0.70 && (activeNavTabRef.current === 'home' || activeNavTabRef.current === 'cover')) {
-            setActiveNavTab('work');
+          if (currentProgressRef.current >= 0.70 && activeNavTabRef.current === 'home') {
+            setActiveNavTab('network');
             setActivePreset('network');
-            updateDocumentTitle('work');
-          } else if (currentProgressRef.current < 0.30 && (activeNavTabRef.current === 'work' || activeNavTabRef.current === 'network')) {
-            setActiveNavTab('cover');
-            updateDocumentTitle('cover');
+          } else if (currentProgressRef.current < 0.30 && activeNavTabRef.current !== 'home') {
+            setActiveNavTab('home');
           }
         }
 
@@ -1723,8 +1668,7 @@ export default function App() {
   // Return to cover with smooth, fast single-pass upward transition (no ricochet)
   const handleReturnToCover = useCallback(() => {
     playSound('close');
-    setActiveNavTab('cover');
-    updateDocumentTitle('cover');
+    setActiveNavTab('home');
     if (activeViewRef.current !== 'canvas') {
       setActiveView('canvas');
       targetProgressRef.current = 0;
@@ -1854,8 +1798,7 @@ export default function App() {
   // Smooth single-pass transition down to workspace
   const handleExplore = useCallback(() => {
     playSound('open');
-    setActiveNavTab('work');
-    updateDocumentTitle('work');
+    setActiveNavTab('network');
     setActiveView('canvas');
     setActivePreset('network');
     setSelectedNodeId(null);
@@ -1881,12 +1824,12 @@ export default function App() {
     isProgrammaticScrollRef.current = true;
 
     if (nodeId === 'node-project') {
-      setActiveNavTab('work');
+      setActiveNavTab('projects');
       if (target.project) {
         setSelectedProject(target.project);
       }
     } else {
-      setActiveNavTab('work');
+      setActiveNavTab('network');
     }
 
     const viewportWidth = typeof window !== 'undefined' ? window.innerWidth : 1200;
@@ -1905,7 +1848,7 @@ export default function App() {
     });
 
     if (wasOnTimeline) {
-      // Coming from Lab - skip scroll animation entirely, land directly in workspace
+      // Coming from Chronicle - skip scroll animation entirely, land directly in workspace
       targetProgressRef.current = 1;
       currentProgressRef.current = 1;
       setScrollProgress(1);
@@ -1918,14 +1861,13 @@ export default function App() {
     }
   }, [nodes]);
 
-  // Top Nav Tab Selection - Centered layouts for Cover, Work, Research, Lab, CV, Contact
-  const handleSelectNavTab = useCallback((tab: NavigationTab) => {
+  // Top Nav Tab Selection - Centered layouts for Network and Research tabs
+  const handleSelectNavTab = useCallback((tab: 'home' | 'network' | 'projects' | 'lab' | 'notebook' | 'about') => {
     setActiveNavTab(tab);
-    updateDocumentTitle(tab);
 
-    if (tab === 'home' || tab === 'cover') {
+    if (tab === 'home') {
       handleReturnToCover();
-    } else if (tab === 'work' || tab === 'network') {
+    } else if (tab === 'network') {
       const wasOnTimeline = activeViewRef.current === 'timeline';
       setActiveView('canvas');
       setActivePreset('network');
@@ -1935,7 +1877,7 @@ export default function App() {
       setTimeout(() => { isProgrammaticScrollRef.current = false; }, 500);
 
       if (wasOnTimeline) {
-        // Coming from Lab — skip scroll animation, land instantly in workspace
+        // Coming from Chronicle — skip scroll animation, land instantly in workspace
         targetProgressRef.current = 1;
         currentProgressRef.current = 1;
         setScrollProgress(1);
@@ -1946,17 +1888,51 @@ export default function App() {
         const maxScroll = typeof document !== 'undefined' ? document.documentElement.scrollHeight - window.innerHeight : 1000;
         window.scrollTo({ top: maxScroll, behavior: 'smooth' });
       }
-    } else if (tab === 'research' || tab === 'projects') {
-      setActiveResearchCanvasPhase('phase-05');
-    } else if (tab === 'lab' || tab === 'notebook') {
+    } else if (tab === 'projects') {
+      const wasOnTimeline = activeViewRef.current === 'timeline';
+      setActiveView('canvas');
+      setActivePreset('project');
+      setSelectedNodeId(null);
+      centerViewForPreset('project', 0.70);
+      isProgrammaticScrollRef.current = true;
+      setTimeout(() => { isProgrammaticScrollRef.current = false; }, 500);
+
+      if (wasOnTimeline) {
+        // Coming from Chronicle — skip scroll animation, land instantly in workspace
+        targetProgressRef.current = 1;
+        currentProgressRef.current = 1;
+        setScrollProgress(1);
+        const maxScroll = typeof document !== 'undefined' ? document.documentElement.scrollHeight - window.innerHeight : 1000;
+        window.scrollTo({ top: maxScroll, behavior: 'instant' });
+      } else {
+        // Coming from Cover or already on canvas — original smooth scroll behavior
+        const maxScroll = typeof document !== 'undefined' ? document.documentElement.scrollHeight - window.innerHeight : 1000;
+        window.scrollTo({ top: maxScroll, behavior: 'smooth' });
+      }
+    } else if (tab === 'lab') {
+      const wasOnTimeline = activeViewRef.current === 'timeline';
+      setActiveView('canvas');
+      isProgrammaticScrollRef.current = true;
+      setTimeout(() => { isProgrammaticScrollRef.current = false; }, 500);
+
+      if (wasOnTimeline) {
+        targetProgressRef.current = 1;
+        currentProgressRef.current = 1;
+        setScrollProgress(1);
+        const maxScroll = typeof document !== 'undefined' ? document.documentElement.scrollHeight - window.innerHeight : 1000;
+        window.scrollTo({ top: maxScroll, behavior: 'instant' });
+      } else {
+        const maxScroll = typeof document !== 'undefined' ? document.documentElement.scrollHeight - window.innerHeight : 1000;
+        window.scrollTo({ top: maxScroll, behavior: 'smooth' });
+      }
+      handleFocusNode('node-controls');
+    } else if (tab === 'notebook') {
       setActiveView('timeline');
       window.scrollTo({ top: 0, behavior: 'instant' });
-    } else if (tab === 'cv' || tab === 'about') {
+    } else if (tab === 'about') {
       setIsResumeOpen(true);
-    } else if (tab === 'contact') {
-      setIsContactOpen(true);
     }
-  }, [centerViewForPreset, handleReturnToCover]);
+  }, [centerViewForPreset, handleFocusNode, handleReturnToCover]);
   handleSelectNavTabRef.current = handleSelectNavTab;
 
   // Preset Selection Handler
@@ -1998,17 +1974,18 @@ export default function App() {
       {/* CONTINUOUS SCROLL-DRIVEN ARCHITECTURE */}
       <main className="relative w-full max-w-full bg-[#14171c]">
         {activeView === 'timeline' ? (
-          /* Engineering Lab & Experiment Ledger */
+          /* Editorial Chronicle Journal View */
           <div className="relative w-full min-h-screen z-20 pointer-events-auto">
-            <LabView
-              onBackToWork={() => {
-                handleSelectNavTab('work');
+            <ChronicleView
+              onBackToCanvas={() => {
+                handleSelectNavTab('network');
               }}
-              onOpenProjectDetail={(projectId) => {
-                const proj = PORTFOLIO_PROJECTS.find((p) => p.id === projectId);
-                if (proj) {
-                  setSelectedProject(proj);
-                }
+              onFocusNodeOnCanvas={(nodeId) => {
+                handleFocusNode(nodeId);
+              }}
+              activePhaseId={chronicleActivePhaseId}
+              onActivePhaseChange={(phaseId) => {
+                setChronicleActivePhaseId(phaseId);
               }}
               onOpenResearchCanvas3D={(phaseId) => {
                 setActiveResearchCanvasPhase(phaseId);
@@ -2039,8 +2016,8 @@ export default function App() {
               <ArchitecturalReveal scrollProgress={scrollProgress}>
                 <div
                   style={{
-                    opacity: (activeNavTab !== 'home' && activeNavTab !== 'cover') ? 1 : (scrollProgress >= 0.10 ? Math.min(1, Math.pow((scrollProgress - 0.10) / 0.40, 1.2)) : 0),
-                    pointerEvents: ((activeNavTab !== 'home' && activeNavTab !== 'cover') || scrollProgress >= 0.80) ? 'auto' : 'none',
+                    opacity: activeNavTab !== 'home' ? 1 : (scrollProgress >= 0.10 ? Math.min(1, Math.pow((scrollProgress - 0.10) / 0.40, 1.2)) : 0),
+                    pointerEvents: (activeNavTab !== 'home' || scrollProgress >= 0.80) ? 'auto' : 'none',
                   }}
                   className="absolute inset-0 w-full max-w-full h-full pt-14 sm:pt-16 z-10"
                 >
@@ -2243,8 +2220,7 @@ export default function App() {
                 scrollProgress={scrollProgress}
                 activeNavTab={activeNavTab}
                 onExplore={handleExplore}
-                onViewWork={() => setActiveResearchCanvasPhase('phase-05')}
-                onViewCV={handleOpenResumeModal}
+                onViewWork={() => handleSelectNavTab('projects')}
               />
             </div>
           </div>
@@ -2312,12 +2288,6 @@ export default function App() {
           playSound('open');
           setSelectedProject(null);
           setActiveResearchCanvasPhase(phaseId || 'phase-05');
-        }}
-        onOpenLabEntry={(labId) => {
-          playSound('nav');
-          setSelectedProject(null);
-          setActiveView('timeline');
-          window.scrollTo({ top: 0, behavior: 'instant' });
         }}
       />
 

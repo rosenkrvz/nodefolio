@@ -102,7 +102,6 @@ export const Share = createIcon(UntitledShare07);
 export const Printer = createIcon(UntitledPrinter);
 export const RotateCcw = createIcon(UntitledRefreshCcw01);
 export const Sliders = createIcon(UntitledSliders01);
-export const Filter = createIcon(UntitledSliders01);
 export const Grid = createIcon(UntitledGrid01);
 export const Grip = createIcon(UntitledDotsGrid);
 export const Menu = createIcon(UntitledMenu01);

@@ -49,56 +49,10 @@ export interface ProjectItem {
   tags: string[];
   metrics: { label: string; value: string }[];
   image: string;
-  category?: string;
-  status?: string;
-  problem?: string;
-  approach?: string;
-  implementation?: string[];
-  contribution?: string;
-  learnings?: string;
   liveUrl?: string;
   githubUrl?: string;
   parameters?: { label: string; value: string }[];
-  relatedResearchPhaseId?: string;
-  relatedLabId?: string;
 }
-
-export type LabEntryType = 'BUILD' | 'EXPERIMENT' | 'DEBUG' | 'RESEARCH' | 'OPTIMIZATION';
-
-export interface LabEntry {
-  id: string;
-  date: string;
-  displayYear: string;
-  period: string;
-  numeral: string;
-  title: string;
-  type: LabEntryType;
-  context: string;
-  problem: string;
-  investigation: string;
-  approach: string;
-  implementation: string;
-  result: string;
-  lesson: string;
-  status: string;
-  statusLabel: string;
-  tags: string[];
-  relatedProjectId?: string;
-  relatedResearchPhaseId?: string;
-  metrics?: { label: string; value: string }[];
-}
-
-export type NavigationTab =
-  | 'home'
-  | 'work'
-  | 'research'
-  | 'lab'
-  | 'cv'
-  | 'contact'
-  | 'network'
-  | 'projects'
-  | 'notebook'
-  | 'about';
 
 export interface ExperienceItem {
   role: string;
@@ -110,7 +64,6 @@ export interface ExperienceItem {
 
 export type NodeCategory =
   | 'profile'
-  | 'category'
   | 'skills'
   | 'certificates'
   | 'project'

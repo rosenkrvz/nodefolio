@@ -3,8 +3,6 @@ import { Clock, Share, Check, Mail, Close, Menu, VolumeMax, VolumeX } from './ic
 import { useSound } from '../lib/sound';
 import { BrandLogo } from './ui/BrandLogo';
 
-import { NavigationTab } from '../types';
-
 interface TopNavbarProps {
   activePreset: string;
   onSelectPreset: (preset: string) => void;
@@ -17,8 +15,8 @@ interface TopNavbarProps {
   onFocusClock?: () => void;
   activeView: 'canvas' | 'list' | 'timeline';
   onToggleView: (view: 'canvas' | 'list' | 'timeline') => void;
-  activeNavTab?: NavigationTab;
-  onSelectNavTab?: (tab: NavigationTab) => void;
+  activeNavTab?: 'home' | 'network' | 'projects' | 'lab' | 'notebook' | 'about';
+  onSelectNavTab?: (tab: 'home' | 'network' | 'projects' | 'lab' | 'notebook' | 'about') => void;
 }
 
 const TopNavbarComponent: React.FC<TopNavbarProps> = ({
@@ -64,7 +62,7 @@ const TopNavbarComponent: React.FC<TopNavbarProps> = ({
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleMobileSelect = (tab: NavigationTab) => {
+  const handleMobileSelect = (tab: 'home' | 'network' | 'projects' | 'notebook') => {
     playSound('nav');
     setIsMobileMenuOpen(false);
     onSelectNavTab?.(tab);
@@ -120,24 +118,24 @@ const TopNavbarComponent: React.FC<TopNavbarProps> = ({
               type="button"
               onClick={() => {
                 playSound('nav');
-                onSelectNavTab?.('work');
+                onSelectNavTab?.('network');
               }}
               className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
-                activeNavTab === 'work' || activeNavTab === 'network'
+                activeNavTab === 'network'
                   ? 'text-white bg-white/[0.08]'
                   : 'hover:text-white hover:bg-white/[0.04]'
               }`}
             >
-              WORK
+              NETWORK
             </button>
             <button
               type="button"
               onClick={() => {
                 playSound('nav');
-                onSelectNavTab?.('research');
+                onSelectNavTab?.('projects');
               }}
               className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
-                activeNavTab === 'research' || activeNavTab === 'projects'
+                activeNavTab === 'projects'
                   ? 'text-white bg-white/[0.08]'
                   : 'hover:text-white hover:bg-white/[0.04]'
               }`}
@@ -148,15 +146,15 @@ const TopNavbarComponent: React.FC<TopNavbarProps> = ({
               type="button"
               onClick={() => {
                 playSound('nav');
-                onSelectNavTab?.('lab');
+                onSelectNavTab?.('notebook');
               }}
               className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
-                activeNavTab === 'lab' || activeNavTab === 'notebook'
+                activeNavTab === 'notebook'
                   ? 'text-white bg-white/[0.08]'
                   : 'hover:text-white hover:bg-white/[0.04]'
               }`}
             >
-              LAB
+              CHRONICLE
             </button>
             {onOpenResume && (
               <button
@@ -167,7 +165,7 @@ const TopNavbarComponent: React.FC<TopNavbarProps> = ({
                   onOpenResume();
                 }}
                 className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
-                  isResumeOpen || activeNavTab === 'cv' || activeNavTab === 'about'
+                  isResumeOpen
                     ? 'text-white bg-white/[0.08]'
                     : 'hover:text-white hover:bg-white/[0.04]'
                 }`}
@@ -181,15 +179,7 @@ const TopNavbarComponent: React.FC<TopNavbarProps> = ({
         {/* Mobile Minimal Section Pill */}
         <div className="hidden min-[400px]:flex md:hidden items-center px-1">
           <span className="text-[10px] font-tech font-bold text-zinc-300 bg-white/[0.06] border border-white/10 px-2 py-0.5 rounded-full uppercase tracking-wider">
-            {activeNavTab === 'research' || activeNavTab === 'projects'
-              ? 'RESEARCH'
-              : activeNavTab === 'work' || activeNavTab === 'network'
-              ? 'WORK'
-              : activeNavTab === 'lab' || activeNavTab === 'notebook'
-              ? 'LAB'
-              : activeNavTab === 'cv' || activeNavTab === 'about'
-              ? 'CV'
-              : 'COVER'}
+            {activeNavTab === 'projects' ? 'RESEARCH' : activeNavTab === 'network' ? 'NETWORK' : activeNavTab === 'notebook' ? 'CHRONICLE' : 'COVER'}
           </span>
         </div>
 
@@ -281,37 +271,37 @@ const TopNavbarComponent: React.FC<TopNavbarProps> = ({
               type="button"
               onClick={() => handleMobileSelect('home')}
               className={`px-4 py-3 rounded-xl text-left transition-colors cursor-pointer ${
-                activeNavTab === 'home' || activeNavTab === 'cover' ? 'bg-white/10 text-white font-bold' : 'hover:bg-white/[0.06]'
+                activeNavTab === 'home' ? 'bg-white/10 text-white font-bold' : 'hover:bg-white/[0.06]'
               }`}
             >
               Cover
             </button>
             <button
               type="button"
-              onClick={() => handleMobileSelect('work')}
+              onClick={() => handleMobileSelect('network')}
               className={`px-4 py-3 rounded-xl text-left transition-colors cursor-pointer ${
-                activeNavTab === 'work' || activeNavTab === 'network' ? 'bg-white/10 text-white font-bold' : 'hover:bg-white/[0.06]'
+                activeNavTab === 'network' ? 'bg-white/10 text-white font-bold' : 'hover:bg-white/[0.06]'
               }`}
             >
-              Work
+              Network
             </button>
             <button
               type="button"
-              onClick={() => handleMobileSelect('research')}
+              onClick={() => handleMobileSelect('projects')}
               className={`px-4 py-3 rounded-xl text-left transition-colors cursor-pointer ${
-                activeNavTab === 'research' || activeNavTab === 'projects' ? 'bg-white/10 text-white font-bold' : 'hover:bg-white/[0.06]'
+                activeNavTab === 'projects' ? 'bg-white/10 text-white font-bold' : 'hover:bg-white/[0.06]'
               }`}
             >
               Research
             </button>
             <button
               type="button"
-              onClick={() => handleMobileSelect('lab')}
+              onClick={() => handleMobileSelect('notebook')}
               className={`px-4 py-3 rounded-xl text-left transition-colors cursor-pointer ${
-                activeNavTab === 'lab' || activeNavTab === 'notebook' ? 'bg-white/10 text-white font-bold' : 'hover:bg-white/[0.06]'
+                activeNavTab === 'notebook' ? 'bg-white/10 text-white font-bold' : 'hover:bg-white/[0.06]'
               }`}
             >
-              Lab
+              Chronicle
             </button>
             {onOpenResume && (
               <button
@@ -319,11 +309,10 @@ const TopNavbarComponent: React.FC<TopNavbarProps> = ({
                 onClick={() => {
                   playSound('nav');
                   setIsMobileMenuOpen(false);
-                  onSelectNavTab?.('cv');
                   onOpenResume();
                 }}
                 className={`px-4 py-3 rounded-xl text-left transition-colors cursor-pointer ${
-                  isResumeOpen || activeNavTab === 'cv' || activeNavTab === 'about' ? 'bg-white/10 text-white font-bold' : 'hover:bg-white/[0.06] hover:text-white'
+                  isResumeOpen ? 'bg-white/10 text-white font-bold' : 'hover:bg-white/[0.06] hover:text-white'
                 }`}
               >
                 CV / Resume
