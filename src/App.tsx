@@ -1579,8 +1579,20 @@ export default function App() {
     const MIN_GRAPH_SCALE = 0.42;
     const MAX_GRAPH_SCALE = 0.85;
 
+    // Detect 1920 x 1080p resolution (both full 1080p display and typical desktop 1080p browser window bounds)
+    const is1080pRes = typeof window !== 'undefined' && (
+      (window.screen && (
+        (window.screen.width === 1920 && window.screen.height === 1080) ||
+        (window.screen.availWidth === 1920 && window.screen.availHeight >= 960 && window.screen.availHeight <= 1080)
+      )) ||
+      (vw >= 1700 && vw <= 2100 && vh >= 750 && vh <= 1150)
+    );
+
     let targetScale: number;
-    if (desiredScale !== undefined) {
+    if (preset === 'network' && is1080pRes) {
+      // Strictly maintain 60% for 1920 x 1080p resolution on the Network / Work computational workspace
+      targetScale = 0.60;
+    } else if (desiredScale !== undefined) {
       targetScale = Math.max(MIN_GRAPH_SCALE, Math.min(MAX_GRAPH_SCALE, desiredScale));
     } else {
       const autoComputed = Math.min(canonicalTarget, maxFitScale);
@@ -1631,7 +1643,7 @@ export default function App() {
     const tw = typeof targetNode.width === 'number' && isFinite(targetNode.width) ? targetNode.width : 340;
 
     setTransform((prev) => {
-      const prevScale = typeof prev?.scale === 'number' && isFinite(prev.scale) && prev.scale > 0 ? prev.scale : 0.65;
+      const prevScale = typeof prev?.scale === 'number' && isFinite(prev.scale) && prev.scale > 0 ? prev.scale : 0.60;
       const s = isMobileViewport ? Math.max(0.74, prevScale) : prevScale;
       const nodeCenterX = targetNode.x + tw / 2;
       const nodeCenterY = targetNode.y + getNodeEstimatedHeight(targetNode) / 2;
@@ -1756,7 +1768,7 @@ export default function App() {
       const deltaPercent = direction * 0.01;
 
       setTransform((prev) => {
-        const ps = typeof prev?.scale === 'number' && isFinite(prev.scale) && prev.scale > 0 ? prev.scale : 0.65;
+        const ps = typeof prev?.scale === 'number' && isFinite(prev.scale) && prev.scale > 0 ? prev.scale : 0.60;
         const px = typeof prev?.x === 'number' && isFinite(prev.x) ? prev.x : 0;
         const py = typeof prev?.y === 'number' && isFinite(prev.y) ? prev.y : 0;
         const nextScale = Math.max(0.25, Math.min(2.20, Math.round((ps + deltaPercent) * 100) / 100));
@@ -1843,7 +1855,14 @@ export default function App() {
 
     const viewportWidth = typeof window !== 'undefined' ? window.innerWidth : 1200;
     const viewportHeight = typeof window !== 'undefined' ? window.innerHeight : 800;
-    const targetScale = viewportWidth < 640 ? 0.55 : 0.65;
+    const is1080pRes = typeof window !== 'undefined' && (
+      (window.screen && (
+        (window.screen.width === 1920 && window.screen.height === 1080) ||
+        (window.screen.availWidth === 1920 && window.screen.availHeight >= 960 && window.screen.availHeight <= 1080)
+      )) ||
+      (viewportWidth >= 1700 && viewportWidth <= 2100 && viewportHeight >= 750 && viewportHeight <= 1150)
+    );
+    const targetScale = viewportWidth < 640 ? 0.55 : (nodeId === 'node-project' ? 0.70 : (is1080pRes ? 0.60 : 0.60));
     const nodeHalfHeight = nodeId === 'node-project' ? 340 : (nodeId === 'node-clock' ? 260 : 170);
     const tw = typeof target.width === 'number' && isFinite(target.width) ? target.width : 340;
 
@@ -2121,7 +2140,7 @@ export default function App() {
                           onZoomIn={() => {
                             playSound('zoom');
                             setTransform((p) => {
-                              const ps = typeof p?.scale === 'number' && isFinite(p.scale) && p.scale > 0 ? p.scale : 0.65;
+                              const ps = typeof p?.scale === 'number' && isFinite(p.scale) && p.scale > 0 ? p.scale : 0.60;
                               const px = typeof p?.x === 'number' && isFinite(p.x) ? p.x : 0;
                               const py = typeof p?.y === 'number' && isFinite(p.y) ? p.y : 0;
                               const nextScale = Math.min(2.20, Math.round((ps + 0.01) * 100) / 100);
@@ -2136,7 +2155,7 @@ export default function App() {
                           onZoomOut={() => {
                             playSound('zoom');
                             setTransform((p) => {
-                              const ps = typeof p?.scale === 'number' && isFinite(p.scale) && p.scale > 0 ? p.scale : 0.65;
+                              const ps = typeof p?.scale === 'number' && isFinite(p.scale) && p.scale > 0 ? p.scale : 0.60;
                               const px = typeof p?.x === 'number' && isFinite(p.x) ? p.x : 0;
                               const py = typeof p?.y === 'number' && isFinite(p.y) ? p.y : 0;
                               const nextScale = Math.max(0.25, Math.round((ps - 0.01) * 100) / 100);
