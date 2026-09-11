@@ -112,7 +112,7 @@ const TopNavbarComponent: React.FC<TopNavbarProps> = ({
                   : 'hover:text-white hover:bg-white/[0.04]'
               }`}
             >
-              COVER
+              HOME
             </button>
             <button
               type="button"
@@ -126,7 +126,7 @@ const TopNavbarComponent: React.FC<TopNavbarProps> = ({
                   : 'hover:text-white hover:bg-white/[0.04]'
               }`}
             >
-              NETWORK
+              WORK
             </button>
             <button
               type="button"
@@ -154,7 +154,7 @@ const TopNavbarComponent: React.FC<TopNavbarProps> = ({
                   : 'hover:text-white hover:bg-white/[0.04]'
               }`}
             >
-              CHRONICLE
+              LAB
             </button>
             {onOpenResume && (
               <button
@@ -179,7 +179,7 @@ const TopNavbarComponent: React.FC<TopNavbarProps> = ({
         {/* Mobile Minimal Section Pill */}
         <div className="hidden min-[400px]:flex md:hidden items-center px-1">
           <span className="text-[10px] font-tech font-bold text-zinc-300 bg-white/[0.06] border border-white/10 px-2 py-0.5 rounded-full uppercase tracking-wider">
-            {activeNavTab === 'projects' ? 'RESEARCH' : activeNavTab === 'network' ? 'NETWORK' : activeNavTab === 'notebook' ? 'CHRONICLE' : 'COVER'}
+            {activeNavTab === 'projects' ? 'RESEARCH' : activeNavTab === 'network' ? 'WORK' : activeNavTab === 'notebook' ? 'LAB' : 'HOME'}
           </span>
         </div>
 
@@ -274,7 +274,7 @@ const TopNavbarComponent: React.FC<TopNavbarProps> = ({
                 activeNavTab === 'home' ? 'bg-white/10 text-white font-bold' : 'hover:bg-white/[0.06]'
               }`}
             >
-              Cover
+              Home
             </button>
             <button
               type="button"
@@ -283,7 +283,7 @@ const TopNavbarComponent: React.FC<TopNavbarProps> = ({
                 activeNavTab === 'network' ? 'bg-white/10 text-white font-bold' : 'hover:bg-white/[0.06]'
               }`}
             >
-              Network
+              Work
             </button>
             <button
               type="button"
@@ -301,7 +301,7 @@ const TopNavbarComponent: React.FC<TopNavbarProps> = ({
                 activeNavTab === 'notebook' ? 'bg-white/10 text-white font-bold' : 'hover:bg-white/[0.06]'
               }`}
             >
-              Chronicle
+              Lab
             </button>
             {onOpenResume && (
               <button

@@ -190,20 +190,26 @@ const ALL_INITIAL_CONNECTIONS: Connection[] = [...INITIAL_CONNECTIONS, ...RESEAR
 // ─── URL Hash Routing ─────────────────────────────────────────────────────────
 // Maps internal nav tabs to clean URL hash fragments for shareable, bookmarkable links.
 const TAB_TO_HASH: Record<string, string> = {
-  home: '#cover',
-  network: '#network',
+  home: '#home',
+  network: '#work',
   projects: '#research',
-  notebook: '#chronicle_entries',
+  notebook: '#lab',
   lab: '#lab',
-  about: '#about',
+  about: '#cv',
 };
 
 const HASH_TO_TAB: Record<string, 'home' | 'network' | 'projects' | 'lab' | 'notebook' | 'about'> = {
+  '#home': 'home',
   '#cover': 'home',
+  '#work': 'network',
   '#network': 'network',
   '#research': 'projects',
+  '#projects': 'projects',
+  '#lab': 'notebook',
+  '#chronicle': 'notebook',
   '#chronicle_entries': 'notebook',
-  '#lab': 'lab',
+  '#notebook': 'notebook',
+  '#cv': 'about',
   '#about': 'about',
   '': 'home',
 };
