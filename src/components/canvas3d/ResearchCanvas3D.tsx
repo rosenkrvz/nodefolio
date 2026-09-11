@@ -32,6 +32,40 @@ const detectHardwareTier = (): QualityTier => {
   return 'high';
 };
 
+// Adaptive camera distance calculation based on viewport aspect ratio
+// On mobile portrait (aspect < 1.15), Three.js fixed vertical FOV narrows horizontal FOV.
+// We scale camera distance outward so the 3D artifact fits comfortably with generous breathing room.
+const getResponsiveCameraSetup = (
+  defaultPos: [number, number, number],
+  defaultTarget: [number, number, number],
+  aspect: number
+): { pos: [number, number, number]; target: [number, number, number] } => {
+  const [cx, cy, cz] = defaultPos;
+  const [tx, ty, tz] = defaultTarget;
+
+  // On wide/desktop screens (aspect >= 1.15), use the default desktop camera setup untouched
+  if (aspect >= 1.15) {
+    return { pos: [cx, cy, cz], target: [tx, ty, tz] };
+  }
+
+  // On portrait/mobile screens (aspect < 1.15):
+  // Scale camera distance outward so the 3D artifact fits without dominating or colliding with UI
+  const distanceScalar = Math.min(Math.max(0.92 / Math.sqrt(aspect), 1.08), 1.5);
+  const dx = cx - tx;
+  const dy = cy - ty;
+  const dz = cz - tz;
+
+  return {
+    pos: [
+      tx + dx * distanceScalar,
+      ty + dy * distanceScalar * 1.02,
+      tz + dz * distanceScalar,
+    ],
+    // Center the artifact visually in portrait mode
+    target: [tx, ty - 0.22, tz],
+  };
+};
+
 export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
   initialPhaseId,
   onExit,
@@ -49,6 +83,9 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
   const [webGlSupported, setWebGlSupported] = useState<boolean>(true);
   const [isLoadingGeometry, setIsLoadingGeometry] = useState<boolean>(true);
   const [showTechnicalDetails, setShowTechnicalDetails] = useState<boolean>(false);
+
+  // Auto-scroll ref for bottom phase navigation buttons
+  const phaseBtnRefs = useRef<Record<string, HTMLButtonElement | null>>({});
 
   // Adaptive Quality System State
   const [qualityMode, setQualityMode] = useState<'auto' | QualityTier>('auto');
@@ -86,6 +123,18 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
 
   const currentPhaseMeta: PhaseMetadata =
     RESEARCH_PHASES.find((p) => p.id === activePhaseId) || RESEARCH_PHASES[4];
+
+  // Auto-center active phase button when activePhaseId changes
+  useEffect(() => {
+    const activeBtn = phaseBtnRefs.current[activePhaseId];
+    if (activeBtn) {
+      activeBtn.scrollIntoView({
+        behavior: 'smooth',
+        inline: 'center',
+        block: 'nearest',
+      });
+    }
+  }, [activePhaseId]);
 
   // Switch active artifact inside current scene
   const switchArtifact = useCallback(
@@ -130,9 +179,18 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
       scene.add(newArtifact.group);
       activeArtifactRef.current = newArtifact;
 
-      // Reset camera position for this artifact
-      const [cx, cy, cz] = newArtifact.defaultCameraPosition;
-      const [tx, ty, tz] = newArtifact.defaultTarget;
+      // Reset camera position for this artifact with responsive aspect compensation
+      const aspect =
+        (containerRef.current?.clientWidth || window.innerWidth) /
+        (containerRef.current?.clientHeight || window.innerHeight);
+      const {
+        pos: [cx, cy, cz],
+        target: [tx, ty, tz],
+      } = getResponsiveCameraSetup(
+        newArtifact.defaultCameraPosition,
+        newArtifact.defaultTarget,
+        aspect
+      );
       camera.position.set(cx, cy, cz);
       controls.target.set(tx, ty, tz);
       controls.update();
@@ -174,18 +232,23 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
     const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 100);
     cameraRef.current = camera;
 
-    // 3. Renderer with Dynamic Pixel Ratio
+    // 3. Renderer with Dynamic Pixel Ratio (capped appropriately for mobile)
     const renderer = new THREE.WebGLRenderer({
       antialias: activeTier !== 'low',
       powerPreference: 'high-performance',
       alpha: false,
     });
     renderer.setSize(width, height);
+    const isMobileDevice =
+      typeof window !== 'undefined' &&
+      (window.innerWidth < 768 || 'ontouchstart' in window);
     const targetPixelRatio =
       activeTier === 'low'
         ? 1.0
-        : activeTier === 'medium'
+        : isMobileDevice
         ? Math.min(window.devicePixelRatio || 1, 1.5)
+        : activeTier === 'medium'
+        ? Math.min(window.devicePixelRatio || 1, 1.6)
         : Math.min(window.devicePixelRatio || 1, 2.0);
     renderer.setPixelRatio(targetPixelRatio);
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -197,12 +260,12 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
     container.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
-    // 4. OrbitControls
+    // 4. OrbitControls with multi-touch support
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.dampingFactor = 0.08;
     controls.minDistance = 4.8;
-    controls.maxDistance = 28;
+    controls.maxDistance = 32;
     controls.maxPolarAngle = Math.PI / 2 + 0.05;
     controls.touches = {
       ONE: THREE.TOUCH.ROTATE,
@@ -229,7 +292,7 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
     // Initial artifact load
     switchArtifact(activePhaseId, activeTier);
 
-    // Resize Handler
+    // Resize & Orientation Change Handler
     const handleResize = () => {
       if (!container || !renderer || !camera) return;
       const w = container.clientWidth || window.innerWidth;
@@ -239,12 +302,15 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
       renderer.setSize(w, h);
     };
     window.addEventListener('resize', handleResize);
+    window.addEventListener('orientationchange', handleResize);
 
     // Raycasting & Interaction Setup
     const raycaster = new THREE.Raycaster();
     const pointer = new THREE.Vector2();
     let isDragging = false;
     let dragStartPos = { x: 0, y: 0 };
+    let lastTapTime = 0;
+    let lastTapPos = { x: 0, y: 0 };
 
     const onPointerDown = (e: PointerEvent) => {
       isDragging = false;
@@ -301,15 +367,26 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
       const targetMeshes = inspectables.map((i) => i.mesh);
       const intersects = raycaster.intersectObjects(targetMeshes, true);
 
+      const now = Date.now();
+      const timeSinceLastTap = now - lastTapTime;
+      const distSinceLastTap = Math.hypot(e.clientX - lastTapPos.x, e.clientY - lastTapPos.y);
+
       if (intersects.length > 0) {
         const hit = intersects[0];
         const match = inspectables.find(
           (item) => item.mesh === hit.object || item.mesh.children.includes(hit.object)
         );
         if (match) {
-          playSound('select');
-          setSelectedItem(match.data);
-          activeArtifactRef.current.onSelectObject?.(match.data);
+          if (timeSinceLastTap < 350 && distSinceLastTap < 30) {
+            // Touch / mouse double-tap detected -> Focus Camera directly
+            handleFocusCamera(match.data.worldPosition);
+          } else {
+            playSound('select');
+            setSelectedItem(match.data);
+            activeArtifactRef.current.onSelectObject?.(match.data);
+          }
+          lastTapTime = now;
+          lastTapPos = { x: e.clientX, y: e.clientY };
           return;
         }
       }
@@ -317,6 +394,8 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
       // Clicked on empty canvas -> deselect
       setSelectedItem(null);
       activeArtifactRef.current.onSelectObject?.(null);
+      lastTapTime = now;
+      lastTapPos = { x: e.clientX, y: e.clientY };
     };
 
     const onDoubleClick = (e: MouseEvent) => {
@@ -391,6 +470,7 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
         cancelAnimationFrame(animFrameIdRef.current);
       }
       window.removeEventListener('resize', handleResize);
+      window.removeEventListener('orientationchange', handleResize);
       window.removeEventListener('keydown', onKeyDown);
       container.removeEventListener('pointerdown', onPointerDown);
       container.removeEventListener('pointermove', onPointerMove);
@@ -457,8 +537,17 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
     const artifact = activeArtifactRef.current;
     if (!camera || !controls || !artifact) return;
 
-    const [cx, cy, cz] = artifact.defaultCameraPosition;
-    const [tx, ty, tz] = artifact.defaultTarget;
+    const aspect =
+      (containerRef.current?.clientWidth || window.innerWidth) /
+      (containerRef.current?.clientHeight || window.innerHeight);
+    const {
+      pos: [cx, cy, cz],
+      target: [tx, ty, tz],
+    } = getResponsiveCameraSetup(
+      artifact.defaultCameraPosition,
+      artifact.defaultTarget,
+      aspect
+    );
 
     cameraFocusTarget.current = {
       active: true,
@@ -478,7 +567,7 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
   return (
     <div
       id="research-3d-canvas"
-      className="fixed inset-0 z-50 w-screen h-screen overflow-hidden bg-[#07090e] select-none"
+      className="fixed inset-0 z-50 w-screen h-screen h-[100dvh] overflow-hidden bg-[#07090e] select-none"
       style={{ touchAction: 'none' }}
     >
       {/* 3D WebGL Canvas Viewport */}
@@ -488,18 +577,25 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
       <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(ellipse_at_center,transparent_45%,rgba(7,9,14,0.72)_100%)]" />
 
       {/* -------------------------------------------------------------------
-          TOP HUD: Header & Actions
+          TOP HUD: Header & Actions with Safe Area Insets
          ------------------------------------------------------------------- */}
-      <header className="absolute top-0 inset-x-0 p-4 sm:p-6 flex items-start justify-between pointer-events-none z-10">
+      <header
+        className="absolute top-0 inset-x-0 flex items-start justify-between pointer-events-none z-20 transition-all"
+        style={{
+          paddingTop: 'calc(env(safe-area-inset-top, 0px) + 12px)',
+          paddingLeft: 'calc(env(safe-area-inset-left, 0px) + 16px)',
+          paddingRight: 'calc(env(safe-area-inset-right, 0px) + 16px)',
+        }}
+      >
         {/* Left: Scientific Telemetry Header */}
-        <div className="pointer-events-auto max-w-sm sm:max-w-md">
-          <div className="flex items-center gap-2 mb-1">
-            <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping" />
-            <span className="font-body text-[10px] font-bold tracking-[0.25em] text-rose-400 uppercase">
-              RESEARCH CANVAS // PHASE {currentPhaseMeta.numeral}
+        <div className="pointer-events-auto max-w-[50%] sm:max-w-md pr-2">
+          <div className="flex items-center gap-1.5 mb-0.5 sm:mb-1">
+            <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping flex-shrink-0" />
+            <span className="font-body text-[9px] sm:text-[10px] font-bold tracking-[0.16em] sm:tracking-[0.25em] text-rose-400 uppercase truncate">
+              CANVAS // PHASE {currentPhaseMeta.numeral}
             </span>
           </div>
-          <h1 className="font-display text-xl sm:text-2xl font-extrabold tracking-tight text-white uppercase">
+          <h1 className="font-display text-base sm:text-2xl font-extrabold tracking-tight text-white uppercase leading-tight line-clamp-2">
             {currentPhaseMeta.title}
           </h1>
           <p className="font-body text-xs text-zinc-400 mt-0.5 hidden sm:block">
@@ -507,9 +603,9 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
           </p>
         </div>
 
-        {/* Right: Technical Controls & Adaptive Quality Toggle */}
-        <div className="pointer-events-auto flex items-center gap-2">
-          {/* Adaptive Quality Selector */}
+        {/* Right: Touch-sized Controls & Adaptive Quality Toggle */}
+        <div className="pointer-events-auto flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
+          {/* Adaptive Quality Selector (Desktop) */}
           <div className="hidden lg:flex items-center gap-1 p-1 rounded-xl bg-black/60 backdrop-blur-md border border-white/10 text-[10px] font-tech text-zinc-400">
             <span className="px-2 font-semibold text-zinc-400 uppercase">PERF:</span>
             {(['auto', 'high', 'medium', 'low'] as const).map((q) => (
@@ -528,7 +624,7 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
             ))}
           </div>
 
-          {/* Toggle Specification Panel on Mobile */}
+          {/* Toggle Specification Panel on Mobile (Comfortable 44px Touch Target) */}
           <button
             type="button"
             onClick={() => {
@@ -536,29 +632,31 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
               setShowTechnicalDetails(!showTechnicalDetails);
             }}
             aria-label="Toggle mathematical details"
-            className="md:hidden p-2 rounded-xl bg-black/60 backdrop-blur-md border border-white/10 text-zinc-300 hover:text-white transition-all cursor-pointer"
+            className="md:hidden min-h-[44px] min-w-[44px] p-2.5 rounded-xl bg-black/70 backdrop-blur-md border border-white/10 text-zinc-300 hover:text-white active:bg-white/10 transition-all cursor-pointer flex items-center justify-center"
           >
             <Activity className="w-4 h-4 text-rose-400" />
           </button>
 
-          {/* Reset Camera */}
+          {/* Reset Camera (44px Touch Target) */}
           <button
             type="button"
             onClick={handleResetCamera}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-black/60 backdrop-blur-md border border-white/10 text-zinc-300 hover:text-white font-body text-xs tracking-wider uppercase transition-all hover:border-white/20 active:scale-95 cursor-pointer"
+            aria-label="Reset camera orientation"
+            className="min-h-[44px] min-w-[44px] px-3 py-2.5 rounded-xl bg-black/70 backdrop-blur-md border border-white/10 text-zinc-300 hover:text-white active:bg-white/10 font-body text-xs tracking-wider uppercase transition-all hover:border-white/20 active:scale-95 cursor-pointer flex items-center justify-center gap-1.5"
           >
             <RotateCcw className="w-3.5 h-3.5 text-zinc-400" />
             <span className="hidden sm:inline">RESET VIEW</span>
           </button>
 
-          {/* Exit 3D Canvas */}
+          {/* Exit 3D Canvas (44px Touch Target) */}
           <button
             type="button"
             onClick={handleExitCanvas}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-rose-600/90 hover:bg-rose-500 backdrop-blur-md text-white font-body font-semibold text-xs tracking-wider uppercase transition-all shadow-[0_0_16px_rgba(225,29,72,0.4)] active:scale-95 cursor-pointer"
+            aria-label="Exit 3D research canvas"
+            className="min-h-[44px] px-3.5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 active:bg-rose-700 backdrop-blur-md text-white font-body font-semibold text-xs tracking-wider uppercase transition-all shadow-[0_0_16px_rgba(225,29,72,0.4)] active:scale-95 cursor-pointer flex items-center justify-center gap-1.5"
           >
-            <span>EXIT CANVAS</span>
-            <X className="w-4 h-4" />
+            <span className="text-[11px] sm:text-xs">EXIT CANVAS</span>
+            <X className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
           </button>
         </div>
       </header>
@@ -567,29 +665,30 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
           INTERACTIVE HOVER INDICATOR (Floating Bottom-Left)
          ------------------------------------------------------------------- */}
       {hoveredItem && !selectedItem && (
-        <div className="absolute left-4 sm:left-6 bottom-24 sm:bottom-24 z-20 pointer-events-none animate-in fade-in duration-150">
+        <div className="absolute left-4 sm:left-6 bottom-20 sm:bottom-24 z-20 pointer-events-none animate-in fade-in duration-150">
           <div className="px-3 py-1.5 rounded-xl bg-black/80 backdrop-blur-md border border-rose-500/40 text-xs font-tech text-white flex items-center gap-2 shadow-xl">
             <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-ping" />
             <span className="text-zinc-400 font-semibold">{hoveredItem.type}:</span>
             <span className="font-bold text-rose-300">{hoveredItem.name}</span>
             <span className="text-zinc-400 text-[10px] uppercase tracking-wider hidden sm:inline">
-              [CLICK TO INSPECT]
+              [TAP TO INSPECT]
             </span>
           </div>
         </div>
       )}
 
       {/* -------------------------------------------------------------------
-          OBJECT INSPECTION HUD CARD (Appears when an object is selected)
+          OBJECT INSPECTION HUD CARD
+          (Mobile: Compact Bottom Sheet; Desktop: Floating Side Card)
          ------------------------------------------------------------------- */}
       {selectedItem && (
         <aside
           role="region"
           aria-label="Component Inspection Card"
-          className="absolute right-4 sm:right-6 top-20 sm:top-24 w-80 sm:w-96 max-h-[75vh] overflow-y-auto p-4 sm:p-5 rounded-2xl bg-[#0b0e14]/90 backdrop-blur-xl border border-rose-500/50 shadow-[0_12px_40px_rgba(0,0,0,0.85)] pointer-events-auto z-20 animate-in fade-in slide-in-from-right-4 duration-200"
+          className="fixed md:absolute inset-x-3 md:inset-x-auto md:right-6 bottom-[calc(env(safe-area-inset-bottom,0px)+74px)] md:bottom-auto md:top-24 md:w-96 max-h-[42vh] md:max-h-[75vh] overflow-y-auto p-4 sm:p-5 rounded-2xl bg-[#0b0e14]/95 backdrop-blur-xl border border-rose-500/50 shadow-[0_12px_40px_rgba(0,0,0,0.85)] pointer-events-auto z-30 animate-in fade-in slide-in-from-bottom-4 md:slide-in-from-right-4 duration-200"
         >
           {/* Header */}
-          <div className="flex items-start justify-between border-b border-white/10 pb-3 mb-3">
+          <div className="flex items-start justify-between border-b border-white/10 pb-2.5 mb-2.5">
             <div>
               <div className="flex items-center gap-2 mb-1">
                 <span className="w-2 h-2 rounded-full bg-rose-500 shadow-[0_0_8px_#f43f5e]" />
@@ -597,10 +696,10 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
                   {selectedItem.type}
                 </span>
               </div>
-              <h2 className="font-display text-lg font-bold text-white leading-tight uppercase">
+              <h2 className="font-display text-base sm:text-lg font-bold text-white leading-tight uppercase">
                 {selectedItem.name}
               </h2>
-              <span className="font-tech text-[11px] text-zinc-400 block mt-0.5">
+              <span className="font-tech text-[10px] sm:text-[11px] text-zinc-400 block mt-0.5">
                 {selectedItem.role}
               </span>
             </div>
@@ -611,24 +710,25 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
                 setSelectedItem(null);
                 activeArtifactRef.current?.onSelectObject?.(null);
               }}
-              className="p-1 rounded-lg bg-white/[0.06] hover:bg-white/15 text-zinc-400 hover:text-white transition-all cursor-pointer"
+              aria-label="Close inspection card"
+              className="p-2 min-h-[36px] min-w-[36px] flex items-center justify-center rounded-lg bg-white/[0.06] hover:bg-white/15 text-zinc-400 hover:text-white transition-all cursor-pointer"
             >
               <X className="w-4 h-4" />
             </button>
           </div>
 
           {/* Properties Table */}
-          <div className="space-y-2 mb-4 text-xs font-tech">
+          <div className="space-y-1.5 mb-3 text-xs font-tech">
             {Object.entries(selectedItem.properties).map(([k, v]) => (
-              <div key={k} className="flex items-baseline justify-between gap-3 py-1 border-b border-white/[0.04]">
+              <div key={k} className="flex items-baseline justify-between gap-3 py-0.5 border-b border-white/[0.04]">
                 <span className="text-zinc-400 uppercase tracking-wider text-[10px]">{k}</span>
-                <span className="text-zinc-200 font-semibold text-right font-mono truncate max-w-[180px]">{v}</span>
+                <span className="text-zinc-200 font-semibold text-right font-mono truncate max-w-[170px]">{v}</span>
               </div>
             ))}
           </div>
 
           {/* Contextual Mathematical Explanation */}
-          <p className="font-body text-xs text-zinc-300 leading-relaxed mb-4 p-2.5 rounded-xl bg-white/[0.03] border border-white/[0.06]">
+          <p className="font-body text-xs text-zinc-300 leading-relaxed mb-3 p-2.5 rounded-xl bg-white/[0.03] border border-white/[0.06]">
             {selectedItem.description}
           </p>
 
@@ -637,7 +737,7 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
             <button
               type="button"
               onClick={() => handleFocusCamera(selectedItem.worldPosition)}
-              className="flex-1 py-2 px-3 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-body text-xs font-semibold uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 shadow-[0_0_12px_rgba(225,29,72,0.35)] cursor-pointer"
+              className="flex-1 min-h-[42px] py-2 px-3 rounded-xl bg-rose-600 hover:bg-rose-500 active:bg-rose-700 text-white font-body text-xs font-semibold uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 shadow-[0_0_12px_rgba(225,29,72,0.35)] cursor-pointer"
             >
               <span>FOCUS CAMERA</span>
               <ArrowUpRight className="w-3.5 h-3.5" />
@@ -648,20 +748,20 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
                 setSelectedItem(null);
                 activeArtifactRef.current?.onSelectObject?.(null);
               }}
-              className="py-2 px-3 rounded-xl bg-white/[0.05] hover:bg-white/10 text-zinc-300 hover:text-white font-tech text-xs uppercase cursor-pointer"
+              className="min-h-[42px] px-4 rounded-xl bg-white/[0.05] hover:bg-white/10 active:bg-white/15 text-zinc-300 hover:text-white font-tech text-xs uppercase cursor-pointer"
             >
-              ESC
+              CLOSE
             </button>
           </div>
         </aside>
       )}
 
       {/* -------------------------------------------------------------------
-          RIGHT: Phase Specification Panel (Hidden when inspecting object)
+          RIGHT / BOTTOM: Phase Specification Panel (Hidden when inspecting object)
          ------------------------------------------------------------------- */}
       {!selectedItem && (
         <aside
-          className={`absolute right-4 sm:right-6 bottom-24 sm:bottom-24 max-w-xs p-4 rounded-xl bg-black/70 backdrop-blur-md border border-white/10 text-zinc-300 pointer-events-auto transition-all duration-300 z-10 ${
+          className={`fixed md:absolute inset-x-3 md:inset-x-auto md:right-6 bottom-[calc(env(safe-area-inset-bottom,0px)+74px)] md:bottom-24 md:max-w-xs p-4 rounded-2xl md:rounded-xl bg-black/85 backdrop-blur-xl border border-white/15 text-zinc-300 pointer-events-auto transition-all duration-300 z-20 ${
             showTechnicalDetails ? 'block' : 'hidden md:block'
           }`}
         >
@@ -707,33 +807,47 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
       )}
 
       {/* -------------------------------------------------------------------
-          BOTTOM: 5-Phase Selector Navigation
+          BOTTOM: 5-Phase Selector Navigation with Auto-Centering & Safe Area
          ------------------------------------------------------------------- */}
       <nav
         aria-label="3D Research Phase Selector"
-        className="absolute bottom-4 sm:bottom-6 inset-x-0 flex justify-center pointer-events-none z-10 px-3"
+        className="absolute bottom-0 inset-x-0 flex justify-center pointer-events-none z-20 px-2 sm:px-4"
+        style={{
+          paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 10px)',
+          paddingLeft: 'calc(env(safe-area-inset-left, 0px) + 8px)',
+          paddingRight: 'calc(env(safe-area-inset-right, 0px) + 8px)',
+        }}
       >
-        <div className="pointer-events-auto flex items-center gap-1 sm:gap-1.5 p-1.5 rounded-2xl bg-black/80 backdrop-blur-xl border border-white/15 shadow-[0_8px_32px_rgba(0,0,0,0.8)] overflow-x-auto max-w-full">
-          {RESEARCH_PHASES.map((phase) => {
-            const isActive = phase.id === activePhaseId;
-            return (
-              <button
-                key={phase.id}
-                type="button"
-                onClick={() => handleSelectPhase(phase.id)}
-                className={`relative px-3 sm:px-4 py-2 rounded-xl font-body text-xs font-semibold uppercase tracking-wider transition-all whitespace-nowrap cursor-pointer ${
-                  isActive
-                    ? 'bg-rose-600 text-white shadow-[0_0_14px_rgba(225,29,72,0.5)]'
-                    : 'text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.06]'
-                }`}
-              >
-                <span className="opacity-60 text-[10px] mr-1.5 font-bold">
-                  {phase.numeral}
-                </span>
-                <span>{phase.shortName || phase.title.split(' ')[0]}</span>
-              </button>
-            );
-          })}
+        <div className="relative pointer-events-auto max-w-full sm:max-w-fit w-full sm:w-auto">
+          {/* Subtle scroll edge gradient masks on mobile to indicate scrollability */}
+          <div className="pointer-events-none absolute left-0 top-0 bottom-0 w-4 bg-gradient-to-r from-[#07090e] to-transparent z-10 sm:hidden rounded-l-2xl" />
+          <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-4 bg-gradient-to-l from-[#07090e] to-transparent z-10 sm:hidden rounded-r-2xl" />
+
+          <div className="flex items-center gap-1 sm:gap-1.5 p-1 sm:p-1.5 rounded-2xl bg-black/85 backdrop-blur-xl border border-white/15 shadow-[0_8px_32px_rgba(0,0,0,0.85)] overflow-x-auto scroll-smooth no-scrollbar touch-pan-x">
+            {RESEARCH_PHASES.map((phase) => {
+              const isActive = phase.id === activePhaseId;
+              return (
+                <button
+                  key={phase.id}
+                  ref={(el) => {
+                    phaseBtnRefs.current[phase.id] = el;
+                  }}
+                  type="button"
+                  onClick={() => handleSelectPhase(phase.id)}
+                  className={`relative min-h-[44px] px-3.5 sm:px-4 py-2 rounded-xl font-body text-xs font-semibold uppercase tracking-wider transition-all whitespace-nowrap flex-shrink-0 cursor-pointer flex items-center justify-center ${
+                    isActive
+                      ? 'bg-rose-600 text-white shadow-[0_0_14px_rgba(225,29,72,0.5)]'
+                      : 'text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.06] active:bg-white/10'
+                  }`}
+                >
+                  <span className="opacity-60 text-[10px] mr-1.5 font-bold font-mono">
+                    {phase.numeral}
+                  </span>
+                  <span>{phase.shortName || phase.title}</span>
+                </button>
+              );
+            })}
+          </div>
         </div>
       </nav>
 

@@ -536,3 +536,12 @@ html {
   }
 }
 
+/* Hide scrollbar for smooth touch scroll containers */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
