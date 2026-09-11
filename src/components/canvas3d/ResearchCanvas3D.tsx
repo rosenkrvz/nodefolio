@@ -31,8 +31,10 @@ import {
   Sliders,
   Maximize,
   Grid,
+  VolumeMax,
+  VolumeX,
 } from '../icons';
-import { playSound } from '../../lib/sound';
+import { useSound } from '../../lib/sound/useSound';
 
 interface ResearchCanvas3DProps {
   initialPhaseId?: string;
@@ -110,6 +112,9 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
   const [activePhaseId, setActivePhaseId] = useState<ResearchPhaseId>(resolveInitialPhase());
   const currentPhaseIdRef = useRef<ResearchPhaseId>(activePhaseId);
   currentPhaseIdRef.current = activePhaseId;
+
+  // Sound System Integration
+  const { isMuted, toggleMute, playSound } = useSound();
 
   // Dedicated Research Entry / Preloader State
   const [isInitialEntryLoading, setIsInitialEntryLoading] = useState<boolean>(isInitialEntry !== false);
@@ -940,71 +945,114 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
         })}
 
       {/* ───────────────────────────────────────────────────────────────────
-          ZONE A: TOP RESEARCH INSTRUMENT HEADER
+          ZONE A: TOP RESEARCH INSTRUMENT HEADER (Cockpit Utility Bar)
          ─────────────────────────────────────────────────────────────────── */}
       <header
         aria-label="3D Research Canvas Navigation"
         className="absolute top-0 inset-x-0 z-30 flex items-center justify-between px-3 sm:px-6 py-3 pointer-events-none"
         style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 12px)' }}
       >
-        {/* Left: Instrument Metadata */}
-        <div className="flex items-center gap-2.5 pointer-events-auto">
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-black/80 backdrop-blur-xl border border-white/15 shadow-lg">
-            <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
-            <span className="font-tech text-[11px] tracking-[0.2em] font-bold text-rose-400 uppercase">
-              PHASE {currentPhaseMeta.numeral}
-            </span>
-            <span className="text-zinc-600">/</span>
-            <span className="font-display text-xs sm:text-sm font-semibold tracking-wide text-white uppercase truncate max-w-[160px] sm:max-w-none">
-              {currentPhaseMeta.title}
-            </span>
-          </div>
-
-          <div className="hidden lg:flex items-center px-3 py-1.5 rounded-xl bg-black/60 backdrop-blur-md border border-white/10 text-zinc-400 text-xs font-mono">
+        {/* Left: Unified Instrument Metadata Pod */}
+        <div className="flex items-center gap-2 px-3 h-10 rounded-xl bg-zinc-950/80 backdrop-blur-2xl border border-white/[0.1] shadow-[0_8px_30px_rgba(0,0,0,0.6)] pointer-events-auto select-none">
+          <span className="relative flex h-2 w-2 flex-shrink-0">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75" />
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500 shadow-[0_0_8px_#f43f5e]" />
+          </span>
+          <span className="font-tech text-[10px] sm:text-[11px] font-bold tracking-[0.2em] text-rose-400 uppercase whitespace-nowrap">
+            PHASE {currentPhaseMeta.numeral}
+          </span>
+          <span className="h-3 w-px bg-white/15" />
+          <span className="font-display text-xs sm:text-sm font-semibold tracking-wide text-white uppercase truncate max-w-[120px] sm:max-w-[200px] md:max-w-none">
+            {currentPhaseMeta.title}
+          </span>
+          <span className="hidden lg:inline-flex items-center px-1.5 py-0.5 rounded bg-white/[0.05] border border-white/[0.08] text-[9px] font-mono text-zinc-400 uppercase tracking-wider">
             {currentPhaseMeta.dimension}
+          </span>
+        </div>
+
+        {/* Center: Precision Real-time Diagnostics & Quality Selector */}
+        <div className="hidden md:flex items-center gap-2 px-2.5 h-10 rounded-xl bg-zinc-950/80 backdrop-blur-2xl border border-white/[0.1] shadow-[0_8px_30px_rgba(0,0,0,0.6)] pointer-events-auto select-none">
+          {/* FPS Live Telemetry */}
+          <div className="flex items-center gap-1.5 px-1 font-mono text-[11px]">
+            <span
+              className={`w-1.5 h-1.5 rounded-full ${
+                liveFps >= 50
+                  ? 'bg-emerald-400 shadow-[0_0_8px_#34d399]'
+                  : liveFps >= 30
+                  ? 'bg-amber-400 shadow-[0_0_8px_#fbbf24]'
+                  : 'bg-rose-400 shadow-[0_0_8px_#f43f5e]'
+              }`}
+            />
+            <span className="font-semibold text-zinc-200">{liveFps}</span>
+            <span className="text-[9px] text-zinc-500 font-medium uppercase">FPS</span>
+          </div>
+
+          <span className="h-3.5 w-px bg-white/15" />
+
+          {/* Segmented Quality Switcher */}
+          <div className="flex items-center p-0.5 rounded-lg bg-white/[0.03] border border-white/[0.06] gap-0.5">
+            {(['auto', 'high', 'medium', 'low'] as const).map((tier) => {
+              const isSelected = qualityMode === tier;
+              return (
+                <button
+                  key={tier}
+                  type="button"
+                  onClick={() => {
+                    playSound('click');
+                    setQualityMode(tier);
+                    const effective = tier === 'auto' ? detectedTierRef.current : tier;
+                    switchArtifact(activePhaseId, effective);
+                  }}
+                  className={`px-2 py-0.5 rounded-md text-[9px] font-mono font-semibold uppercase tracking-wider transition-all cursor-pointer ${
+                    isSelected
+                      ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40 shadow-[0_0_10px_rgba(244,63,94,0.3)]'
+                      : 'text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.04] border border-transparent'
+                  }`}
+                >
+                  {tier === 'medium' ? 'MED' : tier}
+                </button>
+              );
+            })}
           </div>
         </div>
 
-        {/* Center: Real-time Diagnostics & Quality Selector */}
-        <div className="hidden md:flex items-center gap-2 pointer-events-auto">
-          <div className="flex items-center gap-1.5 px-3 py-1 rounded-xl bg-black/80 backdrop-blur-xl border border-white/15 text-xs shadow-lg">
-            <span className="text-[10px] font-mono text-zinc-400 uppercase font-semibold">PERF:</span>
-            {(['auto', 'high', 'medium', 'low'] as const).map((tier) => (
-              <button
-                key={tier}
-                type="button"
-                onClick={() => {
-                  playSound('click');
-                  setQualityMode(tier);
-                  const effective = tier === 'auto' ? detectedTierRef.current : tier;
-                  switchArtifact(activePhaseId, effective);
-                }}
-                className={`px-2 py-0.5 rounded text-[10px] font-mono uppercase font-semibold transition-all cursor-pointer ${
-                  qualityMode === tier
-                    ? 'bg-rose-600 text-white shadow-[0_0_8px_rgba(225,29,72,0.5)]'
-                    : 'text-zinc-400 hover:text-white'
-                }`}
-              >
-                {tier === 'medium' ? 'MED' : tier}
-              </button>
-            ))}
-            <span className="text-zinc-600 mx-0.5">|</span>
-            <span className="font-mono text-[10px] text-zinc-300 font-semibold">{liveFps} FPS</span>
-          </div>
-        </div>
+        {/* Right: Camera Reset, Sound & Exit Command Cluster */}
+        <div className="flex items-center gap-1 px-1.5 h-10 rounded-xl bg-zinc-950/80 backdrop-blur-2xl border border-white/[0.1] shadow-[0_8px_30px_rgba(0,0,0,0.6)] pointer-events-auto select-none">
+          {/* Audio Mute / Unmute Toggle */}
+          <button
+            type="button"
+            onClick={() => {
+              toggleMute();
+            }}
+            title={isMuted ? 'Unmute Audio' : 'Mute Audio'}
+            className="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-white/[0.08] transition-colors cursor-pointer"
+          >
+            {isMuted ? (
+              <VolumeX className="w-3.5 h-3.5 text-zinc-500" />
+            ) : (
+              <VolumeMax className="w-3.5 h-3.5 text-rose-400" />
+            )}
+          </button>
 
-        {/* Right: Camera Reset & Exit */}
-        <div className="flex items-center gap-2 pointer-events-auto">
+          <span className="h-3.5 w-px bg-white/10 hidden sm:block" />
+
+          {/* Camera Reset */}
           <button
             type="button"
             onClick={handleResetView}
             title="Reset to Overview Camera (Hotkey: R)"
-            className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-black/80 backdrop-blur-xl border border-white/15 text-zinc-300 hover:text-white hover:border-white/30 text-xs font-semibold uppercase tracking-wider transition-all cursor-pointer shadow-lg active:scale-95"
+            className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-zinc-300 hover:text-white hover:bg-white/[0.08] text-xs font-semibold uppercase tracking-wider transition-all cursor-pointer active:scale-95"
           >
-            <RotateCcw className="w-3.5 h-3.5" />
-            <span>RESET [R]</span>
+            <RotateCcw className="w-3.5 h-3.5 text-zinc-400" />
+            <span className="font-tech text-xs tracking-wider">RESET</span>
+            <kbd className="hidden md:inline px-1 py-0.2 rounded bg-white/[0.06] border border-white/[0.08] text-[9px] font-mono text-zinc-400">
+              R
+            </kbd>
           </button>
 
+          <span className="h-3.5 w-px bg-white/10 hidden sm:block" />
+
+          {/* Exit Canvas */}
           <button
             type="button"
             onClick={() => {
@@ -1012,10 +1060,14 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
               onExit(currentPhaseMeta.chronicleId);
             }}
             aria-label="Exit 3D Research Canvas"
-            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-rose-600/90 hover:bg-rose-600 text-white text-xs font-semibold uppercase tracking-wider transition-all cursor-pointer shadow-[0_0_16px_rgba(225,29,72,0.35)] active:scale-95"
+            title="Exit 3D Canvas (Hotkey: Esc)"
+            className="group flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-lg bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/35 hover:border-rose-500/60 text-rose-300 hover:text-white text-xs font-semibold uppercase tracking-wider transition-all cursor-pointer shadow-[0_0_14px_rgba(244,63,94,0.18)] active:scale-95"
           >
-            <X className="w-4 h-4" />
-            <span className="hidden sm:inline">EXIT CANVAS</span>
+            <X className="w-3.5 h-3.5 text-rose-400 group-hover:text-white transition-colors" />
+            <span className="font-tech text-xs font-bold tracking-widest">EXIT</span>
+            <kbd className="hidden md:inline px-1 py-0.2 rounded bg-rose-500/20 border border-rose-500/30 text-[9px] font-mono text-rose-300">
+              ESC
+            </kbd>
           </button>
         </div>
       </header>
