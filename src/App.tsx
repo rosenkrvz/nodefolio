@@ -1424,16 +1424,46 @@ export default function App() {
     if (!node || typeof node !== 'object') return 340;
     if (node.id === 'node-project') return 680;
     if (node.id === 'node-clock') return 520;
+    if (node.id === 'node-profile') return 420;
+    if (node.id === 'node-credentials') return 380;
     if (node.id === 'node-models' || node.id === 'node-systems') return 390;
     if (node.category === 'visitor') return 280;
     if (node.researchData) return 340;
     return 340;
   }, []);
 
-  // Precision mathematical centering calculation for presets & screen sizes
+  // Geometry model of the usable Node Space workspace
+  const getUsableCanvasViewport = useCallback((vw: number, vh: number, isMobile: boolean) => {
+    // Top: Navbar is 64px on desktop (54px on mobile) + 24px safety buffer
+    const topInset = isMobile ? 68 : 88;
+    // Bottom: Telemetry status bar is 44px + 20px padding/margin
+    const bottomInset = isMobile ? 76 : 68;
+    // Right: Floating control dock is 44px + 20px right margin + 24px breathing space
+    const rightInset = isMobile ? 20 : 88;
+    // Left: Symmetrical margin for optical balance
+    const leftInset = isMobile ? 20 : 44;
+
+    const usableWidth = Math.max(260, vw - leftInset - rightInset);
+    const usableHeight = Math.max(260, vh - topInset - bottomInset);
+    const usableCenterX = Math.round(leftInset + usableWidth / 2);
+    const usableCenterY = Math.round(topInset + usableHeight / 2);
+
+    return {
+      usableWidth,
+      usableHeight,
+      usableCenterX,
+      usableCenterY,
+      topInset,
+      bottomInset,
+      leftInset,
+      rightInset,
+    };
+  }, []);
+
+  // Precision mathematical centering & auto-fit calculation for presets & screen sizes
   const centerViewForPreset = useCallback((preset: string = 'network', desiredScale?: number) => {
-    const vw = typeof window !== 'undefined' ? window.innerWidth : 1200;
-    const vh = typeof window !== 'undefined' ? window.innerHeight : 800;
+    const vw = typeof window !== 'undefined' ? window.innerWidth : 1920;
+    const vh = typeof window !== 'undefined' ? window.innerHeight : 1080;
     const isMobileViewport = vw < 768;
 
     // Use canonical baseline nodes for calculating structural center (prevents distortion from dragged cards)
@@ -1444,7 +1474,6 @@ export default function App() {
         return ['node-profile', 'node-models', 'node-credentials', 'node-systems', 'node-project', 'node-clock'].includes(n.id);
       }
       if (preset === 'project') {
-        // Research tab: Center symmetrically on the 4 core research nodes
         return ['node-profile', 'node-models', 'node-systems', 'node-project'].includes(n.id);
       }
       if (preset === 'skills') {
@@ -1461,7 +1490,6 @@ export default function App() {
       if (preset === 'certificates') {
         return ['node-profile', 'node-credentials', 'node-inference', 'node-eval'].includes(n.id);
       }
-      // 'all': full research workspace ecosystem
       return true;
     });
 
@@ -1469,40 +1497,32 @@ export default function App() {
       (n): n is NodeData => Boolean(n && typeof n === 'object' && typeof n.x === 'number' && isFinite(n.x) && typeof n.y === 'number' && isFinite(n.y))
     );
 
-    // DEDICATED MOBILE SPATIAL COMPOSITION:
-    // Composes a readable 0.74–0.80 scale focal view around the anchor node
+    // 1. DEDICATED MOBILE PORTRAIT VIEWPORT (<768px):
+    // Prioritize readability and substantial touch targets over shrinking 2300px into 390px
     if (isMobileViewport) {
       const mobileScale = desiredScale !== undefined
         ? desiredScale
-        : Math.min(0.82, Math.max(0.70, Math.round(((vw - 20) / 440) * 100) / 100));
+        : Math.min(0.80, Math.max(0.72, Math.round(((vw - 20) / 450) * 100) / 100));
 
       const focalNode = validTargetNodes.find((n) => n.id === 'node-profile') || validTargetNodes[0];
-
-      let targetX = 480;
-      let targetY = 740;
-      let targetW = 340;
-      let targetH = 340;
-
-      if (focalNode) {
-        targetX = typeof focalNode.x === 'number' && isFinite(focalNode.x) ? focalNode.x : 480;
-        targetY = typeof focalNode.y === 'number' && isFinite(focalNode.y) ? focalNode.y : 740;
-        targetW = typeof focalNode.width === 'number' && isFinite(focalNode.width) ? focalNode.width : 340;
-        targetH = getNodeEstimatedHeight(focalNode);
-      }
+      const targetX = focalNode && typeof focalNode.x === 'number' ? focalNode.x : 100;
+      const targetY = focalNode && typeof focalNode.y === 'number' ? focalNode.y : 380;
+      const targetW = focalNode && typeof focalNode.width === 'number' ? focalNode.width : 340;
+      const targetH = focalNode ? getNodeEstimatedHeight(focalNode) : 380;
 
       const focalCenterX = targetX + targetW / 2;
       const focalCenterY = targetY + targetH / 2;
 
-      // Center in mobile screen accounting for compact top nav (54px) and bottom dock (64px)
-      const viewCenterX = vw / 2;
-      const viewCenterY = (vh - 10) / 2;
-
-      const x = Math.round(viewCenterX - focalCenterX * mobileScale);
-      const y = Math.round(viewCenterY - focalCenterY * mobileScale);
+      const usable = getUsableCanvasViewport(vw, vh, true);
+      const x = Math.round(usable.usableCenterX - focalCenterX * mobileScale);
+      const y = Math.round(usable.usableCenterY - focalCenterY * mobileScale);
 
       setTransform({ x, y, scale: mobileScale });
       return;
     }
+
+    // 2. DESKTOP & LAPTOP RESPONSIVE AUTO-FIT (>=768px):
+    const usable = getUsableCanvasViewport(vw, vh, false);
 
     let minX = Infinity;
     let maxX = -Infinity;
@@ -1514,55 +1534,72 @@ export default function App() {
         const nx = typeof node.x === 'number' && isFinite(node.x) ? node.x : 0;
         const ny = typeof node.y === 'number' && isFinite(node.y) ? node.y : 0;
         const nw = typeof node.width === 'number' && isFinite(node.width) ? node.width : 340;
-        const h = getNodeEstimatedHeight(node);
-        if (nx < minX) minX = nx;
-        if (nx + nw > maxX) maxX = nx + nw;
-        if (ny < minY) minY = ny;
-        if (ny + h > maxY) maxY = ny + h;
+        const nh = getNodeEstimatedHeight(node);
+
+        // Include node body with an intentional 16px buffer for selection glow & pin protrusion
+        if (nx - 16 < minX) minX = nx - 16;
+        if (nx + nw + 16 > maxX) maxX = nx + nw + 16;
+        if (ny - 16 < minY) minY = ny - 16;
+        if (ny + nh + 16 > maxY) maxY = ny + nh + 16;
       }
     } else {
       minX = 100;
-      maxX = 2380;
-      minY = 80;
-      maxY = 1800;
+      maxX = 2300;
+      minY = 380;
+      maxY = 1200;
     }
 
-    const groupCenterX = (minX + maxX) / 2;
-    const groupCenterY = (minY + maxY) / 2;
+    const graphWidth = Math.max(100, maxX - minX);
+    const graphHeight = Math.max(100, maxY - minY);
+    const graphCenterX = (minX + maxX) / 2;
+    const graphCenterY = (minY + maxY) / 2;
 
-    const groupW = Math.max(100, maxX - minX);
-    const groupH = Math.max(100, maxY - minY);
+    // Viewport usable fit ratios (92% safe margin so graph never touches edge UI)
+    const fitScaleX = usable.usableWidth / graphWidth;
+    const fitScaleY = usable.usableHeight / graphHeight;
+    const maxFitScale = Math.min(fitScaleX, fitScaleY) * 0.92;
 
-    // Viewport usable area accounting for top navbar (64px), bottom telemetry bar (44px), and dock controls (60px)
-    const availW = Math.max(300, vw - 120);
-    const availH = Math.max(300, vh - 140);
-    const maxFitScale = Math.min(availW / groupW, availH / groupH);
+    // Canonical reference desktop targets (at standard 1080p):
+    // Research tab: 0.70 (70% in dock)
+    // Network tab: 0.60 (60% in dock)
+    const canonicalTarget = preset === 'project' ? 0.70 : (preset === 'network' ? 0.60 : 0.60);
 
-    // Zoom scale: exactly 0.70 for Research tab matching reference screenshot, 0.60 for Network tab
-    const defaultScale = preset === 'project' ? 0.70 : (preset === 'network' ? 0.60 : 0.60);
-    const targetDesired = desiredScale !== undefined ? desiredScale : defaultScale;
-    const minScaleFloor = preset === 'project' ? 0.65 : (preset === 'network' ? 0.58 : 0.32);
-    const targetScale = Math.min(targetDesired, Math.max(minScaleFloor, Number(maxFitScale.toFixed(2))));
+    // Dynamic auto-scaling bounds:
+    // Large Desktop / 4K: Caps at MAX_GRAPH_SCALE (0.85) so nodes never balloon disproportionately
+    // Laptops / Tablets: Adapts scale smoothly between 0.42 and canonicalTarget without clipping
+    const MIN_GRAPH_SCALE = 0.42;
+    const MAX_GRAPH_SCALE = 0.85;
 
-    // Precision viewport center
-    const viewCenterX = vw / 2;
-    const viewCenterY = (vh + 12) / 2;
+    let targetScale: number;
+    if (desiredScale !== undefined) {
+      targetScale = Math.max(MIN_GRAPH_SCALE, Math.min(MAX_GRAPH_SCALE, desiredScale));
+    } else {
+      const autoComputed = Math.min(canonicalTarget, maxFitScale);
+      targetScale = Math.max(MIN_GRAPH_SCALE, Math.min(MAX_GRAPH_SCALE, Number(autoComputed.toFixed(2))));
+    }
 
-    const x = Math.round(viewCenterX - groupCenterX * targetScale);
-    let y = Math.round(viewCenterY - groupCenterY * targetScale);
+    // Precise visual workspace centering
+    const x = Math.round(usable.usableCenterX - graphCenterX * targetScale);
+    let y = Math.round(usable.usableCenterY - graphCenterY * targetScale);
 
     if (preset === 'network') {
-      // Anchors row 1 comfortably at ~100px from top (36px below 64px top nav),
-      // ensuring bottom cards sit cleanly with ample breathing room above the bottom workspace footer bar
-      const desiredRow1ScreenY = Math.max(90, Math.min(130, Math.round(vh * 0.13)));
-      y = Math.round(desiredRow1ScreenY - 380 * targetScale);
+      // Symmetrically balance Row 1 under navbar when vertical height permits
+      const row1ScreenY = y + 380 * targetScale;
+      const minRow1Y = usable.topInset + 16;
+      const idealRow1Y = Math.max(minRow1Y, Math.min(usable.topInset + 48, Math.round(vh * 0.13)));
+
+      if (row1ScreenY < minRow1Y) {
+        y = Math.round(minRow1Y - 380 * targetScale);
+      } else if (usable.usableHeight > graphHeight * targetScale + 90) {
+        y = Math.round(idealRow1Y - 380 * targetScale);
+      }
     } else if (preset === 'project') {
       // Optical compensation for 4-node research architecture
-      y -= Math.round(vh * 0.015);
+      y -= Math.round(vh * 0.012);
     }
 
     setTransform({ x, y, scale: targetScale });
-  }, [getNodeEstimatedHeight]);
+  }, [getNodeEstimatedHeight, getUsableCanvasViewport]);
 
   // Fast mobile / index camera jump to any research node with readable framing
   const handleJumpToNode = useCallback((nodeId: string) => {
@@ -1599,19 +1636,24 @@ export default function App() {
     centerViewForPreset(activePreset);
   }, [activePreset, centerViewForPreset]);
 
-  // Debounced window resize auto-centering
+  // Debounced window resize & orientation change auto-centering
   useEffect(() => {
     let resizeTimer: ReturnType<typeof setTimeout> | null = null;
     const handleResize = () => {
+      // Do not snap back or interrupt while the user is actively dragging a node
+      if (isDraggingAnyNodeRef.current) return;
       if (resizeTimer) clearTimeout(resizeTimer);
       resizeTimer = setTimeout(() => {
+        if (isDraggingAnyNodeRef.current) return;
         centerViewForPreset(activePreset);
-      }, 150);
+      }, 120);
     };
-    window.addEventListener('resize', handleResize);
+    window.addEventListener('resize', handleResize, { passive: true });
+    window.addEventListener('orientationchange', handleResize, { passive: true });
     return () => {
       if (resizeTimer) clearTimeout(resizeTimer);
       window.removeEventListener('resize', handleResize);
+      window.removeEventListener('orientationchange', handleResize);
     };
   }, [activePreset, centerViewForPreset]);
 
@@ -2022,6 +2064,7 @@ export default function App() {
                             selectedNodeId={selectedNodeId}
                             onSelectConnection={handleSelectConnection}
                             isMobile={false}
+                            canvasScale={transform.scale}
                           />
 
                           {/* Connected Graph Nodes (#0b0d12 carbon fiber) */}

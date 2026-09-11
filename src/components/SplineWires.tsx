@@ -10,6 +10,7 @@ interface SplineWiresProps {
   onSelectConnection?: (id: string | null) => void;
   selectedNodeId?: string | null;
   isMobile?: boolean;
+  canvasScale?: number;
 }
 
 const SplineWiresComponent: React.FC<SplineWiresProps> = ({
@@ -20,7 +21,12 @@ const SplineWiresComponent: React.FC<SplineWiresProps> = ({
   onSelectConnection,
   selectedNodeId,
   isMobile = false,
+  canvasScale = 0.60,
 }) => {
+  // Adaptive spline thickness based on current canvas scale
+  const effectiveScale = typeof canvasScale === 'number' && canvasScale > 0 ? canvasScale : (isMobile ? 0.74 : 0.60);
+  const scaleRatio = Math.max(0.75, Math.min(1.35, Math.sqrt(effectiveScale / 0.60)));
+
   return (
     <svg
       className="absolute top-0 left-0 w-full h-full pointer-events-none z-0"
@@ -59,6 +65,19 @@ const SplineWiresComponent: React.FC<SplineWiresProps> = ({
           : true;
         const groupOpacity = selectedNodeId ? (isRelated ? 1 : 0.18) : 1;
 
+        // Scale-aware stroke dimensions with strict minimum readability floor
+        const rawGlowWidth = isMobile
+          ? (isSelected ? 5.5 : 3.0) * scaleRatio
+          : (isSelected ? 8.0 : 4.5) * scaleRatio;
+        const glowStrokeWidth = Math.max(2.8, Math.min(9.0, rawGlowWidth));
+
+        const rawCoreWidth = isMobile
+          ? (isSelected ? 2.0 : 1.4) * scaleRatio
+          : (isSelected ? 2.5 : 1.8) * scaleRatio;
+        const coreStrokeWidth = Math.max(1.3, Math.min(3.0, rawCoreWidth));
+
+        const terminalRadius = Math.max(2.2, Math.min(3.5, (isMobile ? 2.5 : 3.0) * scaleRatio));
+
         return (
           <g
             key={conn.id}
@@ -81,7 +100,7 @@ const SplineWiresComponent: React.FC<SplineWiresProps> = ({
                 d={pathData}
                 fill="none"
                 stroke={baseColor}
-                strokeWidth={isMobile ? (isSelected ? 5.5 : 3) : (isSelected ? 8 : 4.5)}
+                strokeWidth={glowStrokeWidth}
                 strokeOpacity={isSelected ? 0.45 : 0.2}
                 strokeLinecap="round"
               />
@@ -92,15 +111,15 @@ const SplineWiresComponent: React.FC<SplineWiresProps> = ({
               d={pathData}
               fill="none"
               stroke={isSelected ? '#ffffff' : baseColor}
-              strokeWidth={isMobile ? (isSelected ? 2 : 1.4) : (isSelected ? 2.5 : 1.8)}
+              strokeWidth={coreStrokeWidth}
               strokeOpacity={isSelected ? 1 : 0.85}
               strokeDasharray={wireStyle === 'cyber' ? '6, 6' : undefined}
               strokeLinecap="round"
             />
 
             {/* Precision socket terminals */}
-            <circle cx={x1} cy={y1} r={isMobile ? 2.5 : 3} fill="#ffffff" stroke={baseColor} strokeWidth={isMobile ? 1.2 : 1.5} />
-            <circle cx={x2} cy={y2} r={isMobile ? 2.5 : 3} fill="#ffffff" stroke={baseColor} strokeWidth={isMobile ? 1.2 : 1.5} />
+            <circle cx={x1} cy={y1} r={terminalRadius} fill="#ffffff" stroke={baseColor} strokeWidth={isMobile ? 1.2 : 1.5} />
+            <circle cx={x2} cy={y2} r={terminalRadius} fill="#ffffff" stroke={baseColor} strokeWidth={isMobile ? 1.2 : 1.5} />
           </g>
         );
       })}
@@ -119,7 +138,8 @@ export const SplineWires = React.memo(SplineWiresComponent, (prev, next) => {
     prev.wireStyle !== next.wireStyle ||
     prev.activeConnectionId !== next.activeConnectionId ||
     prev.selectedNodeId !== next.selectedNodeId ||
-    prev.connections.length !== next.connections.length
+    prev.connections.length !== next.connections.length ||
+    Math.abs((prev.canvasScale || 0.6) - (next.canvasScale || 0.6)) > 0.03
   ) {
     return false;
   }
