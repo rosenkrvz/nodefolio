@@ -5,7 +5,10 @@ import { playSound } from '../../lib/sound';
 
 interface ProjectNodeContentProps {
   project: ProjectItem;
-  onOpenModal: (project: ProjectItem) => void;
+  onOpenModal: (
+    project: ProjectItem,
+    originRect?: { left: number; top: number; width: number; height: number } | null
+  ) => void;
 }
 
 export const ProjectNodeContent: React.FC<ProjectNodeContentProps> = ({
@@ -14,19 +17,26 @@ export const ProjectNodeContent: React.FC<ProjectNodeContentProps> = ({
 }) => {
   const imageUrl = project.image || '/assets/latent_manifold_artifact.jpg';
 
-  const handleOpen = (e: React.MouseEvent) => {
+  const handleOpen = (e: React.MouseEvent | React.TouchEvent | React.KeyboardEvent) => {
     e.stopPropagation();
-    playSound('click');
-    onOpenModal(project);
+    playSound('open');
+    const el = e.currentTarget as HTMLElement;
+    const rect = el ? el.getBoundingClientRect() : null;
+    const originRect = rect
+      ? { left: rect.left, top: rect.top, width: rect.width, height: rect.height }
+      : null;
+    onOpenModal(project, originRect);
   };
 
   return (
     <div className="space-y-3.5 pt-1 text-zinc-300">
-      {/* Relatable Manifold Image Artifact Container */}
-      <div 
+      {/* Relatable Manifold Image Artifact Container - Semantic Tappable/Clickable Button */}
+      <button 
+        type="button"
         data-no-node-drag="true"
         onClick={handleOpen}
-        className="relative rounded-xl overflow-hidden border border-white/[0.09] bg-[#0c0e12] aspect-[16/10] group cursor-pointer select-none transition-all duration-300 hover:border-rose-500/40 hover:shadow-[0_0_24px_rgba(225,29,72,0.18)]"
+        aria-label={`Inspect case study and high-dimensional manifold for ${project.title}`}
+        className="w-full text-left p-0 border-0 bg-transparent block relative rounded-xl overflow-hidden border border-white/[0.09] bg-[#0c0e12] aspect-[16/10] group cursor-pointer select-none transition-all duration-300 hover:border-rose-500/40 hover:shadow-[0_0_24px_rgba(225,29,72,0.22)] active:scale-[0.98] focus:outline-none focus:ring-1 focus:ring-rose-500/40"
       >
         {/* Crisp Manifold Visualization Graphic */}
         <img
@@ -66,7 +76,7 @@ export const ProjectNodeContent: React.FC<ProjectNodeContentProps> = ({
             <Maximize className="w-3 h-3 transition-transform group-hover:scale-110" />
           </div>
         </div>
-      </div>
+      </button>
 
       {/* Editorial description with Dongle accent */}
       <div>
@@ -114,7 +124,7 @@ export const ProjectNodeContent: React.FC<ProjectNodeContentProps> = ({
         <button
           type="button"
           onClick={handleOpen}
-          className="group inline-flex items-center gap-1 text-xs font-body font-semibold text-rose-400 hover:text-rose-300 transition-colors cursor-pointer"
+          className="group inline-flex items-center gap-1 text-xs font-body font-semibold text-rose-400 hover:text-rose-300 transition-colors cursor-pointer active:scale-95"
         >
           <span>Open Case Study</span>
           <ArrowUpRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />

@@ -42,7 +42,10 @@ interface GraphNodeProps {
   onNodeResize?: (nodeId: string, newWidth: number, newX?: number) => void;
   onNodePinchEnd?: (nodeId: string, finalWidth: number, finalX?: number) => void;
   onOpenCertificateModal: (cert: CertificateItem) => void;
-  onOpenProjectModal: (proj: ProjectItem) => void;
+  onOpenProjectModal: (
+    proj: ProjectItem,
+    originRect?: { left: number; top: number; width: number; height: number } | null
+  ) => void;
   onOpenContactModal: () => void;
   onOpenResumeModal: () => void;
   onOpenFocusedNode?: (node: NodeData) => void;

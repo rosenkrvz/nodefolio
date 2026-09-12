@@ -321,6 +321,12 @@ export default function App() {
   // Modals state
   const [selectedCertificate, setSelectedCertificate] = useState<CertificateItem | null>(null);
   const [selectedProject, setSelectedProject] = useState<ProjectItem | null>(null);
+  const [projectOriginRect, setProjectOriginRect] = useState<{
+    left: number;
+    top: number;
+    width: number;
+    height: number;
+  } | null>(null);
   const [focusedNode, setFocusedNode] = useState<NodeData | null>(null);
   const [nodeOriginRect, setNodeOriginRect] = useState<{
     left: number;
@@ -1193,10 +1199,17 @@ export default function App() {
     setSelectedCertificate(cert);
   }, []);
 
-  const handleOpenProjectModal = useCallback((proj: ProjectItem) => {
-    playSound('open');
-    setSelectedProject(proj);
-  }, []);
+  const handleOpenProjectModal = useCallback(
+    (
+      proj: ProjectItem,
+      originRect?: { left: number; top: number; width: number; height: number } | null
+    ) => {
+      playSound('open');
+      setProjectOriginRect(originRect || null);
+      setSelectedProject(proj);
+    },
+    []
+  );
 
   const handleOpenContactModal = useCallback(() => {
     playSound('open');
@@ -2036,7 +2049,7 @@ export default function App() {
               connections={connections}
               onFocusNodeOnCanvas={handleFocusNode}
               onOpenCertificateModal={(cert) => setSelectedCertificate(cert)}
-              onOpenProjectModal={(proj) => setSelectedProject(proj)}
+              onOpenProjectModal={handleOpenProjectModal}
               onOpenContact={() => setIsContactOpen(true)}
             />
           </div>
@@ -2316,13 +2329,15 @@ export default function App() {
 
       <ProjectDetailModal
         project={selectedProject}
+        originRect={projectOriginRect}
         onClose={() => {
-          playSound('close');
           setSelectedProject(null);
+          setProjectOriginRect(null);
         }}
         onOpenResearchCanvas3D={(phaseId) => {
           playSound('open');
           setSelectedProject(null);
+          setProjectOriginRect(null);
           setActiveResearchCanvasPhase(phaseId || 'phase-05');
         }}
       />

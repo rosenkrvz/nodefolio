@@ -40,7 +40,10 @@ interface MobileNodespaceProps {
   selectedNodeId: string | null;
   onSelectNode: (nodeId: string) => void;
   onOpenCertificateModal: (cert: CertificateItem) => void;
-  onOpenProjectModal: (proj: ProjectItem) => void;
+  onOpenProjectModal: (
+    proj: ProjectItem,
+    originRect?: { left: number; top: number; width: number; height: number } | null
+  ) => void;
   onOpenContactModal: () => void;
   onOpenResumeModal: () => void;
   onOpenFocusedNode: (node: NodeData) => void;
