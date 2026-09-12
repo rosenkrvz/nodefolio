@@ -127,12 +127,27 @@ interface ResearchCanvas3DProps {
 
 // ─── Hardware & Performance Diagnostics ──────────────────────────────────────
 const detectHardwareTier = (): QualityTier => {
-  if (typeof window === 'undefined') return 'high';
-  const cores = navigator.hardwareConcurrency || 4;
-  const isMobile = window.innerWidth < 768;
-  if (cores <= 2 || isMobile) return 'low';
-  if (cores <= 4) return 'medium';
-  return 'high';
+  if (typeof window === 'undefined') return 'medium';
+  const cores = typeof navigator !== 'undefined' ? navigator.hardwareConcurrency || 4 : 4;
+  const memory = typeof navigator !== 'undefined'
+    ? (navigator as unknown as { deviceMemory?: number }).deviceMemory || 4
+    : 4;
+  const isMobile =
+    /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+    window.innerWidth < 768 ||
+    (navigator.maxTouchPoints > 0 && window.innerWidth < 1024);
+
+  const prefersReducedMotion =
+    typeof window !== 'undefined' &&
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // Low for low-end devices (cores <= 4, memory <= 4, mobile/touch, or reduced motion)
+  if (cores <= 4 || memory <= 4 || isMobile || prefersReducedMotion) {
+    return 'low';
+  }
+
+  // Medium for high-end devices
+  return 'medium';
 };
 
 // ─── Dynamic Bounding-Box Auto-Framing Engine ────────────────────────────────
@@ -239,7 +254,6 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
   // Performance System State
   const [qualityMode, setQualityMode] = useState<'auto' | QualityTier>('auto');
   const detectedTierRef = useRef<QualityTier>(detectHardwareTier());
-  const [liveFps, setLiveFps] = useState<number>(60);
   const activeTier: QualityTier = qualityMode === 'auto' ? detectedTierRef.current : qualityMode;
 
   // Selection & Hover Inspection State
@@ -637,10 +651,8 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
     };
     window.addEventListener('resize', onWindowResize);
 
-    // 8. Animation & Render Loop with FPS Diagnostics & Camera Slerp
+    // 8. Animation & Render Loop with Camera Slerp
     let lastTime = performance.now();
-    let frameCount = 0;
-    let fpsAccumulator = 0;
 
     const animate = () => {
       animFrameIdRef.current = requestAnimationFrame(animate);
@@ -648,16 +660,6 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
       const now = performance.now();
       const delta = Math.min((now - lastTime) / 1000, 0.1);
       lastTime = now;
-
-      // Live FPS measurement
-      frameCount++;
-      fpsAccumulator += delta;
-      if (fpsAccumulator >= 0.5) {
-        const measuredFps = Math.round(frameCount / fpsAccumulator);
-        setLiveFps(measuredFps);
-        frameCount = 0;
-        fpsAccumulator = 0;
-      }
 
       // Smooth camera focusing transition
       const focus = cameraFocusTarget.current;
@@ -942,25 +944,8 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
           </button>
         </div>
 
-        {/* Center: Precision Real-time Diagnostics & Quality Selector */}
-        <div className="hidden md:flex items-center gap-2 px-2.5 h-10 rounded-xl bg-zinc-950/80 backdrop-blur-2xl border border-white/[0.1] shadow-[0_8px_30px_rgba(0,0,0,0.6)] pointer-events-auto select-none">
-          {/* FPS Live Telemetry */}
-          <div className="flex items-center gap-1.5 px-1 font-mono text-[11px]">
-            <span
-              className={`w-1.5 h-1.5 rounded-full ${
-                liveFps >= 50
-                  ? 'bg-emerald-400 shadow-[0_0_8px_#34d399]'
-                  : liveFps >= 30
-                  ? 'bg-amber-400 shadow-[0_0_8px_#fbbf24]'
-                  : 'bg-rose-400 shadow-[0_0_8px_#f43f5e]'
-              }`}
-            />
-            <span className="font-semibold text-zinc-200">{liveFps}</span>
-            <span className="text-[9px] text-zinc-500 font-medium uppercase">FPS</span>
-          </div>
-
-          <span className="h-3.5 w-px bg-white/15" />
-
+        {/* Center: Quality Selector */}
+        <div className="hidden md:flex items-center px-1.5 h-10 rounded-xl bg-zinc-950/80 backdrop-blur-2xl border border-white/[0.1] shadow-[0_8px_30px_rgba(0,0,0,0.6)] pointer-events-auto select-none">
           {/* Segmented Quality Switcher */}
           <div className="flex items-center p-0.5 rounded-lg bg-white/[0.03] border border-white/[0.06] gap-0.5">
             {(['auto', 'high', 'medium', 'low'] as const).map((tier) => {
