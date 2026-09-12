@@ -12,26 +12,44 @@ import {
 } from 'firebase/firestore';
 import { NodeData } from '../types';
 
-// Environment variable config with seamless fallback
-const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || 'AIzaSyNodefolioCommunityEasterEggKey2026',
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || 'nodefolio-research-easteregg.firebaseapp.com',
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || 'nodefolio-research-easteregg',
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || 'nodefolio-research-easteregg.appspot.com',
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || '894210375621',
-  appId: import.meta.env.VITE_FIREBASE_APP_ID || '1:894210375621:web:7c9e120fbd4510ba9e2',
-};
+// Detect whether valid production Firebase credentials have been configured
+const rawApiKey = import.meta.env.VITE_FIREBASE_API_KEY;
+const rawProjectId = import.meta.env.VITE_FIREBASE_PROJECT_ID;
+
+const hasValidConfig = Boolean(
+  rawApiKey &&
+  rawApiKey.trim() !== '' &&
+  rawApiKey !== 'AIzaSyNodefolioCommunityEasterEggKey2026' &&
+  !rawApiKey.includes('MY_') &&
+  rawProjectId &&
+  rawProjectId.trim() !== '' &&
+  rawProjectId !== 'nodefolio-research-easteregg' &&
+  !rawProjectId.includes('MY_')
+);
 
 let app: FirebaseApp | null = null;
 let db: Firestore | null = null;
 let isFirestoreInitialized = false;
 
-try {
-  app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
-  db = getFirestore(app);
-  isFirestoreInitialized = true;
-} catch (err) {
-  console.warn('[Firebase] Initialized in resilient offline mode:', err);
+if (hasValidConfig) {
+  try {
+    const firebaseConfig = {
+      apiKey: rawApiKey,
+      authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || `${rawProjectId}.firebaseapp.com`,
+      projectId: rawProjectId,
+      storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || `${rawProjectId}.appspot.com`,
+      messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || '',
+      appId: import.meta.env.VITE_FIREBASE_APP_ID || '',
+    };
+
+    app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
+    db = getFirestore(app);
+    isFirestoreInitialized = true;
+  } catch (err) {
+    console.warn('[Firebase] Failed to initialize cloud provider, falling back to local mode:', err);
+    isFirestoreInitialized = false;
+    db = null;
+  }
 }
 
 export const VISITOR_NODES_COLLECTION = 'visitor_nodes';
@@ -120,14 +138,13 @@ export const subscribeToCommunityVisitorNodes = (
         onNodesUpdated(firestoreNodes);
       },
       (error) => {
-        // Silently handle offline/permission errors and preserve local experience
-        console.info('[Firestore] Real-time synchronization fallback active:', error.message);
+        // Handle offline/permission/termination errors safely
+        console.warn('[Firestore] Real-time stream disconnected:', error.message);
       }
     );
 
     return unsubscribe;
   } catch (err) {
-    console.info('[Firestore] Subscription bypassed:', err);
     return () => {};
   }
 };
