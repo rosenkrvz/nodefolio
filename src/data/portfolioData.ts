@@ -159,7 +159,7 @@ export const INITIAL_NODES: NodeData[] = [
       metrics: [
         { label: 'Input Latent', value: '512-D Vectors' },
         { label: 'Projection', value: '3D Manifold' },
-        { label: 'Framerate', value: '60 FPS Orbit' },
+        { label: 'Geometry', value: 'Riemannian' },
       ],
       image: '/assets/latent_manifold_artifact.jpg',
       liveUrl: 'https://github.com/rosenkrvz/nodefolio',
