@@ -26,7 +26,6 @@ import {
   Cpu,
   Activity,
   ArrowUpRight,
-  Grip,
   Eye,
   Sliders,
   Maximize,
@@ -256,35 +255,6 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
   // Orientation Gizmo Ref (direct DOM style update to eliminate 60fps React re-renders)
   const gizmoElRef = useRef<HTMLDivElement | null>(null);
 
-  // Draggable Specification HUD State
-  const [specPos, setSpecPos] = useState<{ x: number; y: number } | null>(() => {
-    if (typeof window === 'undefined') return null;
-    try {
-      const stored = localStorage.getItem('nodefolio_spec_pos');
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (
-          typeof parsed.x === 'number' &&
-          typeof parsed.y === 'number' &&
-          parsed.x >= 10 &&
-          parsed.x < window.innerWidth - 100 &&
-          parsed.y >= 50 &&
-          parsed.y < window.innerHeight - 100
-        ) {
-          return { x: parsed.x, y: parsed.y };
-        }
-      }
-    } catch {
-      // Ignore
-    }
-    return null;
-  });
-
-  const [isDraggingSpec, setIsDraggingSpec] = useState<boolean>(false);
-  const specPanelRef = useRef<HTMLElement | null>(null);
-  const specDragOffsetRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
-  const isDraggingSpecRef = useRef<boolean>(false);
-
   // References
   const containerRef = useRef<HTMLDivElement>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
@@ -321,25 +291,7 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
   // Window resize & orientation handling
   useEffect(() => {
     const handleResize = () => {
-      const desktop = window.innerWidth >= 768;
-      setIsDesktop(desktop);
-      if (desktop) {
-        setSpecPos((prev) => {
-          if (!prev) return null;
-          const panelEl = specPanelRef.current;
-          const width = panelEl ? panelEl.offsetWidth : 320;
-          const height = panelEl ? panelEl.offsetHeight : 260;
-          const maxX = Math.max(16, window.innerWidth - width - 16);
-          const maxY = Math.max(72, window.innerHeight - height - 88);
-          if (prev.x > maxX || prev.y > maxY) {
-            return {
-              x: Math.min(prev.x, maxX),
-              y: Math.min(prev.y, maxY),
-            };
-          }
-          return prev;
-        });
-      }
+      setIsDesktop(window.innerWidth >= 768);
     };
     window.addEventListener('resize', handleResize, { passive: true });
     window.addEventListener('orientationchange', handleResize, { passive: true });
@@ -879,100 +831,6 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
     }
   }, []);
 
-  // ── Drag Handlers for Specification HUD on Desktop ─────────────────────────
-  const handleSpecPointerDown = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
-    if (window.innerWidth < 768 || e.button !== 0) return;
-    if ((e.target as HTMLElement).closest('button')) return;
-
-    e.preventDefault();
-    e.stopPropagation();
-
-    const panel = specPanelRef.current;
-    if (!panel) return;
-
-    const rect = panel.getBoundingClientRect();
-    specDragOffsetRef.current = {
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top,
-    };
-
-    isDraggingSpecRef.current = true;
-    setIsDraggingSpec(true);
-
-    const onPointerMove = (moveEv: PointerEvent) => {
-      if (!isDraggingSpecRef.current) return;
-      moveEv.preventDefault();
-      moveEv.stopPropagation();
-
-      const panelEl = specPanelRef.current;
-      const width = panelEl ? panelEl.offsetWidth : 320;
-      const height = panelEl ? panelEl.offsetHeight : 260;
-
-      const minX = 16;
-      const maxX = Math.max(minX, window.innerWidth - width - 16);
-      const minY = 72;
-      const maxY = Math.max(minY, window.innerHeight - height - 88);
-
-      const targetX = moveEv.clientX - specDragOffsetRef.current.x;
-      const targetY = moveEv.clientY - specDragOffsetRef.current.y;
-
-      const clampedX = Math.round(Math.max(minX, Math.min(maxX, targetX)));
-      const clampedY = Math.round(Math.max(minY, Math.min(maxY, targetY)));
-
-      setSpecPos({ x: clampedX, y: clampedY });
-    };
-
-    const onPointerUp = (upEv: PointerEvent) => {
-      if (!isDraggingSpecRef.current) return;
-      isDraggingSpecRef.current = false;
-      setIsDraggingSpec(false);
-
-      window.removeEventListener('pointermove', onPointerMove);
-      window.removeEventListener('pointerup', onPointerUp);
-      window.removeEventListener('pointercancel', onPointerUp);
-
-      const panelEl = specPanelRef.current;
-      const width = panelEl ? panelEl.offsetWidth : 320;
-      const height = panelEl ? panelEl.offsetHeight : 260;
-      const minX = 16;
-      const maxX = Math.max(minX, window.innerWidth - width - 16);
-      const minY = 72;
-      const maxY = Math.max(minY, window.innerHeight - height - 88);
-
-      const targetX = upEv.clientX - specDragOffsetRef.current.x;
-      const targetY = upEv.clientY - specDragOffsetRef.current.y;
-      const finalX = Math.round(Math.max(minX, Math.min(maxX, targetX)));
-      const finalY = Math.round(Math.max(minY, Math.min(maxY, targetY)));
-
-      const finalPos = { x: finalX, y: finalY };
-      setSpecPos(finalPos);
-      try {
-        localStorage.setItem('nodefolio_spec_pos', JSON.stringify(finalPos));
-      } catch {
-        // Ignore
-      }
-      playSound('secondaryClick');
-    };
-
-    window.addEventListener('pointermove', onPointerMove, { passive: false });
-    window.addEventListener('pointerup', onPointerUp, { passive: false });
-    window.addEventListener('pointercancel', onPointerUp, { passive: false });
-  }, []);
-
-  const handleResetSpecPos = useCallback((e?: React.MouseEvent) => {
-    if (e) {
-      e.stopPropagation();
-      e.preventDefault();
-    }
-    setSpecPos(null);
-    try {
-      localStorage.removeItem('nodefolio_spec_pos');
-    } catch {
-      // Ignore
-    }
-    playSound('click');
-  }, []);
-
   return (
     <div
       id="research-3d-canvas"
@@ -1381,48 +1239,6 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
         </button>
       </nav>
 
-      {/* Contextual Introduction Card (Desktop/Tablet Only — mobile uses bottom sheet) */}
-      {showIntroCard && (
-        <aside
-          role="region"
-          aria-label="Phase Context Introduction"
-          className="hidden md:block absolute left-18 top-20 z-30 w-80 p-4 rounded-xl bg-black/90 backdrop-blur-xl border border-white/15 shadow-2xl pointer-events-auto transition-all animate-in fade-in slide-in-from-left-4 duration-300"
-        >
-          <div className="flex items-center justify-between border-b border-white/10 pb-2 mb-2.5">
-            <span className="font-tech text-[10px] font-bold tracking-[0.2em] text-rose-400 uppercase">
-              PHASE {currentPhaseMeta.numeral} // SPECIFICATION
-            </span>
-            <button
-              type="button"
-              onClick={() => setShowIntroCard(false)}
-              className="text-zinc-500 hover:text-white transition-colors cursor-pointer"
-            >
-              <X className="w-3.5 h-3.5" />
-            </button>
-          </div>
-
-          <h2 className="font-display text-sm sm:text-base font-bold text-white uppercase leading-tight mb-0.5">
-            {currentPhaseMeta.title}
-          </h2>
-          <p className="text-[11px] text-rose-300/90 font-semibold mb-2">{currentPhaseMeta.topic}</p>
-
-          <p className="text-[11px] text-zinc-300 leading-relaxed mb-3">
-            {currentPhaseMeta.description}
-          </p>
-
-          <button
-            type="button"
-            onClick={() => {
-              playSound('click');
-              setShowIntroCard(false);
-            }}
-            className="w-full py-2 px-3 rounded-lg bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold uppercase tracking-wider transition-all shadow-[0_0_12px_rgba(225,29,72,0.4)] cursor-pointer text-center"
-          >
-            EXPLORE ARTIFACT
-          </button>
-        </aside>
-      )}
-
       {/* 3D Orientation Gizmo (Bottom-Left Corner) */}
       <div
         aria-hidden="true"
@@ -1452,145 +1268,153 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
       </div>
 
       {/* ───────────────────────────────────────────────────────────────────
-          ZONE D: UNIFIED ARTIFACT INSPECTION PANEL (Right Zone)
-          (Desktop/Tablet: Draggable HUD; Phone uses contextual Bottom Sheet)
+          ZONE D: UNIFIED ARTIFACT INSPECTION & CONTEXT STACK (Right Zone)
+          (Desktop/Tablet: Immovable right HUD stack; Phone uses contextual Bottom Sheet)
          ─────────────────────────────────────────────────────────────────── */}
-      <aside
-        ref={specPanelRef}
-        role="region"
-        aria-label="Artifact Inspection Panel"
-        style={
-          isDesktop && specPos
-            ? {
-                left: `${specPos.x}px`,
-                top: `${specPos.y}px`,
-                right: 'auto',
-                bottom: 'auto',
-              }
-            : undefined
-        }
-        className={`hidden md:block absolute ${
-          isDesktop && specPos ? '' : 'right-6 top-20'
-        } w-80 max-w-xs max-h-[76vh] overflow-y-auto no-scrollbar p-4 rounded-xl bg-black/90 backdrop-blur-xl border ${
-          selectedItem ? 'border-rose-500/60 shadow-[0_16px_48px_rgba(225,29,72,0.2)]' : 'border-white/15 shadow-2xl'
-        } text-zinc-300 pointer-events-auto z-30 ${
-          isDraggingSpec ? 'transition-none cursor-grabbing ring-1 ring-rose-500/50' : 'transition-all duration-200'
-        }`}
-      >
-        {/* Draggable Header */}
-        <div
-          onPointerDown={handleSpecPointerDown}
-          onDoubleClick={handleResetSpecPos}
-          title={isDesktop ? 'Drag to reposition • Double-click to reset' : undefined}
-          className={`flex items-center justify-between border-b border-white/10 pb-2.5 mb-3 select-none ${
-            isDesktop ? 'cursor-grab active:cursor-grabbing group' : ''
-          }`}
+      <div className="hidden md:flex flex-col gap-3 absolute right-6 top-20 z-30 w-80 max-w-xs pointer-events-none max-h-[calc(100vh-6.5rem)] overflow-y-auto no-scrollbar select-none">
+        {/* 1. Immovable Artifact Specification / Component Inspection Panel */}
+        <aside
+          role="region"
+          aria-label="Artifact Inspection Panel"
+          className={`w-full p-4 rounded-xl bg-black/90 backdrop-blur-xl border ${
+            selectedItem ? 'border-rose-500/60 shadow-[0_16px_48px_rgba(225,29,72,0.2)]' : 'border-white/15 shadow-2xl'
+          } text-zinc-300 pointer-events-auto transition-all duration-200 select-none`}
         >
-          <div className="flex items-center gap-1.5">
-            {isDesktop ? (
-              <Grip className="w-3.5 h-3.5 text-zinc-500 group-hover:text-rose-400 transition-colors" />
-            ) : (
+          {/* Immovable Header */}
+          <div className="flex items-center justify-between border-b border-white/10 pb-2.5 mb-3 select-none">
+            <div className="flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-rose-500" />
-            )}
-            <span className="font-tech text-[10px] font-bold tracking-[0.2em] text-zinc-300 group-hover:text-white uppercase transition-colors">
-              {selectedItem ? 'COMPONENT INSPECTION' : 'ARTIFACT SPECIFICATION'}
-            </span>
-          </div>
+              <span className="font-tech text-[10px] font-bold tracking-[0.2em] text-zinc-300 uppercase">
+                {selectedItem ? 'COMPONENT INSPECTION' : 'ARTIFACT SPECIFICATION'}
+              </span>
+            </div>
 
-          <div className="flex items-center gap-1.5">
-            {specPos && isDesktop && (
-              <button
-                type="button"
-                onClick={handleResetSpecPos}
-                title="Reset panel position"
-                className="p-1 rounded text-zinc-500 hover:text-rose-400 transition-colors cursor-pointer"
-              >
-                <RotateCcw className="w-3 h-3" />
-              </button>
-            )}
             <span className="font-tech text-[10px] font-semibold text-rose-400 uppercase">
               {selectedItem ? selectedItem.type : currentPhaseMeta.year}
             </span>
           </div>
-        </div>
 
-        {/* Dynamic Body: Component Selected vs Global Specification */}
-        {selectedItem ? (
-          <div className="space-y-3">
-            <div>
-              <h3 className="font-display text-base font-bold text-white uppercase leading-tight">
-                {selectedItem.name}
-              </h3>
-              <p className="text-xs text-rose-300 font-semibold mt-0.5">{selectedItem.role}</p>
-              <span className="text-[10px] font-mono text-zinc-400 block mt-0.5">{selectedItem.dimension}</span>
-            </div>
+          {/* Dynamic Body: Component Selected vs Global Specification */}
+          {selectedItem ? (
+            <div className="space-y-3">
+              <div>
+                <h3 className="font-display text-base font-bold text-white uppercase leading-tight">
+                  {selectedItem.name}
+                </h3>
+                <p className="text-xs text-rose-300 font-semibold mt-0.5">{selectedItem.role}</p>
+                <span className="text-[10px] font-mono text-zinc-400 block mt-0.5">{selectedItem.dimension}</span>
+              </div>
 
-            {/* Properties Table */}
-            <div className="space-y-1 pt-1 border-t border-white/10 text-xs font-mono">
-              {Object.entries(selectedItem.properties).map(([k, v]) => (
-                <div key={k} className="flex items-baseline justify-between gap-2 py-0.5 border-b border-white/[0.04]">
-                  <span className="text-zinc-400 text-[10px] uppercase font-sans">{k}</span>
-                  <span className="text-zinc-200 font-semibold text-right truncate max-w-[170px]">{v}</span>
-                </div>
-              ))}
-            </div>
-
-            <p className="text-[11px] text-zinc-300 leading-relaxed p-2.5 rounded-xl bg-white/[0.03] border border-white/[0.06]">
-              {selectedItem.description}
-            </p>
-
-            {/* Actions */}
-            <div className="flex items-center gap-2 pt-1 border-t border-white/10">
-              <button
-                type="button"
-                onClick={() => handleFocusCamera(selectedItem.worldPosition)}
-                className="flex-1 py-2 px-3 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-body text-xs font-semibold uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 shadow-[0_0_12px_rgba(225,29,72,0.35)] cursor-pointer"
-              >
-                <span>FOCUS IN 3D</span>
-                <ArrowUpRight className="w-3.5 h-3.5" />
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setSelectedItem(null);
-                  activeArtifactRef.current?.onSelectObject?.(null);
-                }}
-                className="py-2 px-3.5 rounded-xl bg-white/[0.06] hover:bg-white/15 text-zinc-300 hover:text-white font-tech text-xs uppercase cursor-pointer transition-colors"
-              >
-                OVERVIEW
-              </button>
-            </div>
-          </div>
-        ) : (
-          <div className="space-y-2 text-xs">
-            <div className="flex items-center justify-between text-xs py-1 border-b border-white/[0.06]">
-              <span className="text-[10px] font-tech text-zinc-400 uppercase font-semibold">TOPOLOGY</span>
-              <span className="text-zinc-200 font-medium text-right truncate max-w-[170px]">
-                {currentPhaseMeta.objectType}
-              </span>
-            </div>
-
-            <div className="flex items-center justify-between text-xs py-1 border-b border-white/[0.06]">
-              <span className="text-[10px] font-tech text-zinc-400 uppercase font-semibold">BACKEND</span>
-              <span className="text-zinc-200 font-medium text-right truncate max-w-[170px]">
-                {currentPhaseMeta.computeBackend}
-              </span>
-            </div>
-
-            {currentPhaseMeta.metricsSummary && (
-              <div className="grid grid-cols-3 gap-1.5 pt-1.5">
-                {currentPhaseMeta.metricsSummary.map((m, idx) => (
-                  <div key={idx} className="p-2 rounded-xl bg-white/[0.03] border border-white/[0.06] text-center">
-                    <span className="text-[9px] text-zinc-400 uppercase block font-semibold truncate">{m.label}</span>
-                    <span className="text-[11px] text-zinc-100 font-mono font-semibold block mt-0.5 truncate">{m.value}</span>
+              {/* Properties Table */}
+              <div className="space-y-1 pt-1 border-t border-white/10 text-xs font-mono">
+                {Object.entries(selectedItem.properties).map(([k, v]) => (
+                  <div key={k} className="flex items-baseline justify-between gap-2 py-0.5 border-b border-white/[0.04]">
+                    <span className="text-zinc-400 text-[10px] uppercase font-sans">{k}</span>
+                    <span className="text-zinc-200 font-semibold text-right truncate max-w-[170px]">{v}</span>
                   </div>
                 ))}
               </div>
-            )}
-          </div>
+
+              <p className="text-[11px] text-zinc-300 leading-relaxed p-2.5 rounded-xl bg-white/[0.03] border border-white/[0.06]">
+                {selectedItem.description}
+              </p>
+
+              {/* Actions */}
+              <div className="flex items-center gap-2 pt-1 border-t border-white/10">
+                <button
+                  type="button"
+                  onClick={() => handleFocusCamera(selectedItem.worldPosition)}
+                  className="flex-1 py-2 px-3 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-body text-xs font-semibold uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 shadow-[0_0_12px_rgba(225,29,72,0.35)] cursor-pointer active:scale-95"
+                >
+                  <span>FOCUS IN 3D</span>
+                  <ArrowUpRight className="w-3.5 h-3.5" />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedItem(null);
+                    activeArtifactRef.current?.onSelectObject?.(null);
+                  }}
+                  className="py-2 px-3.5 rounded-xl bg-white/[0.06] hover:bg-white/15 text-zinc-300 hover:text-white font-tech text-xs uppercase cursor-pointer transition-colors active:scale-95"
+                >
+                  OVERVIEW
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-2 text-xs">
+              <div className="flex items-center justify-between text-xs py-1 border-b border-white/[0.06]">
+                <span className="text-[10px] font-tech text-zinc-400 uppercase font-semibold">TOPOLOGY</span>
+                <span className="text-zinc-200 font-medium text-right truncate max-w-[170px]">
+                  {currentPhaseMeta.objectType}
+                </span>
+              </div>
+
+              <div className="flex items-center justify-between text-xs py-1 border-b border-white/[0.06]">
+                <span className="text-[10px] font-tech text-zinc-400 uppercase font-semibold">BACKEND</span>
+                <span className="text-zinc-200 font-medium text-right truncate max-w-[170px]">
+                  {currentPhaseMeta.computeBackend}
+                </span>
+              </div>
+
+              {currentPhaseMeta.metricsSummary && (
+                <div className="grid grid-cols-3 gap-1.5 pt-1.5">
+                  {currentPhaseMeta.metricsSummary.map((m, idx) => (
+                    <div key={idx} className="p-2 rounded-xl bg-white/[0.03] border border-white/[0.06] text-center">
+                      <span className="text-[9px] text-zinc-400 uppercase block font-semibold truncate">{m.label}</span>
+                      <span className="text-[11px] text-zinc-100 font-mono font-semibold block mt-0.5 truncate">{m.value}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </aside>
+
+        {/* 2. Contextual Introduction Card (Displayed directly BELOW the Artifact Specification section) */}
+        {showIntroCard && (
+          <aside
+            role="region"
+            aria-label="Phase Context Introduction"
+            className="w-full p-4 rounded-xl bg-black/90 backdrop-blur-xl border border-white/15 shadow-2xl pointer-events-auto transition-all animate-in fade-in slide-in-from-top-2 duration-300 select-none"
+          >
+            <div className="flex items-center justify-between border-b border-white/10 pb-2 mb-2.5">
+              <span className="font-tech text-[10px] font-bold tracking-[0.2em] text-rose-400 uppercase">
+                PHASE {currentPhaseMeta.numeral} // SPECIFICATION
+              </span>
+              <button
+                type="button"
+                onClick={() => setShowIntroCard(false)}
+                className="text-zinc-500 hover:text-white transition-colors cursor-pointer"
+                title="Close phase notification"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+
+            <h2 className="font-display text-sm sm:text-base font-bold text-white uppercase leading-tight mb-0.5">
+              {currentPhaseMeta.title}
+            </h2>
+            <p className="text-[11px] text-rose-300/90 font-semibold mb-2">{currentPhaseMeta.topic}</p>
+
+            <p className="text-[11px] text-zinc-300 leading-relaxed mb-3">
+              {currentPhaseMeta.description}
+            </p>
+
+            <button
+              type="button"
+              onClick={() => {
+                playSound('click');
+                setShowIntroCard(false);
+              }}
+              className="w-full py-2 px-3 rounded-lg bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold uppercase tracking-wider transition-all shadow-[0_0_12px_rgba(225,29,72,0.4)] cursor-pointer text-center active:scale-95"
+            >
+              EXPLORE ARTIFACT
+            </button>
+          </aside>
         )}
-      </aside>
+      </div>
 
       {/* ── PHONE-ONLY FLOATING CONTROLS (< md) ── */}
       <div className="md:hidden absolute right-3 bottom-[calc(env(safe-area-inset-bottom,0px)+74px)] z-20 flex flex-col items-end gap-2 pointer-events-none select-none">
