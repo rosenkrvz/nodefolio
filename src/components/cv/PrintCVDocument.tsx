@@ -375,43 +375,6 @@ export const PrintCVDocument: React.FC<PrintCVDocumentProps> = ({ nodes }) => {
               </p>
             </div>
           </section>
-
-          {/* ──────── HONORS, HACKATHONS & ADDITIONAL HIGHLIGHTS ──────── */}
-          <section className="print-cv-section mb-2 print-avoid-break">
-            <h2 className="print-heading font-display font-bold text-[10pt] text-zinc-950 uppercase tracking-wider pb-0.5 mb-1.5 border-b border-zinc-300 flex items-center justify-between">
-              <span>Honors, Hackathons &amp; Additional Highlights</span>
-              <span className="font-body text-[7.5pt] font-normal text-zinc-500 uppercase tracking-normal">Achievements</span>
-            </h2>
-
-            <div className="grid grid-cols-3 gap-2 text-[8pt]">
-              <div className="p-2 border border-zinc-200 rounded bg-white">
-                <div className="font-display font-bold text-rose-700 text-[8.2pt]">
-                  10+ Hackathons
-                </div>
-                <div className="text-zinc-600 text-[7.6pt] mt-0.5 leading-snug">
-                  Participated in 10+ competitive hackathons; built and shipped independent prototypes in AI, Data Science &amp; Web development.
-                </div>
-              </div>
-
-              <div className="p-2 border border-zinc-200 rounded bg-white">
-                <div className="font-display font-bold text-rose-700 text-[8.2pt]">
-                  Academic Student of the Year
-                </div>
-                <div className="text-zinc-600 text-[7.6pt] mt-0.5 leading-snug">
-                  Awarded Academic Student of the Year in high school for outstanding academic performance, leadership, and scholastic excellence.
-                </div>
-              </div>
-
-              <div className="p-2 border border-zinc-200 rounded bg-white">
-                <div className="font-display font-bold text-rose-700 text-[8.2pt]">
-                  Global Peer Collaboration
-                </div>
-                <div className="text-zinc-600 text-[7.6pt] mt-0.5 leading-snug">
-                  Built connections with international peers and developers through distributed research projects, hackathons, and open collaboration.
-                </div>
-              </div>
-            </div>
-          </section>
         </div>
 
         {/* ──────── DOCUMENT FOOTER ──────── */}
