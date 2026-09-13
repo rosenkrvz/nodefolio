@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { Close, Printer, BookOpen, Layers, Briefcase, Award } from '../icons';
+import { Close, Printer, BookOpen, Layers, Briefcase } from '../icons';
 import { NodeData } from '../../types';
 import { playSound } from '../../lib/sound';
 
@@ -479,40 +479,6 @@ export const ResumeModal: React.FC<ResumeModalProps> = ({ isOpen, onClose, nodes
                   </span>
                 ))}
               </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Extracurricular & Achievements */}
-        <div
-          style={{
-            opacity: isContentVisible ? 1 : 0,
-            transform: isContentVisible ? 'translateY(0)' : 'translateY(16px)',
-            transition:
-              'opacity 360ms ease 220ms, transform 360ms cubic-bezier(0.16, 1, 0.3, 1) 220ms',
-          }}
-          className="mb-2"
-        >
-          <div className="flex items-center gap-2 text-xs sm:text-sm font-display text-white font-bold uppercase tracking-wider mb-3">
-            <Award className="w-4 h-4 text-rose-400" />
-            <span>Extracurricular Initiatives &amp; Honors</span>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-            <div className="p-3 rounded-xl bg-white/[0.03] border border-white/[0.06]">
-              <div className="font-body text-xs font-bold text-zinc-200">
-                EV Braking Efficiency Startup &bull; IIT Jodhpur
-              </div>
-              <p className="font-body text-[11px] sm:text-xs text-zinc-400 mt-1 leading-relaxed">
-                Core Team Member investigating regenerative thermodynamics to convert braking friction into electrical energy for extending EV range.
-              </p>
-            </div>
-            <div className="p-3 rounded-xl bg-white/[0.03] border border-white/[0.06]">
-              <div className="font-body text-xs font-bold text-zinc-200">
-                10+ Hackathons &bull; Academic Student of the Year
-              </div>
-              <p className="font-body text-[11px] sm:text-xs text-zinc-400 mt-1 leading-relaxed">
-                Competed in 10+ hackathons across AI &amp; Web; Awarded Academic Student of the Year in high school for exceptional performance.
-              </p>
             </div>
           </div>
         </div>
