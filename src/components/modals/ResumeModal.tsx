@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { Close, Printer, BookOpen, Layers } from '../icons';
+import { Close, Printer, BookOpen, Layers, Briefcase, Award } from '../icons';
 import { NodeData } from '../../types';
 import { playSound } from '../../lib/sound';
 
@@ -220,7 +220,7 @@ export const ResumeModal: React.FC<ResumeModalProps> = ({ isOpen, onClose, nodes
           </div>
         </div>
 
-        {/* Profile Header */}
+        {/* Profile Header with Avatar & Details */}
         <div
           style={{
             opacity: isContentVisible ? 1 : 0,
@@ -230,19 +230,43 @@ export const ResumeModal: React.FC<ResumeModalProps> = ({ isOpen, onClose, nodes
           }}
           className="mb-5 sm:mb-6 pb-5 sm:pb-6 border-b border-white/[0.08]"
         >
-          <h2 className="font-display text-2xl sm:text-4xl text-white font-bold tracking-tight uppercase leading-tight">
-            {profileNode?.name}
-          </h2>
-          <p className="font-body text-sm sm:text-base text-rose-400 font-semibold mt-1">{profileNode?.role}</p>
-          <p className="font-body text-[11px] sm:text-xs text-zinc-400 font-medium mt-1 break-words">
-            {profileNode?.location} • {profileNode?.email}
-          </p>
-          <p className="font-body text-xs sm:text-base text-zinc-200 mt-2.5 sm:mt-3 max-w-2xl leading-relaxed">
-            {profileNode?.bio}
-          </p>
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+            <div className="w-16 h-20 sm:w-20 sm:h-24 rounded-xl overflow-hidden border border-white/20 bg-white/[0.04] shadow-lg shrink-0">
+              <img
+                src={profileNode?.avatar || '/assets/shubham_photo.jpg'}
+                alt={profileNode?.name || 'Shubham Sharma'}
+                className="w-full h-full object-cover object-top"
+              />
+            </div>
+            <div className="flex-1 min-w-0">
+              <h2 className="font-display text-2xl sm:text-3xl text-white font-bold tracking-tight uppercase leading-tight">
+                {profileNode?.name}
+              </h2>
+              <p className="font-body text-xs sm:text-sm text-rose-400 font-semibold mt-0.5">
+                AI &amp; Data Science Scholar • IIT Jodhpur
+              </p>
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 font-body text-[11px] sm:text-xs text-zinc-400 font-medium mt-1.5">
+                <span>{profileNode?.email}</span>
+                <span>•</span>
+                <span>{profileNode?.phone || '+91 8882082760'}</span>
+                <span>•</span>
+                <span>{profileNode?.location}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Career Objective Banner */}
+          <div className="mt-3.5 p-3 rounded-lg bg-white/[0.03] border border-white/[0.06]">
+            <div className="text-[10px] font-display font-bold uppercase tracking-wider text-rose-400 mb-0.5">
+              Career Objective
+            </div>
+            <p className="font-body text-xs text-zinc-300 italic leading-relaxed m-0">
+              &ldquo;I work for a research-oriented approach towards a descriptive data-driven environment that focuses on purpose rather than just plain definition.&rdquo;
+            </p>
+          </div>
         </div>
 
-        {/* Academic & Theoretical Foundation */}
+        {/* Academic Foundation */}
         <div
           style={{
             opacity: isContentVisible ? 1 : 0,
@@ -254,19 +278,24 @@ export const ResumeModal: React.FC<ResumeModalProps> = ({ isOpen, onClose, nodes
         >
           <div className="flex items-center gap-2 text-xs sm:text-sm font-display text-white font-bold uppercase tracking-wider mb-3">
             <BookOpen className="w-4 h-4 text-rose-400" />
-            <span>Academic &amp; Theoretical Foundation</span>
+            <span>Academic Foundation &amp; Credentials</span>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-3">
             {credNode.map((c) => (
               <div
                 key={c.id}
                 className="p-3 sm:p-3.5 rounded-xl bg-white/[0.03] border border-white/[0.06] hover:border-white/[0.12] transition-colors"
               >
-                <div className="font-body text-xs sm:text-sm font-semibold text-zinc-100">{c.title}</div>
-                <div className="font-body text-[11px] sm:text-xs text-zinc-400 mt-0.5 font-medium">
-                  {c.issuer} • {c.issueDate}
+                <div className="flex justify-between items-baseline">
+                  <div className="font-body text-xs sm:text-sm font-semibold text-zinc-100">{c.title}</div>
                 </div>
-                <p className="font-body text-xs sm:text-[13px] text-zinc-300 mt-1.5 sm:mt-2 leading-relaxed">
+                <div className="font-body text-[11px] sm:text-xs text-rose-400 mt-0.5 font-medium">
+                  {c.issuer}
+                </div>
+                <div className="font-body text-[10px] sm:text-[11px] text-zinc-400 mt-0.5 font-medium">
+                  {c.issueDate} &bull; <span className="text-zinc-300 font-semibold">{c.credentialId}</span>
+                </div>
+                <p className="font-body text-xs text-zinc-300 mt-1.5 leading-relaxed">
                   {c.description}
                 </p>
               </div>
@@ -274,7 +303,62 @@ export const ResumeModal: React.FC<ResumeModalProps> = ({ isOpen, onClose, nodes
           </div>
         </div>
 
-        {/* Core Capabilities */}
+        {/* Work & Research Experience */}
+        <div
+          style={{
+            opacity: isContentVisible ? 1 : 0,
+            transform: isContentVisible ? 'translateY(0)' : 'translateY(11px)',
+            transition:
+              'opacity 310ms ease 140ms, transform 310ms cubic-bezier(0.16, 1, 0.3, 1) 140ms',
+          }}
+          className="mb-5 sm:mb-6"
+        >
+          <div className="flex items-center gap-2 text-xs sm:text-sm font-display text-white font-bold uppercase tracking-wider mb-3">
+            <Briefcase className="w-4 h-4 text-rose-400" />
+            <span>Work &amp; Research Experience</span>
+          </div>
+          <div className="space-y-2.5">
+            <div className="p-3.5 rounded-xl bg-white/[0.03] border border-white/[0.06]">
+              <div className="flex justify-between items-baseline">
+                <span className="font-display text-xs sm:text-sm font-bold text-white uppercase tracking-wider">
+                  Research &amp; Data Science &bull; Internship
+                </span>
+                <span className="font-body text-[10px] sm:text-xs text-rose-400 font-semibold">
+                  Jun 2026 — Present
+                </span>
+              </div>
+              <div className="font-body text-xs text-zinc-400 font-medium mt-0.5">
+                Doingly Analysis &amp; Consultancy &bull; Delhi, India
+              </div>
+              <ul className="list-disc list-inside text-xs text-zinc-300 mt-2 space-y-1 pl-0.5 leading-relaxed">
+                <li>Conduct research, quantitative exploratory analysis, and data modeling for active client consulting projects.</li>
+                <li>Analyze enterprise data to uncover patterns, anomalies, and actionable practical recommendations.</li>
+                <li>Utilize Python and data science paradigms for statistical inference, validation, and rapid experimentation.</li>
+              </ul>
+            </div>
+
+            <div className="p-3.5 rounded-xl bg-white/[0.03] border border-white/[0.06]">
+              <div className="flex justify-between items-baseline">
+                <span className="font-display text-xs sm:text-sm font-bold text-white uppercase tracking-wider">
+                  Core Team Member
+                </span>
+                <span className="font-body text-[10px] sm:text-xs text-rose-400 font-semibold">
+                  Feb 2026 — Present
+                </span>
+              </div>
+              <div className="font-body text-xs text-zinc-400 font-medium mt-0.5">
+                Visible Logic Labs &bull; Virtual / Remote
+              </div>
+              <ul className="list-disc list-inside text-xs text-zinc-300 mt-2 space-y-1 pl-0.5 leading-relaxed">
+                <li>Support marketing, growth, and user outreach initiatives to scale technical product adoption and community reach.</li>
+                <li>Author and maintain high-standard technical documentation, API specifications, and architecture briefs.</li>
+                <li>Collaborate cross-functionally on product feature ideation, UX flows, and robust user-centric solutions.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        {/* Technical Capabilities */}
         <div
           style={{
             opacity: isContentVisible ? 1 : 0,
@@ -289,18 +373,34 @@ export const ResumeModal: React.FC<ResumeModalProps> = ({ isOpen, onClose, nodes
             <span>Technical Capabilities</span>
           </div>
           <div className="flex flex-wrap gap-1.5">
-            {[...modelsSkills, ...systemsSkills].map((s) => (
+            {[
+              'Python',
+              'SQL',
+              'C++',
+              'TypeScript',
+              'PyTorch',
+              'NumPy / SciPy',
+              'Data Analytics',
+              'Data Engineering',
+              'Data Cleaning',
+              'Data Manipulation',
+              'Web Development',
+              'UI & UX Design',
+              'RESTful APIs',
+              'Problem Solving',
+              'Technical Writing',
+            ].map((skill) => (
               <span
-                key={s.name}
+                key={skill}
                 className="px-2.5 py-1 rounded-lg text-[11px] sm:text-xs font-body font-semibold bg-white/[0.04] hover:bg-white/[0.08] text-zinc-200 border border-white/[0.08] hover:border-white/[0.16] transition-colors"
               >
-                {s.name}
+                {skill}
               </span>
             ))}
           </div>
         </div>
 
-        {/* Featured Research & Systems */}
+        {/* Featured Projects */}
         <div
           style={{
             opacity: isContentVisible ? 1 : 0,
@@ -308,13 +408,36 @@ export const ResumeModal: React.FC<ResumeModalProps> = ({ isOpen, onClose, nodes
             transition:
               'opacity 340ms ease 200ms, transform 340ms cubic-bezier(0.16, 1, 0.3, 1) 200ms',
           }}
-          className="mb-2"
+          className="mb-5 sm:mb-6"
         >
           <div className="flex items-center gap-2 text-xs sm:text-sm font-display text-white font-bold uppercase tracking-wider mb-3">
             <BookOpen className="w-4 h-4 text-rose-400" />
-            <span>Featured Research &amp; Projects</span>
+            <span>Featured Engineering &amp; Research Projects</span>
           </div>
           <div className="space-y-3">
+            {/* Nirogshaala */}
+            <div className="p-3.5 rounded-xl bg-white/[0.03] border border-white/[0.06]">
+              <div className="flex justify-between items-baseline">
+                <span className="font-display text-xs sm:text-sm font-bold text-white uppercase tracking-wider">
+                  Full-stack Consultation Website (Nirogshaala)
+                </span>
+                <span className="font-body text-[10px] sm:text-xs text-rose-400 font-semibold uppercase">
+                  Apr 2026 — Sep 2026
+                </span>
+              </div>
+              <p className="font-body text-xs sm:text-[13px] text-zinc-300 mt-1.5 leading-relaxed">
+                Designed and developed the Nirogshaala healthcare platform with a clean, responsive interface and intuitive UX. Engineered responsive layouts for mobile, tablet, and desktop viewports, with focus on performance and usability.
+              </p>
+              <div className="flex flex-wrap gap-1 mt-2">
+                {['React', 'Next.js', 'TypeScript', 'Tailwind CSS', 'UI/UX Design', 'REST API'].map((t) => (
+                  <span key={t} className="px-2 py-0.5 rounded bg-white/[0.04] text-[10px] text-zinc-400 font-tech">
+                    {t}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            {/* Latent Graph Visualizer */}
             <div className="p-3.5 rounded-xl bg-white/[0.03] border border-white/[0.06]">
               <div className="flex justify-between items-baseline">
                 <span className="font-display text-xs sm:text-sm font-bold text-white uppercase tracking-wider">
@@ -336,6 +459,7 @@ export const ResumeModal: React.FC<ResumeModalProps> = ({ isOpen, onClose, nodes
               </div>
             </div>
 
+            {/* First-Principles Autograd */}
             <div className="p-3.5 rounded-xl bg-white/[0.03] border border-white/[0.06]">
               <div className="flex justify-between items-baseline">
                 <span className="font-display text-xs sm:text-sm font-bold text-white uppercase tracking-wider">
@@ -355,6 +479,40 @@ export const ResumeModal: React.FC<ResumeModalProps> = ({ isOpen, onClose, nodes
                   </span>
                 ))}
               </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Extracurricular & Achievements */}
+        <div
+          style={{
+            opacity: isContentVisible ? 1 : 0,
+            transform: isContentVisible ? 'translateY(0)' : 'translateY(16px)',
+            transition:
+              'opacity 360ms ease 220ms, transform 360ms cubic-bezier(0.16, 1, 0.3, 1) 220ms',
+          }}
+          className="mb-2"
+        >
+          <div className="flex items-center gap-2 text-xs sm:text-sm font-display text-white font-bold uppercase tracking-wider mb-3">
+            <Award className="w-4 h-4 text-rose-400" />
+            <span>Extracurricular Initiatives &amp; Honors</span>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            <div className="p-3 rounded-xl bg-white/[0.03] border border-white/[0.06]">
+              <div className="font-body text-xs font-bold text-zinc-200">
+                EV Braking Efficiency Startup &bull; IIT Jodhpur
+              </div>
+              <p className="font-body text-[11px] sm:text-xs text-zinc-400 mt-1 leading-relaxed">
+                Core Team Member investigating regenerative thermodynamics to convert braking friction into electrical energy for extending EV range.
+              </p>
+            </div>
+            <div className="p-3 rounded-xl bg-white/[0.03] border border-white/[0.06]">
+              <div className="font-body text-xs font-bold text-zinc-200">
+                10+ Hackathons &bull; Academic Student of the Year
+              </div>
+              <p className="font-body text-[11px] sm:text-xs text-zinc-400 mt-1 leading-relaxed">
+                Competed in 10+ hackathons across AI &amp; Web; Awarded Academic Student of the Year in high school for exceptional performance.
+              </p>
             </div>
           </div>
         </div>

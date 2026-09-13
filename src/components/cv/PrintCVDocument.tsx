@@ -1,5 +1,5 @@
 import React from 'react';
-import { NodeData, SkillItem, CertificateItem, ProjectItem } from '../../types';
+import { NodeData } from '../../types';
 
 interface PrintCVDocumentProps {
   nodes: NodeData[];
@@ -7,314 +7,423 @@ interface PrintCVDocumentProps {
 
 export const PrintCVDocument: React.FC<PrintCVDocumentProps> = ({ nodes }) => {
   const profileNode = nodes.find((n) => n.id === 'node-profile')?.profile;
-  const credNode = nodes.find((n) => n.id === 'node-credentials')?.certificates || [];
-  const modelsSkills = nodes.find((n) => n.id === 'node-models')?.skills || [];
-  const systemsSkills = nodes.find((n) => n.id === 'node-systems')?.skills || [];
-  const projectNode = nodes.find((n) => n.id === 'node-project')?.project;
 
   const name = profileNode?.name || 'SHUBHAM SHARMA';
-  const role = profileNode?.role || 'AI & Data Science';
+  const role = 'AI & Data Science Scholar • IIT Jodhpur';
   const email = profileNode?.email || 'marksrv047@gmail.com';
-  const github = profileNode?.github || 'https://github.com/rosenkrvz';
+  const phone = profileNode?.phone || '+91 8882082760';
+  const location = 'Ghaziabad, Uttar Pradesh, India';
   const githubUser = 'github.com/rosenkrvz';
-  const linkedin = profileNode?.linkedin || 'https://linkedin.com';
   const linkedinUser = 'linkedin.com/in/shubham-sharma';
   const portfolioUrl = 'nodefolio-rosenkrvz.vercel.app';
-  const location = 'India • Open for Global Remote & Relocation';
+  const photoUrl = profileNode?.avatar || '/assets/shubham_photo.jpg';
 
-  // Structured Projects & Research Initiatives using verified portfolio & chronicle milestone data
-  const researchProjects = [
-    {
-      title: projectNode?.title || 'Latent Graph Visualizer',
-      subtitle: 'High-Dimensional Manifold & Topological Cluster Explorer',
-      role: 'System Architect & Developer',
-      period: '2025 — Present',
-      description:
-        'Engineered an interactive computational system mapping continuous neural latent spaces to discrete topological clusters. Implemented parametric traversal algorithms, non-linear dimensionality reduction projections (UMAP and t-SNE), and high-framerate WebGL coordinate rendering for 512-dimensional embedding manifolds.',
-      technologies: ['PyTorch', 'WebGL / Canvas', 'Dimensionality Reduction (UMAP / t-SNE)', 'Embedding Manifolds', 'TypeScript'],
-      highlights: [
-        'Projected 512-D vectors onto 3D continuous Riemannian manifolds with real-time parametric orbit traversal at 60 FPS.',
-        'Evaluated geodesic trajectory interpolation against standard Euclidean baselines to eliminate semantic collapse in sparse regions.',
-      ],
-    },
-    {
-      title: 'First-Principles Autograd Engine & Reverse-Mode Autodiff',
-      subtitle: 'Directed Acyclic Graph (DAG) Execution Tape & Tape Recording',
-      role: 'Research & Core Engineering',
-      period: '2023 — 2024',
-      description:
-        'Constructed a lightweight scalar and multi-dimensional tensor automatic differentiation engine from scratch in Python with C++ acceleration. Built explicit DAG topological sorting, dynamic backward execution tapes, and reverse-mode derivative propagation to study exact activation memory lifetimes.',
-      technologies: ['Python', 'C++ / CPython', 'DAG Topological Sort', 'Reverse-Mode Autodiff', 'Dynamic Graph Tapes'],
-      highlights: [
-        'Implemented automatic chain-rule differentiation with backward tape accumulation and tensor broadcasting bookkeeping.',
-        'Profiled activation memory lifetimes during forward passes to implement zero-copy tensor reuse patterns.',
-      ],
-    },
-    {
-      title: 'Self-Attention Memory Hierarchy & KV-Cache Benchmarks',
-      subtitle: 'Transformer Inference Memory-Bandwidth & Tiling Profiling',
-      role: 'Experimental Benchmarking',
-      period: '2024 — 2025',
-      description:
-        'Investigated memory-bandwidth bottlenecks in transformer attention mechanisms through tiled matrix algebra and cache management. Analyzed GPU global memory (HBM) versus on-chip SRAM round-trips during long-sequence generation.',
-      technologies: ['PyTorch', 'Triton', 'FlashAttention Mechanics', 'Tiled Matrix Multiplication', 'KV-Cache Dynamics'],
-      highlights: [
-        'Fused online softmax computation into outer tiled matrix loops, eliminating quadratic N x N memory materialization.',
-        'Documented empirical speedups and memory-bandwidth scaling across context windows ranging from 2K to 32K tokens.',
-      ],
-    },
-    {
-      title: 'Hyperspherical Uniformity & Contrastive Metric Spaces',
-      subtitle: 'Representation Learning & Embedding Geometry Formulation',
-      role: 'Theoretical Study & Evaluation',
-      period: '2024',
-      description:
-        'Formulated and tested multi-modal contrastive InfoNCE representations to prevent dimensional shrinkage and representation collapse. Evaluated hyperspherical alignment, singular value decay, and temperature scaling parameters.',
-      technologies: ['PyTorch', 'Metric Spaces', 'Contrastive Learning (InfoNCE)', 'Hyperspherical Embeddings', 'NumPy / SciPy'],
-      highlights: [
-        'Benchmarked temperature schedules to optimize negative pair repulsion without destabilizing gradient variance.',
-        'Demonstrated uniform feature distribution across unit hyperspheres to preserve metric downstream transferability.',
-      ],
-    },
-  ];
+  const objective =
+    'I work for a research-oriented approach towards a descriptive data-driven environment that focuses on purpose rather than just plain definition.';
 
   return (
     <article
       id="print-cv-document"
-      aria-label="Printable Curriculum Vitae"
+      aria-label="Printable Curriculum Vitae - Shubham Sharma"
       className="print-cv-root font-body text-zinc-900 bg-white"
     >
-      {/* ═════════════════ DOCUMENT HEADER ═════════════════ */}
-      <header className="print-cv-header pb-3 mb-3 border-b border-zinc-300">
-        <div className="flex flex-row justify-between items-start">
-          <div>
-            <h1 className="font-display font-bold text-[22pt] text-zinc-950 uppercase tracking-tight leading-none m-0">
-              {name}
-            </h1>
-            <div className="font-display font-semibold text-[10pt] text-rose-700 uppercase tracking-wider mt-1">
-              {role} <span className="text-zinc-400 font-normal">|</span> Computational Systems &amp; Statistical Learning
-            </div>
-          </div>
-
-          <div className="text-right text-[8.2pt] font-body text-zinc-600 space-y-0.5">
-            <div>
-              <span className="font-semibold text-zinc-800">Email:</span>{' '}
-              <a href={`mailto:${email}`} className="text-zinc-900 underline hover:text-rose-700">
-                {email}
-              </a>
-            </div>
-            <div>
-              <span className="font-semibold text-zinc-800">GitHub:</span>{' '}
-              <a href={github} target="_blank" rel="noreferrer" className="text-zinc-900 underline hover:text-rose-700">
-                {githubUser}
-              </a>
-            </div>
-            <div>
-              <span className="font-semibold text-zinc-800">LinkedIn:</span>{' '}
-              <a href={linkedin} target="_blank" rel="noreferrer" className="text-zinc-900 underline hover:text-rose-700">
-                {linkedinUser}
-              </a>
-            </div>
-            <div>
-              <span className="font-semibold text-zinc-800">Portfolio:</span>{' '}
-              <span className="text-zinc-900 font-medium">{portfolioUrl}</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Location & Status Bar */}
-        <div className="mt-2 pt-1.5 border-t border-zinc-150 flex items-center justify-between text-[8.2pt] text-zinc-600">
-          <div>
-            <span className="font-semibold text-zinc-800">Location:</span> {location}
-          </div>
-          <div>
-            <span className="inline-block w-1.5 h-1.5 rounded-full bg-rose-600 mr-1.5 align-middle" />
-            <span className="font-semibold text-zinc-800">Primary Focus:</span> Generative Architectures &amp; Distributed Tensors
-          </div>
-        </div>
-
-        {/* Professional Summary / Research Thesis Statement */}
-        <div className="mt-2 text-[8.8pt] text-zinc-700 leading-relaxed text-justify">
-          <p className="m-0">
-            AI &amp; Data Science engineer focused on the intersection of theoretical statistics, mathematical optimization, and high-performance neural computing. Experience designing from-scratch computational graph runtimes, benchmarking attention memory hierarchies, and engineering interactive manifold projection tools. Committed to rigorous computational verification, verifiable code, and modular machine learning systems.
-          </p>
-        </div>
-      </header>
-
-      {/* ═════════════════ EDUCATION & ACADEMIC FOUNDATION ═════════════════ */}
-      <section className="print-cv-section mb-3.5">
-        <h2 className="print-heading font-display font-bold text-[10.5pt] text-zinc-950 uppercase tracking-wider pb-0.5 mb-2 border-b border-zinc-300 flex items-center justify-between">
-          <span>Education &amp; Academic Foundation</span>
-          <span className="font-body text-[7.5pt] font-normal text-zinc-500 uppercase tracking-normal">Academic Rigor</span>
-        </h2>
-
-        <div className="space-y-2">
-          {credNode.map((c) => (
-            <div key={c.id} className="print-avoid-break">
-              <div className="flex justify-between items-baseline">
-                <h3 className="font-display font-bold text-[9.5pt] text-zinc-900 m-0">
-                  {c.title}
-                </h3>
-                <span className="font-body text-[8.2pt] font-semibold text-zinc-600">
-                  {c.issueDate}
-                </span>
-              </div>
-
-              <div className="flex justify-between items-baseline text-[8.2pt] text-rose-700 font-medium mt-0.5">
-                <span>{c.issuer}</span>
-                <span className="text-zinc-500 text-[7.8pt]">Track: {c.credentialId}</span>
-              </div>
-
-              <p className="text-[8.5pt] text-zinc-700 leading-normal mt-0.5 m-0">
-                {c.description}
-              </p>
-
-              {c.skills && c.skills.length > 0 && (
-                <div className="text-[7.8pt] text-zinc-600 mt-0.5">
-                  <span className="font-semibold text-zinc-800">Key Coursework &amp; Topics:</span>{' '}
-                  {c.skills.join(' • ')}
+      {/* ═════════════════════════════════════════════════════════════
+          PAGE 1: IDENTITY, OBJECTIVE, EDUCATION, EXPERIENCE & SKILLS
+          ═════════════════════════════════════════════════════════════ */}
+      <section className="print-page print-page-1 flex flex-col justify-between">
+        <div>
+          {/* ──────── HEADER SECTION WITH CANDIDATE PHOTO ──────── */}
+          <header className="print-cv-header pb-2.5 mb-2.5 border-b-2 border-zinc-800">
+            <div className="flex flex-row items-center gap-4">
+              {/* High-Resolution Framed Candidate Portrait */}
+              <div className="shrink-0">
+                <div className="w-[78px] h-[96px] rounded-md overflow-hidden border-2 border-zinc-900 bg-zinc-100 shadow-sm">
+                  <img
+                    src={photoUrl}
+                    alt={name}
+                    className="w-full h-full object-cover object-top"
+                  />
                 </div>
-              )}
+              </div>
+
+              {/* Identity & Main Headlines */}
+              <div className="flex-1 min-w-0">
+                <h1 className="font-display font-bold text-[22pt] text-zinc-950 uppercase tracking-tight leading-none m-0">
+                  {name}
+                </h1>
+                <div className="font-display font-semibold text-[9.5pt] text-rose-700 uppercase tracking-wider mt-1">
+                  {role} <span className="text-zinc-400 font-normal">|</span> Computational Systems &amp; Data Engineering
+                </div>
+
+                {/* Contact Coordinates Badges */}
+                <div className="mt-2 grid grid-cols-3 gap-x-3 gap-y-1 text-[8pt] text-zinc-700">
+                  <div className="flex items-center gap-1.5 truncate">
+                    <span className="font-bold text-zinc-900">Email:</span>
+                    <a href={`mailto:${email}`} className="text-zinc-800 underline hover:text-rose-700 truncate">
+                      {email}
+                    </a>
+                  </div>
+                  <div className="flex items-center gap-1.5 truncate">
+                    <span className="font-bold text-zinc-900">Phone:</span>
+                    <span className="text-zinc-800">{phone}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 truncate">
+                    <span className="font-bold text-zinc-900">Location:</span>
+                    <span className="text-zinc-800">{location}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 truncate">
+                    <span className="font-bold text-zinc-900">Portfolio:</span>
+                    <span className="text-zinc-800 font-medium">{portfolioUrl}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 truncate">
+                    <span className="font-bold text-zinc-900">GitHub:</span>
+                    <a href={`https://${githubUser}`} target="_blank" rel="noreferrer" className="text-zinc-800 underline hover:text-rose-700 truncate">
+                      {githubUser}
+                    </a>
+                  </div>
+                  <div className="flex items-center gap-1.5 truncate">
+                    <span className="font-bold text-zinc-900">LinkedIn:</span>
+                    <a href={`https://${linkedinUser}`} target="_blank" rel="noreferrer" className="text-zinc-800 underline hover:text-rose-700 truncate">
+                      {linkedinUser}
+                    </a>
+                  </div>
+                </div>
+              </div>
             </div>
-          ))}
-        </div>
-      </section>
 
-      {/* ═════════════════ TECHNICAL SKILLS & CAPABILITIES ═════════════════ */}
-      <section className="print-cv-section mb-3.5 print-avoid-break">
-        <h2 className="print-heading font-display font-bold text-[10.5pt] text-zinc-950 uppercase tracking-wider pb-0.5 mb-2 border-b border-zinc-300 flex items-center justify-between">
-          <span>Technical Skills &amp; Capabilities</span>
-          <span className="font-body text-[7.5pt] font-normal text-zinc-500 uppercase tracking-normal">Core Taxonomy</span>
-        </h2>
-
-        <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-[8.5pt]">
-          {/* Column 1: Generative & Deep Learning */}
-          <div className="space-y-0.5">
-            <div className="font-display font-bold text-[8.8pt] text-zinc-900 uppercase tracking-wider text-rose-700">
-              Generative Architectures &amp; Deep Learning
+            {/* Career Objective */}
+            <div className="mt-2.5 pt-2 border-t border-zinc-200">
+              <div className="flex items-baseline gap-2">
+                <span className="font-display font-bold text-[8pt] uppercase tracking-wider text-rose-700 shrink-0">
+                  Career Objective:
+                </span>
+                <p className="text-[8.4pt] text-zinc-800 italic leading-snug m-0">
+                  &ldquo;{objective}&rdquo;
+                </p>
+              </div>
             </div>
-            <ul className="list-disc list-inside text-zinc-700 space-y-0.5 pl-0.5 m-0 text-[8.2pt]">
-              {modelsSkills.map((s) => (
-                <li key={s.name} className="leading-tight">
-                  <span className="font-semibold text-zinc-800">{s.name}:</span>{' '}
-                  <span className="text-zinc-600">{s.tags.join(', ')}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
+          </header>
 
-          {/* Column 2: Systems, Infrastructure & Data */}
-          <div className="space-y-0.5">
-            <div className="font-display font-bold text-[8.8pt] text-zinc-900 uppercase tracking-wider text-rose-700">
-              Neural Systems &amp; Data Infrastructure
-            </div>
-            <ul className="list-disc list-inside text-zinc-700 space-y-0.5 pl-0.5 m-0 text-[8.2pt]">
-              {systemsSkills.map((s) => (
-                <li key={s.name} className="leading-tight">
-                  <span className="font-semibold text-zinc-800">{s.name}:</span>{' '}
-                  <span className="text-zinc-600">{s.tags.join(', ')}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
+          {/* ──────── EDUCATION & ACADEMIC BACKGROUND ──────── */}
+          <section className="print-cv-section mb-3">
+            <h2 className="print-heading font-display font-bold text-[10pt] text-zinc-950 uppercase tracking-wider pb-0.5 mb-1.5 border-b border-zinc-300 flex items-center justify-between">
+              <span>Education &amp; Academic Foundation</span>
+              <span className="font-body text-[7.5pt] font-normal text-zinc-500 uppercase tracking-normal">Rigorous Academic Track</span>
+            </h2>
 
-          {/* Row 2: Languages & Tooling */}
-          <div className="col-span-2 pt-1 border-t border-zinc-150 flex items-baseline justify-between text-[8.2pt]">
-            <div>
-              <span className="font-semibold text-zinc-900">Languages &amp; Core Frameworks:</span>{' '}
-              <span className="text-zinc-700">Python, C++, TypeScript, JavaScript, PyTorch, Triton, WebGL, CUDA, NumPy, SciPy</span>
-            </div>
-            <div className="text-zinc-500 text-[7.8pt]">
-              <span className="font-semibold text-zinc-700">Tools:</span> Git, Linux, Docker, Arrow, Parquet, FAISS, ONNX
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ═════════════════ AREAS OF FOCUS & COLLABORATIONS ═════════════════ */}
-      <section className="print-cv-section mb-3.5 print-avoid-break">
-        <h2 className="print-heading font-display font-bold text-[10.5pt] text-zinc-950 uppercase tracking-wider pb-0.5 mb-2 border-b border-zinc-300 flex items-center justify-between">
-          <span>Areas of Active Study &amp; Technical Focus</span>
-          <span className="font-body text-[7.5pt] font-normal text-zinc-500 uppercase tracking-normal">Research Interests</span>
-        </h2>
-
-        <div className="flex flex-wrap items-center gap-1.5 text-[8pt] text-zinc-700">
-          {[
-            'Statistical Learning & Inference',
-            'Generative Architectures (Diffusion & Transformers)',
-            'Latent Topology & Manifold Geometry',
-            'Computational Graph Runtimes & Autograd',
-            'Tensor Optimization & KV-Cache Dynamics',
-            'High-Dimensional Embedding Projections',
-          ].map((area) => (
-            <span
-              key={area}
-              className="px-2 py-0.5 bg-zinc-100 border border-zinc-200 rounded text-zinc-800 font-medium"
-            >
-              {area}
-            </span>
-          ))}
-        </div>
-
-        <p className="text-[8.2pt] text-zinc-600 mt-2 m-0 leading-normal">
-          <span className="font-semibold text-zinc-800">Professional Alignment:</span> Open for Software Engineering roles, Machine Learning engineering positions, and collaborative systems research.
-        </p>
-      </section>
-
-      {/* ═════════════════ PROJECTS & COMPUTATIONAL RESEARCH (PAGE 2) ═════════════════ */}
-      <section className="print-cv-section print-break-before-page mb-3.5">
-        <h2 className="print-heading font-display font-bold text-[10.5pt] text-zinc-950 uppercase tracking-wider pb-0.5 mb-2.5 border-b border-zinc-300 flex items-center justify-between">
-          <span>Projects &amp; Computational Research</span>
-          <span className="font-body text-[7.5pt] font-normal text-zinc-500 uppercase tracking-normal">Engineering &amp; Systems</span>
-        </h2>
-
-        <div className="space-y-3.5">
-          {researchProjects.map((p) => (
-            <div key={p.title} className="print-avoid-break">
-              <div className="flex justify-between items-baseline">
-                <div className="flex items-baseline gap-2">
-                  <h3 className="font-display font-bold text-[9.5pt] text-zinc-950 m-0">
-                    {p.title}
+            <div className="space-y-2">
+              {/* IIT Jodhpur */}
+              <div className="print-avoid-break">
+                <div className="flex justify-between items-baseline">
+                  <h3 className="font-display font-bold text-[9.2pt] text-zinc-900 m-0">
+                    Bachelor of Science (B.S.), AI &amp; Data Science
                   </h3>
-                  <span className="text-[8.2pt] text-rose-700 font-medium">
-                    [{p.subtitle}]
+                  <span className="font-body text-[8pt] font-bold text-zinc-700">
+                    2025 — 2029
                   </span>
                 </div>
-                <span className="font-body text-[8.2pt] font-semibold text-zinc-600 shrink-0">
-                  {p.period}
-                </span>
+                <div className="flex justify-between items-baseline text-[8pt] text-rose-700 font-semibold mt-0.5">
+                  <span>Indian Institute of Technology Jodhpur (IIT Jodhpur)</span>
+                  <span className="text-zinc-500 text-[7.5pt] font-normal">Department of Computer Science &amp; Data Intelligence</span>
+                </div>
+                <p className="text-[8pt] text-zinc-700 leading-snug mt-0.5 m-0">
+                  Specialized curriculum encompassing mathematical foundations of machine learning, statistical inference, high-performance computing, convex optimization, and scalable data engineering systems.
+                </p>
               </div>
 
-              <div className="text-[8pt] font-medium text-zinc-600 mt-0.5">
-                <span className="text-zinc-800 font-semibold">Role:</span> {p.role} &bull;{' '}
-                <span className="text-zinc-800 font-semibold">Stack:</span> {p.technologies.join(', ')}
+              {/* High School Stages - Two Column Clean Layout */}
+              <div className="grid grid-cols-2 gap-3 pt-1 border-t border-zinc-150">
+                <div>
+                  <div className="flex justify-between items-baseline">
+                    <span className="font-display font-bold text-[8.6pt] text-zinc-900">
+                      Senior Secondary (XII), CBSE Science
+                    </span>
+                    <span className="text-[7.8pt] font-bold text-rose-700">84.20%</span>
+                  </div>
+                  <div className="text-[7.8pt] text-zinc-600">
+                    Silver Shine School &bull; Passing Year: 2025
+                  </div>
+                </div>
+
+                <div>
+                  <div className="flex justify-between items-baseline">
+                    <span className="font-display font-bold text-[8.6pt] text-zinc-900">
+                      Secondary (X), CBSE
+                    </span>
+                    <span className="text-[7.8pt] font-bold text-rose-700">90.67%</span>
+                  </div>
+                  <div className="text-[7.8pt] text-zinc-600">
+                    Silver Shine School &bull; Passing Year: 2023
+                  </div>
+                </div>
               </div>
-
-              <p className="text-[8.5pt] text-zinc-700 leading-normal mt-1 m-0 text-justify">
-                {p.description}
-              </p>
-
-              <ul className="list-disc list-inside text-[8.2pt] text-zinc-600 mt-1 space-y-0.5 pl-0.5 m-0">
-                {p.highlights.map((h, i) => (
-                  <li key={i} className="leading-tight">
-                    {h}
-                  </li>
-                ))}
-              </ul>
             </div>
-          ))}
+          </section>
+
+          {/* ──────── WORK & RESEARCH EXPERIENCE ──────── */}
+          <section className="print-cv-section mb-3">
+            <h2 className="print-heading font-display font-bold text-[10pt] text-zinc-950 uppercase tracking-wider pb-0.5 mb-1.5 border-b border-zinc-300 flex items-center justify-between">
+              <span>Work &amp; Research Experience</span>
+              <span className="font-body text-[7.5pt] font-normal text-zinc-500 uppercase tracking-normal">Industry &amp; Applied Practice</span>
+            </h2>
+
+            <div className="space-y-2.5">
+              {/* Doingly */}
+              <div className="print-avoid-break">
+                <div className="flex justify-between items-baseline">
+                  <div className="flex items-baseline gap-2">
+                    <h3 className="font-display font-bold text-[9.2pt] text-zinc-950 m-0">
+                      Research &amp; Data Science &bull; Internship
+                    </h3>
+                  </div>
+                  <span className="font-body text-[8pt] font-bold text-zinc-700">
+                    Jun 2026 — Present
+                  </span>
+                </div>
+                <div className="text-[8pt] text-rose-700 font-semibold mt-0.5">
+                  Doingly Analysis &amp; Consultancy &bull; Delhi, India
+                </div>
+                <ul className="list-disc list-inside text-[8pt] text-zinc-750 mt-1 space-y-0.5 pl-0.5 m-0 leading-snug">
+                  <li>Conduct quantitative research, statistical analysis, and data modeling for active consulting engagements.</li>
+                  <li>Process, structure, and explore multi-dimensional datasets to identify hidden patterns, extract insights, and formulate actionable client solutions.</li>
+                  <li>Implement Python and statistical learning frameworks for analytical modeling, validation, and rapid experimentation.</li>
+                  <li>Synthesize complex research findings into clear, data-backed recommendations and strategic executive briefs.</li>
+                </ul>
+              </div>
+
+              {/* Visible Logic Labs */}
+              <div className="print-avoid-break pt-1.5 border-t border-zinc-150">
+                <div className="flex justify-between items-baseline">
+                  <h3 className="font-display font-bold text-[9.2pt] text-zinc-950 m-0">
+                    Core Team Member
+                  </h3>
+                  <span className="font-body text-[8pt] font-bold text-zinc-700">
+                    Feb 2026 — Present
+                  </span>
+                </div>
+                <div className="text-[8pt] text-rose-700 font-semibold mt-0.5">
+                  Visible Logic Labs &bull; Virtual / Remote
+                </div>
+                <ul className="list-disc list-inside text-[8pt] text-zinc-750 mt-1 space-y-0.5 pl-0.5 m-0 leading-snug">
+                  <li>Support product marketing, outreach, and user growth initiatives to scale technical product adoption and community reach.</li>
+                  <li>Create, structure, and maintain detailed technical documentation, API specifications, and architecture workflows.</li>
+                  <li>Collaborate cross-functionally on product feature ideation, UX flows, and robust user-focused implementations.</li>
+                  <li>Formulate actionable roadmaps and drive practical technical solutions through structured execution and sprint planning.</li>
+                </ul>
+              </div>
+            </div>
+          </section>
+
+          {/* ──────── TECHNICAL & ANALYTICAL SKILLS ──────── */}
+          <section className="print-cv-section mb-1 print-avoid-break">
+            <h2 className="print-heading font-display font-bold text-[10pt] text-zinc-950 uppercase tracking-wider pb-0.5 mb-1.5 border-b border-zinc-300 flex items-center justify-between">
+              <span>Technical &amp; Analytical Competencies</span>
+              <span className="font-body text-[7.5pt] font-normal text-zinc-500 uppercase tracking-normal">Categorized Taxonomy</span>
+            </h2>
+
+            <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-[8pt]">
+              <div>
+                <span className="font-bold text-zinc-900">Programming &amp; Frameworks:</span>{' '}
+                <span className="text-zinc-700">Python, SQL, C++, TypeScript, JavaScript, PyTorch, NumPy, SciPy, Git, Linux</span>
+              </div>
+
+              <div>
+                <span className="font-bold text-zinc-900">Data Science &amp; Pipelines:</span>{' '}
+                <span className="text-zinc-700">Data Analytics, Data Extraction, Data Cleaning, Data Engineering, Annotation, Manipulation, Statistical Modeling</span>
+              </div>
+
+              <div>
+                <span className="font-bold text-zinc-900">Web &amp; Systems Engineering:</span>{' '}
+                <span className="text-zinc-700">Full-Stack Web Dev, UI &amp; UX Design, Responsive Layouts, REST APIs, WebGL, Performance Optimization</span>
+              </div>
+
+              <div>
+                <span className="font-bold text-zinc-900">Professional Competencies:</span>{' '}
+                <span className="text-zinc-700">Problem Solving, Technical Writing, Scientific Documentation, Creative Writing, English (Written &amp; Spoken)</span>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        {/* Page 1 Running Footer */}
+        <div className="pt-2 border-t border-zinc-200 flex justify-between items-center text-[7.2pt] text-zinc-500 font-body">
+          <span>SHUBHAM SHARMA &bull; Curriculum Vitae</span>
+          <span>Page 1 of 2</span>
         </div>
       </section>
 
-      {/* ═════════════════ DOCUMENT FOOTER ═════════════════ */}
-      <footer className="print-cv-footer pt-2 mt-4 border-t border-zinc-200 flex justify-between items-center text-[7.5pt] text-zinc-500 font-body">
+      {/* ═════════════════════════════════════════════════════════════
+          PAGE 2: FEATURED PROJECTS, EXTRACURRICULAR, AWARDS & FOOTER
+          ═════════════════════════════════════════════════════════════ */}
+      <section className="print-page print-page-2 print-break-before-page flex flex-col justify-between pt-1">
         <div>
-          <span className="font-semibold text-zinc-700">SHUBHAM SHARMA</span> &bull; Curriculum Vitae &bull; Built with Nodefolio
+          {/* Running Mini-Header for Page 2 */}
+          <div className="flex justify-between items-baseline pb-1 mb-2 border-b border-zinc-300 text-[8pt] text-zinc-600">
+            <span className="font-display font-bold text-zinc-900 uppercase tracking-wide">
+              {name} &bull; Curriculum Vitae
+            </span>
+            <span>AI &amp; Data Science &bull; IIT Jodhpur</span>
+          </div>
+
+          {/* ──────── FEATURED PROJECTS & ENGINEERING ──────── */}
+          <section className="print-cv-section mb-3">
+            <h2 className="print-heading font-display font-bold text-[10pt] text-zinc-950 uppercase tracking-wider pb-0.5 mb-2 border-b border-zinc-300 flex items-center justify-between">
+              <span>Key Projects &amp; Computational Systems</span>
+              <span className="font-body text-[7.5pt] font-normal text-zinc-500 uppercase tracking-normal">Engineering &amp; Research</span>
+            </h2>
+
+            <div className="space-y-2.5">
+              {/* Nirogshaala */}
+              <div className="print-avoid-break">
+                <div className="flex justify-between items-baseline">
+                  <div className="flex items-baseline gap-2">
+                    <h3 className="font-display font-bold text-[9.2pt] text-zinc-950 m-0">
+                      Full-Stack Consultation Website (Nirogshaala)
+                    </h3>
+                    <span className="text-[7.8pt] text-rose-700 font-semibold">
+                      [Production Web Architecture]
+                    </span>
+                  </div>
+                  <span className="font-body text-[8pt] font-bold text-zinc-700">
+                    Apr 2026 — Sep 2026
+                  </span>
+                </div>
+                <div className="text-[7.8pt] text-zinc-600 mt-0.5">
+                  <span className="font-bold text-zinc-800">Stack:</span> React, Next.js, TypeScript, Tailwind CSS, Responsive UI/UX Architecture, RESTful API
+                </div>
+                <p className="text-[8pt] text-zinc-700 leading-snug mt-1 m-0">
+                  Architected and engineered the end-to-end digital consultation web platform for Nirogshaala, delivering a clean, highly accessible user experience.
+                </p>
+                <ul className="list-disc list-inside text-[8pt] text-zinc-750 mt-0.5 space-y-0.5 pl-0.5 m-0 leading-snug">
+                  <li>Engineered responsive, cross-device layouts for mobile, tablet, and desktop with seamless component states.</li>
+                  <li>Structured intuitive navigation funnels and consultation scheduling workflows to maximize user access.</li>
+                  <li>Focused on high-performance frontend optimization, clean styling hierarchies, and consistent visual branding.</li>
+                </ul>
+              </div>
+
+              {/* Latent Graph Visualizer */}
+              <div className="print-avoid-break pt-1.5 border-t border-zinc-150">
+                <div className="flex justify-between items-baseline">
+                  <div className="flex items-baseline gap-2">
+                    <h3 className="font-display font-bold text-[9.2pt] text-zinc-950 m-0">
+                      Latent Graph Visualizer &amp; Manifold Explorer
+                    </h3>
+                    <span className="text-[7.8pt] text-rose-700 font-semibold">
+                      [High-Dimensional Geometry]
+                    </span>
+                  </div>
+                  <span className="font-body text-[8pt] font-bold text-zinc-700">
+                    2025 — Present
+                  </span>
+                </div>
+                <div className="text-[7.8pt] text-zinc-600 mt-0.5">
+                  <span className="font-bold text-zinc-800">Stack:</span> PyTorch, WebGL / Canvas, UMAP / t-SNE, High-Dimensional Embeddings, TypeScript
+                </div>
+                <p className="text-[8pt] text-zinc-700 leading-snug mt-1 m-0">
+                  Engineered an interactive computational workspace projecting 512-dimensional neural latent spaces into continuous topological clusters and Riemannian manifolds.
+                </p>
+                <ul className="list-disc list-inside text-[8pt] text-zinc-750 mt-0.5 space-y-0.5 pl-0.5 m-0 leading-snug">
+                  <li>Implemented real-time 3D coordinate orbit traversal rendering at a constant 60 FPS using hardware-accelerated WebGL.</li>
+                  <li>Evaluated non-linear dimensionality reduction projections (UMAP and t-SNE) against geodesic baselines to avoid semantic collapse.</li>
+                </ul>
+              </div>
+
+              {/* First-Principles Autograd Engine */}
+              <div className="print-avoid-break pt-1.5 border-t border-zinc-150">
+                <div className="flex justify-between items-baseline">
+                  <div className="flex items-baseline gap-2">
+                    <h3 className="font-display font-bold text-[9.2pt] text-zinc-950 m-0">
+                      First-Principles Autograd Engine &amp; Reverse-Mode Tape
+                    </h3>
+                    <span className="text-[7.8pt] text-rose-700 font-semibold">
+                      [Computational Graphs]
+                    </span>
+                  </div>
+                  <span className="font-body text-[8pt] font-bold text-zinc-700">
+                    2023 — 2024
+                  </span>
+                </div>
+                <div className="text-[7.8pt] text-zinc-600 mt-0.5">
+                  <span className="font-bold text-zinc-800">Stack:</span> Python, C++, DAG Topological Sort, Reverse-Mode Autodiff, Memory Profiling
+                </div>
+                <p className="text-[8pt] text-zinc-700 leading-snug mt-1 m-0">
+                  Constructed a scalar and multi-dimensional tensor automatic differentiation runtime from scratch with dynamic DAG tape recording and C++ backend routines.
+                </p>
+                <ul className="list-disc list-inside text-[8pt] text-zinc-750 mt-0.5 space-y-0.5 pl-0.5 m-0 leading-snug">
+                  <li>Built reverse-mode derivative propagation using topological graph evaluation and zero-copy tensor caching patterns.</li>
+                </ul>
+              </div>
+            </div>
+          </section>
+
+          {/* ──────── EXTRA-CURRICULAR & INNOVATION ──────── */}
+          <section className="print-cv-section mb-3 print-avoid-break">
+            <h2 className="print-heading font-display font-bold text-[10pt] text-zinc-950 uppercase tracking-wider pb-0.5 mb-1.5 border-b border-zinc-300 flex items-center justify-between">
+              <span>Extracurricular Activities &amp; Applied Innovation</span>
+              <span className="font-body text-[7.5pt] font-normal text-zinc-500 uppercase tracking-normal">Engineering Initiatives</span>
+            </h2>
+
+            <div className="p-2 bg-zinc-50 border border-zinc-200 rounded">
+              <div className="flex justify-between items-baseline">
+                <h3 className="font-display font-bold text-[8.8pt] text-zinc-900 m-0">
+                  Core Team Member &bull; Technical Startup on EV Braking Efficiency
+                </h3>
+                <span className="text-[7.8pt] font-bold text-rose-700">IIT Jodhpur</span>
+              </div>
+              <p className="text-[8pt] text-zinc-700 leading-snug mt-1 m-0">
+                Played a key role as a Core Team Member in an engineering startup initiative at IIT Jodhpur focused on improving electric vehicle braking efficiency. Investigated an innovative thermodynamic approach recovering kinetic heat generated through friction during braking and converting it into usable electrical energy, with the objective of improving overall powertrain energy efficiency and extending EV driving range.
+              </p>
+            </div>
+          </section>
+
+          {/* ──────── HONORS, HACKATHONS & ADDITIONAL HIGHLIGHTS ──────── */}
+          <section className="print-cv-section mb-2 print-avoid-break">
+            <h2 className="print-heading font-display font-bold text-[10pt] text-zinc-950 uppercase tracking-wider pb-0.5 mb-1.5 border-b border-zinc-300 flex items-center justify-between">
+              <span>Honors, Hackathons &amp; Additional Highlights</span>
+              <span className="font-body text-[7.5pt] font-normal text-zinc-500 uppercase tracking-normal">Achievements</span>
+            </h2>
+
+            <div className="grid grid-cols-3 gap-2 text-[8pt]">
+              <div className="p-2 border border-zinc-200 rounded bg-white">
+                <div className="font-display font-bold text-rose-700 text-[8.2pt]">
+                  10+ Hackathons
+                </div>
+                <div className="text-zinc-600 text-[7.6pt] mt-0.5 leading-snug">
+                  Participated in 10+ competitive hackathons; built and shipped independent prototypes in AI, Data Science &amp; Web development.
+                </div>
+              </div>
+
+              <div className="p-2 border border-zinc-200 rounded bg-white">
+                <div className="font-display font-bold text-rose-700 text-[8.2pt]">
+                  Academic Student of the Year
+                </div>
+                <div className="text-zinc-600 text-[7.6pt] mt-0.5 leading-snug">
+                  Awarded Academic Student of the Year in high school for outstanding academic performance, leadership, and scholastic excellence.
+                </div>
+              </div>
+
+              <div className="p-2 border border-zinc-200 rounded bg-white">
+                <div className="font-display font-bold text-rose-700 text-[8.2pt]">
+                  Global Peer Collaboration
+                </div>
+                <div className="text-zinc-600 text-[7.6pt] mt-0.5 leading-snug">
+                  Built connections with international peers and developers through distributed research projects, hackathons, and open collaboration.
+                </div>
+              </div>
+            </div>
+          </section>
         </div>
-        <div>
-          Verified Document &bull; {portfolioUrl} &bull; Generated {new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
-        </div>
-      </footer>
+
+        {/* ──────── DOCUMENT FOOTER ──────── */}
+        <footer className="print-cv-footer pt-2 border-t border-zinc-200 flex justify-between items-center text-[7.2pt] text-zinc-500 font-body">
+          <div>
+            <span className="font-bold text-zinc-800">SHUBHAM SHARMA</span> &bull; Verified Curriculum Vitae &bull; Built with Nodefolio
+          </div>
+          <div>
+            {portfolioUrl} &bull; Page 2 of 2
+          </div>
+        </footer>
+      </section>
     </article>
   );
 };

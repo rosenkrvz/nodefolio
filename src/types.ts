@@ -141,6 +141,7 @@ export interface NodeData {
     location: string;
     status: string;
     email: string;
+    phone?: string;
     github: string;
     linkedin: string;
     stats: { label: string; value: string }[];
