@@ -306,7 +306,7 @@ export default function App() {
   const [activeConnectionId, setActiveConnectionId] = useState<string | null>(null);
 
   // Canvas pan & zoom transform (centered at 57% scale by default, matching canonical configuration)
-  const [transform, setTransform] = useState<CanvasTransform>({ x: 0, y: 0, scale: 0.57 });
+  const [transform, setTransform] = useState<CanvasTransform>({ x: 0, y: -139, scale: 0.57 });
   const transformRef = useRef(transform);
   transformRef.current = transform;
   const isPanningRef = useRef(false);
@@ -1607,20 +1607,21 @@ export default function App() {
     }
 
     // Precise visual workspace centering:
-    // Top row (y=380) sits comfortably below the navbar at usable.topInset + 18px (matching reference screenshot)
-    // while keeping Academic & Foundation comfortably framed above the bottom status bar.
+    // Top row (y=380) sits snug and elevated right below the navbar (78px from screen top, 14px buffer),
+    // eliminating empty dead space on North while leaving generous breathing room above South status bar.
     let x = Math.round(usable.usableCenterX - graphCenterX * targetScale);
-    let y = Math.round(usable.topInset + 18 - minY * targetScale);
+    const targetTopOnScreen = isMobileViewport ? usable.topInset + 10 : 78;
+    let y = Math.round(targetTopOnScreen - 380 * targetScale);
 
-    // If bottom edge exceeds available viewport height, adjust gracefully
-    const actualBottom = y + maxY * targetScale;
-    if (actualBottom > vh - usable.bottomInset) {
-      y -= Math.round(actualBottom - (vh - usable.bottomInset));
+    // If bottom edge exceeds available viewport height on compact screens, adjust gracefully
+    const maxBottom = y + maxY * targetScale;
+    if (maxBottom > vh - usable.bottomInset) {
+      y -= Math.round(maxBottom - (vh - usable.bottomInset));
     }
-    // Hard floor guard: never allow top edge to clip into navbar
-    const actualTop = y + minY * targetScale;
-    if (actualTop < usable.topInset) {
-      y += Math.round(usable.topInset - actualTop);
+    // Hard floor guard: never allow top edge to clip into navbar (64px + 6px buffer = 70px)
+    const minTop = y + 380 * targetScale;
+    if (minTop < 70) {
+      y += Math.round(70 - minTop);
     }
 
     // Bulletproof 4-Directional Boundary Enforcement:

@@ -72,7 +72,7 @@ export const INITIAL_NODES: NodeData[] = [
     subtitle: 'Mathematics & Computation',
     category: 'certificates',
     x: 560,
-    y: 840,
+    y: 800,
     width: 340,
     inputs: [
       { id: 'pin-in-cred', label: 'mathematical.core', color: 'crimson', type: 'input', nodeId: 'node-credentials' },

@@ -19,7 +19,7 @@ export const NETWORK_CORE_COORDINATES: Record<string, { x: number; y: number; wi
   'node-profile': { x: 100, y: 380, width: 340 },
 
   // Column 2, Row 2: Academic & Theoretical Foundation (under Generative Architectures)
-  'node-credentials': { x: 560, y: 840, width: 340 },
+  'node-credentials': { x: 560, y: 800, width: 340 },
 
   // Column 2, Row 1: Generative Architectures
   'node-models': { x: 560, y: 380, width: 340 },
