@@ -37,6 +37,8 @@ import {
   ChevronUp,
   ChevronLeft,
   ChevronRight,
+  Check,
+  Copy,
 } from '../icons';
 import { useSound } from '../../lib/sound/useSound';
 
@@ -457,7 +459,293 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
     };
   }, [showLayersMenu]);
 
-  // ── Professional Blender Keyboard Shortcuts (N, T, Z, Space, R, 1, 3, 7, Esc) ──
+  // Toggle individual visual layer (grid, trajectories, clusters, geometry, annotations)
+  const handleToggleLayer = useCallback((layer: LayerType) => {
+    playSound('click');
+    setActiveLayers((prev) => {
+      const nextState = !prev[layer];
+      if (layer === 'annotations') {
+        setShowAnnotations(nextState);
+      } else {
+        activeArtifactRef.current?.toggleLayer?.(layer, nextState);
+      }
+      return { ...prev, [layer]: nextState };
+    });
+  }, [playSound]);
+
+  // ── Blender Top Header Menus & Interaction Mode Architecture ───────────────
+  type HeaderMenuType = 'editor' | 'mode' | 'view' | 'select' | 'add' | 'mesh';
+  const [openHeaderMenu, setOpenHeaderMenu] = useState<HeaderMenuType | null>(null);
+  const [viewportMode, setViewportMode] = useState<'object' | 'edit' | 'curvature' | 'turntable'>('object');
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const headerMenusRef = useRef<HTMLDivElement>(null);
+  const customProbesRef = useRef<THREE.Group[]>([]);
+
+  const showToast = useCallback((msg: string) => {
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    setToastMessage(msg);
+    toastTimerRef.current = setTimeout(() => {
+      setToastMessage(null);
+    }, 2800);
+  }, []);
+
+  const toggleHeaderMenu = (menu: HeaderMenuType) => {
+    playSound('click');
+    setOpenHeaderMenu((prev) => (prev === menu ? null : menu));
+  };
+
+  const handleMenuHover = (menu: HeaderMenuType) => {
+    if (openHeaderMenu && openHeaderMenu !== menu) {
+      setOpenHeaderMenu(menu);
+    }
+  };
+
+  // Close menus on click outside
+  useEffect(() => {
+    if (!openHeaderMenu) return;
+
+    const handlePointerDownOutside = (e: PointerEvent) => {
+      const target = e.target as Node;
+      if (headerMenusRef.current && !headerMenusRef.current.contains(target)) {
+        setOpenHeaderMenu(null);
+      }
+    };
+
+    window.addEventListener('pointerdown', handlePointerDownOutside);
+    return () => {
+      window.removeEventListener('pointerdown', handlePointerDownOutside);
+    };
+  }, [openHeaderMenu]);
+
+  // Smooth camera focus to specific world coordinate
+  const handleFocusCamera = useCallback((targetWorldPos: THREE.Vector3) => {
+    const camera = cameraRef.current;
+    const controls = controlsRef.current;
+    if (!camera || !controls) return;
+
+    const offsetDir = camera.position.clone().sub(controls.target).normalize();
+    const targetDistance = 4.8;
+    const newCameraPos = targetWorldPos.clone().add(offsetDir.multiplyScalar(targetDistance));
+
+    cameraFocusTarget.current = {
+      active: true,
+      startPos: camera.position.clone(),
+      endPos: newCameraPos,
+      startTarget: controls.target.clone(),
+      endTarget: targetWorldPos.clone(),
+      progress: 0,
+    };
+  }, []);
+
+  // Reset view to dynamic optimal framing
+  const handleResetView = useCallback(() => {
+    playSound('secondaryClick');
+    setSelectedItem(null);
+    activeArtifactRef.current?.onSelectObject?.(null);
+
+    const camera = cameraRef.current;
+    const controls = controlsRef.current;
+    const artifact = activeArtifactRef.current;
+    if (!camera || !controls || !artifact) return;
+
+    const vw = containerRef.current?.clientWidth || window.innerWidth;
+    const vh = containerRef.current?.clientHeight || window.innerHeight;
+    const isMob = vw < 768;
+
+    const framing = computeOptimalFraming(artifact.group, camera, vw, vh, isMob);
+    const endPos = framing ? framing.cameraPos : new THREE.Vector3(...artifact.defaultCameraPosition);
+    const endTarget = framing ? framing.target : new THREE.Vector3(...artifact.defaultTarget);
+
+    cameraFocusTarget.current = {
+      active: true,
+      startPos: camera.position.clone(),
+      endPos,
+      startTarget: controls.target.clone(),
+      endTarget,
+      progress: 0,
+    };
+  }, [playSound]);
+
+  // Mode switcher handler
+  const handleSelectViewportMode = useCallback((mode: 'object' | 'edit' | 'curvature' | 'turntable') => {
+    playSound('click');
+    setViewportMode(mode);
+    setOpenHeaderMenu(null);
+    if (mode === 'edit') {
+      handleSetShadingMode('wireframe');
+      setIsAutoRotate(false);
+      showToast('Edit Mode (Wireframe Lattice)');
+    } else if (mode === 'object') {
+      handleSetShadingMode('rendered');
+      setIsAutoRotate(false);
+      showToast('Object Mode (PBR Material)');
+    } else if (mode === 'curvature') {
+      handleSetShadingMode('rendered');
+      activeLayers.trajectories || handleToggleLayer('trajectories');
+      activeLayers.clusters || handleToggleLayer('clusters');
+      setIsAutoRotate(false);
+      showToast('Curvature Mode (Gradient Topology)');
+    } else if (mode === 'turntable') {
+      setIsAutoRotate(true);
+      showToast('Turntable Mode (360° Kinetic Inspection)');
+    }
+  }, [activeLayers.clusters, activeLayers.trajectories, handleSetShadingMode, handleToggleLayer, playSound, showToast]);
+
+  // Add 3D Latent Probe Marker
+  const handleAddProbe = useCallback(() => {
+    playSound('click');
+    const scene = sceneRef.current;
+    const controls = controlsRef.current;
+    if (!scene) return;
+
+    const probeGroup = new THREE.Group();
+    const probeCount = customProbesRef.current.length;
+    const center = controls ? controls.target.clone() : new THREE.Vector3(0, 0, 0);
+    const angle = probeCount * 1.35;
+    const radius = 2.2 + probeCount * 0.45;
+    const posX = center.x + Math.sin(angle) * radius;
+    const posY = center.y + 0.6;
+    const posZ = center.z + Math.cos(angle) * radius;
+
+    probeGroup.position.set(posX, posY, posZ);
+
+    const sphereGeo = new THREE.SphereGeometry(0.2, 16, 16);
+    const sphereMat = new THREE.MeshBasicMaterial({ color: 0xf43f5e });
+    const sphere = new THREE.Mesh(sphereGeo, sphereMat);
+    probeGroup.add(sphere);
+
+    const ringGeo = new THREE.RingGeometry(0.28, 0.36, 24);
+    const ringMat = new THREE.MeshBasicMaterial({ color: 0xfb7185, side: THREE.DoubleSide });
+    const ring = new THREE.Mesh(ringGeo, ringMat);
+    ring.rotation.x = Math.PI / 2;
+    probeGroup.add(ring);
+
+    const lineGeo = new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3(0, 0, 0),
+      new THREE.Vector3(0, -3.2, 0),
+    ]);
+    const lineMat = new THREE.LineDashedMaterial({
+      color: 0xf43f5e,
+      dashSize: 0.15,
+      gapSize: 0.1,
+      transparent: true,
+      opacity: 0.75,
+    });
+    const line = new THREE.Line(lineGeo, lineMat);
+    line.computeLineDistances();
+    probeGroup.add(line);
+
+    scene.add(probeGroup);
+    customProbesRef.current.push(probeGroup);
+
+    const probeItem: InspectableItem = {
+      id: `custom-probe-${probeCount + 1}`,
+      name: `Latent Probe #${probeCount + 1}`,
+      role: 'User-Injected Spatial Coordinate Beacon',
+      dimension: `Spatial: [${posX.toFixed(2)}, ${posY.toFixed(2)}, ${posZ.toFixed(2)}]`,
+      description: `Interactive probe marker injected into the manifold coordinate space at world position [${posX.toFixed(2)}, ${posY.toFixed(2)}, ${posZ.toFixed(2)}].`,
+      worldPosition: new THREE.Vector3(posX, posY, posZ),
+      properties: {
+        'PROBE ID': `#0${probeCount + 1}`,
+        'COORD X': `${posX.toFixed(3)} m`,
+        'COORD Y': `${posY.toFixed(3)} m`,
+        'COORD Z': `${posZ.toFixed(3)} m`,
+        'TYPE': 'SPATIAL BEACON',
+        'ORIGIN': 'MANUAL INJECTION',
+      },
+      type: 'centroid',
+    };
+    setSelectedItem(probeItem);
+    handleFocusCamera(probeItem.worldPosition);
+    showToast(`Added Latent Probe #${probeCount + 1} at [${posX.toFixed(1)}, ${posZ.toFixed(1)}]`);
+  }, [handleFocusCamera, playSound, showToast]);
+
+  // Clear all custom probes
+  const handleClearProbes = useCallback(() => {
+    playSound('click');
+    const scene = sceneRef.current;
+    if (scene) {
+      customProbesRef.current.forEach((g) => {
+        scene.remove(g);
+        g.traverse((c) => {
+          if ((c as THREE.Mesh).geometry) (c as THREE.Mesh).geometry.dispose();
+          if ((c as THREE.Mesh).material) {
+            const m = (c as THREE.Mesh).material;
+            if (Array.isArray(m)) m.forEach((mat) => mat.dispose());
+            else m.dispose();
+          }
+        });
+      });
+    }
+    customProbesRef.current = [];
+    setSelectedItem((prev) => (prev?.id.startsWith('custom-probe-') ? null : prev));
+    showToast('Cleared custom probe markers');
+  }, [playSound, showToast]);
+
+  // Select first inspectable node
+  const handleSelectFirstComponent = useCallback(() => {
+    playSound('click');
+    const inspectables = activeArtifactRef.current?.getInspectableObjects?.() || [];
+    if (inspectables.length === 0) return;
+    const firstItem = inspectables[0].data;
+    setSelectedItem(firstItem);
+    activeArtifactRef.current?.onSelectObject?.(firstItem);
+    handleFocusCamera(firstItem.worldPosition);
+    showToast(`Selected: ${firstItem.name}`);
+  }, [handleFocusCamera, playSound, showToast]);
+
+  // Cycle next inspectable node
+  const handleCycleNextComponent = useCallback(() => {
+    playSound('click');
+    const inspectables = activeArtifactRef.current?.getInspectableObjects?.() || [];
+    if (inspectables.length === 0) return;
+
+    let nextIdx = 0;
+    if (selectedItem) {
+      const currIdx = inspectables.findIndex((i) => i.data.id === selectedItem.id);
+      nextIdx = (currIdx + 1) % inspectables.length;
+    }
+    const nextItem = inspectables[nextIdx].data;
+    setSelectedItem(nextItem);
+    activeArtifactRef.current?.onSelectObject?.(nextItem);
+    handleFocusCamera(nextItem.worldPosition);
+    showToast(`Selected: ${nextItem.name}`);
+  }, [handleFocusCamera, playSound, selectedItem, showToast]);
+
+  // Focus selected component
+  const handleFocusSelected = useCallback(() => {
+    if (selectedItem) {
+      playSound('click');
+      handleFocusCamera(selectedItem.worldPosition);
+      showToast(`Focused on ${selectedItem.name} [F]`);
+    } else {
+      handleSelectFirstComponent();
+    }
+  }, [handleFocusCamera, handleSelectFirstComponent, playSound, selectedItem, showToast]);
+
+  // Copy tensor math spec
+  const handleCopyMathSpec = useCallback(() => {
+    playSound('click');
+    const spec = `---
+Research Phase: ${currentPhaseMeta.numeral} // ${currentPhaseMeta.title}
+Chronicle ID: ${currentPhaseMeta.chronicleId}
+Topic: ${currentPhaseMeta.topic}
+Object Type: ${currentPhaseMeta.objectType}
+Backend Context: ${currentPhaseMeta.computeBackend}
+Metrics:
+${currentPhaseMeta.metricsSummary?.map((m) => `  - ${m.label}: ${m.value}`).join('\n')}
+Summary:
+${currentPhaseMeta.description}
+---`;
+    if (navigator?.clipboard?.writeText) {
+      navigator.clipboard.writeText(spec).then(() => {
+        showToast('Tensor Math Specification copied to clipboard!');
+      });
+    }
+  }, [currentPhaseMeta, playSound, showToast]);
+
+  // ── Professional Blender Keyboard Shortcuts (N, T, Z, G, Space, R, 1, 3, 7, F, Tab, Esc) ──
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
@@ -465,6 +753,15 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
       if (e.key === 'r' || e.key === 'R') {
         e.preventDefault();
         handleResetView();
+      } else if (e.key === 'f' || e.key === 'F') {
+        e.preventDefault();
+        handleFocusSelected();
+      } else if (e.key === 'Tab') {
+        e.preventDefault();
+        handleCycleNextComponent();
+      } else if (e.key === 'g' || e.key === 'G') {
+        e.preventDefault();
+        handleToggleLayer('grid');
       } else if (e.key === 'n' || e.key === 'N') {
         e.preventDefault();
         setNPanelOpen((prev) => !prev);
@@ -491,6 +788,10 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
         handleSnapAxis('y'); // Top View (Numpad 7)
       } else if (e.key === 'Escape') {
         e.preventDefault();
+        if (openHeaderMenu) {
+          setOpenHeaderMenu(null);
+          return;
+        }
         if (showLayersMenu) {
           setShowLayersMenu(false);
           return;
@@ -516,7 +817,20 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [activePhaseId, currentPhaseMeta.chronicleId, onExit, showLayersMenu, selectedItem, shadingMode]);
+  }, [
+    activePhaseId,
+    currentPhaseMeta.chronicleId,
+    handleCycleNextComponent,
+    handleFocusSelected,
+    handleResetView,
+    handleToggleLayer,
+    onExit,
+    openHeaderMenu,
+    playSound,
+    selectedItem,
+    shadingMode,
+    showLayersMenu,
+  ]);
 
   // ── Switch 3D Artifact inside the persistent WebGL Scene ───────────────────
   const switchArtifact = useCallback(
@@ -534,6 +848,10 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
         scene.remove(activeArtifactRef.current.group);
         activeArtifactRef.current.dispose();
         activeArtifactRef.current = null;
+      }
+      if (customProbesRef.current.length > 0) {
+        customProbesRef.current.forEach((g) => scene.remove(g));
+        customProbesRef.current = [];
       }
 
       setSelectedItem(null);
@@ -613,24 +931,25 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
     let width = container.clientWidth || window.innerWidth;
     let height = container.clientHeight || window.innerHeight;
 
-    // 1. Scene setup with depth fog
+    // 1. Scene setup with depth fog (composited over authentic webpage background)
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x07090e);
-    scene.fog = new THREE.FogExp2(0x07090e, 0.022);
+    scene.background = null;
+    scene.fog = new THREE.FogExp2(0x14171c, 0.015);
     sceneRef.current = scene;
 
     // 2. Camera setup
     const camera = new THREE.PerspectiveCamera(46, width / height, 0.1, 100);
     cameraRef.current = camera;
 
-    // 3. WebGL Renderer with capped DPR for crisp high-framerate rendering
+    // 3. WebGL Renderer with alpha transparency and capped DPR for high framerate
     let renderer: THREE.WebGLRenderer;
     try {
       renderer = new THREE.WebGLRenderer({
         antialias: true,
         powerPreference: 'high-performance',
-        alpha: false,
+        alpha: true,
       });
+      renderer.setClearColor(0x000000, 0);
       renderer.setSize(width, height);
       renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2.0));
       renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -930,68 +1249,6 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
     handleSelectPhase(RESEARCH_PHASES[nextIdx].id);
   };
 
-  // Smooth camera focus to specific world coordinate
-  const handleFocusCamera = (targetWorldPos: THREE.Vector3) => {
-    const camera = cameraRef.current;
-    const controls = controlsRef.current;
-    if (!camera || !controls) return;
-
-    const offsetDir = camera.position.clone().sub(controls.target).normalize();
-    const targetDistance = 4.8;
-    const newCameraPos = targetWorldPos.clone().add(offsetDir.multiplyScalar(targetDistance));
-
-    cameraFocusTarget.current = {
-      active: true,
-      startPos: camera.position.clone(),
-      endPos: newCameraPos,
-      startTarget: controls.target.clone(),
-      endTarget: targetWorldPos.clone(),
-      progress: 0,
-    };
-  };
-
-  // Reset view to dynamic optimal framing
-  const handleResetView = () => {
-    playSound('secondaryClick');
-    setSelectedItem(null);
-    activeArtifactRef.current?.onSelectObject?.(null);
-
-    const camera = cameraRef.current;
-    const controls = controlsRef.current;
-    const artifact = activeArtifactRef.current;
-    if (!camera || !controls || !artifact) return;
-
-    const vw = containerRef.current?.clientWidth || window.innerWidth;
-    const vh = containerRef.current?.clientHeight || window.innerHeight;
-    const isMob = vw < 768;
-
-    const framing = computeOptimalFraming(artifact.group, camera, vw, vh, isMob);
-    const endPos = framing ? framing.cameraPos : new THREE.Vector3(...artifact.defaultCameraPosition);
-    const endTarget = framing ? framing.target : new THREE.Vector3(...artifact.defaultTarget);
-
-    cameraFocusTarget.current = {
-      active: true,
-      startPos: camera.position.clone(),
-      endPos,
-      startTarget: controls.target.clone(),
-      endTarget,
-      progress: 0,
-    };
-  };
-
-  // Toggle individual visual layer
-  const handleToggleLayer = (layer: LayerType) => {
-    playSound('click');
-    const nextState = !activeLayers[layer];
-    setActiveLayers((prev) => ({ ...prev, [layer]: nextState }));
-
-    if (layer === 'annotations') {
-      setShowAnnotations(nextState);
-    } else {
-      activeArtifactRef.current?.toggleLayer?.(layer, nextState);
-    }
-  };
-
   const handleEntryTransitionComplete = useCallback(() => {
     setIsInitialEntryLoading(false);
     if (controlsRef.current) {
@@ -1003,24 +1260,61 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
   return (
     <div
       id="research-3d-canvas"
-      className="fixed inset-0 z-50 w-screen h-screen h-[100dvh] overflow-hidden bg-[#07090e] select-none text-zinc-100 font-body"
+      className="fixed inset-0 z-50 w-screen h-screen h-[100dvh] overflow-hidden bg-[#14171c] select-none text-zinc-100 font-body"
       style={{ touchAction: 'none' }}
     >
+      {/* ── Webpage Authentic Technical Background Atmosphere ── */}
+      <div className="absolute inset-0 w-full h-full pointer-events-none overflow-hidden z-0" aria-hidden="true">
+        {/* Authentic diagonal technical carbon pattern matching the webpage */}
+        <div className="pattern-bg w-full h-full opacity-45" />
+
+        {/* Animated drifting technical ambient bands */}
+        <div className="cube-svg opacity-35" />
+
+        {/* Crimson ambient aura glow centered behind the 3D artifact */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] sm:w-[800px] h-[360px] sm:h-[500px] max-w-full bg-rose-900/20 rounded-full blur-[110px] pointer-events-none" />
+
+        {/* Subtle secondary crimson ambient glow */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_75%_25%,rgba(225,29,72,0.12),transparent_55%)] pointer-events-none" />
+
+        {/* ── Webpage Coordinate & Architectural Grid Layer (Toggleable) ── */}
+        <div
+          className={`absolute inset-0 pointer-events-none transition-opacity duration-300 ${
+            activeLayers.grid ? 'opacity-100' : 'opacity-0'
+          }`}
+        >
+          {/* Subtle coordinate dot matrix matching webpage */}
+          <div className="absolute inset-0 bg-canvas-dots-overlay opacity-75" />
+
+          {/* Fine architectural line grid matching webpage aesthetic */}
+          <div
+            className="absolute inset-0 opacity-25"
+            style={{
+              backgroundImage: `
+                linear-gradient(to right, rgba(255, 255, 255, 0.08) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(255, 255, 255, 0.08) 1px, transparent 1px)
+              `,
+              backgroundSize: '48px 48px',
+            }}
+          />
+        </div>
+
+        {/* Technical Perimeter Vignette: softens outer edges for seamless Blender UI integration */}
+        <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(ellipse_at_center,transparent_45%,rgba(14,17,22,0.78)_100%)]" />
+      </div>
+
       {/* 3D WebGL Canvas Viewport */}
       <div
         ref={containerRef}
-        className={`absolute top-0 left-0 bottom-0 cursor-grab active:cursor-grabbing transition-[right] duration-200 ${
+        className={`absolute top-0 left-0 bottom-0 cursor-grab active:cursor-grabbing transition-[right] duration-200 z-10 ${
           nPanelOpen ? 'right-0 md:right-80' : 'right-0'
         }`}
         style={{ touchAction: 'none' }}
       />
 
-        {/* Ambient Vignette & Spatial Atmosphere */}
-        <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(ellipse_at_center,transparent_40%,rgba(7,9,14,0.78)_100%)]" />
-
         {/* ── Technical Minimal Loader (for fast in-canvas phase transitions) ── */}
         {!isInitialEntryLoading && isLoadingGeometry && (
-          <div className="absolute inset-0 z-40 flex items-center justify-center bg-[#07090e]/75 backdrop-blur-md transition-opacity duration-200 pointer-events-none">
+          <div className="absolute inset-0 z-40 flex items-center justify-center bg-[#14171c]/80 backdrop-blur-md transition-opacity duration-200 pointer-events-none">
             <div className="px-5 py-4 rounded-xl bg-black/85 border border-white/10 shadow-2xl flex flex-col items-center gap-2 max-w-xs text-center">
               <span className="font-tech text-[10px] tracking-[0.25em] text-rose-400 font-semibold uppercase animate-pulse">
                 INITIALIZING RESEARCH ARTIFACT // PHASE {currentPhaseMeta.numeral}
@@ -1077,34 +1371,631 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
         style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px))' }}
       >
         {/* Left Cluster: Editor Type, Mode Selector, Menus & Breadcrumb */}
-        <div className="flex items-center gap-1.5 min-w-0">
-          {/* Blender 3D Viewport Icon (Signature Orange Mesh Cube) */}
-          <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-[2px] bg-[#2a2a2a] border border-[#3e3e3e] text-[#e87d0d]">
-            <BlenderBoxIcon className="w-3.5 h-3.5" />
-            <span className="font-bold text-[10px] text-zinc-200 hidden sm:inline">3D Viewport</span>
+        <div ref={headerMenusRef} className="flex items-center gap-1.5 min-w-0">
+          {/* 1. Blender 3D Viewport Icon & Editor Type Dropdown */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => toggleHeaderMenu('editor')}
+              onMouseEnter={() => handleMenuHover('editor')}
+              className={`flex items-center gap-1 px-1.5 py-0.5 rounded-[2px] border text-[#e87d0d] cursor-pointer transition-colors ${
+                openHeaderMenu === 'editor'
+                  ? 'bg-[#383838] border-[#555]'
+                  : 'bg-[#2a2a2a] hover:bg-[#323232] border-[#3e3e3e]'
+              }`}
+              title="Editor Type Switcher"
+            >
+              <BlenderBoxIcon className="w-3.5 h-3.5" />
+              <span className="font-bold text-[10px] text-zinc-200 hidden sm:inline">3D Viewport</span>
+              <ChevronDown className="w-2.5 h-2.5 text-zinc-400" />
+            </button>
+
+            {openHeaderMenu === 'editor' && (
+              <div className="absolute left-0 top-full mt-1 w-56 p-1.5 rounded-[2px] bg-[#222222] border border-[#3e3e3e] shadow-2xl z-50 text-xs font-mono space-y-0.5 animate-in fade-in duration-100">
+                <div className="px-2 py-1 text-[9px] font-bold text-zinc-500 uppercase tracking-wider">
+                  Editor Mode
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleResetView();
+                    setOpenHeaderMenu(null);
+                    showToast('3D Viewport Active');
+                  }}
+                  className="w-full flex items-center justify-between px-2 py-1 rounded-[2px] hover:bg-[#383838] text-white cursor-pointer text-left"
+                >
+                  <span className="flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#e87d0d]" />
+                    <span>3D Viewport</span>
+                  </span>
+                  <span className="text-[9px] text-zinc-400">Main</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setNPanelOpen(true);
+                    setActiveNTab('item');
+                    setOpenRollouts((prev) => ({ ...prev, topology: true }));
+                    setOpenHeaderMenu(null);
+                    playSound('click');
+                    showToast('Opened Topology & Math Inspector');
+                  }}
+                  className="w-full flex items-center justify-between px-2 py-1 rounded-[2px] hover:bg-[#383838] text-zinc-300 hover:text-white cursor-pointer text-left"
+                >
+                  <span className="flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+                    <span>Topology & Math</span>
+                  </span>
+                  <span className="text-[9px] text-zinc-400">N-Panel</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setNPanelOpen(true);
+                    setActiveNTab('item');
+                    setOpenRollouts((prev) => ({ ...prev, stats: true }));
+                    setOpenHeaderMenu(null);
+                    playSound('click');
+                    showToast('Opened Scene Statistics & Telemetry');
+                  }}
+                  className="w-full flex items-center justify-between px-2 py-1 rounded-[2px] hover:bg-[#383838] text-zinc-300 hover:text-white cursor-pointer text-left"
+                >
+                  <span className="flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                    <span>Scene Telemetry</span>
+                  </span>
+                  <span className="text-[9px] text-zinc-400">Stats</span>
+                </button>
+
+                <div className="h-px bg-[#353535] my-1" />
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleToggleFullscreen();
+                    setOpenHeaderMenu(null);
+                  }}
+                  className="w-full flex items-center justify-between px-2 py-1 rounded-[2px] hover:bg-[#383838] text-zinc-300 hover:text-white cursor-pointer text-left"
+                >
+                  <span>Toggle Cinema Fullscreen</span>
+                  <span className="text-[9px] text-zinc-500 font-mono">F11</span>
+                </button>
+              </div>
+            )}
           </div>
 
-          {/* Mode Pill Dropdown: [ Object Mode ▾ ] */}
-          <div className="flex items-center gap-1 px-2 py-0.5 rounded-[2px] bg-[#282828] hover:bg-[#323232] border border-[#3e3e3e] text-zinc-200 cursor-pointer">
-            <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shadow-[0_0_4px_#f43f5e]" />
-            <span className="font-semibold text-[10px] uppercase">Object Mode</span>
-            <ChevronDown className="w-3 h-3 text-zinc-400" />
+          {/* 2. Interaction Mode Dropdown: [ • OBJECT MODE ▾ ] */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => toggleHeaderMenu('mode')}
+              onMouseEnter={() => handleMenuHover('mode')}
+              className={`flex items-center gap-1.5 px-2 py-0.5 rounded-[2px] border text-zinc-200 cursor-pointer transition-colors ${
+                openHeaderMenu === 'mode'
+                  ? 'bg-[#383838] border-[#555]'
+                  : 'bg-[#282828] hover:bg-[#323232] border-[#3e3e3e]'
+              }`}
+              title="Interaction Mode Selector"
+            >
+              <span
+                className={`w-1.5 h-1.5 rounded-full ${
+                  viewportMode === 'object'
+                    ? 'bg-rose-500 shadow-[0_0_4px_#f43f5e]'
+                    : viewportMode === 'edit'
+                    ? 'bg-amber-400 shadow-[0_0_4px_#fbbf24]'
+                    : viewportMode === 'curvature'
+                    ? 'bg-sky-400 shadow-[0_0_4px_#38bdf8]'
+                    : 'bg-emerald-400 shadow-[0_0_4px_#34d399]'
+                }`}
+              />
+              <span className="font-semibold text-[10px] uppercase">
+                {viewportMode === 'object'
+                  ? 'Object Mode'
+                  : viewportMode === 'edit'
+                  ? 'Edit Mode'
+                  : viewportMode === 'curvature'
+                  ? 'Curvature'
+                  : 'Turntable'}
+              </span>
+              <ChevronDown className="w-3 h-3 text-zinc-400" />
+            </button>
+
+            {openHeaderMenu === 'mode' && (
+              <div className="absolute left-0 top-full mt-1 w-64 p-1.5 rounded-[2px] bg-[#222222] border border-[#3e3e3e] shadow-2xl z-50 text-xs font-mono space-y-0.5 animate-in fade-in duration-100">
+                <div className="px-2 py-1 text-[9px] font-bold text-zinc-500 uppercase tracking-wider">
+                  Interaction Modes
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => handleSelectViewportMode('object')}
+                  className={`w-full flex items-center justify-between px-2 py-1.5 rounded-[2px] cursor-pointer text-left transition-colors ${
+                    viewportMode === 'object' ? 'bg-rose-950/70 text-rose-300 font-bold' : 'hover:bg-[#383838] text-zinc-300 hover:text-white'
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-rose-500 shadow-[0_0_6px_#f43f5e]" />
+                    <div>
+                      <span className="block text-[11px]">Object Mode</span>
+                      <span className="block text-[9px] text-zinc-500 font-normal">Select & inspect 3D components</span>
+                    </div>
+                  </div>
+                  <span className="text-[9px] text-zinc-500">Default</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleSelectViewportMode('edit')}
+                  className={`w-full flex items-center justify-between px-2 py-1.5 rounded-[2px] cursor-pointer text-left transition-colors ${
+                    viewportMode === 'edit' ? 'bg-amber-950/70 text-amber-300 font-bold' : 'hover:bg-[#383838] text-zinc-300 hover:text-white'
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-amber-400 shadow-[0_0_6px_#fbbf24]" />
+                    <div>
+                      <span className="block text-[11px]">Edit Mode (Lattice)</span>
+                      <span className="block text-[9px] text-zinc-500 font-normal">Wireframe polygon & vertex inspection</span>
+                    </div>
+                  </div>
+                  <span className="text-[9px] text-zinc-500">Z</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleSelectViewportMode('curvature')}
+                  className={`w-full flex items-center justify-between px-2 py-1.5 rounded-[2px] cursor-pointer text-left transition-colors ${
+                    viewportMode === 'curvature' ? 'bg-sky-950/70 text-sky-300 font-bold' : 'hover:bg-[#383838] text-zinc-300 hover:text-white'
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-sky-400 shadow-[0_0_6px_#38bdf8]" />
+                    <div>
+                      <span className="block text-[11px]">Curvature Heatmap</span>
+                      <span className="block text-[9px] text-zinc-500 font-normal">Emphasize gradient flows & topology</span>
+                    </div>
+                  </div>
+                  <span className="text-[9px] text-zinc-500">Grad</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleSelectViewportMode('turntable')}
+                  className={`w-full flex items-center justify-between px-2 py-1.5 rounded-[2px] cursor-pointer text-left transition-colors ${
+                    viewportMode === 'turntable' ? 'bg-emerald-950/70 text-emerald-300 font-bold' : 'hover:bg-[#383838] text-zinc-300 hover:text-white'
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_6px_#34d399]" />
+                    <div>
+                      <span className="block text-[11px]">Turntable Showcase</span>
+                      <span className="block text-[9px] text-zinc-500 font-normal">Kinetic 360° auto-rotation</span>
+                    </div>
+                  </div>
+                  <span className="text-[9px] text-zinc-500">Space</span>
+                </button>
+              </div>
+            )}
           </div>
 
-          {/* Blender Editor Menus (Desktop) */}
+          {/* 3. Blender Editor Menus (View, Select, Add, Mesh) */}
           <div className="hidden lg:flex items-center gap-0.5 text-zinc-400 text-[11px]">
-            <button type="button" onClick={handleResetView} className="px-1.5 py-0.5 rounded-[2px] hover:bg-white/[0.08] hover:text-white cursor-pointer transition-colors">
-              View
-            </button>
-            <button type="button" onClick={() => setSelectedItem(null)} className="px-1.5 py-0.5 rounded-[2px] hover:bg-white/[0.08] hover:text-white cursor-pointer transition-colors">
-              Select
-            </button>
-            <button type="button" onClick={() => handleToggleLayer('grid')} className="px-1.5 py-0.5 rounded-[2px] hover:bg-white/[0.08] hover:text-white cursor-pointer transition-colors">
-              Add
-            </button>
-            <button type="button" onClick={() => handleSetShadingMode(shadingMode === 'wireframe' ? 'rendered' : 'wireframe')} className="px-1.5 py-0.5 rounded-[2px] hover:bg-white/[0.08] hover:text-white cursor-pointer transition-colors">
-              Mesh
-            </button>
+            {/* View Menu */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => toggleHeaderMenu('view')}
+                onMouseEnter={() => handleMenuHover('view')}
+                className={`px-1.5 py-0.5 rounded-[2px] cursor-pointer transition-colors ${
+                  openHeaderMenu === 'view' ? 'bg-white/[0.12] text-white font-bold' : 'hover:bg-white/[0.08] hover:text-white text-zinc-400'
+                }`}
+              >
+                View
+              </button>
+
+              {openHeaderMenu === 'view' && (
+                <div className="absolute left-0 top-full mt-1 w-60 p-1.5 rounded-[2px] bg-[#222222] border border-[#3e3e3e] shadow-2xl z-50 text-xs font-mono space-y-0.5 animate-in fade-in duration-100">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      handleResetView();
+                      setOpenHeaderMenu(null);
+                      showToast('Centered Camera on Artifact [R]');
+                    }}
+                    className="w-full flex items-center justify-between px-2 py-1 rounded-[2px] hover:bg-[#383838] text-zinc-300 hover:text-white cursor-pointer text-left"
+                  >
+                    <span>Frame All / Center</span>
+                    <span className="text-[10px] text-zinc-500">R</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      handleFocusSelected();
+                      setOpenHeaderMenu(null);
+                    }}
+                    className="w-full flex items-center justify-between px-2 py-1 rounded-[2px] hover:bg-[#383838] text-zinc-300 hover:text-white cursor-pointer text-left"
+                  >
+                    <span>Frame Selected Node</span>
+                    <span className="text-[10px] text-zinc-500">F</span>
+                  </button>
+
+                  <div className="h-px bg-[#353535] my-1" />
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      handleSnapAxis('y');
+                      setOpenHeaderMenu(null);
+                      showToast('Top View (Axis +Y)');
+                    }}
+                    className="w-full flex items-center justify-between px-2 py-1 rounded-[2px] hover:bg-[#383838] text-zinc-300 hover:text-white cursor-pointer text-left"
+                  >
+                    <span>Viewpoint: Top</span>
+                    <span className="text-[10px] text-zinc-500">Numpad 7</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      handleSnapAxis('z');
+                      setOpenHeaderMenu(null);
+                      showToast('Front View (Axis +Z)');
+                    }}
+                    className="w-full flex items-center justify-between px-2 py-1 rounded-[2px] hover:bg-[#383838] text-zinc-300 hover:text-white cursor-pointer text-left"
+                  >
+                    <span>Viewpoint: Front</span>
+                    <span className="text-[10px] text-zinc-500">Numpad 1</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      handleSnapAxis('x');
+                      setOpenHeaderMenu(null);
+                      showToast('Right View (Axis +X)');
+                    }}
+                    className="w-full flex items-center justify-between px-2 py-1 rounded-[2px] hover:bg-[#383838] text-zinc-300 hover:text-white cursor-pointer text-left"
+                  >
+                    <span>Viewpoint: Right</span>
+                    <span className="text-[10px] text-zinc-500">Numpad 3</span>
+                  </button>
+
+                  <div className="h-px bg-[#353535] my-1" />
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      handleToggleLayer('grid');
+                      setOpenHeaderMenu(null);
+                    }}
+                    className="w-full flex items-center justify-between px-2 py-1 rounded-[2px] hover:bg-[#383838] text-zinc-300 hover:text-white cursor-pointer text-left"
+                  >
+                    <span className="flex items-center gap-2">
+                      <span className={`w-1.5 h-1.5 rounded-full ${activeLayers.grid ? 'bg-rose-500' : 'bg-zinc-600'}`} />
+                      <span>Toggle Grid</span>
+                    </span>
+                    <span className="text-[10px] text-zinc-500">G</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setNPanelOpen((prev) => !prev);
+                      setOpenHeaderMenu(null);
+                      playSound('toggle');
+                    }}
+                    className="w-full flex items-center justify-between px-2 py-1 rounded-[2px] hover:bg-[#383838] text-zinc-300 hover:text-white cursor-pointer text-left"
+                  >
+                    <span className="flex items-center gap-2">
+                      <span className={`w-1.5 h-1.5 rounded-full ${nPanelOpen ? 'bg-rose-500' : 'bg-zinc-600'}`} />
+                      <span>Properties Sidebar</span>
+                    </span>
+                    <span className="text-[10px] text-zinc-500">N</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setTPanelOpen((prev) => !prev);
+                      setOpenHeaderMenu(null);
+                      playSound('toggle');
+                    }}
+                    className="w-full flex items-center justify-between px-2 py-1 rounded-[2px] hover:bg-[#383838] text-zinc-300 hover:text-white cursor-pointer text-left"
+                  >
+                    <span className="flex items-center gap-2">
+                      <span className={`w-1.5 h-1.5 rounded-full ${tPanelOpen ? 'bg-rose-500' : 'bg-zinc-600'}`} />
+                      <span>Tool Shelf</span>
+                    </span>
+                    <span className="text-[10px] text-zinc-500">T</span>
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Select Menu */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => toggleHeaderMenu('select')}
+                onMouseEnter={() => handleMenuHover('select')}
+                className={`px-1.5 py-0.5 rounded-[2px] cursor-pointer transition-colors ${
+                  openHeaderMenu === 'select' ? 'bg-white/[0.12] text-white font-bold' : 'hover:bg-white/[0.08] hover:text-white text-zinc-400'
+                }`}
+              >
+                Select
+              </button>
+
+              {openHeaderMenu === 'select' && (
+                <div className="absolute left-0 top-full mt-1 w-56 p-1.5 rounded-[2px] bg-[#222222] border border-[#3e3e3e] shadow-2xl z-50 text-xs font-mono space-y-0.5 animate-in fade-in duration-100">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      handleSelectFirstComponent();
+                      setOpenHeaderMenu(null);
+                    }}
+                    className="w-full flex items-center justify-between px-2 py-1 rounded-[2px] hover:bg-[#383838] text-zinc-300 hover:text-white cursor-pointer text-left"
+                  >
+                    <span>Select Primary Node</span>
+                    <span className="text-[10px] text-zinc-500">Main</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      handleCycleNextComponent();
+                      setOpenHeaderMenu(null);
+                    }}
+                    className="w-full flex items-center justify-between px-2 py-1 rounded-[2px] hover:bg-[#383838] text-zinc-300 hover:text-white cursor-pointer text-left"
+                  >
+                    <span>Cycle Next Node</span>
+                    <span className="text-[10px] text-zinc-500">Tab</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      handleFocusSelected();
+                      setOpenHeaderMenu(null);
+                    }}
+                    className="w-full flex items-center justify-between px-2 py-1 rounded-[2px] hover:bg-[#383838] text-zinc-300 hover:text-white cursor-pointer text-left"
+                  >
+                    <span>Focus Selected</span>
+                    <span className="text-[10px] text-zinc-500">F</span>
+                  </button>
+
+                  <div className="h-px bg-[#353535] my-1" />
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedItem(null);
+                      activeArtifactRef.current?.onSelectObject?.(null);
+                      setOpenHeaderMenu(null);
+                      playSound('secondaryClick');
+                      showToast('Deselected all objects');
+                    }}
+                    className="w-full flex items-center justify-between px-2 py-1 rounded-[2px] hover:bg-[#383838] text-zinc-300 hover:text-white cursor-pointer text-left"
+                  >
+                    <span>Deselect All</span>
+                    <span className="text-[10px] text-zinc-500">Esc</span>
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Add Menu */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => toggleHeaderMenu('add')}
+                onMouseEnter={() => handleMenuHover('add')}
+                className={`px-1.5 py-0.5 rounded-[2px] cursor-pointer transition-colors ${
+                  openHeaderMenu === 'add' ? 'bg-white/[0.12] text-white font-bold' : 'hover:bg-white/[0.08] hover:text-white text-zinc-400'
+                }`}
+              >
+                Add
+              </button>
+
+              {openHeaderMenu === 'add' && (
+                <div className="absolute left-0 top-full mt-1 w-64 p-1.5 rounded-[2px] bg-[#222222] border border-[#3e3e3e] shadow-2xl z-50 text-xs font-mono space-y-0.5 animate-in fade-in duration-100">
+                  <div className="px-2 py-1 text-[9px] font-bold text-zinc-500 uppercase tracking-wider">
+                    Spawn Elements
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      handleAddProbe();
+                      setOpenHeaderMenu(null);
+                    }}
+                    className="w-full flex items-center justify-between px-2 py-1.5 rounded-[2px] hover:bg-[#383838] text-zinc-200 hover:text-white cursor-pointer text-left"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-rose-500 shadow-[0_0_6px_#f43f5e]" />
+                      <div>
+                        <span className="block text-[11px] font-semibold text-rose-300">Latent Probe Marker</span>
+                        <span className="block text-[9px] text-zinc-500">Inject interactive 3D beacon</span>
+                      </div>
+                    </div>
+                    <span className="text-[10px] text-rose-400 font-bold">+ New</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      handleToggleLayer('trajectories');
+                      setOpenHeaderMenu(null);
+                      showToast(`Trajectories: ${!activeLayers.trajectories ? 'Shown' : 'Hidden'}`);
+                    }}
+                    className="w-full flex items-center justify-between px-2 py-1 rounded-[2px] hover:bg-[#383838] text-zinc-300 hover:text-white cursor-pointer text-left"
+                  >
+                    <span>Geodesic Trajectory Flow</span>
+                    <span className="text-[9px] text-zinc-400">{activeLayers.trajectories ? 'ON' : 'OFF'}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      handleToggleLayer('annotations');
+                      setOpenHeaderMenu(null);
+                      showToast(`Spatial Annotations: ${!activeLayers.annotations ? 'Shown' : 'Hidden'}`);
+                    }}
+                    className="w-full flex items-center justify-between px-2 py-1 rounded-[2px] hover:bg-[#383838] text-zinc-300 hover:text-white cursor-pointer text-left"
+                  >
+                    <span>Spatial Coordinate Annotations</span>
+                    <span className="text-[9px] text-zinc-400">{activeLayers.annotations ? 'ON' : 'OFF'}</span>
+                  </button>
+
+                  <div className="h-px bg-[#353535] my-1" />
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      handleClearProbes();
+                      setOpenHeaderMenu(null);
+                    }}
+                    className="w-full flex items-center justify-between px-2 py-1 rounded-[2px] hover:bg-[#383838] text-zinc-400 hover:text-rose-300 cursor-pointer text-left"
+                  >
+                    <span>Clear Custom Probe Markers</span>
+                    <span className="text-[9px] text-zinc-600">Reset</span>
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Mesh Menu */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => toggleHeaderMenu('mesh')}
+                onMouseEnter={() => handleMenuHover('mesh')}
+                className={`px-1.5 py-0.5 rounded-[2px] cursor-pointer transition-colors ${
+                  openHeaderMenu === 'mesh' ? 'bg-white/[0.12] text-white font-bold' : 'hover:bg-white/[0.08] hover:text-white text-zinc-400'
+                }`}
+              >
+                Mesh
+              </button>
+
+              {openHeaderMenu === 'mesh' && (
+                <div className="absolute left-0 top-full mt-1 w-64 p-1.5 rounded-[2px] bg-[#222222] border border-[#3e3e3e] shadow-2xl z-50 text-xs font-mono space-y-0.5 animate-in fade-in duration-100">
+                  <div className="px-2 py-1 text-[9px] font-bold text-zinc-500 uppercase tracking-wider">
+                    Shading & Tessellation
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      handleSetShadingMode('rendered');
+                      setOpenHeaderMenu(null);
+                      showToast('PBR Material Shading Active');
+                    }}
+                    className="w-full flex items-center justify-between px-2 py-1 rounded-[2px] hover:bg-[#383838] text-zinc-300 hover:text-white cursor-pointer text-left"
+                  >
+                    <span className="flex items-center gap-2">
+                      <span className={`w-1.5 h-1.5 rounded-full ${shadingMode === 'rendered' ? 'bg-rose-500' : 'bg-transparent'}`} />
+                      <span>Shading: Rendered (PBR)</span>
+                    </span>
+                    <span className="text-[10px] text-zinc-500">PBR</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      handleSetShadingMode('wireframe');
+                      setOpenHeaderMenu(null);
+                      showToast('Wireframe Shading Active [Z]');
+                    }}
+                    className="w-full flex items-center justify-between px-2 py-1 rounded-[2px] hover:bg-[#383838] text-zinc-300 hover:text-white cursor-pointer text-left"
+                  >
+                    <span className="flex items-center gap-2">
+                      <span className={`w-1.5 h-1.5 rounded-full ${shadingMode === 'wireframe' ? 'bg-rose-500' : 'bg-transparent'}`} />
+                      <span>Shading: Wireframe</span>
+                    </span>
+                    <span className="text-[10px] text-zinc-500">Z</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      handleSetShadingMode('solid');
+                      setOpenHeaderMenu(null);
+                      showToast('Solid Clay Shading Active');
+                    }}
+                    className="w-full flex items-center justify-between px-2 py-1 rounded-[2px] hover:bg-[#383838] text-zinc-300 hover:text-white cursor-pointer text-left"
+                  >
+                    <span className="flex items-center gap-2">
+                      <span className={`w-1.5 h-1.5 rounded-full ${shadingMode === 'solid' ? 'bg-rose-500' : 'bg-transparent'}`} />
+                      <span>Shading: Solid Clay</span>
+                    </span>
+                    <span className="text-[10px] text-zinc-500">Solid</span>
+                  </button>
+
+                  <div className="h-px bg-[#353535] my-1" />
+
+                  <div className="px-2 py-1 text-[9px] font-bold text-zinc-500 uppercase tracking-wider">
+                    Tessellation Density
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setQualityMode('auto');
+                      switchArtifact(activePhaseId, detectHardwareTier());
+                      setOpenHeaderMenu(null);
+                      showToast('Mesh Density: Auto (Hardware Tier)');
+                    }}
+                    className="w-full flex items-center justify-between px-2 py-1 rounded-[2px] hover:bg-[#383838] text-zinc-300 hover:text-white cursor-pointer text-left"
+                  >
+                    <span>Density: Auto Tier</span>
+                    <span className="text-[9px] text-zinc-500 uppercase">{activeTier}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setQualityMode('high');
+                      switchArtifact(activePhaseId, 'high');
+                      setOpenHeaderMenu(null);
+                      showToast('Mesh Density: High Quality (64×64 Grid)');
+                    }}
+                    className="w-full flex items-center justify-between px-2 py-1 rounded-[2px] hover:bg-[#383838] text-zinc-300 hover:text-white cursor-pointer text-left"
+                  >
+                    <span>Density: High (64×64)</span>
+                    <span className="text-[9px] text-emerald-400">HQ</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setQualityMode('low');
+                      switchArtifact(activePhaseId, 'low');
+                      setOpenHeaderMenu(null);
+                      showToast('Mesh Density: Low Power (32×32 Grid)');
+                    }}
+                    className="w-full flex items-center justify-between px-2 py-1 rounded-[2px] hover:bg-[#383838] text-zinc-300 hover:text-white cursor-pointer text-left"
+                  >
+                    <span>Density: Low Power</span>
+                    <span className="text-[9px] text-zinc-500">Eco</span>
+                  </button>
+
+                  <div className="h-px bg-[#353535] my-1" />
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      handleCopyMathSpec();
+                      setOpenHeaderMenu(null);
+                    }}
+                    className="w-full flex items-center justify-between px-2 py-1.5 rounded-[2px] hover:bg-[#383838] text-rose-300 hover:text-rose-200 cursor-pointer text-left"
+                  >
+                    <span>Copy Math Tensor Spec</span>
+                    <span className="text-[9px] text-zinc-500">JSON/TXT</span>
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
 
           <div className="hidden sm:block h-3.5 w-px bg-[#3e3e3e] mx-1" />
@@ -1166,6 +2057,28 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
             </button>
           </div>
 
+          {/* Quick Grid Toggle Button [G] */}
+          <button
+            type="button"
+            onClick={() => handleToggleLayer('grid')}
+            title={`Toggle Grid [G] (${activeLayers.grid ? 'Active' : 'Disabled'})`}
+            className={`flex items-center gap-1.5 px-2 py-1 rounded-[2px] border cursor-pointer text-[10px] font-mono transition-all ${
+              activeLayers.grid
+                ? 'bg-rose-950/70 border-rose-500/70 text-rose-300 shadow-[0_0_8px_rgba(244,63,94,0.25)] font-bold'
+                : 'bg-[#282828] border-[#3a3a3a] text-zinc-400 hover:text-white hover:bg-[#323232]'
+            }`}
+          >
+            <Grid className={`w-3 h-3 ${activeLayers.grid ? 'text-rose-400' : 'text-zinc-400'}`} />
+            <span className="hidden sm:inline">Grid</span>
+            <kbd className={`hidden md:inline px-1 py-0.2 rounded-[2px] text-[8px] ${
+              activeLayers.grid
+                ? 'bg-rose-900/60 text-rose-200 border border-rose-500/40'
+                : 'bg-[#1a1a1a] text-zinc-400 border border-[#333]'
+            }`}>
+              G
+            </kbd>
+          </button>
+
           {/* Viewport Overlays Dropdown Button */}
           <div className="relative">
             <button
@@ -1182,7 +2095,7 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
                   : 'bg-[#282828] border-[#3a3a3a] text-zinc-300 hover:text-white hover:bg-[#323232]'
               }`}
             >
-              <Grid className="w-3 h-3 text-rose-400" />
+              <Layers className="w-3 h-3 text-rose-400" />
               <span className="hidden sm:inline">Overlays</span>
               <ChevronDown className="w-2.5 h-2.5 text-zinc-400" />
             </button>
@@ -1295,6 +2208,14 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
         </div>
       </header>
 
+      {/* Visual Feedback Toast Notification */}
+      {toastMessage && (
+        <div className="fixed top-11 left-1/2 -translate-x-1/2 z-50 px-3.5 py-1.5 rounded-[2px] bg-[#1c1c1c]/95 backdrop-blur-md border border-rose-500/60 shadow-[0_4px_16px_rgba(0,0,0,0.8),0_0_12px_rgba(244,63,94,0.25)] text-zinc-100 font-mono text-xs flex items-center gap-2 pointer-events-none animate-in fade-in slide-in-from-top-2 duration-150">
+          <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-ping" />
+          <span>{toastMessage}</span>
+        </div>
+      )}
+
       {/* ───────────────────────────────────────────────────────────────────
           BLENDER T-PANEL: LEFT TOOL SHELF (Toggle: T)
          ─────────────────────────────────────────────────────────────────── */}
@@ -1406,13 +2327,22 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
               )}
             </div>
 
+            {/* Tool: Grid Quick Toggle [G] */}
+            <ToolRailButton
+              active={activeLayers.grid}
+              onClick={() => handleToggleLayer('grid')}
+              title={`Toggle Grid [G] (${activeLayers.grid ? 'Active' : 'Disabled'})`}
+            >
+              <Grid className={`w-4 h-4 ${activeLayers.grid ? 'text-rose-400' : 'text-zinc-300'}`} />
+            </ToolRailButton>
+
             {/* Tool: 3D Annotations Toggle */}
             <ToolRailButton
               active={showAnnotations}
               onClick={() => handleToggleLayer('annotations')}
               title="Toggle Spatial Annotations"
             >
-              <Grid className="w-4 h-4 text-zinc-300" />
+              <Eye className="w-4 h-4 text-zinc-300" />
             </ToolRailButton>
 
             {/* Tool: Reset View [R] */}
@@ -1901,32 +2831,86 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
 
             {/* ── TAB 3: VIEW ── */}
             {activeNTab === 'view' && (
-              <div className="border border-[#383838] rounded-[2px] bg-[#1e1e1e] p-2 space-y-2">
-                <div className="flex items-center gap-2 border-b border-[#383838] pb-1.5">
-                  <span className="font-bold text-white uppercase text-[11px]">View Properties</span>
-                </div>
-                <div className="space-y-1 text-[10px]">
-                  <div className="flex justify-between py-0.5 border-b border-[#292929]">
-                    <span className="text-zinc-400">Focal Length (FOV)</span>
-                    <span className="text-zinc-200">45.0°</span>
-                  </div>
-                  <div className="flex justify-between py-0.5 border-b border-[#292929]">
-                    <span className="text-zinc-400">Clip Start</span>
-                    <span className="text-zinc-200">0.1 m</span>
-                  </div>
-                  <div className="flex justify-between py-0.5 border-b border-[#292929]">
-                    <span className="text-zinc-400">Clip End</span>
-                    <span className="text-zinc-200">1000.0 m</span>
-                  </div>
-                  <div className="flex justify-between py-0.5 border-b border-[#292929]">
-                    <span className="text-zinc-400">Navigation Gizmo</span>
+              <div className="space-y-2">
+                {/* Rollout: Grid & Viewport Display */}
+                <div className="border border-[#383838] rounded-[2px] bg-[#1e1e1e]">
+                  <div className="px-2 py-1.5 bg-[#282828] border-b border-[#353535] text-zinc-200 font-bold text-[11px] flex items-center justify-between">
+                    <span className="flex items-center gap-1.5">
+                      <Grid className="w-3.5 h-3.5 text-rose-400" />
+                      <span>Grid & Viewport Display</span>
+                    </span>
                     <button
                       type="button"
-                      onClick={() => setShowGizmo((prev) => !prev)}
-                      className="text-rose-400 hover:underline cursor-pointer uppercase font-bold"
+                      onClick={() => handleToggleLayer('grid')}
+                      className={`px-1.5 py-0.5 rounded-[2px] text-[9px] font-mono font-bold transition-all cursor-pointer ${
+                        activeLayers.grid
+                          ? 'bg-rose-600 text-white shadow-sm'
+                          : 'bg-[#181818] border border-[#383838] text-zinc-400 hover:text-white'
+                      }`}
                     >
-                      {showGizmo ? 'VISIBLE' : 'HIDDEN'}
+                      {activeLayers.grid ? 'ENABLED' : 'DISABLED'}
                     </button>
+                  </div>
+                  <div className="p-2 space-y-1.5 text-[10px]">
+                    <div className="flex items-center justify-between py-1 border-b border-[#292929]">
+                      <div>
+                        <span className="text-zinc-200 font-medium block">Architectural Grid [G]</span>
+                        <span className="text-[9px] text-zinc-500">2D dot-matrix & 3D ground perspective</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleToggleLayer('grid')}
+                        className="flex items-center gap-1.5 cursor-pointer px-1.5 py-0.5 rounded-[2px] hover:bg-white/[0.04]"
+                      >
+                        <span className={`w-2 h-2 rounded-full ${activeLayers.grid ? 'bg-rose-500 shadow-[0_0_6px_#f43f5e]' : 'bg-zinc-600'}`} />
+                        <span className={activeLayers.grid ? 'text-rose-300 font-bold' : 'text-zinc-500'}>
+                          {activeLayers.grid ? 'ON' : 'OFF'}
+                        </span>
+                      </button>
+                    </div>
+                    <div className="flex items-center justify-between py-1 border-b border-[#292929]">
+                      <span className="text-zinc-400">Background Pattern</span>
+                      <span className="text-zinc-300 font-mono">Carbon Web Stripes</span>
+                    </div>
+                    <div className="flex items-center justify-between py-1 border-b border-[#292929]">
+                      <span className="text-zinc-400">Atmosphere Drift</span>
+                      <span className="text-zinc-300 font-mono">28s Dynamic CSS</span>
+                    </div>
+                    <div className="flex items-center justify-between py-0.5">
+                      <span className="text-zinc-400">3D Spatial Fog</span>
+                      <span className="text-zinc-300 font-mono">Exp2 (Depth 0.015)</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Rollout: Camera Optics */}
+                <div className="border border-[#383838] rounded-[2px] bg-[#1e1e1e] p-2 space-y-2">
+                  <div className="flex items-center gap-2 border-b border-[#383838] pb-1.5">
+                    <span className="font-bold text-white uppercase text-[11px]">Camera Optics</span>
+                  </div>
+                  <div className="space-y-1 text-[10px]">
+                    <div className="flex justify-between py-0.5 border-b border-[#292929]">
+                      <span className="text-zinc-400">Focal Length (FOV)</span>
+                      <span className="text-zinc-200">46.0° Perspective</span>
+                    </div>
+                    <div className="flex justify-between py-0.5 border-b border-[#292929]">
+                      <span className="text-zinc-400">Clip Start</span>
+                      <span className="text-zinc-200">0.1 m</span>
+                    </div>
+                    <div className="flex justify-between py-0.5 border-b border-[#292929]">
+                      <span className="text-zinc-400">Clip End</span>
+                      <span className="text-zinc-200">100.0 m</span>
+                    </div>
+                    <div className="flex justify-between py-0.5 border-b border-[#292929]">
+                      <span className="text-zinc-400">Navigation Gizmo</span>
+                      <button
+                        type="button"
+                        onClick={() => setShowGizmo((prev) => !prev)}
+                        className="text-rose-400 hover:underline cursor-pointer uppercase font-bold"
+                      >
+                        {showGizmo ? 'VISIBLE' : 'HIDDEN'}
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -2070,6 +3054,10 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
             <span className="flex items-center gap-1">
               <kbd className="px-1 py-0.2 bg-[#252525] border border-[#383838] rounded-[2px] text-zinc-300">Wheel</kbd>
               <span>Zoom</span>
+            </span>
+            <span className="flex items-center gap-1">
+              <kbd className="px-1 py-0.2 bg-[#252525] border border-[#383838] rounded-[2px] text-zinc-300">G</kbd>
+              <span>Grid</span>
             </span>
             <span className="hidden md:flex items-center gap-1">
               <kbd className="px-1 py-0.2 bg-[#252525] border border-[#383838] rounded-[2px] text-zinc-300">N</kbd>

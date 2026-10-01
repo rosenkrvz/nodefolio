@@ -90,7 +90,7 @@ export const ResearchEntryLoader: React.FC<ResearchEntryLoaderProps> = ({
     <div
       aria-label="Initializing Research Environment"
       aria-live="polite"
-      className={`fixed inset-0 z-50 flex flex-col items-center justify-between bg-[#07090e] text-white select-none transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] will-change-[opacity,transform] ${
+      className={`fixed inset-0 z-50 flex flex-col items-center justify-between bg-[#14171c] text-white select-none transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] will-change-[opacity,transform] ${
         isFadingOut
           ? 'opacity-0 pointer-events-none scale-[0.985] blur-[2px]'
           : 'opacity-100 pointer-events-auto scale-100 blur-none'
@@ -100,6 +100,12 @@ export const ResearchEntryLoader: React.FC<ResearchEntryLoaderProps> = ({
         paddingBottom: 'max(24px, env(safe-area-inset-bottom, 24px))',
       }}
     >
+      {/* Authentic diagonal technical carbon pattern matching the webpage */}
+      <div className="absolute inset-0 w-full h-full pointer-events-none overflow-hidden z-0" aria-hidden="true">
+        <div className="pattern-bg w-full h-full opacity-40" />
+        <div className="cube-svg opacity-30" />
+      </div>
+
       {/* Scoped CSS for user-provided Dominoes animation */}
       <style>{`
         .research-entry-spinner-wrapper {
