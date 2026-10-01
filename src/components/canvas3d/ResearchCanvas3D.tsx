@@ -267,7 +267,8 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
     return typeof window !== 'undefined' ? window.innerWidth >= 768 : true;
   });
   const [isAutoRotate, setIsAutoRotate] = useState<boolean>(false);
-  const [showLayersMenu, setShowLayersMenu] = useState<boolean>(false);
+  const [showOverlaysMenu, setShowOverlaysMenu] = useState<boolean>(false);
+  const [showLeftLayersMenu, setShowLeftLayersMenu] = useState<boolean>(false);
   const [showAnnotations, setShowAnnotations] = useState<boolean>(false);
   const [activeLayers, setActiveLayers] = useState<Record<LayerType, boolean>>({
     geometry: true,
@@ -402,8 +403,10 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
   const activeArtifactRef = useRef<PhaseArtifactInstance | null>(null);
   const animFrameIdRef = useRef<number | null>(null);
   const phaseBtnRefs = useRef<Record<string, HTMLButtonElement | null>>({});
-  const layersMenuRef = useRef<HTMLDivElement>(null);
-  const layersBtnRef = useRef<HTMLButtonElement>(null);
+  const overlaysMenuRef = useRef<HTMLDivElement>(null);
+  const overlaysBtnRef = useRef<HTMLButtonElement>(null);
+  const leftLayersMenuRef = useRef<HTMLDivElement>(null);
+  const leftLayersBtnRef = useRef<HTMLButtonElement>(null);
 
   // Smooth camera focusing transition
   const cameraFocusTarget = useRef<{
@@ -439,19 +442,29 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
     };
   }, []);
 
-  // ── Auto-close Visual Layers Menu when clicking outside ───────────────────
+  // ── Auto-close Viewport Overlays & Left Layers Menu when clicking outside ──
   useEffect(() => {
-    if (!showLayersMenu) return;
+    if (!showOverlaysMenu && !showLeftLayersMenu) return;
 
     const handlePointerDownOutside = (e: PointerEvent) => {
       const target = e.target as Node;
       if (
-        layersMenuRef.current &&
-        !layersMenuRef.current.contains(target) &&
-        layersBtnRef.current &&
-        !layersBtnRef.current.contains(target)
+        showOverlaysMenu &&
+        overlaysMenuRef.current &&
+        !overlaysMenuRef.current.contains(target) &&
+        overlaysBtnRef.current &&
+        !overlaysBtnRef.current.contains(target)
       ) {
-        setShowLayersMenu(false);
+        setShowOverlaysMenu(false);
+      }
+      if (
+        showLeftLayersMenu &&
+        leftLayersMenuRef.current &&
+        !leftLayersMenuRef.current.contains(target) &&
+        leftLayersBtnRef.current &&
+        !leftLayersBtnRef.current.contains(target)
+      ) {
+        setShowLeftLayersMenu(false);
       }
     };
 
@@ -459,7 +472,7 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
     return () => {
       window.removeEventListener('pointerdown', handlePointerDownOutside);
     };
-  }, [showLayersMenu]);
+  }, [showOverlaysMenu, showLeftLayersMenu]);
 
   // Toggle individual visual layer (grid, trajectories, clusters, geometry, annotations)
   const handleToggleLayer = useCallback((layer: LayerType) => {
@@ -1102,8 +1115,9 @@ ${currentPhaseMeta.description}
           setOpenHeaderMenu(null);
           return;
         }
-        if (showLayersMenu) {
-          setShowLayersMenu(false);
+        if (showOverlaysMenu || showLeftLayersMenu) {
+          setShowOverlaysMenu(false);
+          setShowLeftLayersMenu(false);
           return;
         }
         if (selectedItem) {
@@ -1141,7 +1155,8 @@ ${currentPhaseMeta.description}
     playSound,
     selectedItem,
     shadingMode,
-    showLayersMenu,
+    showOverlaysMenu,
+    showLeftLayersMenu,
   ]);
 
   // ── Switch 3D Artifact inside the persistent WebGL Scene ───────────────────
@@ -1699,7 +1714,7 @@ ${currentPhaseMeta.description}
       {/* ── TOP BLENDER EDITOR HEADER BAR (Full-width, razor-sharp 36px bar) ── */}
       <header
         aria-label="Blender 3D Viewport Header"
-        className="fixed top-0 inset-x-0 h-9 z-30 bg-[#202020] border-b border-[#353535] text-zinc-300 font-mono text-[11px] px-2 flex items-center justify-between select-none pointer-events-auto shadow-md"
+        className="fixed top-0 inset-x-0 h-9 z-40 bg-[#202020] border-b border-[#353535] text-zinc-300 font-mono text-[11px] px-2 flex items-center justify-between select-none pointer-events-auto shadow-md"
         style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px))' }}
       >
         {/* Left Cluster: Editor Type, Mode Selector, Menus & Breadcrumb */}
@@ -2415,15 +2430,17 @@ ${currentPhaseMeta.description}
           <div className="relative">
             <button
               type="button"
-              ref={layersBtnRef}
+              ref={overlaysBtnRef}
               onClick={() => {
                 playSound('toggle');
-                setShowLayersMenu((prev) => !prev);
+                setShowOverlaysMenu((prev) => !prev);
+                setShowLeftLayersMenu(false);
+                setOpenHeaderMenu(null);
               }}
               title="Viewport Overlays Configuration"
               className={`flex items-center gap-1 px-2 py-1 rounded-[2px] border cursor-pointer text-[10px] font-mono transition-all ${
-                showLayersMenu
-                  ? 'bg-[#383838] border-[#555] text-white'
+                showOverlaysMenu
+                  ? 'bg-[#383838] border-[#555] text-white shadow-sm'
                   : 'bg-[#282828] border-[#3a3a3a] text-zinc-300 hover:text-white hover:bg-[#323232]'
               }`}
             >
@@ -2433,31 +2450,41 @@ ${currentPhaseMeta.description}
             </button>
 
             {/* Overlays Popover Panel */}
-            {showLayersMenu && (
+            {showOverlaysMenu && (
               <div
-                ref={layersMenuRef}
+                ref={overlaysMenuRef}
                 role="dialog"
                 aria-label="Viewport Overlays"
-                className="absolute right-0 top-full mt-1 w-52 p-2.5 rounded-[2px] bg-[#222222] border border-[#3e3e3e] shadow-2xl z-50 space-y-2 text-xs font-mono select-none"
+                className="absolute right-0 top-full mt-1 w-56 p-2.5 rounded-[2px] bg-[#222222] border border-[#3e3e3e] shadow-2xl z-50 space-y-2 text-xs font-mono select-none animate-in fade-in slide-in-from-top-1 duration-150"
               >
                 <div className="flex items-center justify-between border-b border-[#353535] pb-1.5">
                   <span className="font-bold text-zinc-200 text-[10px] uppercase">Viewport Overlays</span>
-                  <span className="text-[9px] text-zinc-400 bg-[#1c1c1c] px-1 py-0.2 rounded-[2px]">
+                  <span className="text-[9px] text-zinc-400 bg-[#1c1c1c] px-1 py-0.2 rounded-[2px] border border-[#333]">
                     {Object.values(activeLayers).filter(Boolean).length}/5
                   </span>
                 </div>
-                <div className="space-y-1">
+                <div className="space-y-0.5">
                   {(['geometry', 'trajectories', 'clusters', 'grid', 'annotations'] as const).map((layer) => (
                     <label
                       key={layer}
-                      className="flex items-center justify-between text-zinc-300 hover:text-white cursor-pointer py-0.5 px-1 rounded-[2px] hover:bg-white/[0.06] transition-colors"
+                      className="flex items-center justify-between text-zinc-300 hover:text-white cursor-pointer py-1 px-1.5 rounded-[2px] hover:bg-white/[0.06] transition-colors select-none group"
                     >
-                      <span className="capitalize text-[11px]">{layer}</span>
+                      <div className="flex items-center gap-2">
+                        <span
+                          className="w-1.5 h-1.5 rounded-[1px] transition-all duration-200"
+                          style={{
+                            backgroundColor: activeLayers[layer] ? '#f43f5e' : 'rgba(255,255,255,0.2)',
+                          }}
+                        />
+                        <span className="capitalize font-mono text-[11px] tracking-wide text-zinc-300 group-hover:text-white">
+                          {layer}
+                        </span>
+                      </div>
                       <input
                         type="checkbox"
                         checked={activeLayers[layer]}
                         onChange={() => handleToggleLayer(layer)}
-                        className="accent-rose-500 w-3 h-3 cursor-pointer rounded-[2px]"
+                        className="accent-rose-500 w-3.5 h-3.5 cursor-pointer rounded-[2px]"
                       />
                     </label>
                   ))}
@@ -2599,13 +2626,14 @@ ${currentPhaseMeta.description}
             {/* Tool: Visual Layers Popover */}
             <div className="relative">
               <ToolRailButton
-                ref={layersBtnRef}
-                active={showLayersMenu}
+                ref={leftLayersBtnRef}
+                active={showLeftLayersMenu}
                 onClick={() => {
                   playSound('click');
-                  setShowLayersMenu((prev) => !prev);
+                  setShowLeftLayersMenu((prev) => !prev);
+                  setShowOverlaysMenu(false);
                 }}
-                ariaExpanded={showLayersMenu}
+                ariaExpanded={showLeftLayersMenu}
                 ariaHasPopup="dialog"
                 title="Viewport Overlays & Layers"
               >
@@ -2613,9 +2641,9 @@ ${currentPhaseMeta.description}
               </ToolRailButton>
 
               {/* Blender Layer / Overlays Menu */}
-              {showLayersMenu && (
+              {showLeftLayersMenu && (
                 <div
-                  ref={layersMenuRef}
+                  ref={leftLayersMenuRef}
                   role="dialog"
                   aria-label="Visual Layers Configuration"
                   className="absolute left-full ml-2 top-0 w-52 p-2 bg-[#232323] border border-[#3e3e3e] rounded-[2px] shadow-2xl z-40 space-y-2 text-xs select-none"
