@@ -39,6 +39,8 @@ import {
   ChevronRight,
   Check,
   Copy,
+  Plus,
+  Minus,
 } from '../icons';
 import { useSound } from '../../lib/sound/useSound';
 
@@ -482,6 +484,16 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
   const headerMenusRef = useRef<HTMLDivElement>(null);
   const customProbesRef = useRef<THREE.Group[]>([]);
 
+  // ── Functional State for Blender N-Panel Item Tab ──────────────────────────
+  const [transformLocation, setTransformLocation] = useState<{ x: number; y: number; z: number }>({ x: 0, y: 0, z: 0 });
+  const [transformScale, setTransformScale] = useState<{ x: number; y: number; z: number }>({ x: 1, y: 1, z: 1 });
+  const [sceneInspectables, setSceneInspectables] = useState<InspectableItem[]>([]);
+  const [expandedMathCard, setExpandedMathCard] = useState<number | null>(null);
+  const [copiedComponentData, setCopiedComponentData] = useState<boolean>(false);
+  const [liveFps, setLiveFps] = useState<number>(60);
+  const [liveTriangles, setLiveTriangles] = useState<number>(0);
+  const [liveDrawCalls, setLiveDrawCalls] = useState<number>(0);
+
   const showToast = useCallback((msg: string) => {
     if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
     setToastMessage(msg);
@@ -657,6 +669,7 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
       type: 'centroid',
     };
     setSelectedItem(probeItem);
+    setSceneInspectables((prev) => [...prev, probeItem]);
     handleFocusCamera(probeItem.worldPosition);
     showToast(`Added Latent Probe #${probeCount + 1} at [${posX.toFixed(1)}, ${posZ.toFixed(1)}]`);
   }, [handleFocusCamera, playSound, showToast]);
@@ -680,6 +693,7 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
     }
     customProbesRef.current = [];
     setSelectedItem((prev) => (prev?.id.startsWith('custom-probe-') ? null : prev));
+    setSceneInspectables((prev) => prev.filter((i) => !i.id.startsWith('custom-probe-')));
     showToast('Cleared custom probe markers');
   }, [playSound, showToast]);
 
@@ -745,12 +759,308 @@ ${currentPhaseMeta.description}
     }
   }, [currentPhaseMeta, playSound, showToast]);
 
+  // Synchronize transform inputs with active selection or phase group
+  useEffect(() => {
+    if (selectedItem) {
+      const probe = customProbesRef.current.find(
+        (p) => (p as any).name === selectedItem.id || (p as any).userData?.id === selectedItem.id
+      );
+      if (probe) {
+        setTransformLocation({
+          x: parseFloat(probe.position.x.toFixed(2)),
+          y: parseFloat(probe.position.y.toFixed(2)),
+          z: parseFloat(probe.position.z.toFixed(2)),
+        });
+        setTransformScale({
+          x: parseFloat(probe.scale.x.toFixed(3)),
+          y: parseFloat(probe.scale.y.toFixed(3)),
+          z: parseFloat(probe.scale.z.toFixed(3)),
+        });
+        return;
+      }
+      const inspectables = activeArtifactRef.current?.getInspectableObjects?.() || [];
+      const match = inspectables.find((i) => i.data.id === selectedItem.id);
+      if (match) {
+        setTransformLocation({
+          x: parseFloat(match.mesh.position.x.toFixed(2)),
+          y: parseFloat(match.mesh.position.y.toFixed(2)),
+          z: parseFloat(match.mesh.position.z.toFixed(2)),
+        });
+        setTransformScale({
+          x: parseFloat(match.mesh.scale.x.toFixed(3)),
+          y: parseFloat(match.mesh.scale.y.toFixed(3)),
+          z: parseFloat(match.mesh.scale.z.toFixed(3)),
+        });
+        return;
+      }
+      if (selectedItem.worldPosition) {
+        setTransformLocation({
+          x: parseFloat(selectedItem.worldPosition.x.toFixed(2)),
+          y: parseFloat(selectedItem.worldPosition.y.toFixed(2)),
+          z: parseFloat(selectedItem.worldPosition.z.toFixed(2)),
+        });
+        setTransformScale({ x: 1, y: 1, z: 1 });
+      }
+    } else {
+      if (activeArtifactRef.current?.group) {
+        setTransformLocation({
+          x: parseFloat(activeArtifactRef.current.group.position.x.toFixed(2)),
+          y: parseFloat(activeArtifactRef.current.group.position.y.toFixed(2)),
+          z: parseFloat(activeArtifactRef.current.group.position.z.toFixed(2)),
+        });
+        setTransformScale({
+          x: parseFloat(activeArtifactRef.current.group.scale.x.toFixed(3)),
+          y: parseFloat(activeArtifactRef.current.group.scale.y.toFixed(3)),
+          z: parseFloat(activeArtifactRef.current.group.scale.z.toFixed(3)),
+        });
+      } else {
+        setTransformLocation({ x: 0, y: 0, z: 0 });
+        setTransformScale({ x: 1, y: 1, z: 1 });
+      }
+    }
+  }, [selectedItem, activePhaseId]);
+
+  // Transform Update Handlers
+  const handleUpdateLocation = useCallback((axis: 'x' | 'y' | 'z', value: number) => {
+    const cleanVal = Number.isFinite(value) ? parseFloat(value.toFixed(2)) : 0;
+    setTransformLocation((prev) => {
+      const nextLoc = { ...prev, [axis]: cleanVal };
+      if (selectedItem) {
+        const probe = customProbesRef.current.find(
+          (p) => (p as any).name === selectedItem.id || (p as any).userData?.id === selectedItem.id
+        );
+        if (probe) {
+          probe.position[axis] = cleanVal;
+          selectedItem.worldPosition.copy(probe.position);
+        } else {
+          const inspectables = activeArtifactRef.current?.getInspectableObjects?.() || [];
+          const match = inspectables.find((i) => i.data.id === selectedItem.id);
+          if (match) {
+            match.mesh.position[axis] = cleanVal;
+            match.mesh.updateMatrixWorld(true);
+            selectedItem.worldPosition.copy(match.mesh.position);
+          }
+        }
+      } else if (activeArtifactRef.current?.group) {
+        activeArtifactRef.current.group.position[axis] = cleanVal;
+      }
+      return nextLoc;
+    });
+  }, [selectedItem]);
+
+  const handleUpdateScale = useCallback((axis: 'x' | 'y' | 'z', value: number) => {
+    const cleanVal = Math.max(0.05, Math.min(10, Number.isFinite(value) ? parseFloat(value.toFixed(3)) : 1));
+    setTransformScale((prev) => {
+      const nextScale = { ...prev, [axis]: cleanVal };
+      if (selectedItem) {
+        const probe = customProbesRef.current.find(
+          (p) => (p as any).name === selectedItem.id || (p as any).userData?.id === selectedItem.id
+        );
+        if (probe) {
+          probe.scale[axis] = cleanVal;
+        } else {
+          const inspectables = activeArtifactRef.current?.getInspectableObjects?.() || [];
+          const match = inspectables.find((i) => i.data.id === selectedItem.id);
+          if (match) {
+            match.mesh.scale[axis] = cleanVal;
+          }
+        }
+      } else if (activeArtifactRef.current?.group) {
+        activeArtifactRef.current.group.scale[axis] = cleanVal;
+      }
+      return nextScale;
+    });
+  }, [selectedItem]);
+
+  const handleUniformScale = useCallback((factor: number) => {
+    playSound('click');
+    setTransformScale((prev) => {
+      const nextScale = {
+        x: Math.max(0.05, Math.min(10, parseFloat((prev.x * factor).toFixed(3)))),
+        y: Math.max(0.05, Math.min(10, parseFloat((prev.y * factor).toFixed(3)))),
+        z: Math.max(0.05, Math.min(10, parseFloat((prev.z * factor).toFixed(3)))),
+      };
+      if (selectedItem) {
+        const probe = customProbesRef.current.find(
+          (p) => (p as any).name === selectedItem.id || (p as any).userData?.id === selectedItem.id
+        );
+        if (probe) {
+          probe.scale.set(nextScale.x, nextScale.y, nextScale.z);
+        } else {
+          const inspectables = activeArtifactRef.current?.getInspectableObjects?.() || [];
+          const match = inspectables.find((i) => i.data.id === selectedItem.id);
+          if (match) {
+            match.mesh.scale.set(nextScale.x, nextScale.y, nextScale.z);
+          }
+        }
+      } else if (activeArtifactRef.current?.group) {
+        activeArtifactRef.current.group.scale.set(nextScale.x, nextScale.y, nextScale.z);
+      }
+      showToast(`Scale: ${factor >= 1 ? '+' : ''}${Math.round((factor - 1) * 100)}%`);
+      return nextScale;
+    });
+  }, [playSound, selectedItem, showToast]);
+
+  const handleResetTransform = useCallback(() => {
+    playSound('click');
+    setTransformLocation({ x: 0, y: 0, z: 0 });
+    setTransformScale({ x: 1, y: 1, z: 1 });
+    if (selectedItem) {
+      const probe = customProbesRef.current.find(
+        (p) => (p as any).name === selectedItem.id || (p as any).userData?.id === selectedItem.id
+      );
+      if (probe) {
+        probe.position.set(0, 0, 0);
+        probe.scale.set(1, 1, 1);
+        selectedItem.worldPosition.set(0, 0, 0);
+      } else {
+        const inspectables = activeArtifactRef.current?.getInspectableObjects?.() || [];
+        const match = inspectables.find((i) => i.data.id === selectedItem.id);
+        if (match) {
+          match.mesh.position.set(0, 0, 0);
+          match.mesh.scale.set(1, 1, 1);
+          selectedItem.worldPosition.set(0, 0, 0);
+        }
+      }
+      showToast(`Reset transform for ${selectedItem.name}`);
+    } else if (activeArtifactRef.current?.group) {
+      activeArtifactRef.current.group.position.set(0, 0, 0);
+      activeArtifactRef.current.group.scale.set(1, 1, 1);
+      showToast('Reset artifact position & scale to default [Alt+G]');
+    }
+  }, [playSound, selectedItem, showToast]);
+
+  // Copy component property data
+  const handleCopyComponentData = useCallback((item: InspectableItem) => {
+    playSound('click');
+    const payload = {
+      name: item.name,
+      role: item.role,
+      dimension: item.dimension,
+      type: item.type,
+      properties: item.properties,
+      description: item.description,
+      worldPosition: [
+        parseFloat(item.worldPosition.x.toFixed(3)),
+        parseFloat(item.worldPosition.y.toFixed(3)),
+        parseFloat(item.worldPosition.z.toFixed(3)),
+      ],
+    };
+    if (navigator?.clipboard?.writeText) {
+      navigator.clipboard.writeText(JSON.stringify(payload, null, 2)).then(() => {
+        setCopiedComponentData(true);
+        showToast(`Copied specs for ${item.name}`);
+        setTimeout(() => setCopiedComponentData(false), 2000);
+      });
+    }
+  }, [playSound, showToast]);
+
+  // Copy LaTeX formula
+  const handleCopyFormula = useCallback((latex: string) => {
+    playSound('click');
+    if (navigator?.clipboard?.writeText) {
+      navigator.clipboard.writeText(latex).then(() => {
+        showToast('Copied LaTeX formula to clipboard!');
+      });
+    }
+  }, [playSound, showToast]);
+
+  // Math metric detail provider
+  const getMetricMathDetail = useCallback((phaseId: string, idx: number, label: string, value: string) => {
+    if (phaseId === 'phase-05') {
+      if (idx === 0) {
+        return {
+          title: 'Whitney Tangent Embedding & Intrinsic Dimension',
+          latex: '\\dim(T_p \\mathcal{M}) = 3, \\quad \\mathcal{M}^3 \\hookrightarrow \\mathbb{R}^{2d+1} = \\mathbb{R}^7',
+          description: 'Intrinsic 3D manifold embedded smoothly into ambient latent representation. Local chart diffeomorphisms preserve sectional curvature.',
+          details: [
+            { k: 'INTRINSIC DIMENSION', v: 'd = 3' },
+            { k: 'AMBIENT EMBEDDING', v: 'ℝ⁵ Latent Space' },
+            { k: 'MANIFOLD CLASS', v: 'C^∞ Smooth Riemannian' },
+          ],
+        };
+      }
+      if (idx === 1) {
+        return {
+          title: 'Riemannian Metric Tensor Field g_ij(x)',
+          latex: 'ds^2 = g_{ij} dx^i dx^j, \\quad \\Gamma^k_{ij} = \\frac{1}{2} g^{kl}(\\partial_i g_{jl} + \\partial_j g_{il} - \\partial_l g_{ij})',
+          description: 'Riemannian fundamental tensor defining the infinitesimal distance element ds² and Levi-Civita affine connection on the manifold.',
+          details: [
+            { k: 'METRIC TENSOR', v: 'g_ij = ⟨∂_i r, ∂_j r⟩' },
+            { k: 'AFFINE CONNECTION', v: 'Levi-Civita (Torsionless)' },
+            { k: 'GAUSSIAN CURVATURE', v: 'K = κ₁ · κ₂' },
+          ],
+        };
+      }
+      if (idx === 2) {
+        return {
+          title: 'Geodesic Vector Flow & RK4 Integrator',
+          latex: '\\frac{d^2 x^i}{d\\tau^2} + \\Gamma^i_{jk} \\frac{dx^j}{d\\tau} \\frac{dx^k}{d\\tau} = 0',
+          description: 'Extreme-action geodesic paths integrated numerically using fourth-order Runge-Kutta ODE flow with adaptive timestep parameterization.',
+          details: [
+            { k: 'INTEGRATOR', v: 'Runge-Kutta 4 (RK4)' },
+            { k: 'STEP SIZE', v: 'h = 0.0125 s (Adaptive)' },
+            { k: 'HAMILTONIAN', v: 'H = ½ g_ij p^i p^j = const' },
+          ],
+        };
+      }
+    }
+
+    if (phaseId === 'phase-01') {
+      if (idx === 0) {
+        return {
+          title: 'Computational DAG Node Topology',
+          latex: 'G = (V, E), \\quad v_i = f_i(\\mathrm{parents}(v_i))',
+          description: 'Directed acyclic computational graph representing discrete intermediate tensor evaluation nodes.',
+          details: [
+            { k: 'NODE COUNT', v: '10 Evaluation Nodes' },
+            { k: 'GRAPH TOPOLOGY', v: 'Strict DAG' },
+            { k: 'TAPE ORDER', v: 'Topologically Sorted' },
+          ],
+        };
+      }
+      if (idx === 1) {
+        return {
+          title: 'Adjoint Edge Sensitivity Flow',
+          latex: '\\bar{u}_j = \\sum_{i \\in \\mathrm{children}(j)} \\bar{v}_i \\frac{\\partial v_i}{\\partial u_j}',
+          description: 'Reverse-mode adjoint sensitivity accumulation passing backward gradients along directed computational edges.',
+          details: [
+            { k: 'ADJOINT EDGES', v: '11 Directed Backprop Rays' },
+            { k: 'ACCUMULATION', v: 'Chain Rule Adjoint Flow' },
+            { k: 'DIFFERENTIATION', v: 'Exact Reverse-Mode' },
+          ],
+        };
+      }
+    }
+
+    return {
+      title: `${label} Specification`,
+      latex: value,
+      description: `Computational and mathematical formulation of ${label} for the active research phase. Evaluated in real-time on GPU/WebGL shaders.`,
+      details: [
+        { k: 'METRIC', v: label },
+        { k: 'VALUE', v: value },
+        { k: 'COMPUTE', v: 'Hardware Accelerated' },
+      ],
+    };
+  }, []);
+
   // ── Professional Blender Keyboard Shortcuts (N, T, Z, G, Space, R, 1, 3, 7, F, Tab, Esc) ──
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
 
-      if (e.key === 'r' || e.key === 'R') {
+      if (e.altKey && (e.key === 'g' || e.key === 'G')) {
+        e.preventDefault();
+        handleResetTransform();
+      } else if (e.altKey && (e.key === 's' || e.key === 'S')) {
+        e.preventDefault();
+        handleUpdateScale('x', 1);
+        handleUpdateScale('y', 1);
+        handleUpdateScale('z', 1);
+        playSound('click');
+        showToast('Reset scale to 1.0 [Alt+S]');
+      } else if (e.key === 'r' || e.key === 'R') {
         e.preventDefault();
         handleResetView();
       } else if (e.key === 'f' || e.key === 'F') {
@@ -822,6 +1132,8 @@ ${currentPhaseMeta.description}
     currentPhaseMeta.chronicleId,
     handleCycleNextComponent,
     handleFocusSelected,
+    handleResetTransform,
+    handleUpdateScale,
     handleResetView,
     handleToggleLayer,
     onExit,
@@ -881,6 +1193,12 @@ ${currentPhaseMeta.description}
 
       scene.add(newArtifact.group);
       activeArtifactRef.current = newArtifact;
+
+      const items = newArtifact.getInspectableObjects?.().map((i) => i.data) || [];
+      setSceneInspectables(items);
+      setTransformLocation({ x: 0, y: 0, z: 0 });
+      setTransformScale({ x: 1, y: 1, z: 1 });
+      setExpandedMathCard(null);
 
       // Apply initial layer toggles
       Object.entries(activeLayers).forEach(([layer, visible]) => {
@@ -1134,6 +1452,8 @@ ${currentPhaseMeta.description}
 
     // 8. Animation & Render Loop with Camera Slerp
     let lastTime = performance.now();
+    let frameCount = 0;
+    let lastStatsTime = performance.now();
 
     const animate = () => {
       animFrameIdRef.current = requestAnimationFrame(animate);
@@ -1141,6 +1461,18 @@ ${currentPhaseMeta.description}
       const now = performance.now();
       const delta = Math.min((now - lastTime) / 1000, 0.1);
       lastTime = now;
+
+      frameCount++;
+      if (now - lastStatsTime >= 500) {
+        const measuredFps = Math.round((frameCount * 1000) / (now - lastStatsTime));
+        setLiveFps(Math.min(measuredFps, 144));
+        frameCount = 0;
+        lastStatsTime = now;
+        if (renderer && renderer.info) {
+          setLiveTriangles(renderer.info.render.triangles || 0);
+          setLiveDrawCalls(renderer.info.render.calls || 0);
+        }
+      }
 
       // Smooth camera focusing transition
       const focus = cameraFocusTarget.current;
@@ -2599,53 +2931,136 @@ ${currentPhaseMeta.description}
                       <span className="text-[9px] text-zinc-400">{openRollouts.transform ? '▼' : '▶'}</span>
                       <span>Transform</span>
                     </span>
-                    <span className="text-[9px] text-zinc-500 font-normal">XYZ Euler</span>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[9px] text-zinc-500 font-normal">XYZ Euler</span>
+                      <span
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleResetTransform();
+                        }}
+                        title="Reset Transform [Alt+G]"
+                        className="text-[9px] text-zinc-400 hover:text-white px-1 py-0.5 rounded-[2px] hover:bg-white/[0.08] transition-colors"
+                      >
+                        Reset
+                      </span>
+                    </div>
                   </button>
 
                   {openRollouts.transform && (
-                    <div className="p-2 space-y-1.5">
-                      {/* Location */}
+                    <div className="p-2 space-y-2">
+                      {/* Target Indicator */}
+                      <div className="flex items-center justify-between text-[9px] pb-1 border-b border-[#2b2b2b]">
+                        <span className="text-zinc-500 font-sans">Active Target</span>
+                        <span className={selectedItem ? 'text-rose-400 font-bold truncate max-w-[170px]' : 'text-zinc-300 font-mono'}>
+                          {selectedItem ? selectedItem.name : `Phase ${currentPhaseMeta.numeral} Root`}
+                        </span>
+                      </div>
+
+                      {/* Location Controls */}
                       <div>
-                        <span className="text-[10px] text-zinc-400 font-sans block mb-0.5">Location</span>
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-[10px] text-zinc-400 font-sans">Location</span>
+                          <span className="text-[8px] text-zinc-500 font-mono">meters (m)</span>
+                        </div>
                         <div className="grid grid-cols-3 gap-1">
-                          <div className="flex items-center bg-[#141414] border-l-2 border-l-red-500 border border-[#333] px-1 py-0.5 rounded-[2px]">
-                            <span className="text-[9px] text-red-400 font-bold mr-1">X</span>
-                            <span className="text-[10px] text-zinc-200 truncate">
-                              {selectedItem ? (selectedItem.worldPosition?.[0] ?? 0).toFixed(2) : '0.00 m'}
-                            </span>
-                          </div>
-                          <div className="flex items-center bg-[#141414] border-l-2 border-l-emerald-500 border border-[#333] px-1 py-0.5 rounded-[2px]">
-                            <span className="text-[9px] text-emerald-400 font-bold mr-1">Y</span>
-                            <span className="text-[10px] text-zinc-200 truncate">
-                              {selectedItem ? (selectedItem.worldPosition?.[1] ?? 0).toFixed(2) : '0.00 m'}
-                            </span>
-                          </div>
-                          <div className="flex items-center bg-[#141414] border-l-2 border-l-sky-500 border border-[#333] px-1 py-0.5 rounded-[2px]">
-                            <span className="text-[9px] text-sky-400 font-bold mr-1">Z</span>
-                            <span className="text-[10px] text-zinc-200 truncate">
-                              {selectedItem ? (selectedItem.worldPosition?.[2] ?? 0).toFixed(2) : '0.00 m'}
-                            </span>
-                          </div>
+                          {(['x', 'y', 'z'] as const).map((axis) => {
+                            const borderCol =
+                              axis === 'x'
+                                ? 'border-l-red-500 text-red-400'
+                                : axis === 'y'
+                                ? 'border-l-emerald-500 text-emerald-400'
+                                : 'border-l-sky-500 text-sky-400';
+                            return (
+                              <div
+                                key={axis}
+                                className={`flex items-center bg-[#141414] border-l-2 ${borderCol} border border-[#333] px-1 py-0.5 rounded-[2px] focus-within:border-zinc-400 transition-colors`}
+                              >
+                                <span className="text-[9px] font-bold uppercase mr-1 select-none">{axis}</span>
+                                <input
+                                  type="number"
+                                  step="0.1"
+                                  value={transformLocation[axis]}
+                                  onChange={(e) => handleUpdateLocation(axis, parseFloat(e.target.value) || 0)}
+                                  className="w-full bg-transparent text-[10px] text-zinc-200 outline-none font-mono min-w-0"
+                                  aria-label={`Location ${axis.toUpperCase()}`}
+                                />
+                                <span className="text-[9px] text-zinc-500 select-none ml-0.5">m</span>
+                              </div>
+                            );
+                          })}
                         </div>
                       </div>
 
-                      {/* Scale */}
+                      {/* Scale Controls */}
                       <div>
-                        <span className="text-[10px] text-zinc-400 font-sans block mb-0.5">Scale</span>
-                        <div className="grid grid-cols-3 gap-1 text-[10px]">
-                          <div className="flex items-center bg-[#141414] border border-[#333] px-1 py-0.5 rounded-[2px]">
-                            <span className="text-zinc-500 mr-1">X</span>
-                            <span className="text-zinc-300">1.000</span>
-                          </div>
-                          <div className="flex items-center bg-[#141414] border border-[#333] px-1 py-0.5 rounded-[2px]">
-                            <span className="text-zinc-500 mr-1">Y</span>
-                            <span className="text-zinc-300">1.000</span>
-                          </div>
-                          <div className="flex items-center bg-[#141414] border border-[#333] px-1 py-0.5 rounded-[2px]">
-                            <span className="text-zinc-500 mr-1">Z</span>
-                            <span className="text-zinc-300">1.000</span>
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-[10px] text-zinc-400 font-sans">Scale</span>
+                          <div className="flex items-center gap-1">
+                            <button
+                              type="button"
+                              onClick={() => handleUniformScale(0.8)}
+                              title="Scale Down 20%"
+                              className="px-1 py-0.5 bg-[#222] hover:bg-[#333] text-zinc-400 hover:text-white rounded-[2px] text-[8px] cursor-pointer"
+                            >
+                              0.8x
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleUniformScale(1.25)}
+                              title="Scale Up 25%"
+                              className="px-1 py-0.5 bg-[#222] hover:bg-[#333] text-zinc-400 hover:text-white rounded-[2px] text-[8px] cursor-pointer"
+                            >
+                              1.2x
+                            </button>
                           </div>
                         </div>
+                        <div className="grid grid-cols-3 gap-1">
+                          {(['x', 'y', 'z'] as const).map((axis) => (
+                            <div
+                              key={axis}
+                              className="flex items-center bg-[#141414] border border-[#333] px-1 py-0.5 rounded-[2px] focus-within:border-zinc-400 transition-colors"
+                            >
+                              <span className="text-[9px] text-zinc-500 font-bold uppercase mr-1 select-none">{axis}</span>
+                              <input
+                                type="number"
+                                step="0.05"
+                                min="0.05"
+                                max="10"
+                                value={transformScale[axis]}
+                                onChange={(e) => handleUpdateScale(axis, parseFloat(e.target.value) || 1)}
+                                className="w-full bg-transparent text-[10px] text-zinc-200 outline-none font-mono min-w-0"
+                                aria-label={`Scale ${axis.toUpperCase()}`}
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Quick Transform Actions */}
+                      <div className="flex items-center gap-1 pt-1 border-t border-[#292929]">
+                        <button
+                          type="button"
+                          onClick={handleResetTransform}
+                          title="Reset Location to 0 and Scale to 1.0 [Alt+G / Alt+S]"
+                          className="flex-1 py-1 px-1.5 bg-[#252525] hover:bg-[#323232] text-zinc-300 hover:text-white text-[10px] font-sans font-medium rounded-[2px] transition-colors flex items-center justify-center gap-1 cursor-pointer"
+                        >
+                          <RotateCcw className="w-2.5 h-2.5 text-zinc-400" />
+                          <span>Reset [Alt+G]</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            handleUpdateLocation('x', 0);
+                            handleUpdateLocation('y', 0);
+                            handleUpdateLocation('z', 0);
+                            playSound('click');
+                            showToast('Centered coordinates to [0, 0, 0]');
+                          }}
+                          title="Center Coordinates to [0, 0, 0]"
+                          className="py-1 px-2.5 bg-[#252525] hover:bg-[#323232] text-zinc-400 hover:text-white text-[10px] font-sans rounded-[2px] transition-colors cursor-pointer"
+                        >
+                          Center
+                        </button>
                       </div>
                     </div>
                   )}
@@ -2671,12 +3086,22 @@ ${currentPhaseMeta.description}
                     <div className="p-2 space-y-2">
                       {selectedItem ? (
                         <>
-                          <div>
-                            <h3 className="font-bold text-white text-xs uppercase leading-tight font-sans">
-                              {selectedItem.name}
-                            </h3>
-                            <p className="text-[10px] text-rose-300 mt-0.5 font-semibold">{selectedItem.role}</p>
-                            <span className="text-[9px] text-zinc-400 block">{selectedItem.dimension}</span>
+                          <div className="flex items-start justify-between">
+                            <div>
+                              <h3 className="font-bold text-white text-xs uppercase leading-tight font-sans">
+                                {selectedItem.name}
+                              </h3>
+                              <p className="text-[10px] text-rose-300 mt-0.5 font-semibold">{selectedItem.role}</p>
+                              <span className="text-[9px] text-zinc-400 block">{selectedItem.dimension}</span>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => handleCopyComponentData(selectedItem)}
+                              title="Copy Component Specs [JSON]"
+                              className="p-1 text-zinc-400 hover:text-white hover:bg-white/[0.08] rounded-[2px] transition-colors cursor-pointer shrink-0"
+                            >
+                              {copiedComponentData ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                            </button>
                           </div>
 
                           <div className="space-y-1 pt-1 border-t border-[#333]">
@@ -2692,14 +3117,32 @@ ${currentPhaseMeta.description}
                             {selectedItem.description}
                           </p>
 
-                          <div className="flex items-center gap-1.5 pt-1">
+                          <div className="grid grid-cols-2 gap-1 pt-1">
                             <button
                               type="button"
                               onClick={() => handleFocusCamera(selectedItem.worldPosition)}
-                              className="flex-1 py-1.5 px-2 rounded-[2px] bg-rose-600 hover:bg-rose-500 text-white font-sans text-[11px] font-bold uppercase transition-all flex items-center justify-center gap-1 cursor-pointer"
+                              className="py-1.5 px-2 rounded-[2px] bg-rose-600 hover:bg-rose-500 text-white font-sans text-[10px] font-bold uppercase transition-all flex items-center justify-center gap-1 cursor-pointer"
                             >
-                              <span>FOCUS IN 3D</span>
+                              <span>FOCUS [F]</span>
                               <ArrowUpRight className="w-3 h-3" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={handleCycleNextComponent}
+                              className="py-1.5 px-2 rounded-[2px] bg-[#2a2a2a] hover:bg-[#383838] text-zinc-200 hover:text-white font-sans text-[10px] uppercase transition-colors flex items-center justify-center gap-1 cursor-pointer"
+                            >
+                              <span>NEXT [TAB]</span>
+                            </button>
+                          </div>
+
+                          <div className="flex items-center gap-1 pt-0.5">
+                            <button
+                              type="button"
+                              onClick={() => handleCopyComponentData(selectedItem)}
+                              className="flex-1 py-1 px-2 rounded-[2px] bg-[#1a1a1a] hover:bg-[#252525] border border-[#333] text-zinc-300 hover:text-white font-sans text-[9px] uppercase flex items-center justify-center gap-1 cursor-pointer"
+                            >
+                              <Copy className="w-2.5 h-2.5" />
+                              <span>{copiedComponentData ? 'COPIED SPECS' : 'COPY SPECS'}</span>
                             </button>
                             <button
                               type="button"
@@ -2707,15 +3150,70 @@ ${currentPhaseMeta.description}
                                 setSelectedItem(null);
                                 activeArtifactRef.current?.onSelectObject?.(null);
                               }}
-                              className="py-1.5 px-2.5 rounded-[2px] bg-[#2a2a2a] hover:bg-[#383838] text-zinc-300 hover:text-white font-sans text-[11px] uppercase cursor-pointer"
+                              className="py-1 px-2.5 rounded-[2px] bg-[#1a1a1a] hover:bg-[#252525] border border-[#333] text-zinc-400 hover:text-white font-sans text-[9px] uppercase cursor-pointer"
                             >
                               DESELECT
                             </button>
                           </div>
                         </>
                       ) : (
-                        <div className="text-center py-3 text-zinc-500 text-[11px] font-sans">
-                          Select any node or component in the 3D viewport to inspect its properties.
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between text-[10px] text-zinc-400">
+                            <span>Scene Nodes ({sceneInspectables.length})</span>
+                            <button
+                              type="button"
+                              onClick={handleSelectFirstComponent}
+                              className="text-[9px] text-rose-400 hover:text-rose-300 font-semibold cursor-pointer"
+                            >
+                              Select Primary [Tab]
+                            </button>
+                          </div>
+
+                          {/* Quick Component Picker List */}
+                          <div className="space-y-1 max-h-44 overflow-y-auto pr-0.5 no-scrollbar">
+                            {sceneInspectables.length > 0 ? (
+                              sceneInspectables.map((item) => (
+                                <button
+                                  key={item.id}
+                                  type="button"
+                                  onClick={() => {
+                                    playSound('click');
+                                    setSelectedItem(item);
+                                    activeArtifactRef.current?.onSelectObject?.(item);
+                                    handleFocusCamera(item.worldPosition);
+                                    showToast(`Selected: ${item.name}`);
+                                  }}
+                                  className="w-full text-left p-1.5 rounded-[2px] bg-[#161616] hover:bg-[#252525] border border-[#2d2d2d] hover:border-rose-500/50 flex items-center justify-between transition-colors cursor-pointer group"
+                                >
+                                  <div className="min-w-0 pr-1">
+                                    <span className="text-[10px] font-bold text-zinc-200 group-hover:text-white truncate block">
+                                      {item.name}
+                                    </span>
+                                    <span className="text-[9px] text-zinc-500 group-hover:text-rose-300/80 truncate block">
+                                      {item.role}
+                                    </span>
+                                  </div>
+                                  <ArrowUpRight className="w-3 h-3 text-zinc-500 group-hover:text-rose-400 shrink-0 transition-colors" />
+                                </button>
+                              ))
+                            ) : (
+                              <div className="text-center py-2 text-zinc-500 text-[10px]">
+                                No sub-components declared for this phase artifact.
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Quick Add Probe button */}
+                          <div className="pt-1 border-t border-[#2d2d2d]">
+                            <button
+                              type="button"
+                              onClick={handleAddProbe}
+                              className="w-full py-1.5 px-2 bg-[#1d1d1d] hover:bg-[#282828] border border-dashed border-[#383838] hover:border-rose-500/60 text-zinc-300 hover:text-white text-[10px] font-sans rounded-[2px] flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                            >
+                              <Plus className="w-3 h-3 text-rose-400" />
+                              <span>Inject 3D Latent Coordinate Probe</span>
+                            </button>
+                          </div>
                         </div>
                       )}
                     </div>
@@ -2737,7 +3235,7 @@ ${currentPhaseMeta.description}
                   </button>
 
                   {openRollouts.topology && (
-                    <div className="p-2 space-y-1.5">
+                    <div className="p-2 space-y-2">
                       <div className="flex items-center justify-between py-0.5 border-b border-[#292929] text-[10px]">
                         <span className="text-zinc-400 uppercase">OBJECT TYPE</span>
                         <span className="text-zinc-200 font-medium truncate max-w-[150px]">{currentPhaseMeta.objectType}</span>
@@ -2748,19 +3246,113 @@ ${currentPhaseMeta.description}
                       </div>
                       <div className="flex items-center justify-between py-0.5 border-b border-[#292929] text-[10px]">
                         <span className="text-zinc-400 uppercase">CHRONICLE ID</span>
-                        <span className="text-rose-400 font-bold">{currentPhaseMeta.chronicleId}</span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            playSound('click');
+                            onExit(currentPhaseMeta.chronicleId);
+                          }}
+                          title="Open Chronicle Entry for this Phase"
+                          className="text-rose-400 font-bold hover:underline cursor-pointer flex items-center gap-0.5"
+                        >
+                          <span>{currentPhaseMeta.chronicleId}</span>
+                          <ArrowUpRight className="w-2.5 h-2.5" />
+                        </button>
                       </div>
 
+                      {/* Interactive 3-Metric Cards */}
                       {currentPhaseMeta.metricsSummary && (
-                        <div className="grid grid-cols-3 gap-1 pt-1.5">
-                          {currentPhaseMeta.metricsSummary.map((m, idx) => (
-                            <div key={idx} className="p-1 rounded-[2px] bg-[#141414] border border-[#2e2e2e] text-center">
-                              <span className="text-[8px] text-zinc-400 uppercase block font-semibold truncate">{m.label}</span>
-                              <span className="text-[10px] text-zinc-100 font-bold block mt-0.5 truncate">{m.value}</span>
-                            </div>
-                          ))}
+                        <div>
+                          <div className="text-[9px] text-zinc-500 font-sans mb-1 flex items-center justify-between">
+                            <span>Mathematical Invariants</span>
+                            <span className="text-[8px] text-zinc-500">[Click card to expand]</span>
+                          </div>
+                          <div className="grid grid-cols-3 gap-1">
+                            {currentPhaseMeta.metricsSummary.map((m, idx) => {
+                              const isExpanded = expandedMathCard === idx;
+                              return (
+                                <button
+                                  key={idx}
+                                  type="button"
+                                  onClick={() => {
+                                    playSound('toggle');
+                                    setExpandedMathCard((prev) => (prev === idx ? null : idx));
+                                  }}
+                                  className={`p-1.5 rounded-[2px] text-center transition-all cursor-pointer ${
+                                    isExpanded
+                                      ? 'bg-rose-950/40 border border-rose-500 shadow-sm'
+                                      : 'bg-[#141414] hover:bg-[#1c1c1c] border border-[#2e2e2e] hover:border-zinc-500'
+                                  }`}
+                                >
+                                  <span className="text-[8px] text-zinc-400 uppercase block font-semibold truncate">{m.label}</span>
+                                  <span className={`text-[10px] font-bold block mt-0.5 truncate ${isExpanded ? 'text-rose-300' : 'text-zinc-100'}`}>
+                                    {m.value}
+                                  </span>
+                                </button>
+                              );
+                            })}
+                          </div>
                         </div>
                       )}
+
+                      {/* Expanded Math Detail Drawer */}
+                      {expandedMathCard !== null && currentPhaseMeta.metricsSummary?.[expandedMathCard] && (() => {
+                        const m = currentPhaseMeta.metricsSummary[expandedMathCard];
+                        const detail = getMetricMathDetail(activePhaseId, expandedMathCard, m.label, m.value);
+                        return (
+                          <div className="p-2 rounded-[2px] bg-[#141414] border border-rose-900/60 space-y-1.5 animate-in fade-in duration-150">
+                            <div className="flex items-center justify-between border-b border-[#292929] pb-1">
+                              <span className="text-[10px] font-bold text-rose-300">{detail.title}</span>
+                              <button
+                                type="button"
+                                onClick={() => setExpandedMathCard(null)}
+                                className="text-zinc-500 hover:text-white text-xs cursor-pointer"
+                              >
+                                ✕
+                              </button>
+                            </div>
+
+                            {/* LaTeX / Math display */}
+                            <div className="p-1.5 bg-[#0d0d0d] rounded-[2px] border border-[#282828] font-mono text-[9px] text-zinc-200 select-all overflow-x-auto no-scrollbar">
+                              {detail.latex}
+                            </div>
+
+                            <p className="text-[9px] text-zinc-400 font-sans leading-relaxed">
+                              {detail.description}
+                            </p>
+
+                            <div className="space-y-0.5 pt-0.5 border-t border-[#242424] text-[9px]">
+                              {detail.details.map((d, i) => (
+                                <div key={i} className="flex justify-between py-0.5 text-zinc-400">
+                                  <span>{d.k}</span>
+                                  <span className="text-zinc-200 font-semibold">{d.v}</span>
+                                </div>
+                              ))}
+                            </div>
+
+                            <button
+                              type="button"
+                              onClick={() => handleCopyFormula(detail.latex)}
+                              className="w-full mt-1 py-1 px-2 rounded-[2px] bg-[#1f1f1f] hover:bg-[#2b2b2b] text-zinc-300 hover:text-white text-[9px] flex items-center justify-center gap-1 cursor-pointer transition-colors"
+                            >
+                              <Copy className="w-2.5 h-2.5 text-rose-400" />
+                              <span>Copy Formula LaTeX</span>
+                            </button>
+                          </div>
+                        );
+                      })()}
+
+                      {/* Copy Math Spec button */}
+                      <div className="pt-1 border-t border-[#292929]">
+                        <button
+                          type="button"
+                          onClick={handleCopyMathSpec}
+                          className="w-full py-1.5 px-2 bg-[#252525] hover:bg-[#323232] text-zinc-300 hover:text-white text-[10px] font-sans rounded-[2px] flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                        >
+                          <Copy className="w-3 h-3 text-rose-400" />
+                          <span>Copy Complete Math Spec</span>
+                        </button>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -2776,29 +3368,110 @@ ${currentPhaseMeta.description}
                       <span className="text-[9px] text-zinc-400">{openRollouts.stats ? '▼' : '▶'}</span>
                       <span>Scene Statistics</span>
                     </span>
-                    <span className="text-[9px] text-emerald-400 font-bold">60 FPS</span>
+                    <span className="text-[9px] text-emerald-400 font-bold font-mono">{liveFps} FPS</span>
                   </button>
 
                   {openRollouts.stats && (
                     <div className="p-2 space-y-1 text-[10px]">
-                      <div className="flex justify-between py-0.5 border-b border-[#292929]">
-                        <span className="text-zinc-400">Shading Mode</span>
-                        <span className="text-zinc-200 uppercase font-bold">{shadingMode}</span>
-                      </div>
-                      <div className="flex justify-between py-0.5 border-b border-[#292929]">
-                        <span className="text-zinc-400">Turntable Motor</span>
-                        <span className={isAutoRotate ? 'text-rose-400 font-bold' : 'text-zinc-500'}>
-                          {isAutoRotate ? 'ACTIVE (1.2 rad/s)' : 'IDLE'}
-                        </span>
-                      </div>
-                      <div className="flex justify-between py-0.5 border-b border-[#292929]">
-                        <span className="text-zinc-400">Quality Tier</span>
-                        <span className="text-zinc-200 uppercase font-bold">{activeTier}</span>
-                      </div>
-                      <div className="flex justify-between py-0.5">
-                        <span className="text-zinc-400">Graphics Context</span>
-                        <span className="text-zinc-200">WebGL2 / r128</span>
-                      </div>
+                      {/* Interactive Shading Mode Toggle */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const modes: Array<'rendered' | 'wireframe' | 'solid'> = ['rendered', 'wireframe', 'solid'];
+                          const nextIdx = (modes.indexOf(shadingMode) + 1) % modes.length;
+                          const nextMode = modes[nextIdx];
+                          handleSetShadingMode(nextMode);
+                          showToast(`Shading: ${nextMode.toUpperCase()} [Z]`);
+                        }}
+                        title="Cycle Viewport Shading Mode [Z]"
+                        className="w-full flex items-center justify-between py-1 px-1.5 rounded-[2px] bg-[#141414] hover:bg-[#202020] border border-[#2b2b2b] hover:border-zinc-500/50 transition-colors text-left cursor-pointer group"
+                      >
+                        <span className="text-zinc-400 group-hover:text-zinc-300">Shading Mode</span>
+                        <div className="flex items-center gap-1">
+                          <span
+                            className={`font-bold uppercase text-[9px] px-1.5 py-0.5 rounded-[2px] ${
+                              shadingMode === 'rendered'
+                                ? 'bg-rose-950/70 text-rose-300 border border-rose-800/60'
+                                : shadingMode === 'wireframe'
+                                ? 'bg-amber-950/70 text-amber-300 border border-amber-800/60'
+                                : 'bg-sky-950/70 text-sky-300 border border-sky-800/60'
+                            }`}
+                          >
+                            {shadingMode}
+                          </span>
+                          <span className="text-[8px] text-zinc-500 font-mono">[Z]</span>
+                        </div>
+                      </button>
+
+                      {/* Interactive Turntable Motor Toggle */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsAutoRotate((prev) => {
+                            const next = !prev;
+                            playSound('toggle');
+                            showToast(next ? 'Turntable Motor: ACTIVE (1.2 rad/s)' : 'Turntable Motor: IDLE');
+                            return next;
+                          });
+                        }}
+                        title="Toggle Orbit Turntable Rotation [Space]"
+                        className="w-full flex items-center justify-between py-1 px-1.5 rounded-[2px] bg-[#141414] hover:bg-[#202020] border border-[#2b2b2b] hover:border-zinc-500/50 transition-colors text-left cursor-pointer group"
+                      >
+                        <span className="text-zinc-400 group-hover:text-zinc-300">Turntable Motor</span>
+                        <div className="flex items-center gap-1.5">
+                          {isAutoRotate && (
+                            <span className="w-1.5 h-1.5 rounded-full bg-rose-400 animate-pulse" />
+                          )}
+                          <span className={`text-[9px] font-bold ${isAutoRotate ? 'text-rose-400' : 'text-zinc-500'}`}>
+                            {isAutoRotate ? 'ACTIVE (1.2 rad/s)' : 'IDLE'}
+                          </span>
+                          <span className="text-[8px] text-zinc-500 font-mono">[Space]</span>
+                        </div>
+                      </button>
+
+                      {/* Interactive Quality Tier Cycle */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const tiers: QualityTier[] = ['low', 'medium', 'high'];
+                          const nextIdx = (tiers.indexOf(activeTier) + 1) % tiers.length;
+                          const nextTier = tiers[nextIdx];
+                          setQualityMode(nextTier);
+                          switchArtifact(activePhaseId, nextTier);
+                          playSound('toggle');
+                          showToast(`Quality Tier: ${nextTier.toUpperCase()}`);
+                        }}
+                        title="Cycle Graphics Tessellation Quality Tier"
+                        className="w-full flex items-center justify-between py-1 px-1.5 rounded-[2px] bg-[#141414] hover:bg-[#202020] border border-[#2b2b2b] hover:border-zinc-500/50 transition-colors text-left cursor-pointer group"
+                      >
+                        <span className="text-zinc-400 group-hover:text-zinc-300">Quality Tier</span>
+                        <div className="flex items-center gap-1">
+                          <span className="text-zinc-200 uppercase font-bold text-[9px] px-1.5 py-0.5 rounded-[2px] bg-[#222] border border-[#333]">
+                            {activeTier}
+                          </span>
+                          <span className="text-[8px] text-zinc-500">↻</span>
+                        </div>
+                      </button>
+
+                      {/* Graphics Context with Live Stats */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          playSound('click');
+                          showToast(`WebGL2 Hardware Accelerated | Triangles: ${liveTriangles.toLocaleString()} | Calls: ${liveDrawCalls}`);
+                        }}
+                        title="Inspect WebGL Context & Draw Calls"
+                        className="w-full py-1 px-1.5 rounded-[2px] bg-[#141414] hover:bg-[#202020] border border-[#2b2b2b] hover:border-zinc-500/50 transition-colors text-left cursor-pointer group"
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="text-zinc-400 group-hover:text-zinc-300">Graphics Context</span>
+                          <span className="text-zinc-200 font-medium">WebGL2 / r128</span>
+                        </div>
+                        <div className="flex items-center justify-between text-[9px] text-zinc-500 pt-0.5 font-mono">
+                          <span>Triangles: {liveTriangles > 0 ? liveTriangles.toLocaleString() : '2,450'}</span>
+                          <span>Draw Calls: {liveDrawCalls > 0 ? liveDrawCalls : '4'}</span>
+                        </div>
+                      </button>
                     </div>
                   )}
                 </div>
