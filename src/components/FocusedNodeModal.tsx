@@ -2,6 +2,8 @@ import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { NodeData, ProjectItem, CertificateItem, Connection } from '../types';
 import { AnalogClock } from './AnalogClock';
 import { ResearchMiniVisualizer } from './nodes/ResearchMiniVisualizer';
+import { NodeCharacterBanner } from './modals/NodeCharacterBanner';
+import { SKILL_CHARACTER_MAP } from '../data/skillsCharacterData';
 import { playSound } from '../lib/sound';
 import {
   Close,
@@ -62,6 +64,7 @@ export const FocusedNodeModal: React.FC<FocusedNodeModalProps> = ({
   const [clockTime, setClockTime] = useState('');
   const [clockDate, setClockDate] = useState('');
   const [timeZone, setTimeZone] = useState('');
+  const [skillsViewMode, setSkillsViewMode] = useState<'specs' | 'deep' | 'architecture'>('deep');
 
   // Animation lifecycle state: 'mounting' | 'open' | 'closing'
   const [animState, setAnimState] = useState<'mounting' | 'open' | 'closing'>('mounting');
@@ -351,83 +354,13 @@ export const FocusedNodeModal: React.FC<FocusedNodeModalProps> = ({
         <div className="absolute bottom-2.5 left-2.5 w-2.5 h-2.5 border-b border-l border-rose-500/60 pointer-events-none" />
         <div className="absolute bottom-2.5 right-2.5 w-2.5 h-2.5 border-b border-r border-rose-500/60 pointer-events-none" />
 
-        {/* ═══════════ UNIFIED INSPECTION HEADER ═══════════ */}
-        <header className="shrink-0 px-4 sm:px-8 pt-4 sm:pt-6 pb-3.5 sm:pb-5 border-b border-white/[0.08] bg-white/[0.01]">
-          {/* Metadata Eyebrow Row */}
-          <div
-            style={{
-              opacity: isContentVisible ? 1 : 0,
-              transform: isContentVisible ? 'translateY(0)' : 'translateY(5px)',
-              transition: 'opacity 260ms ease 40ms, transform 260ms cubic-bezier(0.16, 1, 0.3, 1) 40ms',
-            }}
-            className="flex items-center justify-between gap-4 mb-2.5 sm:mb-3"
-          >
-            <div className="flex items-center gap-2.5 min-w-0">
-              <span
-                className={`w-1.5 h-1.5 shrink-0 ${
-                  status.pulse
-                    ? 'bg-rose-500 shadow-[0_0_8px_#f43f5e] animate-pulse'
-                    : 'bg-rose-500 shadow-[0_0_6px_#f43f5e]'
-                }`}
-              />
-              <span className="font-mono text-[10px] font-bold text-rose-400 uppercase tracking-[0.2em] truncate">
-                {node.category} &bull; ARTIFACT {node.id.toUpperCase()}
-              </span>
-              <span className="text-zinc-600 hidden sm:inline">&bull;</span>
-              <span className="text-zinc-400 text-[10px] font-mono uppercase tracking-widest hidden sm:inline">
-                LAYER 01 / SPATIAL SPEC
-              </span>
-            </div>
-
-            {/* Right Header Status & Dismissal */}
-            <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-              <div className="hidden xs:flex sm:flex items-center gap-2 px-2.5 py-1 rounded-sm bg-black/50 border border-white/[0.10] text-[10px] font-mono text-zinc-300 uppercase tracking-wider">
-                <span className="text-rose-400 font-bold">{status.label}:</span>
-                <span className="text-zinc-200">{status.state}</span>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => handleClose()}
-                aria-label="Close inspection panel"
-                className="w-9 h-9 sm:w-8 sm:h-8 flex items-center justify-center rounded-md bg-white/[0.04] hover:bg-rose-500/10 active:bg-rose-500/20 text-zinc-300 hover:text-white border border-white/10 hover:border-rose-500/40 transition-colors cursor-pointer"
-                title="Close inspection (ESC)"
-              >
-                <Close className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-
-          {/* Monumental Headline Title */}
-          <div
-            style={{
-              opacity: isContentVisible ? 1 : 0,
-              transform: isContentVisible ? 'translateY(0)' : 'translateY(6px)',
-              transition: 'opacity 280ms ease 80ms, transform 280ms cubic-bezier(0.16, 1, 0.3, 1) 80ms',
-            }}
-            className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-2"
-          >
-            <div>
-              <h2 className="font-display text-xl sm:text-3xl md:text-4xl text-white font-bold tracking-tight uppercase leading-tight break-words">
-                {node.title}
-              </h2>
-              {node.subtitle && (
-                <p className="font-serif italic text-xs sm:text-sm text-zinc-300 font-normal mt-1 tracking-wide">
-                  {node.subtitle}
-                </p>
-              )}
-            </div>
-
-            <div className="text-right hidden sm:block">
-              <span className="font-mono text-[10px] font-semibold text-zinc-400 uppercase tracking-[0.2em] block">
-                COORD: [{Math.round(node.x)}, {Math.round(node.y)}]
-              </span>
-              <span className="font-mono text-[10px] text-zinc-400 uppercase tracking-widest block mt-0.5">
-                WIDTH: {node.width}PX &bull; PORTS: {(node.inputs?.length || 0) + (node.outputs?.length || 0)}
-              </span>
-            </div>
-          </div>
-        </header>
+        {/* ═══════════ UNIFIED THEMATIC HERO BANNER & HEADER ═══════════ */}
+        <NodeCharacterBanner
+          node={node}
+          isContentVisible={isContentVisible}
+          onClose={() => handleClose()}
+          status={status}
+        />
 
         {/* ═══════════ ARTIFACT CONTENT VIEWPORT (SCROLLABLE) ═══════════ */}
         <div
@@ -519,60 +452,165 @@ export const FocusedNodeModal: React.FC<FocusedNodeModalProps> = ({
              ------------------------------------------------------------- */}
           {node.category === 'skills' && node.skills && (
             <div className="space-y-5">
-              {/* Section Header with technical index */}
-              <div className="flex items-center justify-between border-b border-white/[0.06] pb-2.5">
-                <div className="font-mono text-[10px] font-bold tracking-[0.25em] text-zinc-400 uppercase flex items-center gap-2">
+              {/* Section Header with technical index & view mode selector */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/[0.08] pb-3">
+                <div className="font-mono text-[10px] font-bold tracking-[0.25em] text-zinc-300 uppercase flex items-center gap-2">
                   <Cpu className="w-3.5 h-3.5 text-rose-400" />
                   <span>COMPUTATIONAL MODULES &bull; {node.skills.length} OPERATIONAL STAGES</span>
                 </div>
-                <div className="font-mono text-[10px] text-zinc-400 tracking-widest uppercase">
-                  ARCHITECTURE VERIFIED &bull; LATENT OPS
+
+                {/* View Mode Switcher: Specs, Deep Telemetry, Architecture */}
+                <div className="flex items-center gap-1 p-0.5 rounded bg-black/60 border border-white/[0.10] self-start sm:self-auto font-mono text-[9px]">
+                  <button
+                    type="button"
+                    onClick={() => setSkillsViewMode('deep')}
+                    className={`px-2 py-1 rounded transition-colors uppercase font-bold tracking-wider ${
+                      skillsViewMode === 'deep'
+                        ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40 shadow-2xs'
+                        : 'text-zinc-400 hover:text-white'
+                    }`}
+                  >
+                    Deep Telemetry &amp; Math
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSkillsViewMode('specs')}
+                    className={`px-2 py-1 rounded transition-colors uppercase font-bold tracking-wider ${
+                      skillsViewMode === 'specs'
+                        ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40 shadow-2xs'
+                        : 'text-zinc-400 hover:text-white'
+                    }`}
+                  >
+                    Compact Specs
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSkillsViewMode('architecture')}
+                    className={`px-2 py-1 rounded transition-colors uppercase font-bold tracking-wider ${
+                      skillsViewMode === 'architecture'
+                        ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40 shadow-2xs'
+                        : 'text-zinc-400 hover:text-white'
+                    }`}
+                  >
+                    Architectural Notes
+                  </button>
                 </div>
               </div>
 
-              {/* Sophisticated Module Ledger (Crisp, sharp cards with Space Mono metrics) */}
+              {/* Character-Rich Computational Modules Grid */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                {node.skills.map((sk, idx) => (
-                  <div
-                    key={sk.name}
-                    className="p-4 rounded-md bg-black/50 border border-white/[0.10] hover:border-rose-500/40 transition-all relative overflow-hidden group"
-                  >
-                    {/* Stage Eyebrow & Category */}
-                    <div className="flex items-center justify-between gap-2 mb-2">
-                      <div className="flex items-center gap-2">
-                        <span className="font-mono text-[10px] font-bold text-rose-400 tracking-wider uppercase">
-                          STAGE 0{idx + 1}
-                        </span>
-                        <span className="text-zinc-600">&bull;</span>
-                        <span className="font-mono text-[10px] text-zinc-400 uppercase tracking-widest">
-                          {sk.category}
-                        </span>
+                {node.skills.map((sk, idx) => {
+                  const charSpec = SKILL_CHARACTER_MAP[sk.name];
+                  const symbol = charSpec?.symbol || '⨂';
+                  const badge = charSpec?.badge || `${sk.category.toUpperCase()} PIPELINE`;
+                  const formula = charSpec?.formula;
+                  const specs = charSpec?.specs || [];
+                  const notes = charSpec?.architecturalNotes;
+
+                  return (
+                    <div
+                      key={sk.name}
+                      className="p-4 sm:p-4.5 rounded-lg bg-black/60 border border-white/[0.12] hover:border-rose-500/50 transition-all relative overflow-hidden group shadow-md flex flex-col justify-between gap-3"
+                    >
+                      {/* Subtle accent corner glow */}
+                      <div className="absolute top-0 right-0 w-24 h-24 bg-rose-500/5 rounded-full blur-xl pointer-events-none group-hover:bg-rose-500/10 transition-colors" />
+
+                      {/* Stage Eyebrow Row: Symbol Chip, Stage Title & Benchmark Meter */}
+                      <div className="space-y-2.5">
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            {/* Thematic Character Symbol Badge */}
+                            <div className="w-8 h-8 rounded-md bg-rose-500/15 border border-rose-500/35 flex items-center justify-center font-mono text-sm font-bold text-rose-300 shadow-[0_0_10px_rgba(244,63,94,0.25)] shrink-0">
+                              {symbol}
+                            </div>
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-1.5">
+                                <span className="font-mono text-[10px] font-bold text-rose-400 tracking-wider uppercase">
+                                  STAGE 0{idx + 1}
+                                </span>
+                                <span className="text-zinc-600">&bull;</span>
+                                <span className="font-mono text-[9px] text-zinc-400 uppercase tracking-widest truncate">
+                                  {sk.category}
+                                </span>
+                              </div>
+                              <div className="font-mono text-[8px] text-rose-300/80 tracking-wider uppercase truncate">
+                                {badge}
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Benchmark Score Badge */}
+                          <div className="flex flex-col items-end gap-1 shrink-0">
+                            <span className="px-2 py-0.5 rounded-xs bg-white/[0.05] border border-white/[0.12] font-mono text-[10px] font-bold text-zinc-100 flex items-center gap-1.5 shadow-2xs">
+                              <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
+                              {sk.level}% BENCH
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Benchmark Progress Bar */}
+                        <div className="w-full h-1 bg-white/[0.08] rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-gradient-to-r from-rose-600 via-rose-500 to-rose-400 shadow-[0_0_8px_#f43f5e] transition-all duration-700 ease-out"
+                            style={{ width: `${sk.level}%` }}
+                          />
+                        </div>
+
+                        {/* Module Title */}
+                        <h3 className="font-display text-base font-bold text-white tracking-wide uppercase group-hover:text-rose-100 transition-colors pt-0.5">
+                          {sk.name}
+                        </h3>
                       </div>
 
-                      {/* Discrete Benchmark Metric (Editorial/Technical Space Mono) */}
-                      <span className="px-2 py-0.5 rounded-sm bg-white/[0.04] border border-white/[0.10] font-mono text-[10px] font-semibold text-zinc-200">
-                        {sk.level}% BENCH
-                      </span>
-                    </div>
+                      {/* Mathematical Formulation (in Deep mode or Specs mode) */}
+                      {formula && skillsViewMode !== 'architecture' && (
+                        <div className="px-2.5 py-1.5 rounded bg-black/70 border border-white/[0.08] font-mono text-[9.5px] text-rose-300 tracking-wide flex items-center justify-between gap-2 overflow-x-auto">
+                          <span className="text-zinc-500 font-bold shrink-0">FORMULA:</span>
+                          <span className="truncate text-zinc-200">{formula}</span>
+                        </div>
+                      )}
 
-                    {/* Module Title */}
-                    <h3 className="font-display text-base font-bold text-white tracking-wide uppercase mb-3 group-hover:text-rose-100 transition-colors">
-                      {sk.name}
-                    </h3>
+                      {/* Deep Technical Specs Grid */}
+                      {specs.length > 0 && skillsViewMode !== 'architecture' && (
+                        <div className="grid grid-cols-2 gap-1.5 font-mono">
+                          {specs.map((sp, sIdx) => (
+                            <div
+                              key={sIdx}
+                              className="px-2 py-1 rounded bg-white/[0.025] border border-white/[0.06] flex flex-col justify-center"
+                            >
+                              <span className="text-[7.5px] text-rose-400/90 font-bold uppercase tracking-wider">
+                                {sp.label}
+                              </span>
+                              <span className="text-[9.5px] text-zinc-200 font-medium truncate mt-0.5">
+                                {sp.value}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
 
-                    {/* Runtime Dependencies / Capability Tags */}
-                    <div className="flex flex-wrap gap-1.5 pt-1">
-                      {sk.tags.map((tag) => (
-                        <span
-                          key={tag}
-                          className="px-2 py-0.5 rounded-sm bg-white/[0.03] border border-white/[0.08] text-[10px] font-mono text-zinc-300"
-                        >
-                          {tag}
-                        </span>
-                      ))}
+                      {/* Architectural Insight Note */}
+                      {notes && (skillsViewMode === 'deep' || skillsViewMode === 'architecture') && (
+                        <p className="font-serif italic text-xs text-zinc-300 leading-relaxed font-normal border-l-2 border-rose-500/40 pl-2.5 py-0.5">
+                          {notes}
+                        </p>
+                      )}
+
+                      {/* Capability / Dependency Tags */}
+                      <div className="flex flex-wrap gap-1.5 pt-2 border-t border-white/[0.06]">
+                        {sk.tags.map((tag) => (
+                          <span
+                            key={tag}
+                            className="px-2 py-0.5 rounded-xs bg-white/[0.03] border border-white/[0.08] text-[9.5px] font-mono text-zinc-300 flex items-center gap-1 group-hover:border-white/[0.14] transition-colors"
+                          >
+                            <span className="w-1 h-1 rounded-full bg-rose-400/60" />
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}
@@ -721,79 +759,117 @@ export const FocusedNodeModal: React.FC<FocusedNodeModalProps> = ({
                 </div>
               </div>
 
-              {/* Curriculum Cards (Crisp architectural boxes) */}
+              {/* Curriculum Cards (Crisp architectural boxes with academic symbols) */}
               <div className="space-y-4">
-                {node.certificates.map((cert) => (
-                  <div
-                    key={cert.id}
-                    className="p-5 rounded-md bg-black/50 border border-white/[0.10] hover:border-white/[0.20] transition-all space-y-4"
-                  >
-                    <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-2 border-b border-white/[0.06] pb-3">
-                      <div>
-                        <span className="font-mono text-[10px] font-bold text-rose-400 uppercase tracking-widest block mb-1">
-                          {cert.issuer}
-                        </span>
-                        <h3 className="font-display text-lg sm:text-xl font-bold text-white uppercase tracking-tight">
-                          {cert.title}
-                        </h3>
+                {node.certificates.map((cert) => {
+                  const getCertSymbol = () => {
+                    if (cert.id === 'acad-iitj') return { symbol: '⌬', badge: 'INSTITUTE OF NATIONAL IMPORTANCE // IIT JODHPUR' };
+                    if (cert.id === 'acad-senior-school') return { symbol: '⚜', badge: 'CBSE ALL INDIA SENIOR SCHOOL EXAMINATION' };
+                    return { symbol: '★', badge: 'CBSE ALL INDIA SECONDARY EXAMINATION' };
+                  };
+                  const certMeta = getCertSymbol();
+
+                  return (
+                    <div
+                      key={cert.id}
+                      className="p-5 rounded-lg bg-black/60 border border-white/[0.12] hover:border-rose-500/40 transition-all space-y-4 relative overflow-hidden group shadow-md"
+                    >
+                      {/* Accent corner glow */}
+                      <div className="absolute top-0 right-0 w-28 h-28 bg-rose-500/5 rounded-full blur-2xl pointer-events-none group-hover:bg-rose-500/10 transition-colors" />
+
+                      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 border-b border-white/[0.08] pb-3.5">
+                        <div className="flex items-start gap-3 min-w-0">
+                          {/* Academic Symbol Insignia */}
+                          <div className="w-9 h-9 rounded-md bg-rose-500/15 border border-rose-500/35 flex items-center justify-center font-mono text-base font-bold text-rose-300 shadow-[0_0_12px_rgba(244,63,94,0.25)] shrink-0 mt-0.5">
+                            {certMeta.symbol}
+                          </div>
+
+                          <div className="min-w-0">
+                            <div className="flex flex-wrap items-center gap-2 mb-1">
+                              <span className="font-mono text-[9px] font-bold text-rose-400 uppercase tracking-widest">
+                                {cert.issuer}
+                              </span>
+                              <span className="text-zinc-600">&bull;</span>
+                              <span className="font-mono text-[8px] text-zinc-400 uppercase tracking-wider">
+                                {certMeta.badge}
+                              </span>
+                            </div>
+                            <h3 className="font-display text-lg sm:text-xl font-bold text-white uppercase tracking-tight leading-snug">
+                              {cert.title}
+                            </h3>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 shrink-0 self-start sm:self-auto">
+                          <span className="font-mono text-[10px] text-zinc-300 uppercase px-2.5 py-1 rounded bg-white/[0.05] border border-white/[0.10] font-semibold">
+                            {cert.issueDate}
+                          </span>
+                        </div>
                       </div>
 
-                      <div className="flex items-center gap-2">
-                        <span className="font-mono text-[10px] text-zinc-400 uppercase px-2 py-0.5 rounded-sm bg-white/[0.04] border border-white/[0.08]">
-                          {cert.issueDate}
-                        </span>
+                      <p className="font-serif text-sm text-zinc-200 leading-relaxed font-normal">
+                        {cert.description}
+                      </p>
+
+                      {/* Coursework & Competency Tags */}
+                      <div className="space-y-1.5 pt-1">
+                        <div className="font-mono text-[8.5px] text-zinc-400 uppercase tracking-widest">
+                          CURRICULAR MODULES &amp; FOUNDATIONS:
+                        </div>
+                        <div className="flex flex-wrap gap-1.5">
+                          {cert.skills.map((skill) => (
+                            <span
+                              key={skill}
+                              className="px-2.5 py-1 rounded-xs bg-white/[0.03] border border-white/[0.08] text-xs font-mono text-zinc-300 flex items-center gap-1.5"
+                            >
+                              <span className="w-1 h-1 rounded-full bg-rose-400" />
+                              {skill}
+                            </span>
+                          ))}
+                        </div>
                       </div>
-                    </div>
 
-                    <p className="font-serif text-sm text-zinc-200 leading-relaxed font-normal">
-                      {cert.description}
-                    </p>
-
-                    {/* Competency tags */}
-                    <div className="flex flex-wrap gap-1.5 pt-1">
-                      {cert.skills.map((skill) => (
-                        <span
-                          key={skill}
-                          className="px-2.5 py-1 rounded-sm bg-white/[0.03] border border-white/[0.08] text-xs font-mono text-zinc-300"
-                        >
-                          {skill}
-                        </span>
-                      ))}
-                    </div>
-
-                    {/* Verification Actions */}
-                    <div className="pt-2 flex items-center justify-between text-xs font-mono text-zinc-400">
-                      <button
-                        type="button"
-                        onClick={() => handleCopy(cert.credentialId, cert.id)}
-                        className="inline-flex items-center gap-1.5 text-zinc-400 hover:text-white transition-colors cursor-pointer"
-                      >
-                        {copiedId === cert.id ? (
-                          <>
-                            <Check className="w-3.5 h-3.5 text-rose-400" />
-                            <span className="text-rose-400 font-semibold">COPIED REF</span>
-                          </>
-                        ) : (
-                          <>
-                            <Copy className="w-3.5 h-3.5" />
-                            <span>REF: {cert.credentialId}</span>
-                          </>
-                        )}
-                      </button>
-
-                      {onOpenCertificateDetail && (
+                      {/* Verification Actions & Hash Status */}
+                      <div className="pt-2 flex flex-wrap items-center justify-between gap-3 text-xs font-mono text-zinc-400 border-t border-white/[0.06]">
                         <button
                           type="button"
-                          onClick={() => onOpenCertificateDetail(cert)}
-                          className="inline-flex items-center gap-1.5 text-rose-400 hover:text-rose-300 font-bold tracking-wider uppercase cursor-pointer"
+                          onClick={() => handleCopy(cert.credentialId, cert.id)}
+                          className="inline-flex items-center gap-1.5 text-zinc-400 hover:text-white transition-colors cursor-pointer"
                         >
-                          <span>Inspect Credential</span>
-                          <ArrowUpRight className="w-3.5 h-3.5" />
+                          {copiedId === cert.id ? (
+                            <>
+                              <Check className="w-3.5 h-3.5 text-rose-400" />
+                              <span className="text-rose-400 font-semibold">COPIED REF</span>
+                            </>
+                          ) : (
+                            <>
+                              <Copy className="w-3.5 h-3.5" />
+                              <span>REF: {cert.credentialId}</span>
+                            </>
+                          )}
                         </button>
-                      )}
+
+                        <div className="flex items-center gap-3">
+                          <div className="flex items-center gap-1.5 text-[9px] text-emerald-400/90 font-mono">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                            <span>VERIFIED RECORD</span>
+                          </div>
+
+                          {onOpenCertificateDetail && (
+                            <button
+                              type="button"
+                              onClick={() => onOpenCertificateDetail(cert)}
+                              className="inline-flex items-center gap-1.5 text-rose-400 hover:text-rose-300 font-bold tracking-wider uppercase cursor-pointer"
+                            >
+                              <span>Inspect Credential</span>
+                              <ArrowUpRight className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}
