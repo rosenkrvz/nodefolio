@@ -54,7 +54,7 @@ const ArchitecturalRevealComponent: React.FC<ArchitecturalRevealProps> = ({
           opacity: statusOpacity,
           transform: `translateY(${(1 - revealProgress) * 15}px)`,
         }}
-        className="absolute top-20 inset-x-0 w-full max-w-5xl mx-auto flex items-center justify-between px-6 text-[11px] font-body text-zinc-400 uppercase tracking-[0.25em] z-30 pointer-events-none"
+        className="absolute top-20 inset-x-0 w-full max-w-[1780px] 2xl:max-w-[1920px] 3xl:max-w-[2160px] mx-auto flex items-center justify-between px-6 sm:px-12 md:px-16 lg:px-20 text-[11px] font-body text-zinc-400 uppercase tracking-[0.25em] z-30 pointer-events-none"
       >
         <div className="flex items-center gap-2">
           <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />

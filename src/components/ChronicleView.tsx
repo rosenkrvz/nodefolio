@@ -186,38 +186,38 @@ const EditorialResearchEntry: React.FC<EditorialResearchEntryProps> = ({
     <article
       id={`milestone-${item.id}`}
       onMouseEnter={() => playSound('hover')}
-      className="relative group scroll-mt-28 pb-10 pt-7 border-b border-white/[0.08] transition-colors duration-300 bg-gradient-to-b from-rose-500/[0.02] to-transparent rounded-2xl p-5 sm:p-8"
+      className="relative group scroll-mt-28 pb-10 pt-7 border border-white/[0.08] transition-colors duration-300 bg-[#0c0e15]/70 backdrop-blur-md rounded-md p-5 sm:p-8 xl:p-12 shadow-[0_8px_32px_rgba(0,0,0,0.5)]"
     >
       {/* Active Phase Crimson Laser Accent Top Rule */}
       <div className="absolute top-0 inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-rose-500 to-transparent shadow-[0_0_14px_#f43f5e]" />
 
       {/* Grid: 3-column asymmetric editorial layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 xl:gap-12 2xl:gap-16 items-start">
         {/* Left Column: Temporal Spine & Status (col-span-3) */}
         <div className="lg:col-span-3 flex flex-col items-start space-y-4">
           {/* Phase Numeral & Classification */}
           <div className="flex items-baseline gap-3">
-            <span className="font-display text-4xl sm:text-5xl font-black tracking-tight leading-none text-white transition-colors">
+            <span className="font-display text-4xl sm:text-5xl xl:text-6xl font-black tracking-tight leading-none text-white transition-colors">
               {numeral}
             </span>
             <div className="flex flex-col">
-              <span className="font-tech text-[10px] tracking-[0.25em] uppercase text-zinc-400 font-semibold">
+              <span className="font-tech text-[10px] xl:text-[11px] tracking-[0.25em] uppercase text-zinc-400 font-semibold">
                 {item.phase}
               </span>
-              <span className="font-body text-xs font-bold tracking-wider uppercase text-rose-400">
+              <span className="font-body text-xs xl:text-sm font-bold tracking-wider uppercase text-rose-400">
                 {item.period}
               </span>
             </div>
           </div>
 
           {/* Status Badge */}
-          <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-md text-[10px] font-tech tracking-[0.2em] uppercase font-bold bg-rose-500/10 text-rose-300 border border-rose-500/30 shadow-[0_0_10px_rgba(244,63,94,0.15)]">
+          <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded text-[10px] xl:text-[11px] font-tech tracking-[0.2em] uppercase font-bold bg-rose-500/10 text-rose-300 border border-rose-500/30 shadow-[0_0_10px_rgba(244,63,94,0.15)]">
             <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse shadow-[0_0_6px_#f43f5e]" />
             <span>{item.statusLabel}</span>
           </div>
 
           {/* Category Pillar */}
-          <div className="pt-1 font-tech text-[9.5px] uppercase tracking-[0.25em] text-zinc-400 max-w-[220px] leading-relaxed">
+          <div className="pt-1 font-tech text-[9.5px] xl:text-[10.5px] uppercase tracking-[0.25em] text-zinc-400 max-w-[220px] xl:max-w-[260px] leading-relaxed">
             {item.category}
           </div>
         </div>
@@ -225,13 +225,13 @@ const EditorialResearchEntry: React.FC<EditorialResearchEntryProps> = ({
         {/* Center Column: Field Notebook Log & Findings (col-span-5) */}
         <div className="lg:col-span-5 space-y-5">
           {/* Title */}
-          <h2 className="font-display text-2xl sm:text-3xl font-bold tracking-tight uppercase leading-[1.12] text-white">
+          <h2 className="font-display text-2xl sm:text-3xl xl:text-4xl 2xl:text-5xl font-bold tracking-tight uppercase leading-[1.12] text-white">
             {item.title}
           </h2>
 
           {/* Core Thesis / Question */}
-          <div className="relative pl-4 border-l-2 border-rose-500/60 bg-white/[0.015] py-2.5 pr-3 rounded-r-lg">
-            <p className="font-body text-sm sm:text-[14.5px] text-zinc-200 font-medium leading-relaxed italic">
+          <div className="relative pl-4 border-l-2 border-rose-500/60 bg-white/[0.015] py-2.5 pr-3 rounded-r-md">
+            <p className="font-body text-sm sm:text-[14.5px] xl:text-base 2xl:text-lg text-zinc-200 font-medium leading-relaxed italic">
               "{item.thesis}"
             </p>
           </div>
@@ -303,15 +303,15 @@ const EditorialResearchEntry: React.FC<EditorialResearchEntryProps> = ({
           />
 
           {/* Telemetry Metrics & Canvas Link */}
-          <div className="p-3.5 rounded-xl bg-white/[0.02] border border-white/[0.06] space-y-3">
+          <div className="p-3.5 xl:p-5 rounded-md bg-[#090b10]/80 border border-white/[0.08] space-y-3.5">
             {item.metrics && item.metrics.length > 0 && (
-              <div className="grid grid-cols-3 gap-2 pb-3 border-b border-white/[0.06]">
+              <div className="grid grid-cols-3 gap-2 pb-3.5 border-b border-white/[0.08]">
                 {item.metrics.map((m, mIdx) => (
                   <div key={mIdx} className="space-y-0.5">
-                    <span className="block font-tech text-[8.5px] uppercase tracking-wider text-zinc-400">
+                    <span className="block font-tech text-[8.5px] xl:text-[9.5px] uppercase tracking-wider text-zinc-400">
                       {m.label}
                     </span>
-                    <span className="block font-tech text-xs font-semibold text-zinc-200 truncate">
+                    <span className="block font-tech text-xs xl:text-sm font-semibold text-zinc-200 truncate">
                       {m.value}
                     </span>
                   </div>
@@ -330,7 +330,7 @@ const EditorialResearchEntry: React.FC<EditorialResearchEntryProps> = ({
                   onFocusNodeOnCanvas(item.linkedNodeId);
                 }
               }}
-              className="w-full py-2.5 px-3.5 rounded-xl bg-rose-950/40 hover:bg-rose-600/20 border border-rose-500/40 hover:border-rose-500/70 font-body text-xs tracking-wider uppercase text-rose-300 hover:text-white font-semibold group/link cursor-pointer focus:outline-none transition-all flex items-center justify-between shadow-[0_0_14px_rgba(225,29,72,0.15)] active:scale-[0.98]"
+              className="w-full py-2.5 px-3.5 rounded-md bg-rose-950/50 hover:bg-rose-600/25 border border-rose-500/50 hover:border-rose-500/80 font-body text-xs xl:text-sm tracking-wider uppercase text-rose-300 hover:text-white font-semibold group/link cursor-pointer focus:outline-none transition-all flex items-center justify-between shadow-[0_0_14px_rgba(225,29,72,0.2)] active:scale-[0.98]"
             >
               <div className="flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
@@ -514,9 +514,36 @@ export const ChronicleView: React.FC<ChronicleViewProps> = ({
       <div className="fixed inset-0 pointer-events-none bg-[radial-gradient(ellipse_at_80%_25%,rgba(225,29,72,0.14),transparent_55%)] z-0" aria-hidden="true" />
       <div className="fixed inset-0 pointer-events-none bg-[radial-gradient(ellipse_at_10%_80%,rgba(225,29,72,0.06),transparent_50%)] z-0" aria-hidden="true" />
 
+      {/* ═══════════ ARCHITECTURAL TELEMETRY MARGIN RAILS (Ultrawide / Zoom-out) ═══════════ */}
+      {/* Left Margin Telemetry Rail */}
+      <div className="hidden 2xl:flex fixed left-5 top-24 bottom-16 flex-col justify-between items-center pointer-events-none z-10 text-[9px] font-mono text-zinc-600 select-none tracking-widest uppercase">
+        <div className="flex flex-col items-center gap-2.5">
+          <div className="w-1.5 h-1.5 rounded-full bg-rose-500/60 shadow-[0_0_6px_#f43f5e]" />
+          <span className="[writing-mode:vertical-rl] rotate-180 text-zinc-400">LATENT_AXIS // 0.000</span>
+        </div>
+        <div className="w-px h-40 bg-gradient-to-b from-transparent via-white/10 to-transparent" />
+        <div className="flex flex-col items-center gap-2.5">
+          <span className="[writing-mode:vertical-rl] rotate-180 text-zinc-500">SYS.CHRONICLE // v4.2</span>
+          <div className="w-1.5 h-1.5 border border-white/20" />
+        </div>
+      </div>
+
+      {/* Right Margin Telemetry Rail */}
+      <div className="hidden 2xl:flex fixed right-5 top-24 bottom-16 flex-col justify-between items-center pointer-events-none z-10 text-[9px] font-mono text-zinc-600 select-none tracking-widest uppercase">
+        <div className="flex flex-col items-center gap-2.5">
+          <div className="w-1.5 h-1.5 rounded-full bg-rose-500/60 shadow-[0_0_6px_#f43f5e]" />
+          <span className="[writing-mode:vertical-rl] text-zinc-400">GEODESIC_AXIS // 1.000</span>
+        </div>
+        <div className="w-px h-40 bg-gradient-to-b from-transparent via-white/10 to-transparent" />
+        <div className="flex flex-col items-center gap-2.5">
+          <span className="[writing-mode:vertical-rl] text-zinc-500">SEC.LEDGER // 0x7E3</span>
+          <div className="w-1.5 h-1.5 border border-white/20" />
+        </div>
+      </div>
+
       {/* ═══════════ CINEMATIC EDITORIAL HERO SECTION ═══════════ */}
-      <header className="relative z-10 w-full pt-28 pb-12 px-6 sm:px-12 md:px-16 border-b border-white/[0.08]">
-        <div className="max-w-7xl mx-auto">
+      <header className="relative z-10 w-full pt-24 sm:pt-28 pb-12 px-4 sm:px-8 md:px-12 lg:px-16 2xl:px-20 border-b border-white/[0.08]">
+        <div className="w-full max-w-[1780px] 2xl:max-w-[1920px] 3xl:max-w-[2160px] mx-auto">
           {/* Top Eyebrow & Brand Anchor */}
           <div
             style={{
@@ -545,7 +572,7 @@ export const ChronicleView: React.FC<ChronicleViewProps> = ({
           </div>
 
           {/* Main Asymmetric Title Block */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-end">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 xl:gap-16 2xl:gap-24 items-end">
             {/* Left: Directionally Masked Title & Pitch (col-span-8) */}
             <div className="lg:col-span-8 flex flex-col items-start">
               {/* Category Breadcrumb */}
@@ -575,10 +602,10 @@ export const ChronicleView: React.FC<ChronicleViewProps> = ({
                   }}
                   className="leading-[0.95] sm:leading-[0.9] select-none tracking-tight"
                 >
-                  <span className="block font-display text-3xl min-[360px]:text-[32px] min-[400px]:text-4xl min-[480px]:text-5xl sm:text-7xl md:text-8xl font-black text-white tracking-[-0.03em] uppercase break-words">
+                  <span className="block font-display text-3xl min-[360px]:text-[32px] min-[400px]:text-4xl min-[480px]:text-5xl sm:text-7xl md:text-8xl xl:text-9xl 2xl:text-[10rem] font-black text-white tracking-[-0.03em] uppercase break-words">
                     COMPUTATIONAL
                   </span>
-                  <span className="block font-display text-3xl min-[360px]:text-[32px] min-[400px]:text-4xl min-[480px]:text-5xl sm:text-7xl md:text-8xl font-light text-zinc-400/90 tracking-[-0.02em] uppercase mt-1 break-words">
+                  <span className="block font-display text-3xl min-[360px]:text-[32px] min-[400px]:text-4xl min-[480px]:text-5xl sm:text-7xl md:text-8xl xl:text-9xl 2xl:text-[10rem] font-light text-zinc-400/90 tracking-[-0.02em] uppercase mt-1 break-words">
                     CHRONICLE
                   </span>
                 </h1>
@@ -591,7 +618,7 @@ export const ChronicleView: React.FC<ChronicleViewProps> = ({
                   transform: reducedMotion || entryStage >= 3 ? 'none' : 'translateY(16px)',
                   transition: 'opacity 0.7s ease-out, transform 0.7s ease-out',
                 }}
-                className="font-body text-base sm:text-lg text-zinc-300 font-normal leading-relaxed mb-8 max-w-2xl"
+                className="font-body text-base sm:text-lg xl:text-xl text-zinc-300 font-normal leading-relaxed mb-8 max-w-2xl xl:max-w-3xl 2xl:max-w-4xl"
               >
                 An art-directed experimental journal logging investigations in Riemannian latent representations, hardware-aware attention kernels, contrastive metric geometry, and first-principles autodiff engines.
               </p>
@@ -611,7 +638,7 @@ export const ChronicleView: React.FC<ChronicleViewProps> = ({
                     playSound('click');
                     onBackToCanvas();
                   }}
-                  className="w-full min-[400px]:w-auto justify-center px-5 sm:px-6 py-3 sm:py-3.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-zinc-200 hover:text-white border border-white/[0.12] hover:border-white/[0.25] font-semibold text-xs sm:text-sm tracking-wider uppercase transition-all active:scale-95 cursor-pointer flex items-center gap-2 group"
+                  className="w-full min-[400px]:w-auto justify-center px-5 sm:px-6 py-3 sm:py-3.5 rounded-md bg-white/[0.04] hover:bg-white/[0.08] text-zinc-200 hover:text-white border border-white/[0.12] hover:border-white/[0.25] font-semibold text-xs sm:text-sm tracking-wider uppercase transition-all active:scale-95 cursor-pointer flex items-center gap-2 group"
                 >
                   <ArrowLeft className="w-4 h-4 text-rose-400 transition-transform group-hover:-translate-x-1" />
                   <span>BACK TO CANVAS</span>
@@ -620,7 +647,7 @@ export const ChronicleView: React.FC<ChronicleViewProps> = ({
                 <a
                   href="#chronicle-ledger"
                   onClick={() => playSound('secondaryClick')}
-                  className="w-full min-[400px]:w-auto justify-center px-5 sm:px-6 py-3 sm:py-3.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-semibold text-xs sm:text-sm tracking-wider uppercase transition-all shadow-[0_0_24px_rgba(244,63,94,0.35)] hover:shadow-[0_0_32px_rgba(244,63,94,0.55)] flex items-center gap-2 group active:scale-95 cursor-pointer"
+                  className="w-full min-[400px]:w-auto justify-center px-5 sm:px-6 py-3 sm:py-3.5 rounded-md bg-rose-600 hover:bg-rose-500 text-white font-semibold text-xs sm:text-sm tracking-wider uppercase transition-all shadow-[0_0_24px_rgba(244,63,94,0.35)] hover:shadow-[0_0_32px_rgba(244,63,94,0.55)] flex items-center gap-2 group active:scale-95 cursor-pointer"
                 >
                   <span>EXPLORE CHRONICLE</span>
                   <ChevronDown className="w-4 h-4 transition-transform group-hover:translate-y-0.5" />
@@ -636,7 +663,7 @@ export const ChronicleView: React.FC<ChronicleViewProps> = ({
               }}
               className="hidden lg:flex lg:col-span-4 flex-col items-end text-right space-y-6 pl-8"
             >
-              <div className="space-y-3 w-full max-w-[280px]">
+              <div className="space-y-3 w-full max-w-[280px] xl:max-w-[340px]">
                 <div className="font-tech text-xs tracking-[0.25em] text-rose-400 uppercase font-semibold pb-2 border-b border-white/[0.08]">
                   JOURNAL SPECIFICATION
                 </div>
@@ -646,8 +673,8 @@ export const ChronicleView: React.FC<ChronicleViewProps> = ({
                   { label: 'SYSTEMS COMPLETED', value: '02 ENGINES' },
                   { label: 'FORMAL RIGOR', value: 'KKT DUALITY' },
                 ].map((stat) => (
-                  <div key={stat.label} className="flex items-center justify-between text-xs">
-                    <span className="font-tech text-zinc-400 uppercase tracking-wider text-[10px]">
+                  <div key={stat.label} className="flex items-center justify-between text-xs xl:text-sm">
+                    <span className="font-tech text-zinc-400 uppercase tracking-wider text-[10px] xl:text-[11px]">
                       {stat.label}
                     </span>
                     <span className="font-tech font-bold text-zinc-200">
@@ -657,8 +684,8 @@ export const ChronicleView: React.FC<ChronicleViewProps> = ({
                 ))}
               </div>
 
-              <div className="pt-4 border-t border-white/[0.06] max-w-[240px]">
-                <p className="font-tech text-[10px] text-zinc-400 uppercase tracking-widest leading-normal">
+              <div className="pt-4 border-t border-white/[0.06] max-w-[240px] xl:max-w-[300px]">
+                <p className="font-tech text-[10px] xl:text-[11px] text-zinc-400 uppercase tracking-widest leading-normal">
                   All mathematical diagrams and kernel schematics are verified against working computational codebases.
                 </p>
                 <div className="w-6 h-0.5 bg-rose-500 mt-2 ml-auto" />
@@ -684,7 +711,7 @@ export const ChronicleView: React.FC<ChronicleViewProps> = ({
       </nav>
 
       {/* ═══════════ EDITORIAL RESEARCH LEDGER ═══════════ */}
-      <main id="chronicle-ledger" className="relative z-10 max-w-7xl mx-auto px-4 sm:px-8 md:px-12 pt-10 pb-16">
+      <main id="chronicle-ledger" className="relative z-10 w-full max-w-[1780px] 2xl:max-w-[1920px] 3xl:max-w-[2160px] mx-auto px-4 sm:px-8 md:px-12 lg:px-16 2xl:px-20 pt-10 pb-16">
         {/* Section Title Header */}
         <div className="flex items-center justify-between gap-4 mb-8 pb-3 border-b border-white/[0.06]">
           <div className="flex items-center gap-3">
@@ -724,7 +751,7 @@ export const ChronicleView: React.FC<ChronicleViewProps> = ({
 
 
       {/* ═══════════ CLOSING COLOPHON & ARCHIVE STAMP ═══════════ */}
-      <footer className="relative z-10 max-w-7xl mx-auto px-4 sm:px-8 md:px-12 mt-8 pb-[calc(env(safe-area-inset-bottom,0px)+32px)] sm:pb-24">
+      <footer className="relative z-10 w-full max-w-[1780px] 2xl:max-w-[1920px] 3xl:max-w-[2160px] mx-auto px-4 sm:px-8 md:px-12 lg:px-16 2xl:px-20 mt-8 pb-[calc(env(safe-area-inset-bottom,0px)+32px)] sm:pb-24">
         <div className="pt-10 border-t border-white/[0.08] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
           <div className="flex items-center gap-3 font-body text-xs tracking-[0.25em] uppercase text-zinc-400">
             <BrandLogo variant="icon" size={14} className="text-rose-400 shrink-0" />

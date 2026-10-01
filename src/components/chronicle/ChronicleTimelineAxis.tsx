@@ -30,7 +30,7 @@ export const ChronicleTimelineAxis: React.FC<ChronicleTimelineAxisProps> = ({
       className={`relative w-full border-y border-white/[0.08] bg-[#090b10]/95 backdrop-blur-md select-none transition-all ${className}`}
       aria-label="Chronological Research Axis"
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-8 py-3.5">
+      <div className="w-full max-w-[1780px] 2xl:max-w-[1920px] 3xl:max-w-[2160px] mx-auto px-4 sm:px-8 md:px-12 lg:px-16 2xl:px-20 py-3.5">
         {/* Top Header Row: System Beacon & Navigation Metadata */}
         <div className="flex items-center justify-between gap-4 pb-2.5 mb-2.5 border-b border-white/[0.06]">
           <div className="flex items-center gap-2.5 flex-wrap">
@@ -58,7 +58,7 @@ export const ChronicleTimelineAxis: React.FC<ChronicleTimelineAxisProps> = ({
         <div
           role="tablist"
           aria-label="Chronicle Phases"
-          className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-2.5 w-full"
+          className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-3 w-full"
         >
           {phases.map((p) => {
             const isSelected = p.id === activePhaseId;
@@ -77,7 +77,7 @@ export const ChronicleTimelineAxis: React.FC<ChronicleTimelineAxisProps> = ({
                     onSelectPhase(p.id);
                   }
                 }}
-                className={`relative group flex flex-col justify-between p-2.5 sm:p-3 rounded-xl text-left transition-all duration-300 cursor-pointer overflow-hidden focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-2 focus-visible:ring-offset-[#090b10] ${
+                className={`relative group flex flex-col justify-between p-2.5 sm:p-3 rounded-md text-left transition-all duration-300 cursor-pointer overflow-hidden focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-2 focus-visible:ring-offset-[#090b10] ${
                   isSelected
                     ? 'bg-[#151922] border border-rose-500/60 shadow-[0_4px_24px_rgba(244,63,94,0.22)] -translate-y-0.5 z-10'
                     : 'bg-[#0c0e15]/90 border border-white/[0.07] hover:border-white/[0.22] hover:bg-[#121620] hover:-translate-y-0.5 z-0'

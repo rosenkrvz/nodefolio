@@ -77,37 +77,37 @@ const ToolRailButton = React.forwardRef<HTMLButtonElement, ToolRailButtonProps>(
         title={title}
         aria-expanded={ariaExpanded}
         aria-haspopup={ariaHasPopup}
-        className="relative p-2.5 rounded-xl cursor-pointer group select-none active:scale-95 will-change-transform transform-gpu"
+        className="relative p-2 rounded-md cursor-pointer group select-none active:scale-95 will-change-transform transform-gpu"
       >
-        {/* Layer 1: GPU-Accelerated Outer Bloom Halo (Animated Breathing Pulse) */}
+        {/* Layer 1: GPU-Accelerated Outer Bloom Halo */}
         <span
           aria-hidden="true"
-          className={`absolute inset-[-4px] rounded-2xl bg-rose-500/35 blur-md pointer-events-none transform-gpu transition-opacity duration-700 ease-out ${
-            active ? 'opacity-100 animate-pulse' : 'opacity-0'
+          className={`absolute inset-[-2px] rounded-md bg-rose-500/25 blur-sm pointer-events-none transform-gpu transition-opacity duration-500 ease-out ${
+            active ? 'opacity-100' : 'opacity-0'
           }`}
         />
 
-        {/* Layer 2: GPU-Accelerated Core Light-Up Illumination Layer (Smooth 600ms Bloom) */}
+        {/* Layer 2: Core Light-Up Illumination Layer with crisp 1px border */}
         <span
           aria-hidden="true"
-          className={`absolute inset-0 rounded-xl bg-gradient-to-tr from-rose-600 via-rose-500 to-rose-400 pointer-events-none transform-gpu transition-all duration-600 ease-[cubic-bezier(0.16,1,0.3,1)] shadow-[0_0_18px_rgba(244,63,94,0.65),inset_0_1px_1.5px_rgba(255,255,255,0.4)] ring-1 ring-rose-400/60 ${
-            active ? 'opacity-100 scale-100' : 'opacity-0 scale-90'
+          className={`absolute inset-0 rounded-md bg-gradient-to-tr from-rose-700 via-rose-600 to-rose-500 pointer-events-none transform-gpu transition-all duration-300 shadow-[0_0_12px_rgba(244,63,94,0.45)] border border-rose-400/60 ${
+            active ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
           }`}
         />
 
         {/* Layer 3: Hover Backdrop for Inactive State */}
         <span
           aria-hidden="true"
-          className={`absolute inset-0 rounded-xl bg-white/[0.08] pointer-events-none transition-opacity duration-300 ${
+          className={`absolute inset-0 rounded-md bg-white/[0.06] border border-white/[0.08] pointer-events-none transition-opacity duration-200 ${
             !active ? 'opacity-0 group-hover:opacity-100' : 'opacity-0'
           }`}
         />
 
-        {/* Layer 4: Icon with Photon Drop-Shadow & Subtle Scale Elevation */}
+        {/* Layer 4: Icon */}
         <span
-          className={`relative z-10 block transition-all duration-500 ease-out transform-gpu ${
+          className={`relative z-10 block transition-all duration-300 ease-out transform-gpu ${
             active
-              ? 'text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.85)] scale-105'
+              ? 'text-white drop-shadow-[0_0_6px_rgba(255,255,255,0.7)] scale-105'
               : 'text-zinc-400 group-hover:text-zinc-100 scale-100'
           }`}
         >
@@ -906,20 +906,20 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
         className="hidden md:flex absolute top-0 inset-x-0 z-30 items-center justify-between px-3 sm:px-6 py-3 pointer-events-none"
         style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 12px)' }}
       >
-        {/* Left: Unified Instrument Metadata Pod */}
-        <div className="flex items-center gap-2 px-3 h-10 rounded-xl bg-zinc-950/80 backdrop-blur-2xl border border-white/[0.1] shadow-[0_8px_30px_rgba(0,0,0,0.6)] pointer-events-auto select-none">
+        {/* Left: Unified Instrument Metadata Pod (Crisp rounded-md cockpit chassis) */}
+        <div className="flex items-center gap-2 px-3 h-10 rounded-md bg-zinc-950/90 backdrop-blur-2xl border border-white/[0.14] shadow-[0_8px_30px_rgba(0,0,0,0.6)] pointer-events-auto select-none">
           <span className="relative flex h-2 w-2 flex-shrink-0">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75" />
             <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500 shadow-[0_0_8px_#f43f5e]" />
           </span>
-          <span className="font-tech text-[10px] sm:text-[11px] font-bold tracking-[0.2em] text-rose-400 uppercase whitespace-nowrap">
+          <span className="font-mono text-[10px] sm:text-[11px] font-bold tracking-[0.2em] text-rose-400 uppercase whitespace-nowrap">
             PHASE {currentPhaseMeta.numeral}
           </span>
-          <span className="h-3 w-px bg-white/15" />
-          <span className="font-display text-xs sm:text-sm font-semibold tracking-wide text-white uppercase truncate max-w-[120px] sm:max-w-[200px] md:max-w-none">
+          <span className="h-3.5 w-px bg-white/15" />
+          <span className="font-display text-xs sm:text-sm font-semibold tracking-wide text-white uppercase truncate max-w-[140px] sm:max-w-[220px] md:max-w-none">
             {currentPhaseMeta.title}
           </span>
-          <span className="hidden lg:inline-flex items-center px-1.5 py-0.5 rounded bg-white/[0.05] border border-white/[0.08] text-[9px] font-mono text-zinc-400 uppercase tracking-wider">
+          <span className="hidden lg:inline-flex items-center px-1.5 py-0.5 rounded-sm bg-white/[0.04] border border-white/[0.08] text-[9px] font-mono text-zinc-300 uppercase tracking-wider">
             {currentPhaseMeta.dimension}
           </span>
 
@@ -933,10 +933,10 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
               setShowIntroCard((prev) => !prev);
             }}
             title={showIntroCard ? 'Hide Phase Specification' : 'View Phase Specification'}
-            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-tech uppercase tracking-wider transition-all cursor-pointer active:scale-95 ${
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-mono uppercase tracking-wider transition-all cursor-pointer active:scale-95 ${
               showIntroCard
-                ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40 shadow-[0_0_10px_rgba(244,63,94,0.3)] font-semibold'
-                : 'bg-white/[0.05] hover:bg-white/10 text-zinc-300 hover:text-white border border-white/[0.08]'
+                ? 'bg-rose-500/20 text-rose-300 border border-rose-500/50 shadow-[0_0_10px_rgba(244,63,94,0.3)] font-bold'
+                : 'bg-white/[0.04] hover:bg-white/10 text-zinc-300 hover:text-white border border-white/[0.08]'
             }`}
           >
             <Search className="w-3.5 h-3.5 text-rose-400" />
@@ -944,37 +944,8 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
           </button>
         </div>
 
-        {/* Center: Quality Selector */}
-        <div className="hidden md:flex items-center px-1.5 h-10 rounded-xl bg-zinc-950/80 backdrop-blur-2xl border border-white/[0.1] shadow-[0_8px_30px_rgba(0,0,0,0.6)] pointer-events-auto select-none">
-          {/* Segmented Quality Switcher */}
-          <div className="flex items-center p-0.5 rounded-lg bg-white/[0.03] border border-white/[0.06] gap-0.5">
-            {(['auto', 'high', 'medium', 'low'] as const).map((tier) => {
-              const isSelected = qualityMode === tier;
-              return (
-                <button
-                  key={tier}
-                  type="button"
-                  onClick={() => {
-                    playSound('click');
-                    setQualityMode(tier);
-                    const effective = tier === 'auto' ? detectedTierRef.current : tier;
-                    switchArtifact(activePhaseId, effective);
-                  }}
-                  className={`px-2 py-0.5 rounded-md text-[9px] font-mono font-semibold uppercase tracking-wider transition-all cursor-pointer ${
-                    isSelected
-                      ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40 shadow-[0_0_10px_rgba(244,63,94,0.3)]'
-                      : 'text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.04] border border-transparent'
-                  }`}
-                >
-                  {tier === 'medium' ? 'MED' : tier}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
         {/* Right: Camera Reset, Sound & Exit Command Cluster */}
-        <div className="flex items-center gap-1 px-1.5 h-10 rounded-xl bg-zinc-950/80 backdrop-blur-2xl border border-white/[0.1] shadow-[0_8px_30px_rgba(0,0,0,0.6)] pointer-events-auto select-none">
+        <div className="flex items-center gap-1 px-1.5 h-10 rounded-md bg-zinc-950/90 backdrop-blur-2xl border border-white/[0.14] shadow-[0_8px_30px_rgba(0,0,0,0.6)] pointer-events-auto select-none">
           {/* Audio Mute / Unmute Toggle */}
           <button
             type="button"
@@ -982,7 +953,7 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
               toggleMute();
             }}
             title={isMuted ? 'Unmute Audio' : 'Mute Audio'}
-            className="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-white/[0.08] transition-colors cursor-pointer"
+            className="p-1.5 rounded-md text-zinc-400 hover:text-white hover:bg-white/[0.08] transition-colors cursor-pointer"
           >
             {isMuted ? (
               <VolumeX className="w-3.5 h-3.5 text-zinc-500" />
@@ -998,11 +969,11 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
             type="button"
             onClick={handleResetView}
             title="Reset to Overview Camera (Hotkey: R)"
-            className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-zinc-300 hover:text-white hover:bg-white/[0.08] text-xs font-semibold uppercase tracking-wider transition-all cursor-pointer active:scale-95"
+            className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-md text-zinc-300 hover:text-white hover:bg-white/[0.08] text-xs font-mono uppercase tracking-wider transition-all cursor-pointer active:scale-95"
           >
             <RotateCcw className="w-3.5 h-3.5 text-zinc-400" />
-            <span className="font-tech text-xs tracking-wider">RESET</span>
-            <kbd className="hidden md:inline px-1 py-0.2 rounded bg-white/[0.06] border border-white/[0.08] text-[9px] font-mono text-zinc-400">
+            <span className="text-xs tracking-wider">RESET</span>
+            <kbd className="hidden md:inline px-1 py-0.2 rounded-sm bg-white/[0.06] border border-white/[0.08] text-[9px] font-mono text-zinc-400">
               R
             </kbd>
           </button>
@@ -1018,11 +989,11 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
             }}
             aria-label="Exit 3D Research Canvas"
             title="Exit 3D Canvas (Hotkey: Esc)"
-            className="group flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-lg bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/35 hover:border-rose-500/60 text-rose-300 hover:text-white text-xs font-semibold uppercase tracking-wider transition-all cursor-pointer shadow-[0_0_14px_rgba(244,63,94,0.18)] active:scale-95"
+            className="group flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-md bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/40 hover:border-rose-500/70 text-rose-300 hover:text-white text-xs font-mono font-bold uppercase tracking-wider transition-all cursor-pointer shadow-[0_0_14px_rgba(244,63,94,0.18)] active:scale-95"
           >
             <X className="w-3.5 h-3.5 text-rose-400 group-hover:text-white transition-colors" />
-            <span className="font-tech text-xs font-bold tracking-widest">EXIT</span>
-            <kbd className="hidden md:inline px-1 py-0.2 rounded bg-rose-500/20 border border-rose-500/30 text-[9px] font-mono text-rose-300">
+            <span className="text-xs font-bold tracking-widest">EXIT</span>
+            <kbd className="hidden md:inline px-1 py-0.2 rounded-sm bg-rose-500/20 border border-rose-500/30 text-[9px] font-mono text-rose-300">
               ESC
             </kbd>
           </button>
@@ -1036,12 +1007,12 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
         style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 8px)' }}
       >
         {/* Left: Phase Numeral & Full Title */}
-        <div className="flex items-center gap-1.5 px-2.5 h-9 rounded-xl bg-zinc-950/90 backdrop-blur-2xl border border-white/15 shadow-[0_4px_20px_rgba(0,0,0,0.7)] pointer-events-auto select-none min-w-0">
+        <div className="flex items-center gap-1.5 px-2.5 h-9 rounded-md bg-zinc-950/95 backdrop-blur-2xl border border-white/[0.14] shadow-[0_4px_20px_rgba(0,0,0,0.7)] pointer-events-auto select-none min-w-0">
           <span className="relative flex h-2 w-2 shrink-0">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75" />
             <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500 shadow-[0_0_6px_#f43f5e]" />
           </span>
-          <span className="font-tech text-[10px] font-bold tracking-[0.16em] text-rose-400 uppercase shrink-0">
+          <span className="font-mono text-[10px] font-bold tracking-[0.16em] text-rose-400 uppercase shrink-0">
             PHASE {currentPhaseMeta.numeral}
           </span>
           <span className="h-3 w-px bg-white/15 shrink-0" />
@@ -1051,7 +1022,7 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
         </div>
 
         {/* Right: Info Toggle, Audio & Exit */}
-        <div className="flex items-center gap-1 px-1.5 h-9 rounded-xl bg-zinc-950/90 backdrop-blur-2xl border border-white/15 shadow-[0_4px_20px_rgba(0,0,0,0.7)] pointer-events-auto select-none shrink-0 ml-1.5">
+        <div className="flex items-center gap-1 px-1.5 h-9 rounded-md bg-zinc-950/95 backdrop-blur-2xl border border-white/[0.14] shadow-[0_4px_20px_rgba(0,0,0,0.7)] pointer-events-auto select-none shrink-0 ml-1.5">
           {/* Mobile Info Button (Toggles Bottom Sheet) */}
           <button
             type="button"
@@ -1060,9 +1031,9 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
               setMobileSheetOpen((prev) => !prev);
             }}
             aria-label={mobileSheetOpen ? 'Close specification sheet' : 'Open specification sheet'}
-            className={`flex items-center gap-1 px-2 py-1 rounded-lg text-[10.5px] font-tech uppercase tracking-wider transition-all cursor-pointer active:scale-95 min-h-[30px] ${
+            className={`flex items-center gap-1 px-2 py-1 rounded-md text-[10.5px] font-mono uppercase tracking-wider transition-all cursor-pointer active:scale-95 min-h-[30px] ${
               mobileSheetOpen
-                ? 'bg-rose-500/25 text-rose-300 border border-rose-500/50 shadow-[0_0_10px_rgba(244,63,94,0.3)] font-semibold'
+                ? 'bg-rose-500/25 text-rose-300 border border-rose-500/50 shadow-[0_0_10px_rgba(244,63,94,0.3)] font-bold'
                 : 'bg-white/[0.06] text-zinc-300 hover:text-white border border-white/[0.08]'
             }`}
           >
@@ -1075,7 +1046,7 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
             type="button"
             onClick={toggleMute}
             aria-label={isMuted ? 'Unmute Audio' : 'Mute Audio'}
-            className="w-7 h-7 flex items-center justify-center rounded-lg text-zinc-400 hover:text-white hover:bg-white/[0.08] transition-colors cursor-pointer active:scale-95"
+            className="w-7 h-7 flex items-center justify-center rounded-md text-zinc-400 hover:text-white hover:bg-white/[0.08] transition-colors cursor-pointer active:scale-95"
           >
             {isMuted ? (
               <VolumeX className="w-3.5 h-3.5 text-zinc-500" />
@@ -1094,7 +1065,7 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
               onExit(currentPhaseMeta.chronicleId);
             }}
             aria-label="Exit 3D Research Canvas"
-            className="flex items-center justify-center w-7 h-7 rounded-lg bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/35 text-rose-300 hover:text-white transition-all cursor-pointer active:scale-95"
+            className="flex items-center justify-center w-7 h-7 rounded-md bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/40 text-rose-300 hover:text-white transition-all cursor-pointer active:scale-95"
           >
             <X className="w-3.5 h-3.5 text-rose-400" />
           </button>
@@ -1104,10 +1075,10 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
       {/* ───────────────────────────────────────────────────────────────────
           ZONE B: LEFT FUNCTIONAL TOOL RAIL & INTRO CARD
          ─────────────────────────────────────────────────────────────────── */}
-      {/* Desktop Vertical Tool Rail */}
+      {/* Desktop Vertical Tool Rail (Crisp rounded-md architectural rail) */}
       <nav
         aria-label="Canvas Exploration Tools"
-        className="hidden md:flex flex-col gap-1.5 absolute left-4 top-1/2 -translate-y-1/2 z-30 p-1.5 rounded-2xl bg-black/85 backdrop-blur-xl border border-white/15 shadow-2xl pointer-events-auto"
+        className="hidden md:flex flex-col gap-1.5 absolute left-4 top-1/2 -translate-y-1/2 z-30 p-1.5 rounded-md bg-black/90 backdrop-blur-xl border border-white/[0.14] shadow-2xl pointer-events-auto"
       >
         {/* Tool 1: Cinematic Turntable / Auto-Rotate */}
         <ToolRailButton
@@ -1148,13 +1119,13 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
             <Layers className="w-4 h-4" />
           </ToolRailButton>
 
-          {/* Interactive Layers Menu Popover with Smooth Cinematic Animation */}
+          {/* Interactive Layers Menu Popover (Crisp architectural dialog) */}
           <div
             ref={layersMenuRef}
             role="dialog"
             aria-label="Visual Layers Configuration"
             aria-hidden={!showLayersMenu}
-            className={`absolute left-full ml-3 top-0 w-52 p-3.5 rounded-2xl bg-black/95 backdrop-blur-2xl border border-white/15 shadow-[0_16px_40px_rgba(0,0,0,0.75),0_0_16px_rgba(225,29,72,0.15)] z-40 space-y-2.5 text-xs origin-top-left transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] select-none ${
+            className={`absolute left-full ml-3 top-0 w-52 p-3.5 rounded-md bg-black/95 backdrop-blur-2xl border border-white/[0.14] shadow-[0_16px_40px_rgba(0,0,0,0.85),0_0_16px_rgba(225,29,72,0.12)] z-40 space-y-2.5 text-xs origin-top-left transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] select-none ${
               showLayersMenu
                 ? 'opacity-100 scale-100 translate-x-0 pointer-events-auto'
                 : 'opacity-0 scale-90 -translate-x-3 pointer-events-none'
@@ -1163,11 +1134,11 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
             <div className="flex items-center justify-between border-b border-white/10 pb-2">
               <div className="flex items-center gap-1.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
-                <span className="text-[10px] font-tech text-zinc-300 uppercase tracking-widest font-bold">
+                <span className="text-[10px] font-mono text-zinc-300 uppercase tracking-widest font-bold">
                   VISUAL LAYERS
                 </span>
               </div>
-              <span className="font-mono text-[9px] text-zinc-500 bg-white/[0.04] px-1.5 py-0.5 rounded border border-white/[0.08]">
+              <span className="font-mono text-[9px] text-zinc-400 bg-white/[0.04] px-1.5 py-0.5 rounded-sm border border-white/[0.08]">
                 {Object.values(activeLayers).filter(Boolean).length}/5
               </span>
             </div>
@@ -1176,7 +1147,7 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
               {(['geometry', 'trajectories', 'clusters', 'grid', 'annotations'] as const).map((layer) => (
                 <label
                   key={layer}
-                  className="flex items-center justify-between text-zinc-300 hover:text-white cursor-pointer py-1 px-1.5 rounded-lg hover:bg-white/[0.06] transition-colors select-none group"
+                  className="flex items-center justify-between text-zinc-300 hover:text-white cursor-pointer py-1 px-1.5 rounded-sm hover:bg-white/[0.06] transition-colors select-none group"
                 >
                   <div className="flex items-center gap-2">
                     <span
@@ -1186,7 +1157,7 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
                         boxShadow: activeLayers[layer] ? '0 0 6px #f43f5e' : 'none',
                       }}
                     />
-                    <span className="capitalize font-medium text-xs tracking-wide group-hover:text-white">
+                    <span className="capitalize font-mono text-xs tracking-wide group-hover:text-white">
                       {layer}
                     </span>
                   </div>
@@ -1194,7 +1165,7 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
                     type="checkbox"
                     checked={activeLayers[layer]}
                     onChange={() => handleToggleLayer(layer)}
-                    className="accent-rose-500 w-3.5 h-3.5 cursor-pointer rounded transition-transform active:scale-90"
+                    className="accent-rose-500 w-3.5 h-3.5 cursor-pointer rounded-sm transition-transform active:scale-90"
                   />
                 </label>
               ))}
@@ -1218,36 +1189,58 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
           type="button"
           onClick={handleResetView}
           title="Reset Camera View [R]"
-          className="relative p-2.5 rounded-xl text-zinc-400 hover:text-white hover:bg-white/10 transition-all duration-300 cursor-pointer group active:scale-90 will-change-transform transform-gpu"
+          className="relative p-2 rounded-md text-zinc-400 hover:text-white hover:bg-white/10 transition-all duration-300 cursor-pointer group active:scale-90 will-change-transform transform-gpu"
         >
           <RotateCcw className="w-4 h-4 transition-transform duration-300 group-hover:-rotate-45" />
         </button>
       </nav>
 
-      {/* 3D Orientation Gizmo (Bottom-Left Corner) */}
+      {/* 3D Orientation Gizmo (Bottom-Left Corner: Symmetrically Centered & Crisp) */}
       <div
         aria-hidden="true"
         className="hidden md:block absolute left-4 bottom-24 z-20 pointer-events-none select-none"
       >
-        <div className="relative w-12 h-12 flex items-center justify-center rounded-xl bg-black/60 backdrop-blur-md border border-white/10">
+        <div className="relative w-14 h-14 flex items-center justify-center rounded-md bg-black/85 backdrop-blur-xl border border-white/[0.14] shadow-[0_8px_24px_rgba(0,0,0,0.8)]">
+          {/* Subtle Technical Corner Reticles */}
+          <div className="absolute top-1 left-1 w-1.5 h-1.5 border-t border-l border-rose-500/60 pointer-events-none" />
+          <div className="absolute top-1 right-1 w-1.5 h-1.5 border-t border-r border-rose-500/60 pointer-events-none" />
+          <div className="absolute bottom-1 left-1 w-1.5 h-1.5 border-b border-l border-rose-500/60 pointer-events-none" />
+          <div className="absolute bottom-1 right-1 w-1.5 h-1.5 border-b border-r border-rose-500/60 pointer-events-none" />
+
+          {/* 3D Rotating Coordinate System */}
           <div
             ref={gizmoElRef}
-            className="w-8 h-8 relative transform-gpu"
-            style={{ transformStyle: 'preserve-3d' }}
+            className="w-10 h-10 relative transform-gpu flex items-center justify-center"
+            style={{ transformStyle: 'preserve-3d', transformOrigin: '50% 50% 0' }}
           >
-            {/* X Axis (Red) */}
-            <div className="absolute top-1/2 left-1/2 w-4 h-0.5 bg-rose-500 origin-left" />
-            <span className="absolute right-0 top-1/2 -translate-y-1/2 text-[9px] font-bold text-rose-400 font-mono">X</span>
+            {/* Central Origin Anchor Node */}
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-white shadow-[0_0_6px_white] z-20" />
 
-            {/* Y Axis (Green) */}
-            <div className="absolute top-1/2 left-1/2 w-0.5 h-4 bg-emerald-500 origin-top -translate-y-4" />
-            <span className="absolute top-0 left-1/2 -translate-x-1/2 text-[9px] font-bold text-emerald-400 font-mono">Y</span>
+            {/* X Axis: +X (Red) & -X (Dim Counter stem) */}
+            <div className="absolute top-1/2 left-1/2 w-3.5 h-0.5 bg-rose-500 origin-left" />
+            <div className="absolute top-1/2 left-1/2 w-2 h-0.5 bg-white/20 origin-right -translate-x-full" />
+            <span className="absolute right-0 top-1/2 -translate-y-1/2 text-[8px] font-bold text-rose-400 font-mono select-none">X</span>
 
-            {/* Z Axis (Blue) */}
+            {/* Y Axis: +Y (Green) & -Y (Dim Counter stem) */}
+            <div className="absolute top-1/2 left-1/2 w-0.5 h-3.5 bg-emerald-500 origin-bottom -translate-y-full" />
+            <div className="absolute top-1/2 left-1/2 w-0.5 h-2 bg-white/20 origin-top" />
+            <span className="absolute top-0 left-1/2 -translate-x-1/2 text-[8px] font-bold text-emerald-400 font-mono select-none">Y</span>
+
+            {/* Z Axis: +Z (Blue) & -Z (Dim Counter stem) */}
             <div
-              className="absolute top-1/2 left-1/2 w-4 h-0.5 bg-sky-500 origin-left"
+              className="absolute top-1/2 left-1/2 w-3.5 h-0.5 bg-sky-400 origin-left"
               style={{ transform: 'rotateY(90deg)' }}
             />
+            <div
+              className="absolute top-1/2 left-1/2 w-2 h-0.5 bg-white/20 origin-right -translate-x-full"
+              style={{ transform: 'rotateY(90deg)' }}
+            />
+            <span
+              className="absolute text-[8px] font-bold text-sky-400 font-mono select-none"
+              style={{ transform: 'rotateY(90deg) translateZ(16px)' }}
+            >
+              Z
+            </span>
           </div>
         </div>
       </div>
@@ -1257,24 +1250,24 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
           (Desktop/Tablet: Immovable right HUD stack; Phone uses contextual Bottom Sheet)
          ─────────────────────────────────────────────────────────────────── */}
       <div className="hidden md:flex flex-col gap-3 absolute right-6 top-20 z-30 w-80 max-w-xs pointer-events-none max-h-[calc(100vh-6.5rem)] overflow-y-auto no-scrollbar select-none">
-        {/* 1. Immovable Artifact Specification / Component Inspection Panel */}
+        {/* 1. Immovable Artifact Specification / Component Inspection Panel (Crisp Architectural Chassis) */}
         <aside
           role="region"
           aria-label="Artifact Inspection Panel"
-          className={`w-full p-4 rounded-xl bg-black/90 backdrop-blur-xl border ${
-            selectedItem ? 'border-rose-500/60 shadow-[0_16px_48px_rgba(225,29,72,0.2)]' : 'border-white/15 shadow-2xl'
+          className={`w-full p-4 rounded-md bg-black/90 backdrop-blur-xl border ${
+            selectedItem ? 'border-rose-500/60 shadow-[0_16px_48px_rgba(225,29,72,0.2)]' : 'border-white/[0.14] shadow-2xl'
           } text-zinc-300 pointer-events-auto transition-all duration-200 select-none`}
         >
           {/* Immovable Header */}
           <div className="flex items-center justify-between border-b border-white/10 pb-2.5 mb-3 select-none">
             <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-rose-500" />
-              <span className="font-tech text-[10px] font-bold tracking-[0.2em] text-zinc-300 uppercase">
+              <span className="w-1.5 h-1.5 bg-rose-500" />
+              <span className="font-mono text-[10px] font-bold tracking-[0.2em] text-zinc-300 uppercase">
                 {selectedItem ? 'COMPONENT INSPECTION' : 'ARTIFACT SPECIFICATION'}
               </span>
             </div>
 
-            <span className="font-tech text-[10px] font-semibold text-rose-400 uppercase">
+            <span className="font-mono text-[10px] font-bold text-rose-400 uppercase">
               {selectedItem ? selectedItem.type : currentPhaseMeta.year}
             </span>
           </div>
@@ -1286,7 +1279,7 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
                 <h3 className="font-display text-base font-bold text-white uppercase leading-tight">
                   {selectedItem.name}
                 </h3>
-                <p className="text-xs text-rose-300 font-semibold mt-0.5">{selectedItem.role}</p>
+                <p className="text-xs text-rose-300 font-mono font-semibold mt-0.5">{selectedItem.role}</p>
                 <span className="text-[10px] font-mono text-zinc-400 block mt-0.5">{selectedItem.dimension}</span>
               </div>
 
@@ -1294,13 +1287,13 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
               <div className="space-y-1 pt-1 border-t border-white/10 text-xs font-mono">
                 {Object.entries(selectedItem.properties).map(([k, v]) => (
                   <div key={k} className="flex items-baseline justify-between gap-2 py-0.5 border-b border-white/[0.04]">
-                    <span className="text-zinc-400 text-[10px] uppercase font-sans">{k}</span>
+                    <span className="text-zinc-400 text-[10px] uppercase font-mono">{k}</span>
                     <span className="text-zinc-200 font-semibold text-right truncate max-w-[170px]">{v}</span>
                   </div>
                 ))}
               </div>
 
-              <p className="text-[11px] text-zinc-300 leading-relaxed p-2.5 rounded-xl bg-white/[0.03] border border-white/[0.06]">
+              <p className="text-xs font-serif text-zinc-200 leading-relaxed p-2.5 rounded-sm bg-white/[0.02] border border-white/[0.08]">
                 {selectedItem.description}
               </p>
 
@@ -1309,7 +1302,7 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
                 <button
                   type="button"
                   onClick={() => handleFocusCamera(selectedItem.worldPosition)}
-                  className="flex-1 py-2 px-3 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-body text-xs font-semibold uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 shadow-[0_0_12px_rgba(225,29,72,0.35)] cursor-pointer active:scale-95"
+                  className="flex-1 py-2 px-3 rounded-md bg-rose-600 hover:bg-rose-500 text-white font-mono text-xs font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 shadow-[0_0_12px_rgba(225,29,72,0.30)] cursor-pointer active:scale-95"
                 >
                   <span>FOCUS IN 3D</span>
                   <ArrowUpRight className="w-3.5 h-3.5" />
@@ -1321,7 +1314,7 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
                     setSelectedItem(null);
                     activeArtifactRef.current?.onSelectObject?.(null);
                   }}
-                  className="py-2 px-3.5 rounded-xl bg-white/[0.06] hover:bg-white/15 text-zinc-300 hover:text-white font-tech text-xs uppercase cursor-pointer transition-colors active:scale-95"
+                  className="py-2 px-3.5 rounded-md bg-white/[0.06] hover:bg-white/15 text-zinc-300 hover:text-white font-mono text-xs uppercase cursor-pointer transition-colors active:scale-95"
                 >
                   OVERVIEW
                 </button>
@@ -1330,15 +1323,15 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
           ) : (
             <div className="space-y-2 text-xs">
               <div className="flex items-center justify-between text-xs py-1 border-b border-white/[0.06]">
-                <span className="text-[10px] font-tech text-zinc-400 uppercase font-semibold">TOPOLOGY</span>
-                <span className="text-zinc-200 font-medium text-right truncate max-w-[170px]">
+                <span className="text-[10px] font-mono text-zinc-400 uppercase font-semibold">TOPOLOGY</span>
+                <span className="text-zinc-200 font-mono font-medium text-right truncate max-w-[170px]">
                   {currentPhaseMeta.objectType}
                 </span>
               </div>
 
               <div className="flex items-center justify-between text-xs py-1 border-b border-white/[0.06]">
-                <span className="text-[10px] font-tech text-zinc-400 uppercase font-semibold">BACKEND</span>
-                <span className="text-zinc-200 font-medium text-right truncate max-w-[170px]">
+                <span className="text-[10px] font-mono text-zinc-400 uppercase font-semibold">BACKEND</span>
+                <span className="text-zinc-200 font-mono font-medium text-right truncate max-w-[170px]">
                   {currentPhaseMeta.computeBackend}
                 </span>
               </div>
@@ -1346,9 +1339,9 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
               {currentPhaseMeta.metricsSummary && (
                 <div className="grid grid-cols-3 gap-1.5 pt-1.5">
                   {currentPhaseMeta.metricsSummary.map((m, idx) => (
-                    <div key={idx} className="p-2 rounded-xl bg-white/[0.03] border border-white/[0.06] text-center">
-                      <span className="text-[9px] text-zinc-400 uppercase block font-semibold truncate">{m.label}</span>
-                      <span className="text-[11px] text-zinc-100 font-mono font-semibold block mt-0.5 truncate">{m.value}</span>
+                    <div key={idx} className="p-2 rounded-sm bg-white/[0.02] border border-white/[0.08] text-center">
+                      <span className="text-[9px] text-zinc-400 uppercase block font-mono font-semibold truncate">{m.label}</span>
+                      <span className="text-[11px] text-zinc-100 font-mono font-bold block mt-0.5 truncate">{m.value}</span>
                     </div>
                   ))}
                 </div>
@@ -1362,10 +1355,10 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
           <aside
             role="region"
             aria-label="Phase Context Introduction"
-            className="w-full p-4 rounded-xl bg-black/90 backdrop-blur-xl border border-white/15 shadow-2xl pointer-events-auto transition-all animate-in fade-in slide-in-from-top-2 duration-300 select-none"
+            className="w-full p-4 rounded-md bg-black/90 backdrop-blur-xl border border-white/[0.14] shadow-2xl pointer-events-auto transition-all animate-in fade-in slide-in-from-top-2 duration-300 select-none"
           >
             <div className="flex items-center justify-between border-b border-white/10 pb-2 mb-2.5">
-              <span className="font-tech text-[10px] font-bold tracking-[0.2em] text-rose-400 uppercase">
+              <span className="font-mono text-[10px] font-bold tracking-[0.2em] text-rose-400 uppercase">
                 PHASE {currentPhaseMeta.numeral} // SPECIFICATION
               </span>
               <button
@@ -1381,9 +1374,9 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
             <h2 className="font-display text-sm sm:text-base font-bold text-white uppercase leading-tight mb-0.5">
               {currentPhaseMeta.title}
             </h2>
-            <p className="text-[11px] text-rose-300/90 font-semibold mb-2">{currentPhaseMeta.topic}</p>
+            <p className="text-[11px] text-rose-300 font-mono font-semibold mb-2">{currentPhaseMeta.topic}</p>
 
-            <p className="text-[11px] text-zinc-300 leading-relaxed mb-3">
+            <p className="text-xs font-serif text-zinc-200 leading-relaxed mb-3">
               {currentPhaseMeta.description}
             </p>
 
@@ -1393,7 +1386,7 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
                 playSound('click');
                 setShowIntroCard(false);
               }}
-              className="w-full py-2 px-3 rounded-lg bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold uppercase tracking-wider transition-all shadow-[0_0_12px_rgba(225,29,72,0.4)] cursor-pointer text-center active:scale-95"
+              className="w-full py-2 px-3 rounded-md bg-rose-600 hover:bg-rose-500 text-white font-mono text-xs font-bold uppercase tracking-wider transition-all shadow-[0_0_12px_rgba(225,29,72,0.35)] cursor-pointer text-center active:scale-95"
             >
               EXPLORE ARTIFACT
             </button>
@@ -1408,7 +1401,7 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
           onClick={handleResetView}
           aria-label="Reset Camera View to Default"
           title="Reset Camera"
-          className="pointer-events-auto flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-zinc-950/90 backdrop-blur-xl border border-white/15 text-zinc-200 hover:text-white shadow-[0_4px_16px_rgba(0,0,0,0.7)] active:scale-95 transition-all text-xs font-tech font-semibold tracking-wider cursor-pointer"
+          className="pointer-events-auto flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-zinc-950/95 backdrop-blur-xl border border-white/[0.14] text-zinc-200 hover:text-white shadow-[0_4px_16px_rgba(0,0,0,0.7)] active:scale-95 transition-all text-xs font-mono font-bold tracking-wider cursor-pointer"
         >
           <RotateCcw className="w-3.5 h-3.5 text-rose-400" />
           <span>RESET CAM</span>
@@ -1602,10 +1595,10 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
       >
         <div className="relative pointer-events-auto max-w-full sm:max-w-fit w-full sm:w-auto">
           {/* Mobile scroll indicator masks */}
-          <div className="pointer-events-none absolute left-0 top-0 bottom-0 w-4 bg-gradient-to-r from-[#07090e] to-transparent z-10 sm:hidden rounded-l-2xl" />
-          <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-4 bg-gradient-to-l from-[#07090e] to-transparent z-10 sm:hidden rounded-r-2xl" />
+          <div className="pointer-events-none absolute left-0 top-0 bottom-0 w-4 bg-gradient-to-r from-[#07090e] to-transparent z-10 sm:hidden rounded-l-md" />
+          <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-4 bg-gradient-to-l from-[#07090e] to-transparent z-10 sm:hidden rounded-r-md" />
 
-          <div className="flex items-center gap-1 sm:gap-2 p-1 sm:p-1.5 rounded-2xl bg-black/90 backdrop-blur-xl border border-white/15 shadow-[0_8px_32px_rgba(0,0,0,0.85)] overflow-x-auto scroll-smooth no-scrollbar touch-pan-x">
+          <div className="flex items-center gap-1 sm:gap-1.5 p-1 sm:p-1.5 rounded-md bg-black/90 backdrop-blur-xl border border-white/[0.14] shadow-[0_8px_32px_rgba(0,0,0,0.85)] overflow-x-auto scroll-smooth no-scrollbar touch-pan-x">
             {RESEARCH_PHASES.map((phase) => {
               const isActive = phase.id === activePhaseId;
               return (
@@ -1616,7 +1609,7 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
                   }}
                   type="button"
                   onClick={() => handleSelectPhase(phase.id)}
-                  className={`relative min-h-[46px] px-3 sm:px-4 py-1.5 rounded-xl transition-all whitespace-nowrap flex-shrink-0 cursor-pointer flex items-center gap-2.5 ${
+                  className={`relative min-h-[44px] px-3 sm:px-3.5 py-1.5 rounded-sm transition-all whitespace-nowrap flex-shrink-0 cursor-pointer flex items-center gap-2.5 ${
                     isActive
                       ? 'bg-rose-950/80 border border-rose-500/60 shadow-[0_0_16px_rgba(225,29,72,0.3)]'
                       : 'hover:bg-white/5 border border-transparent text-zinc-400 hover:text-white'
@@ -1630,10 +1623,10 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
                   {/* Phase Text Info */}
                   <div className="flex flex-col text-left">
                     <div className="flex items-center gap-1.5">
-                      <span className={`font-tech text-[10px] font-bold ${isActive ? 'text-rose-400' : 'text-zinc-500'}`}>
+                      <span className={`font-mono text-[10px] font-bold ${isActive ? 'text-rose-400' : 'text-zinc-500'}`}>
                         {phase.numeral}
                       </span>
-                      <span className={`font-display text-xs font-semibold uppercase tracking-wider ${isActive ? 'text-white' : 'text-zinc-300'}`}>
+                      <span className={`font-serif text-xs font-semibold uppercase tracking-wider ${isActive ? 'text-white' : 'text-zinc-300'}`}>
                         {phase.shortName || phase.title}
                       </span>
                     </div>
@@ -1658,13 +1651,13 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
           paddingRight: 'calc(env(safe-area-inset-right, 0px) + 4px)',
         }}
       >
-        <div className="pointer-events-auto flex items-center gap-1 p-1 rounded-2xl bg-black/90 backdrop-blur-xl border border-white/15 shadow-[0_8px_32px_rgba(0,0,0,0.85)] max-w-full">
+        <div className="pointer-events-auto flex items-center gap-1 p-1 rounded-md bg-black/90 backdrop-blur-xl border border-white/[0.14] shadow-[0_8px_32px_rgba(0,0,0,0.85)] max-w-full">
           {/* Previous Phase Chevron */}
           <button
             type="button"
             onClick={handlePrevPhase}
             aria-label="Previous Research Phase"
-            className="w-8 h-10 flex items-center justify-center rounded-xl text-zinc-400 hover:text-white hover:bg-white/10 active:scale-90 transition-all cursor-pointer shrink-0"
+            className="w-8 h-9 flex items-center justify-center rounded-sm text-zinc-400 hover:text-white hover:bg-white/10 active:scale-95 transition-all cursor-pointer shrink-0"
           >
             <ChevronLeft className="w-4 h-4" />
           </button>
@@ -1681,16 +1674,16 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
                   }}
                   type="button"
                   onClick={() => handleSelectPhase(phase.id)}
-                  className={`min-h-[42px] px-2.5 py-1 rounded-xl transition-all whitespace-nowrap shrink-0 cursor-pointer flex items-center gap-1.5 active:scale-95 ${
+                  className={`min-h-[40px] px-2.5 py-1 rounded-sm transition-all whitespace-nowrap shrink-0 cursor-pointer flex items-center gap-1.5 active:scale-95 ${
                     isActive
                       ? 'bg-rose-950/90 border border-rose-500/80 shadow-[0_0_14px_rgba(225,29,72,0.4)] text-white'
                       : 'hover:bg-white/5 border border-transparent text-zinc-400'
                   }`}
                 >
-                  <span className={`font-tech text-[10px] font-bold ${isActive ? 'text-rose-400' : 'text-zinc-500'}`}>
+                  <span className={`font-mono text-[10px] font-bold ${isActive ? 'text-rose-400' : 'text-zinc-500'}`}>
                     {phase.numeral}
                   </span>
-                  <span className={`font-display text-[11px] font-semibold uppercase tracking-wider ${isActive ? 'text-white' : 'text-zinc-300'}`}>
+                  <span className={`font-serif text-[11px] font-semibold uppercase tracking-wider ${isActive ? 'text-white' : 'text-zinc-300'}`}>
                     {phase.shortName || phase.title}
                   </span>
                 </button>
@@ -1703,7 +1696,7 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
             type="button"
             onClick={handleNextPhase}
             aria-label="Next Research Phase"
-            className="w-8 h-10 flex items-center justify-center rounded-xl text-zinc-400 hover:text-white hover:bg-white/10 active:scale-90 transition-all cursor-pointer shrink-0"
+            className="w-8 h-9 flex items-center justify-center rounded-sm text-zinc-400 hover:text-white hover:bg-white/10 active:scale-95 transition-all cursor-pointer shrink-0"
           >
             <ChevronRight className="w-4 h-4" />
           </button>

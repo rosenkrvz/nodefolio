@@ -71,7 +71,7 @@ const TopNavbarComponent: React.FC<TopNavbarProps> = ({
   return (
     <>
       <header className="fixed top-0 inset-x-0 h-[calc(3.25rem+env(safe-area-inset-top,0px))] sm:h-16 z-50 bg-[#090b10]/95 backdrop-blur-md border-b border-white/[0.08] pointer-events-auto select-none font-body pt-[env(safe-area-inset-top,0px)]">
-        <div className="w-full max-w-7xl mx-auto h-full flex items-center justify-between px-3 sm:px-8 md:px-12">
+        <div className="w-full max-w-[1780px] 2xl:max-w-[1920px] 3xl:max-w-[2160px] mx-auto h-full flex items-center justify-between px-3 sm:px-8 md:px-12 lg:px-16 2xl:px-20">
           {/* Brand Identity / Geometric SS Monogram */}
           <div className="flex items-center gap-2 sm:gap-6 min-w-0">
           <button

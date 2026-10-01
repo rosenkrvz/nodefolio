@@ -145,7 +145,7 @@ const EditorialCoverComponent: React.FC<EditorialCoverProps> = ({
         visibility: (activeNavTab !== 'home' || isFullyOffscreen) ? 'hidden' : 'visible',
         willChange: isFullyOffscreen ? 'auto' : 'transform, opacity',
       }}
-      className={`absolute inset-0 w-full max-w-full h-full min-h-full min-h-[100dvh] flex flex-col justify-between px-3.5 min-[360px]:px-4 sm:px-12 md:px-16 pt-[calc(3.75rem+env(safe-area-inset-top,0px))] pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] sm:pt-[calc(4.5rem+env(safe-area-inset-top,0px))] sm:pb-[calc(1.5rem+env(safe-area-inset-bottom,0px))] select-none overflow-hidden z-20 bg-[#14171c] ${
+      className={`absolute inset-0 w-full max-w-full h-full min-h-full min-h-[100dvh] flex flex-col justify-between px-3.5 min-[360px]:px-4 sm:px-12 md:px-16 lg:px-20 2xl:px-28 pt-[calc(3.75rem+env(safe-area-inset-top,0px))] pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] sm:pt-[calc(4.5rem+env(safe-area-inset-top,0px))] sm:pb-[calc(1.5rem+env(safe-area-inset-bottom,0px))] select-none overflow-hidden z-20 bg-[#14171c] ${
         isLifting ? 'border-b border-rose-500/50 shadow-[0_30px_70px_rgba(0,0,0,0.95)]' : ''
       }`}
     >
@@ -199,7 +199,7 @@ const EditorialCoverComponent: React.FC<EditorialCoverProps> = ({
           opacity: isEntered ? eyebrowOpacity : (entryStage >= 1 ? eyebrowOpacity : 0),
           transition: isEntered ? 'none' : 'opacity 0.6s ease-out, transform 0.6s ease-out',
         }}
-        className="relative z-10 w-full max-w-7xl mx-auto flex items-center justify-between pb-3 sm:pb-4 border-b border-white/[0.08] text-xs font-body text-zinc-400 shrink-0"
+        className="relative z-10 w-full max-w-[1780px] 2xl:max-w-[1920px] 3xl:max-w-[2160px] mx-auto flex items-center justify-between pb-3 sm:pb-4 border-b border-white/[0.08] text-xs font-body text-zinc-400 shrink-0"
       >
         {/* Desktop Eyebrow Left */}
         <div className="hidden sm:flex items-center gap-3 tracking-[0.25em] uppercase font-medium">
@@ -245,7 +245,7 @@ const EditorialCoverComponent: React.FC<EditorialCoverProps> = ({
       </div>
 
       {/* Hero Core Content: Monumental Asymmetric Editorial Layout */}
-      <div className="relative z-10 w-full max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-12 items-end mt-2 min-[360px]:mt-3 min-[390px]:mt-4 mb-auto sm:my-auto py-1 sm:py-2">
+      <div className="relative z-10 w-full max-w-[1780px] 2xl:max-w-[1920px] 3xl:max-w-[2160px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-12 items-end mt-2 min-[360px]:mt-3 min-[390px]:mt-4 mb-auto sm:my-auto py-1 sm:py-2">
         {/* Left / Main Column: Huge Display Title & Statement (col-span-8) */}
         <div className="lg:col-span-8 flex flex-col items-start w-full">
           {/* Subtle Category Pillar (Desktop Only - on mobile, publication metadata is in the top layer) */}
@@ -276,10 +276,10 @@ const EditorialCoverComponent: React.FC<EditorialCoverProps> = ({
               }}
               className="leading-[0.96] sm:leading-[0.92] select-none tracking-tight"
             >
-              <span className="block font-display text-[38px] min-[360px]:text-[44px] min-[390px]:text-[48px] min-[412px]:text-[52px] sm:text-7xl md:text-8xl font-black text-white tracking-[-0.03em] uppercase break-words">
+              <span className="block font-display text-[38px] min-[360px]:text-[44px] min-[390px]:text-[48px] min-[412px]:text-[52px] sm:text-7xl md:text-8xl xl:text-9xl 2xl:text-[10rem] font-black text-white tracking-[-0.03em] uppercase break-words">
                 SHUBHAM
               </span>
-              <span className="block font-display text-[27px] min-[360px]:text-[31px] min-[390px]:text-[34px] min-[412px]:text-[37px] sm:text-7xl md:text-8xl font-light text-zinc-400/80 sm:text-zinc-400/90 tracking-[0.16em] min-[360px]:tracking-[0.18em] sm:tracking-[-0.02em] uppercase mt-0.5 sm:mt-1 pl-0.5 sm:pl-0 break-words">
+              <span className="block font-display text-[27px] min-[360px]:text-[31px] min-[390px]:text-[34px] min-[412px]:text-[37px] sm:text-7xl md:text-8xl xl:text-9xl 2xl:text-[10rem] font-light text-zinc-400/80 sm:text-zinc-400/90 tracking-[0.16em] min-[360px]:tracking-[0.18em] sm:tracking-[-0.02em] uppercase mt-0.5 sm:mt-1 pl-0.5 sm:pl-0 break-words">
                 SHARMA
               </span>
             </h1>
@@ -440,7 +440,7 @@ const EditorialCoverComponent: React.FC<EditorialCoverProps> = ({
           pointerEvents: bottomHintOpacity < 0.1 ? 'none' : 'auto',
           transition: isEntered ? 'none' : 'opacity 0.6s ease-out, transform 0.6s ease-out',
         }}
-        className="relative z-10 w-full max-w-7xl mx-auto flex items-center justify-between pt-2.5 pb-[calc(env(safe-area-inset-bottom,0px)+0.25rem)] sm:pt-6 sm:pb-0 border-t border-white/[0.06] sm:border-white/[0.08] text-xs font-body text-zinc-500 mt-auto sm:mt-0 shrink-0"
+        className="relative z-10 w-full max-w-[1780px] 2xl:max-w-[1920px] 3xl:max-w-[2160px] mx-auto flex items-center justify-between pt-2.5 pb-[calc(env(safe-area-inset-bottom,0px)+0.25rem)] sm:pt-6 sm:pb-0 border-t border-white/[0.06] sm:border-white/[0.08] text-xs font-body text-zinc-500 mt-auto sm:mt-0 shrink-0"
       >
         <button
           type="button"
