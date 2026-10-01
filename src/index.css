@@ -147,6 +147,13 @@ body {
   }
 }
 
+/* Short-height mobile viewport adaptation (e.g. iPhone SE, Safari with toolbars, landscape phones) */
+@media (max-height: 680px) and (max-width: 639px) {
+  .mobile-telemetry-panel {
+    display: none !important;
+  }
+}
+
 /* Subtle coordinate grid overlay */
 .bg-canvas-dots-overlay {
   background-image: radial-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px);

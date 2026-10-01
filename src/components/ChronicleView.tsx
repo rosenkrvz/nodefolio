@@ -564,21 +564,21 @@ export const ChronicleView: React.FC<ChronicleViewProps> = ({
               </div>
 
               {/* Directionally Masked Monumental Display Title */}
-              <div className="overflow-hidden mb-5">
+              <div className="overflow-hidden py-1 -my-1 mb-5">
                 <h1
                   style={{
-                  transform:
+                    transform:
                       reducedMotion || entryStage >= 2 ? 'translateY(0)' : 'translateY(100%)',
                     opacity: reducedMotion || entryStage >= 2 ? 1 : 0,
                     transition:
                       'transform 0.8s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.8s ease-out',
                   }}
-                  className="leading-[0.9] select-none tracking-tight"
+                  className="leading-[0.95] sm:leading-[0.9] select-none tracking-tight"
                 >
-                  <span className="block font-display text-4xl min-[360px]:text-5xl sm:text-7xl md:text-8xl font-black text-white tracking-[-0.03em] uppercase break-words">
+                  <span className="block font-display text-3xl min-[360px]:text-[32px] min-[400px]:text-4xl min-[480px]:text-5xl sm:text-7xl md:text-8xl font-black text-white tracking-[-0.03em] uppercase break-words">
                     COMPUTATIONAL
                   </span>
-                  <span className="block font-display text-4xl min-[360px]:text-5xl sm:text-7xl md:text-8xl font-light text-zinc-400/90 tracking-[-0.02em] uppercase mt-1 break-words">
+                  <span className="block font-display text-3xl min-[360px]:text-[32px] min-[400px]:text-4xl min-[480px]:text-5xl sm:text-7xl md:text-8xl font-light text-zinc-400/90 tracking-[-0.02em] uppercase mt-1 break-words">
                     CHRONICLE
                   </span>
                 </h1>

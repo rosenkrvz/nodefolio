@@ -70,9 +70,10 @@ const TopNavbarComponent: React.FC<TopNavbarProps> = ({
 
   return (
     <>
-      <header className="fixed top-0 inset-x-0 h-[calc(3.25rem+env(safe-area-inset-top,0px))] sm:h-16 z-50 flex items-center justify-between px-3 sm:px-8 md:px-12 bg-[#090b10]/95 backdrop-blur-md border-b border-white/[0.08] pointer-events-auto select-none font-body pt-[env(safe-area-inset-top,0px)]">
-        {/* Brand Identity / Geometric SS Monogram */}
-        <div className="flex items-center gap-2 sm:gap-6 min-w-0">
+      <header className="fixed top-0 inset-x-0 h-[calc(3.25rem+env(safe-area-inset-top,0px))] sm:h-16 z-50 bg-[#090b10]/95 backdrop-blur-md border-b border-white/[0.08] pointer-events-auto select-none font-body pt-[env(safe-area-inset-top,0px)]">
+        <div className="w-full max-w-7xl mx-auto h-full flex items-center justify-between px-3 sm:px-8 md:px-12">
+          {/* Brand Identity / Geometric SS Monogram */}
+          <div className="flex items-center gap-2 sm:gap-6 min-w-0">
           <button
             type="button"
             onClick={() => {
@@ -261,7 +262,8 @@ const TopNavbarComponent: React.FC<TopNavbarProps> = ({
             )}
           </button>
         </div>
-      </header>
+      </div>
+    </header>
 
       {/* Mobile Navigation Drawer */}
       {isMobileMenuOpen && (

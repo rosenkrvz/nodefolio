@@ -264,7 +264,7 @@ const EditorialCoverComponent: React.FC<EditorialCoverProps> = ({
           </div>
 
           {/* Directionally Masked Monumental Display Name */}
-          <div className="overflow-hidden mb-2 min-[360px]:mb-2.5 sm:mb-5">
+          <div className="overflow-hidden py-1 -my-1 mb-2 min-[360px]:mb-2.5 sm:mb-5">
             <h1
               style={{
                 transform:
@@ -274,7 +274,7 @@ const EditorialCoverComponent: React.FC<EditorialCoverProps> = ({
                   ? 'none'
                   : 'transform 0.8s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.8s ease-out',
               }}
-              className="leading-[0.9] sm:leading-[0.92] select-none tracking-tight"
+              className="leading-[0.96] sm:leading-[0.92] select-none tracking-tight"
             >
               <span className="block font-display text-[38px] min-[360px]:text-[44px] min-[390px]:text-[48px] min-[412px]:text-[52px] sm:text-7xl md:text-8xl font-black text-white tracking-[-0.03em] uppercase break-words">
                 SHUBHAM
@@ -350,7 +350,7 @@ const EditorialCoverComponent: React.FC<EditorialCoverProps> = ({
               transform: isEntered || entryStage >= 4 ? 'none' : 'translateY(12px)',
               transition: isEntered ? 'none' : 'opacity 0.7s ease-out 0.15s, transform 0.7s ease-out 0.15s',
             }}
-            className="sm:hidden w-full mt-3 min-[390px]:mt-4 p-3 min-[360px]:p-3.5 rounded-xl bg-white/[0.025] border border-white/[0.08] backdrop-blur-sm relative overflow-hidden"
+            className="mobile-telemetry-panel sm:hidden w-full mt-3 min-[390px]:mt-4 p-3 min-[360px]:p-3.5 rounded-xl bg-white/[0.025] border border-white/[0.08] backdrop-blur-sm relative overflow-hidden"
           >
             {/* Top Telemetry Header */}
             <div className="flex items-center justify-between border-b border-white/[0.06] pb-2 mb-2">
