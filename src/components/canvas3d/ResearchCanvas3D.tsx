@@ -172,29 +172,48 @@ const computeOptimalFraming = (
   viewportH: number,
   isMobile: boolean
 ): { cameraPos: THREE.Vector3; target: THREE.Vector3; radius: number } | null => {
-  const box = new THREE.Box3().setFromObject(group);
+  const box = new THREE.Box3();
+
+  // Exclude helper objects (GridHelper, Reference planes, Gizmos) so bounding box measures true content
+  group.traverse((child) => {
+    if (
+      child instanceof THREE.GridHelper ||
+      child.type === 'GridHelper' ||
+      child.name.toLowerCase().includes('grid') ||
+      child.name.toLowerCase().includes('helper')
+    ) {
+      return;
+    }
+    if ((child as THREE.Mesh).isMesh || (child as THREE.Line).isLine || (child as THREE.Points).isPoints) {
+      box.expandByObject(child);
+    }
+  });
+
+  if (box.isEmpty()) {
+    box.setFromObject(group);
+  }
   if (box.isEmpty()) return null;
 
   const center = new THREE.Vector3();
   box.getCenter(center);
   const size = new THREE.Vector3();
   box.getSize(size);
-  const radius = Math.max(size.x, size.y, size.z) * 0.5 || 6.0;
+  const radius = Math.max(size.x, size.y, size.z) * 0.5 || 5.0;
 
   const fovRad = (camera.fov * Math.PI) / 180;
   const aspect = viewportW / viewportH;
 
   // In portrait/mobile, Three.js fixed vertical FOV narrows horizontal FOV; scale distance outward
-  const distanceScalar = isMobile ? Math.max(1.20, 1.04 / Math.sqrt(Math.max(aspect, 0.4))) : 1.24;
+  // On desktop, keep framing close, imposing, filling ~60% of viewport (distance ~15-16 units)
+  const distanceScalar = isMobile ? Math.max(1.15, 1.0 / Math.sqrt(Math.max(aspect, 0.4))) : 1.18;
   const dist = (radius * distanceScalar) / Math.sin(fovRad / 2);
 
-  // Optical compensation: center target on mobile phone since HUD is contextual; offset left on desktop
-  const targetOffset = isMobile ? new THREE.Vector3(0, 0, 0) : new THREE.Vector3(-0.35, 0.15, 0);
-  const target = center.clone().add(targetOffset);
+  // Optical compensation: exact geometric center of the content (no arbitrary offset)
+  const target = center.clone();
 
-  // Pitch camera at a pleasing technical isometric angle
-  const pitchAngle = isMobile ? 0.36 : 0.44;
-  const yawAngle = isMobile ? 0.20 : 0.28;
+  // Pitch camera at a pleasing technical isometric angle (~23° pitch, ~15° yaw) matching Blender reference
+  const pitchAngle = isMobile ? 0.35 : 0.40;
+  const yawAngle = isMobile ? 0.18 : 0.26;
 
   const cameraPos = new THREE.Vector3(
     target.x + dist * Math.sin(yawAngle) * Math.cos(pitchAngle),
@@ -551,8 +570,20 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
       });
 
       // 3. Compute optimal dynamic framing
-      const vw = containerRef.current?.clientWidth || window.innerWidth;
-      const vh = containerRef.current?.clientHeight || window.innerHeight;
+      const vw =
+        containerRef.current && containerRef.current.clientWidth > 0
+          ? containerRef.current.clientWidth
+          : typeof window !== 'undefined'
+          ? window.innerWidth >= 1200
+            ? window.innerWidth - 320
+            : window.innerWidth
+          : 1280;
+      const vh =
+        containerRef.current && containerRef.current.clientHeight > 0
+          ? containerRef.current.clientHeight
+          : typeof window !== 'undefined'
+          ? window.innerHeight
+          : 800;
       const isMob = vw < 768;
 
       const framing = computeOptimalFraming(newArtifact.group, camera, vw, vh, isMob);
@@ -764,15 +795,22 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
     container.addEventListener('pointermove', onPointerMove);
     container.addEventListener('pointerup', onPointerUp);
 
-    // 7. Window Resize Listener
+    // 7. Dynamic Resize Observer (adapts to N-panel sidebar toggle & window resizing)
     const onWindowResize = () => {
       if (!container || !renderer || !camera) return;
       const w = container.clientWidth || window.innerWidth;
       const h = container.clientHeight || window.innerHeight;
+      if (w === 0 || h === 0) return;
       camera.aspect = w / h;
       camera.updateProjectionMatrix();
       renderer.setSize(w, h);
     };
+
+    let resizeObserver: ResizeObserver | null = null;
+    if (typeof ResizeObserver !== 'undefined') {
+      resizeObserver = new ResizeObserver(onWindowResize);
+      resizeObserver.observe(container);
+    }
     window.addEventListener('resize', onWindowResize);
 
     // 8. Animation & Render Loop with Camera Slerp
@@ -809,19 +847,21 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
         // Project 3D spatial annotations to screen coordinates if enabled
         if (showAnnotations && activeArtifactRef.current.getAnnotations) {
           const rawAnnots = activeArtifactRef.current.getAnnotations();
+          const cw = container.clientWidth || window.innerWidth;
+          const ch = container.clientHeight || window.innerHeight;
           const proj = rawAnnots.map((a) => {
             const v = a.position.clone();
             v.project(camera);
             const isBehind = v.z > 1.0;
-            const screenX = ((v.x + 1) * width) / 2;
-            const screenY = ((-v.y + 1) * height) / 2;
+            const screenX = ((v.x + 1) * cw) / 2;
+            const screenY = ((-v.y + 1) * ch) / 2;
             return {
               id: a.id,
               label: a.label,
               sublabel: a.sublabel,
               screenX,
               screenY,
-              visible: !isBehind && screenX > 20 && screenX < width - 20 && screenY > 60 && screenY < height - 60,
+              visible: !isBehind && screenX > 20 && screenX < cw - 20 && screenY > 60 && screenY < ch - 60,
             };
           });
           setProjectedAnnotations(proj);
@@ -843,6 +883,9 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
     return () => {
       if (animFrameIdRef.current) {
         cancelAnimationFrame(animFrameIdRef.current);
+      }
+      if (resizeObserver) {
+        resizeObserver.disconnect();
       }
       window.removeEventListener('resize', onWindowResize);
       container.removeEventListener('pointerdown', onPointerDown);
@@ -966,7 +1009,9 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
       {/* 3D WebGL Canvas Viewport */}
       <div
         ref={containerRef}
-        className="absolute inset-0 w-full h-full cursor-grab active:cursor-grabbing"
+        className={`absolute top-0 left-0 bottom-0 cursor-grab active:cursor-grabbing transition-[right] duration-200 ${
+          nPanelOpen ? 'right-0 md:right-80' : 'right-0'
+        }`}
         style={{ touchAction: 'none' }}
       />
 
