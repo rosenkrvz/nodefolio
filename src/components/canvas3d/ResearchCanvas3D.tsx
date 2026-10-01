@@ -2705,6 +2705,22 @@ ${currentPhaseMeta.description}
               <Eye className="w-4 h-4 text-zinc-300" />
             </ToolRailButton>
 
+            {/* Tool: Zoom In (+) */}
+            <ToolRailButton
+              onClick={() => handleZoom('in')}
+              title="Zoom In [Scroll Up]"
+            >
+              <Plus className="w-4 h-4 text-zinc-300" />
+            </ToolRailButton>
+
+            {/* Tool: Zoom Out (−) */}
+            <ToolRailButton
+              onClick={() => handleZoom('out')}
+              title="Zoom Out [Scroll Down]"
+            >
+              <Minus className="w-4 h-4 text-zinc-300" />
+            </ToolRailButton>
+
             {/* Tool: Reset View [R] */}
             <ToolRailButton
               onClick={handleResetView}
@@ -2786,97 +2802,103 @@ ${currentPhaseMeta.description}
 
       {/* ───────────────────────────────────────────────────────────────────
           BLENDER TOP-RIGHT NAVIGATION GIZMO & VIEW CONTROLS
-          Slides dynamically to stay left of N-Panel when open!
+          Only shown floating on canvas when N-Panel is closed!
+          When N-Panel is open, it docks seamlessly inside the N-Panel toolbar!
          ─────────────────────────────────────────────────────────────────── */}
-      {showGizmo && (
+      {showGizmo && !nPanelOpen && (
         <div
-          className={`hidden sm:flex flex-col items-center gap-1.5 absolute top-11 z-20 pointer-events-none select-none transition-all duration-200 ${
-            nPanelOpen ? 'right-[330px]' : 'right-3'
-          }`}
+          className="hidden sm:flex flex-col items-center gap-1 absolute top-11 right-3.5 z-20 pointer-events-none select-none transition-all duration-200 animate-in fade-in duration-150"
         >
-          {/* Interactive Orientation Gimbal (Blender Style 3D Cube/Axis Dial) */}
-          <div
-            aria-label="3D Orientation Gizmo"
-            className="relative w-16 h-16 pointer-events-auto rounded-[2px] bg-[#202020]/90 backdrop-blur-md border border-[#383838] flex items-center justify-center shadow-lg group"
-          >
-            {/* Center Origin Dot */}
-            <div className="absolute w-1.5 h-1.5 rounded-full bg-white z-20 pointer-events-none" />
-
-            {/* 3D Rotating Coordinate Axes linked to OrbitControls */}
-            <div
-              ref={gizmoElRef}
-              className="w-12 h-12 relative transform-gpu flex items-center justify-center pointer-events-none"
-              style={{ transformStyle: 'preserve-3d', transformOrigin: '50% 50% 0' }}
-            >
-              {/* +X (Red) */}
-              <div className="absolute top-1/2 left-1/2 w-4 h-[2px] bg-red-500 origin-left" />
-              {/* +Y (Green) */}
-              <div className="absolute top-1/2 left-1/2 w-[2px] h-4 bg-emerald-500 origin-bottom -translate-y-full" />
-              {/* +Z (Blue) */}
-              <div
-                className="absolute top-1/2 left-1/2 w-4 h-[2px] bg-sky-400 origin-left"
-                style={{ transform: 'rotateY(90deg)' }}
-              />
+          <div className="pointer-events-auto p-1 bg-[#202020]/95 backdrop-blur-md border border-[#383838] rounded-[2px] shadow-2xl flex flex-col items-center gap-1">
+            {/* Header Reticle with Dock Shortcut */}
+            <div className="w-full flex items-center justify-between px-1 text-[8px] font-mono text-zinc-400 uppercase tracking-widest border-b border-[#333] pb-0.5">
+              <span>NAV</span>
+              <button
+                type="button"
+                onClick={() => {
+                  playSound('toggle');
+                  setNPanelOpen(true);
+                }}
+                title="Dock inside Sidebar [N]"
+                className="text-zinc-500 hover:text-rose-400 transition-colors cursor-pointer text-[7.5px]"
+              >
+                DOCK ◀
+              </button>
             </div>
 
-            {/* Clickable Cardinal View Snap Buttons (Blender Axis Knobs) */}
-            <button
-              type="button"
-              onClick={() => handleSnapAxis('x')}
-              title="Snap to Right Ortho (+X)"
-              className="absolute right-1 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-red-600/90 hover:bg-red-500 text-[8px] font-bold text-white flex items-center justify-center shadow-sm cursor-pointer active:scale-90"
+            {/* Interactive Orientation Gimbal (Blender Style 3D Cube/Axis Dial) */}
+            <div
+              aria-label="3D Orientation Gizmo"
+              className="relative w-14 h-14 rounded-[2px] bg-[#1a1a1a] border border-[#333] flex items-center justify-center shadow-inner group"
             >
-              X
-            </button>
-            <button
-              type="button"
-              onClick={() => handleSnapAxis('y')}
-              title="Snap to Top Ortho (+Y)"
-              className="absolute top-1 left-1/2 -translate-x-1/2 w-4 h-4 rounded-full bg-emerald-600/90 hover:bg-emerald-500 text-[8px] font-bold text-white flex items-center justify-center shadow-sm cursor-pointer active:scale-90"
-            >
-              Y
-            </button>
-            <button
-              type="button"
-              onClick={() => handleSnapAxis('z')}
-              title="Snap to Front Ortho (+Z)"
-              className="absolute bottom-1 left-1/2 -translate-x-1/2 w-4 h-4 rounded-full bg-sky-600/90 hover:bg-sky-500 text-[8px] font-bold text-white flex items-center justify-center shadow-sm cursor-pointer active:scale-90"
-            >
-              Z
-            </button>
-          </div>
+              <div className="absolute w-1.5 h-1.5 rounded-full bg-white z-20 pointer-events-none" />
+              <div
+                ref={gizmoElRef}
+                className="w-10 h-10 relative transform-gpu flex items-center justify-center pointer-events-none"
+                style={{ transformStyle: 'preserve-3d', transformOrigin: '50% 50% 0' }}
+              >
+                <div className="absolute top-1/2 left-1/2 w-3.5 h-[2px] bg-red-500 origin-left" />
+                <div className="absolute top-1/2 left-1/2 w-[2px] h-3.5 bg-emerald-500 origin-bottom -translate-y-full" />
+                <div
+                  className="absolute top-1/2 left-1/2 w-3.5 h-[2px] bg-sky-400 origin-left"
+                  style={{ transform: 'rotateY(90deg)' }}
+                />
+              </div>
 
-          {/* Blender Stacked Viewport Navigation Pills */}
-          <div className="pointer-events-auto flex flex-col gap-0.5 p-0.5 bg-[#202020]/90 backdrop-blur-md border border-[#383838] rounded-[2px] shadow-md">
-            {/* Zoom In (+) */}
-            <button
-              type="button"
-              onClick={() => handleZoom('in')}
-              title="Zoom In [Scroll Up]"
-              className="w-6 h-6 flex items-center justify-center rounded-[2px] text-zinc-400 hover:text-white hover:bg-white/[0.08] transition-colors cursor-pointer text-xs font-bold"
-            >
-              +
-            </button>
+              {/* Clickable Cardinal View Snap Buttons */}
+              <button
+                type="button"
+                onClick={() => handleSnapAxis('x')}
+                title="Snap to Right Ortho (+X)"
+                className="absolute right-0.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 rounded-full bg-red-600/90 hover:bg-red-500 text-[7px] font-bold text-white flex items-center justify-center shadow-xs cursor-pointer active:scale-90"
+              >
+                X
+              </button>
+              <button
+                type="button"
+                onClick={() => handleSnapAxis('y')}
+                title="Snap to Top Ortho (+Y)"
+                className="absolute top-0.5 left-1/2 -translate-x-1/2 w-3.5 h-3.5 rounded-full bg-emerald-600/90 hover:bg-emerald-500 text-[7px] font-bold text-white flex items-center justify-center shadow-xs cursor-pointer active:scale-90"
+              >
+                Y
+              </button>
+              <button
+                type="button"
+                onClick={() => handleSnapAxis('z')}
+                title="Snap to Front Ortho (+Z)"
+                className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-3.5 h-3.5 rounded-full bg-sky-600/90 hover:bg-sky-500 text-[7px] font-bold text-white flex items-center justify-center shadow-xs cursor-pointer active:scale-90"
+              >
+                Z
+              </button>
+            </div>
 
-            {/* Zoom Out (-) */}
-            <button
-              type="button"
-              onClick={() => handleZoom('out')}
-              title="Zoom Out [Scroll Down]"
-              className="w-6 h-6 flex items-center justify-center rounded-[2px] text-zinc-400 hover:text-white hover:bg-white/[0.08] transition-colors cursor-pointer text-xs font-bold"
-            >
-              −
-            </button>
-
-            {/* Reset Camera */}
-            <button
-              type="button"
-              onClick={handleResetView}
-              title="Center View to Artifact [R]"
-              className="w-6 h-6 flex items-center justify-center rounded-[2px] text-zinc-400 hover:text-white hover:bg-white/[0.08] transition-colors cursor-pointer"
-            >
-              <RotateCcw className="w-3 h-3" />
-            </button>
+            {/* Blender Stacked Viewport Navigation Pills */}
+            <div className="w-full flex flex-col gap-0.5 p-0.5 bg-[#181818] border border-[#2e2e2e] rounded-[2px]">
+              <button
+                type="button"
+                onClick={() => handleZoom('in')}
+                title="Zoom In [Scroll Up]"
+                className="w-full h-5 flex items-center justify-center rounded-[2px] text-zinc-400 hover:text-white hover:bg-white/[0.08] transition-colors cursor-pointer text-xs font-bold"
+              >
+                +
+              </button>
+              <button
+                type="button"
+                onClick={() => handleZoom('out')}
+                title="Zoom Out [Scroll Down]"
+                className="w-full h-5 flex items-center justify-center rounded-[2px] text-zinc-400 hover:text-white hover:bg-white/[0.08] transition-colors cursor-pointer text-xs font-bold"
+              >
+                −
+              </button>
+              <button
+                type="button"
+                onClick={handleResetView}
+                title="Center View to Artifact [R]"
+                className="w-full h-5 flex items-center justify-center rounded-[2px] text-zinc-400 hover:text-white hover:bg-white/[0.08] transition-colors cursor-pointer"
+              >
+                <RotateCcw className="w-3 h-3" />
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -2942,6 +2964,95 @@ ${currentPhaseMeta.description}
               <X className="w-3.5 h-3.5" />
             </button>
           </div>
+
+          {/* Docked Viewport Navigation & Orientation Shelf (Purpose-built home in main toolbar) */}
+          {showGizmo && (
+            <div className="bg-[#181818] border-b border-[#353535] px-2.5 py-1.5 flex items-center justify-between gap-2.5 shrink-0 select-none">
+              <div className="flex items-center gap-2 min-w-0">
+                <div
+                  aria-label="3D Orientation Gizmo"
+                  className="relative w-11 h-11 rounded-[2px] bg-[#222222] border border-[#3d3d3d] flex items-center justify-center shadow-inner group shrink-0"
+                >
+                  <div className="absolute w-1.5 h-1.5 rounded-full bg-white z-20 pointer-events-none" />
+                  <div
+                    ref={gizmoElRef}
+                    className="w-8 h-8 relative transform-gpu flex items-center justify-center pointer-events-none"
+                    style={{ transformStyle: 'preserve-3d', transformOrigin: '50% 50% 0' }}
+                  >
+                    <div className="absolute top-1/2 left-1/2 w-3 h-[2px] bg-red-500 origin-left" />
+                    <div className="absolute top-1/2 left-1/2 w-[2px] h-3 bg-emerald-500 origin-bottom -translate-y-full" />
+                    <div
+                      className="absolute top-1/2 left-1/2 w-3 h-[2px] bg-sky-400 origin-left"
+                      style={{ transform: 'rotateY(90deg)' }}
+                    />
+                  </div>
+
+                  {/* Cardinal Axis Snap Knobs */}
+                  <button
+                    type="button"
+                    onClick={() => handleSnapAxis('x')}
+                    title="Snap to Right Ortho (+X)"
+                    className="absolute right-0.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 rounded-full bg-red-600/90 hover:bg-red-500 text-[7px] font-bold text-white flex items-center justify-center shadow-xs cursor-pointer active:scale-90"
+                  >
+                    X
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleSnapAxis('y')}
+                    title="Snap to Top Ortho (+Y)"
+                    className="absolute top-0.5 left-1/2 -translate-x-1/2 w-3.5 h-3.5 rounded-full bg-emerald-600/90 hover:bg-emerald-500 text-[7px] font-bold text-white flex items-center justify-center shadow-xs cursor-pointer active:scale-90"
+                  >
+                    Y
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleSnapAxis('z')}
+                    title="Snap to Front Ortho (+Z)"
+                    className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-3.5 h-3.5 rounded-full bg-sky-600/90 hover:bg-sky-500 text-[7px] font-bold text-white flex items-center justify-center shadow-xs cursor-pointer active:scale-90"
+                  >
+                    Z
+                  </button>
+                </div>
+
+                <div className="min-w-0">
+                  <span className="font-mono text-[9px] font-bold text-rose-400 uppercase tracking-wider block truncate">
+                    VIEWPORT NAVIGATION
+                  </span>
+                  <span className="font-mono text-[8px] text-zinc-400 uppercase block truncate">
+                    SNAP: ORTHO X / Y / Z
+                  </span>
+                </div>
+              </div>
+
+              {/* Viewport Zoom & Reset Controls */}
+              <div className="flex items-center gap-1 bg-[#222222] border border-[#383838] p-0.5 rounded-[2px] shrink-0">
+                <button
+                  type="button"
+                  onClick={() => handleZoom('in')}
+                  title="Zoom In [Scroll Up]"
+                  className="w-6 h-6 flex items-center justify-center rounded-[2px] text-zinc-300 hover:text-white hover:bg-white/[0.08] transition-colors cursor-pointer text-xs font-bold"
+                >
+                  +
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleZoom('out')}
+                  title="Zoom Out [Scroll Down]"
+                  className="w-6 h-6 flex items-center justify-center rounded-[2px] text-zinc-300 hover:text-white hover:bg-white/[0.08] transition-colors cursor-pointer text-xs font-bold"
+                >
+                  −
+                </button>
+                <button
+                  type="button"
+                  onClick={handleResetView}
+                  title="Center View to Artifact [R]"
+                  className="w-6 h-6 flex items-center justify-center rounded-[2px] text-zinc-300 hover:text-white hover:bg-white/[0.08] transition-colors cursor-pointer"
+                >
+                  <RotateCcw className="w-3 h-3" />
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* N-Panel Scrollable Content */}
           <div className="flex-1 overflow-y-auto overflow-x-hidden p-2 space-y-2 no-scrollbar text-xs font-mono">
