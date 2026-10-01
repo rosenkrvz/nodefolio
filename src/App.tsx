@@ -305,8 +305,8 @@ export default function App() {
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [activeConnectionId, setActiveConnectionId] = useState<string | null>(null);
 
-  // Canvas pan & zoom transform (centered at 58% scale by default, matching canonical configuration)
-  const [transform, setTransform] = useState<CanvasTransform>({ x: 0, y: 0, scale: 0.58 });
+  // Canvas pan & zoom transform (centered at 57% scale by default, matching canonical configuration)
+  const [transform, setTransform] = useState<CanvasTransform>({ x: 0, y: 0, scale: 0.57 });
   const transformRef = useRef(transform);
   transformRef.current = transform;
   const isPanningRef = useRef(false);
@@ -1589,8 +1589,8 @@ export default function App() {
 
     // Canonical reference desktop targets:
     // Research tab: 0.65
-    // Network tab: 0.58 (matching exact 58% workspace configuration in image)
-    const canonicalTarget = preset === 'project' ? 0.65 : 0.58;
+    // Network tab: 0.57 (matching exact 57% workspace configuration in image)
+    const canonicalTarget = preset === 'project' ? 0.65 : 0.57;
 
     // Dynamic auto-scaling bounds:
     // Large Desktop / 4K: Caps at MAX_GRAPH_SCALE (0.85) so nodes never balloon disproportionately
@@ -1606,9 +1606,22 @@ export default function App() {
       targetScale = Math.max(MIN_GRAPH_SCALE, Math.min(MAX_GRAPH_SCALE, Number(autoComputed.toFixed(2))));
     }
 
-    // Precise visual workspace centering
+    // Precise visual workspace centering:
+    // Top row (y=380) sits comfortably below the navbar at usable.topInset + 18px (matching reference screenshot)
+    // while keeping Academic & Foundation comfortably framed above the bottom status bar.
     let x = Math.round(usable.usableCenterX - graphCenterX * targetScale);
-    let y = Math.round(usable.usableCenterY - graphCenterY * targetScale);
+    let y = Math.round(usable.topInset + 18 - minY * targetScale);
+
+    // If bottom edge exceeds available viewport height, adjust gracefully
+    const actualBottom = y + maxY * targetScale;
+    if (actualBottom > vh - usable.bottomInset) {
+      y -= Math.round(actualBottom - (vh - usable.bottomInset));
+    }
+    // Hard floor guard: never allow top edge to clip into navbar
+    const actualTop = y + minY * targetScale;
+    if (actualTop < usable.topInset) {
+      y += Math.round(usable.topInset - actualTop);
+    }
 
     // Bulletproof 4-Directional Boundary Enforcement:
     // Guarantees NO node ever touches the North navbar, South status bar, East controls dock, or West edge.
@@ -1619,14 +1632,6 @@ export default function App() {
     const actualRight = x + maxX * targetScale;
     if (actualRight > vw - usable.rightInset) {
       x -= Math.round(actualRight - (vw - usable.rightInset));
-    }
-    const actualTop = y + minY * targetScale;
-    if (actualTop < usable.topInset) {
-      y += Math.round(usable.topInset - actualTop);
-    }
-    const actualBottom = y + maxY * targetScale;
-    if (actualBottom > vh - usable.bottomInset) {
-      y -= Math.round(actualBottom - (vh - usable.bottomInset));
     }
 
     setTransform({ x, y, scale: targetScale });
