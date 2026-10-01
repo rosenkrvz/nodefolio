@@ -88,12 +88,18 @@ const loadSavedVisitorNodes = (): NodeData[] => {
 };
 
 const NODE_DIMENSIONS_KEY = 'nodefolio_node_dimensions';
-const NODE_DIMENSIONS_VERSION = 'v1';
+const NODE_DIMENSIONS_VERSION = 'v2';
 const NODE_DIMENSIONS_VER_KEY = 'nodefolio_node_dimensions_ver';
 
 const loadSavedNodeDimensions = (): Record<string, { width: number; x?: number }> => {
   if (typeof window === 'undefined') return {};
   try {
+    const currentVersion = localStorage.getItem(NODE_DIMENSIONS_VER_KEY);
+    if (currentVersion !== NODE_DIMENSIONS_VERSION) {
+      localStorage.removeItem(NODE_DIMENSIONS_KEY);
+      localStorage.setItem(NODE_DIMENSIONS_VER_KEY, NODE_DIMENSIONS_VERSION);
+      return {};
+    }
     const raw = localStorage.getItem(NODE_DIMENSIONS_KEY);
     if (!raw) return {};
     const parsed = JSON.parse(raw);
@@ -299,8 +305,8 @@ export default function App() {
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [activeConnectionId, setActiveConnectionId] = useState<string | null>(null);
 
-  // Canvas pan & zoom transform (centered at 60% scale by default)
-  const [transform, setTransform] = useState<CanvasTransform>({ x: 0, y: 0, scale: 0.60 });
+  // Canvas pan & zoom transform (centered at 58% scale by default, matching canonical configuration)
+  const [transform, setTransform] = useState<CanvasTransform>({ x: 0, y: 0, scale: 0.58 });
   const transformRef = useRef(transform);
   transformRef.current = transform;
   const isPanningRef = useRef(false);
@@ -1447,7 +1453,7 @@ export default function App() {
     if (node.id === 'node-project') return 680;
     if (node.id === 'node-clock') return 520;
     if (node.id === 'node-profile') return 420;
-    if (node.id === 'node-credentials') return 380;
+    if (node.id === 'node-credentials') return 420;
     if (node.id === 'node-models' || node.id === 'node-systems') return 390;
     if (node.category === 'visitor') return 280;
     if (node.researchData) return 340;
@@ -1456,14 +1462,14 @@ export default function App() {
 
   // Geometry model of the usable Node Space workspace
   const getUsableCanvasViewport = useCallback((vw: number, vh: number, isMobile: boolean) => {
-    // Top: Navbar is 64px on desktop (54px on mobile) + 24px safety buffer
-    const topInset = isMobile ? 68 : 88;
-    // Bottom: Telemetry status bar is 44px + 20px padding/margin
-    const bottomInset = isMobile ? 76 : 68;
-    // Right: Floating control dock is 44px + 20px right margin + 24px breathing space
-    const rightInset = isMobile ? 20 : 88;
-    // Left: Symmetrical margin for optical balance
-    const leftInset = isMobile ? 20 : 44;
+    // North: TopNavbar is 64px on desktop (54px on mobile) + 28px safety buffer
+    const topInset = isMobile ? 68 : 92;
+    // South: Telemetry status bar is 44px + 28px padding/buffer
+    const bottomInset = isMobile ? 76 : 72;
+    // East: Floating control dock is 44px + 16px right margin + 36px breathing space
+    const rightInset = isMobile ? 20 : 96;
+    // West: Symmetrical margin for optical balance from left screen edge
+    const leftInset = isMobile ? 20 : 48;
 
     const usableWidth = Math.max(260, vw - leftInset - rightInset);
     const usableHeight = Math.max(260, vh - topInset - bottomInset);
@@ -1543,7 +1549,7 @@ export default function App() {
       return;
     }
 
-    // 2. DESKTOP & LAPTOP RESPONSIVE AUTO-FIT (>=768px):
+    // 2. DESKTOP, LAPTOP & TABLET RESPONSIVE AUTO-FIT (>=768px):
     const usable = getUsableCanvasViewport(vw, vh, false);
 
     let minX = Infinity;
@@ -1558,17 +1564,17 @@ export default function App() {
         const nw = typeof node.width === 'number' && isFinite(node.width) ? node.width : 340;
         const nh = getNodeEstimatedHeight(node);
 
-        // Include node body with an intentional 16px buffer for selection glow & pin protrusion
-        if (nx - 16 < minX) minX = nx - 16;
-        if (nx + nw + 16 > maxX) maxX = nx + nw + 16;
-        if (ny - 16 < minY) minY = ny - 16;
-        if (ny + nh + 16 > maxY) maxY = ny + nh + 16;
+        // Include node body with an intentional 20px buffer for selection glow & pin protrusion
+        if (nx - 20 < minX) minX = nx - 20;
+        if (nx + nw + 20 > maxX) maxX = nx + nw + 20;
+        if (ny - 20 < minY) minY = ny - 20;
+        if (ny + nh + 20 > maxY) maxY = ny + nh + 20;
       }
     } else {
       minX = 100;
       maxX = 2300;
       minY = 380;
-      maxY = 1200;
+      maxY = 1260;
     }
 
     const graphWidth = Math.max(100, maxX - minX);
@@ -1576,68 +1582,51 @@ export default function App() {
     const graphCenterX = (minX + maxX) / 2;
     const graphCenterY = (minY + maxY) / 2;
 
-    // Viewport usable fit ratios (92% safe margin so graph never touches edge UI)
+    // Viewport usable fit ratios (92% safe margin so graph never touches edge UI on any axis)
     const fitScaleX = usable.usableWidth / graphWidth;
     const fitScaleY = usable.usableHeight / graphHeight;
     const maxFitScale = Math.min(fitScaleX, fitScaleY) * 0.92;
 
-    // Canonical reference desktop targets (at standard 1080p):
-    // Research tab: 0.70 (70% in dock)
-    // Network tab: 0.60 (60% in dock)
-    const canonicalTarget = preset === 'project' ? 0.70 : (preset === 'network' ? 0.60 : 0.60);
+    // Canonical reference desktop targets:
+    // Research tab: 0.65
+    // Network tab: 0.58 (matching exact 58% workspace configuration in image)
+    const canonicalTarget = preset === 'project' ? 0.65 : 0.58;
 
     // Dynamic auto-scaling bounds:
     // Large Desktop / 4K: Caps at MAX_GRAPH_SCALE (0.85) so nodes never balloon disproportionately
-    // Laptops / Tablets: Adapts scale smoothly between 0.42 and canonicalTarget without clipping
-    const MIN_GRAPH_SCALE = 0.42;
+    // Laptops / Tablets: Adapts scale smoothly without clipping or touching edge panels
+    const MIN_GRAPH_SCALE = 0.38;
     const MAX_GRAPH_SCALE = 0.85;
 
-    // Detect 1920 x 1080p resolution (both full 1080p display and typical desktop 1080p browser window bounds)
-    const is1080pRes = typeof window !== 'undefined' && (
-      (window.screen && (
-        (window.screen.width === 1920 && window.screen.height === 1080) ||
-        (window.screen.availWidth === 1920 && window.screen.availHeight >= 960 && window.screen.availHeight <= 1080)
-      )) ||
-      (vw >= 1700 && vw <= 2100 && vh >= 750 && vh <= 1150)
-    );
-
     let targetScale: number;
-    if (preset === 'network' && is1080pRes) {
-      // Strictly maintain 60% for 1920 x 1080p resolution on the Network / Work computational workspace
-      targetScale = 0.60;
-    } else if (desiredScale !== undefined) {
-      targetScale = Math.max(MIN_GRAPH_SCALE, Math.min(MAX_GRAPH_SCALE, desiredScale));
+    if (desiredScale !== undefined) {
+      targetScale = Math.max(MIN_GRAPH_SCALE, Math.min(maxFitScale, desiredScale));
     } else {
       const autoComputed = Math.min(canonicalTarget, maxFitScale);
       targetScale = Math.max(MIN_GRAPH_SCALE, Math.min(MAX_GRAPH_SCALE, Number(autoComputed.toFixed(2))));
     }
 
-    // Precise visual workspace centering with intentional upward elevation ("sit a tad bit higher")
-    const x = Math.round(usable.usableCenterX - graphCenterX * targetScale);
+    // Precise visual workspace centering
+    let x = Math.round(usable.usableCenterX - graphCenterX * targetScale);
+    let y = Math.round(usable.usableCenterY - graphCenterY * targetScale);
 
-    // Intentional upward elevation offset so square nodes connected by splines sit higher on screen
-    const elevationOffset = preset === 'project'
-      ? Math.round(vh * 0.055)
-      : (preset === 'network' ? Math.round(vh * 0.050) : Math.round(vh * 0.045));
-
-    let y = Math.round(usable.usableCenterY - graphCenterY * targetScale - elevationOffset);
-
-    // Symmetrical safety clamps to guarantee no node ever slips behind or too close to the top navbar
-    if (preset === 'network') {
-      const minRow1Y = usable.topInset + 20;
-      if (y + 380 * targetScale < minRow1Y) {
-        y = Math.round(minRow1Y - 380 * targetScale);
-      }
-    } else if (preset === 'project') {
-      const minProfileY = usable.topInset + 20;
-      if (y + 140 * targetScale < minProfileY) {
-        y = Math.round(minProfileY - 140 * targetScale);
-      }
-    } else {
-      const minGraphY = usable.topInset + 16;
-      if (y + minY * targetScale < minGraphY) {
-        y = Math.round(minGraphY - minY * targetScale);
-      }
+    // Bulletproof 4-Directional Boundary Enforcement:
+    // Guarantees NO node ever touches the North navbar, South status bar, East controls dock, or West edge.
+    const actualLeft = x + minX * targetScale;
+    if (actualLeft < usable.leftInset) {
+      x += Math.round(usable.leftInset - actualLeft);
+    }
+    const actualRight = x + maxX * targetScale;
+    if (actualRight > vw - usable.rightInset) {
+      x -= Math.round(actualRight - (vw - usable.rightInset));
+    }
+    const actualTop = y + minY * targetScale;
+    if (actualTop < usable.topInset) {
+      y += Math.round(usable.topInset - actualTop);
+    }
+    const actualBottom = y + maxY * targetScale;
+    if (actualBottom > vh - usable.bottomInset) {
+      y -= Math.round(actualBottom - (vh - usable.bottomInset));
     }
 
     setTransform({ x, y, scale: targetScale });
@@ -1836,7 +1825,7 @@ export default function App() {
     setActiveView('canvas');
     setActivePreset('network');
     setSelectedNodeId(null);
-    centerViewForPreset('network', 0.60);
+    centerViewForPreset('network');
     if (startSettleRef.current) {
       startSettleRef.current(1, 280);
     } else {
@@ -1918,7 +1907,7 @@ export default function App() {
       setActiveView('canvas');
       setActivePreset('network');
       setSelectedNodeId(null);
-      centerViewForPreset('network', 0.60);
+      centerViewForPreset('network');
       isProgrammaticScrollRef.current = true;
       setTimeout(() => { isProgrammaticScrollRef.current = false; }, 500);
 

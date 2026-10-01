@@ -65,13 +65,13 @@ export const INITIAL_NODES: NodeData[] = [
     ],
   },
 
-  // 3. Academic & Technical Foundation (Column 1, Row 2 - under Profile)
+  // 3. Academic & Technical Foundation (Column 2, Row 2 - under Generative Architectures)
   {
     id: 'node-credentials',
     title: 'Academic & Foundation',
     subtitle: 'Mathematics & Computation',
     category: 'certificates',
-    x: 100,
+    x: 560,
     y: 840,
     width: 340,
     inputs: [
