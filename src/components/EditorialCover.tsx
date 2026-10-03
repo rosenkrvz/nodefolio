@@ -8,17 +8,26 @@ interface EditorialCoverProps {
   activeNavTab?: string;
   onExplore: () => void;
   onViewWork: () => void;
+  onSelectNavTab?: (tab: 'home' | 'network' | 'projects' | 'notebook') => void;
+  onOpenResume?: () => void;
+  onOpenResearchCanvas3D?: (phaseId?: string) => void;
 }
+
+export type HomeCoverFormat = 'editorial' | 'telemetry' | 'executive';
 
 const EditorialCoverComponent: React.FC<EditorialCoverProps> = ({
   scrollProgress,
   activeNavTab = 'home',
   onExplore,
   onViewWork,
+  onSelectNavTab,
+  onOpenResume,
+  onOpenResearchCanvas3D,
 }) => {
   const [entryStage, setEntryStage] = useState(0);
   const [isEntered, setIsEntered] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(false);
+  const [formatMode, setFormatMode] = useState<HomeCoverFormat>('editorial');
 
   // Check prefers-reduced-motion
   useEffect(() => {
@@ -32,7 +41,6 @@ const EditorialCoverComponent: React.FC<EditorialCoverProps> = ({
 
   // Coordinated Page Entry Reveal Sequence matching the Chronicle page (~800ms total)
   useEffect(() => {
-    // If reduced motion is requested or user is already scrolled / on another tab, settle immediately
     if (reducedMotion || scrollProgress > 0.02 || activeNavTab !== 'home') {
       setEntryStage(4);
       setIsEntered(true);
@@ -62,22 +70,15 @@ const EditorialCoverComponent: React.FC<EditorialCoverProps> = ({
     }
   }, [scrollProgress, activeNavTab, isEntered]);
 
-  // Multi-Phase Continuous Hermite Transition Choreography:
-  // Step 1 [0.00 - 0.12]: Grounded Stability & Bottom Cue Retraction
-  // Step 2 [0.12 - 0.35]: Physical Edge Ignition, Horizon Glow & Depth Separation
-  // Step 3 [0.35 - 0.65]: Stratified Layer Parallax, Sub-element Fading & Focal Softening
-  // Step 4 [0.65 - 0.88]: Cinematic Atmosphere Ascent, Bokeh Deepening & Spatial Aperture
-  // Step 5 [0.88 - 1.00]: Terminal Handshake & Clean Clearance
-
-  // 1. Bottom Hint & Instruction Bar (Fades out first so it doesn't clutter during lift)
+  // Bottom Hint & Instruction Bar
   const bottomHintOpacity = Math.max(0, 1 - Math.min(1, scrollProgress / 0.14));
   const bottomHintTranslateY = Math.min(15, (scrollProgress / 0.14) * 15);
 
-  // 2. Horizon Edge Crimson Seam Glow (Ramps from 0 at 0.06 to full intensity by 0.25)
+  // Horizon Edge Crimson Seam Glow
   const seamIntensity = scrollProgress < 0.06 ? 0 : Math.min(1, (scrollProgress - 0.06) / 0.18);
   const isLifting = seamIntensity > 0.01;
 
-  // 3. Sub-layer Parallax (Eyebrow & Research Spec Column)
+  // Sub-layer Parallax
   const subLayerT = Math.max(0, Math.min(1, (scrollProgress - 0.10) / 0.65));
   const subLayerSmooth = subLayerT * subLayerT * (3 - 2 * subLayerT);
   const eyebrowTranslateY = -(subLayerSmooth * 24);
@@ -85,10 +86,10 @@ const EditorialCoverComponent: React.FC<EditorialCoverProps> = ({
   const specsTranslateY = -(subLayerSmooth * 18);
   const specsOpacity = Math.max(0, 1 - Math.pow(subLayerSmooth, 1.6));
 
-  // 4. Background Pattern Counter-Parallax Drift
+  // Background Pattern Counter-Parallax Drift
   const bgDriftPercent = -(Math.min(1, scrollProgress / 0.90) * 8);
 
-  // 5. Main Hero Core Lift & Multi-Stage Blur
+  // Main Hero Core Lift & Multi-Stage Blur
   let blur = 0;
   let opacity = 1;
   let scale = 1;
@@ -100,30 +101,27 @@ const EditorialCoverComponent: React.FC<EditorialCoverProps> = ({
     scale = 1;
     translateYPercent = scrollProgress >= 0.75 ? -105 : 0;
   } else {
-    // Quintic smootherstep: 6t^5 - 15t^4 + 10t^3 (zero jerk, continuous 1st and 2nd derivatives)
     const rawT = Math.max(0, Math.min(1, (scrollProgress - 0.10) / 0.82));
     const smoothT = rawT * rawT * rawT * (rawT * (rawT * 6 - 15) + 10);
 
-    // Multi-stage continuous blur progression (discretized to 0.5px steps to prevent GPU re-rasterization spikes):
     let rawBlur = 0;
     if (scrollProgress < 0.12) {
       rawBlur = 0;
     } else if (scrollProgress < 0.35) {
       const t = (scrollProgress - 0.12) / 0.23;
-      rawBlur = t * 2.8; // 0px -> 2.8px
+      rawBlur = t * 2.8;
     } else if (scrollProgress < 0.65) {
       const t = (scrollProgress - 0.35) / 0.30;
-      rawBlur = 2.8 + t * 4.7; // 2.8px -> 7.5px
+      rawBlur = 2.8 + t * 4.7;
     } else {
       const t = Math.min(1, (scrollProgress - 0.65) / 0.25);
-      rawBlur = 7.5 + t * 6.5; // 7.5px -> 14.0px
+      rawBlur = 7.5 + t * 6.5;
     }
     blur = Math.round(rawBlur * 2) / 2;
 
-    scale = 1 - smoothT * 0.055; // 1.00 to 0.945
-    translateYPercent = -(smoothT * 105); // 0% to -105%
+    scale = 1 - smoothT * 0.055;
+    translateYPercent = -(smoothT * 105);
 
-    // Opacity: Stays solid through first 38% of scroll travel, then dissolves smoothly
     if (scrollProgress < 0.38) {
       opacity = 1;
     } else {
@@ -133,6 +131,11 @@ const EditorialCoverComponent: React.FC<EditorialCoverProps> = ({
   }
 
   const isFullyOffscreen = scrollProgress >= 0.96;
+
+  const handleFormatChange = (mode: HomeCoverFormat) => {
+    playSound('nav');
+    setFormatMode(mode);
+  };
 
   return (
     <section
@@ -162,7 +165,7 @@ const EditorialCoverComponent: React.FC<EditorialCoverProps> = ({
         </div>
       </div>
 
-      {/* Mobile-specific Text Contrast Vignette: softens diagonal background behind typography while letting perimeter geometry breathe */}
+      {/* Mobile-specific Text Contrast Vignette */}
       <div
         className="absolute inset-0 pointer-events-none bg-[radial-gradient(ellipse_at_30%_45%,rgba(20,23,28,0.85)_0%,rgba(20,23,28,0.4)_65%,transparent_100%)] sm:hidden z-0"
         aria-hidden="true"
@@ -179,38 +182,73 @@ const EditorialCoverComponent: React.FC<EditorialCoverProps> = ({
         />
       )}
 
-      {/* Top Editorial Eyebrow & Brand Anchor (Parallax Sub-layer) */}
+      {/* Top Editorial Eyebrow & Brand Anchor with Format Controls */}
       <div
         style={{
           transform: `translate3d(0, ${(eyebrowTranslateY + (isEntered || entryStage >= 1 ? 0 : -12)).toFixed(1)}px, 0)`,
           opacity: isEntered ? eyebrowOpacity : (entryStage >= 1 ? eyebrowOpacity : 0),
           transition: isEntered ? 'none' : 'opacity 0.6s ease-out, transform 0.6s ease-out',
         }}
-        className="relative z-10 w-full max-w-[1780px] 2xl:max-w-[1920px] 3xl:max-w-[2160px] mx-auto flex items-center justify-between pb-3 sm:pb-4 border-b border-white/[0.08] text-xs font-body text-zinc-400 shrink-0"
+        className="relative z-10 w-full max-w-[1780px] 2xl:max-w-[1920px] 3xl:max-w-[2160px] mx-auto flex items-center justify-between pb-3 sm:pb-4 border-b border-white/[0.08] text-xs font-body text-zinc-400 shrink-0 gap-4"
       >
         {/* Desktop Eyebrow Left */}
-        <div className="hidden sm:flex items-center gap-3 tracking-[0.25em] uppercase font-medium">
+        <div className="hidden sm:flex items-center gap-3 tracking-[0.25em] uppercase font-medium shrink-0">
           <BrandLogo variant="icon" size={16} className="text-rose-400 shrink-0" />
           <span className="font-semibold text-zinc-200">PORTFOLIO / 01</span>
           <span className="text-zinc-600">&bull;</span>
           <span className="text-zinc-400">RESEARCH &bull; SYSTEMS</span>
         </div>
 
-        {/* Mobile Eyebrow Left: Editorial Publication Metadata */}
-        <div className="sm:hidden flex flex-col gap-0.5">
-          <div className="flex items-center gap-1.5 tracking-[0.2em] uppercase font-semibold text-zinc-200 text-[10.5px]">
-            <BrandLogo variant="icon" size={12} className="text-rose-400 shrink-0" />
-            <span>PORTFOLIO / 01</span>
-          </div>
-          <div className="flex items-center gap-1.5 text-[8.5px] tracking-[0.18em] font-medium uppercase text-rose-400/85">
-            <span>RESEARCH NOTEBOOK</span>
-            <span className="text-zinc-600">&bull;</span>
-            <span>SYSTEMS</span>
-          </div>
+        {/* Center: Interactive Format Options Switcher */}
+        <div className="flex items-center gap-1.5 p-1 rounded-xl bg-white/[0.035] border border-white/[0.08] backdrop-blur-md shadow-inner">
+          <span className="hidden xl:inline-block font-mono text-[9.5px] uppercase tracking-widest text-zinc-400 pl-2 pr-1 font-semibold">
+            FORMAT:
+          </span>
+          <button
+            type="button"
+            onClick={() => handleFormatChange('editorial')}
+            className={`px-2.5 sm:px-3 py-1 rounded-lg font-mono text-[10px] sm:text-[11px] font-semibold tracking-wider uppercase transition-all cursor-pointer flex items-center gap-1.5 ${
+              formatMode === 'editorial'
+                ? 'bg-rose-500/20 text-white border border-rose-500/50 shadow-[0_0_10px_rgba(244,63,94,0.25)]'
+                : 'text-zinc-400 hover:text-white hover:bg-white/[0.04] border border-transparent'
+            }`}
+            title="Editorial visual overview"
+          >
+            <span className={`w-1.5 h-1.5 rounded-full ${formatMode === 'editorial' ? 'bg-rose-500 shadow-[0_0_6px_#f43f5e]' : 'bg-zinc-600'}`} />
+            <span>01 EDITORIAL</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => handleFormatChange('telemetry')}
+            className={`px-2.5 sm:px-3 py-1 rounded-lg font-mono text-[10px] sm:text-[11px] font-semibold tracking-wider uppercase transition-all cursor-pointer flex items-center gap-1.5 ${
+              formatMode === 'telemetry'
+                ? 'bg-rose-500/20 text-white border border-rose-500/50 shadow-[0_0_10px_rgba(244,63,94,0.25)]'
+                : 'text-zinc-400 hover:text-white hover:bg-white/[0.04] border border-transparent'
+            }`}
+            title="Computational telemetry and systems"
+          >
+            <span className={`w-1.5 h-1.5 rounded-full ${formatMode === 'telemetry' ? 'bg-rose-500 shadow-[0_0_6px_#f43f5e]' : 'bg-zinc-600'}`} />
+            <span>02 TELEMETRY</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => handleFormatChange('executive')}
+            className={`px-2.5 sm:px-3 py-1 rounded-lg font-mono text-[10px] sm:text-[11px] font-semibold tracking-wider uppercase transition-all cursor-pointer flex items-center gap-1.5 ${
+              formatMode === 'executive'
+                ? 'bg-rose-500/20 text-white border border-rose-500/50 shadow-[0_0_10px_rgba(244,63,94,0.25)]'
+                : 'text-zinc-400 hover:text-white hover:bg-white/[0.04] border border-transparent'
+            }`}
+            title="Executive credentials and academic foundation"
+          >
+            <span className={`w-1.5 h-1.5 rounded-full ${formatMode === 'executive' ? 'bg-rose-500 shadow-[0_0_6px_#f43f5e]' : 'bg-zinc-600'}`} />
+            <span>03 EXECUTIVE</span>
+          </button>
         </div>
 
         {/* Desktop Eyebrow Right */}
-        <div className="hidden sm:flex items-center gap-3">
+        <div className="hidden sm:flex items-center gap-3 shrink-0">
           <span className="font-accent text-3xl leading-none text-rose-400/90 font-bold -mb-1">
             2026
           </span>
@@ -220,8 +258,8 @@ const EditorialCoverComponent: React.FC<EditorialCoverProps> = ({
           </span>
         </div>
 
-        {/* Mobile Eyebrow Right: Year 2026 + Publication Tag */}
-        <div className="sm:hidden flex flex-col items-end">
+        {/* Mobile Eyebrow Right */}
+        <div className="sm:hidden flex flex-col items-end shrink-0">
           <span className="font-accent text-2xl min-[360px]:text-3xl leading-none text-rose-400/90 font-bold">
             2026
           </span>
@@ -231,107 +269,320 @@ const EditorialCoverComponent: React.FC<EditorialCoverProps> = ({
         </div>
       </div>
 
-      {/* Hero Core Content: Monumental Asymmetric Editorial Layout */}
+      {/* Hero Core Content: Conditioned on active formatMode */}
       <div className="relative z-10 w-full max-w-[1780px] 2xl:max-w-[1920px] 3xl:max-w-[2160px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-12 items-end mt-2 min-[360px]:mt-3 min-[390px]:mt-4 mb-auto sm:my-auto py-1 sm:py-2">
-        {/* Left / Main Column: Huge Display Title & Statement (col-span-8) */}
+        {/* Left / Main Column (col-span-8) */}
         <div className="lg:col-span-8 flex flex-col items-start w-full">
-          {/* Subtle Category Pillar (Desktop Only - on mobile, publication metadata is in the top layer) */}
+          {/* Interactive Research Topic Pill Bar */}
           <div
             style={{
               opacity: isEntered || entryStage >= 2 ? 1 : 0,
               transition: isEntered ? 'none' : 'opacity 0.5s ease-out',
             }}
-            className="hidden sm:flex font-mono text-[11px] font-semibold tracking-[0.25em] uppercase text-rose-400 mb-3 items-center gap-2"
+            className="flex flex-wrap items-center gap-1.5 sm:gap-2 mb-3.5"
           >
-            <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shadow-[0_0_8px_#f43f5e] animate-pulse" />
-            <span>RESEARCH NOTEBOOK</span>
-            <span className="text-zinc-600">/</span>
-            <span>COMPUTATIONAL GRAPHS</span>
-            <span className="text-zinc-600">/</span>
-            <span>RIEMANNIAN DYNAMICS</span>
-          </div>
+            <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-rose-500/10 border border-rose-500/30 text-rose-400 font-mono text-[9.5px] sm:text-[10.5px] font-semibold tracking-wider uppercase">
+              <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shadow-[0_0_8px_#f43f5e] animate-pulse" />
+              <span>ACTIVE SPECIFICATION</span>
+            </div>
 
-          {/* Directionally Masked Monumental Display Name */}
-          <div className="overflow-hidden py-1 -my-1 mb-2 min-[360px]:mb-2.5 sm:mb-5">
-            <h1
-              style={{
-                transform:
-                  reducedMotion || isEntered || entryStage >= 2 ? 'translateY(0)' : 'translateY(100%)',
-                opacity: isEntered || entryStage >= 2 ? 1 : 0,
-                transition: isEntered
-                  ? 'none'
-                  : 'transform 0.8s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.8s ease-out',
-              }}
-              className="leading-[0.96] sm:leading-[0.92] select-none tracking-tight"
-            >
-              <span className="block font-display text-[38px] min-[360px]:text-[44px] min-[390px]:text-[48px] min-[412px]:text-[52px] sm:text-7xl md:text-8xl xl:text-9xl 2xl:text-[10rem] font-black text-white tracking-[-0.03em] uppercase break-words">
-                SHUBHAM
-              </span>
-              <span className="block font-display text-[27px] min-[360px]:text-[31px] min-[390px]:text-[34px] min-[412px]:text-[37px] sm:text-7xl md:text-8xl xl:text-9xl 2xl:text-[10rem] font-light text-zinc-400/80 sm:text-zinc-400/90 tracking-[0.16em] min-[360px]:tracking-[0.18em] sm:tracking-[-0.02em] uppercase mt-0.5 sm:mt-1 pl-0.5 sm:pl-0 break-words">
-                SHARMA
-              </span>
-            </h1>
-          </div>
-
-          {/* Core Personal Statement */}
-          <div
-            style={{
-              opacity: isEntered || entryStage >= 3 ? 1 : 0,
-              transform: isEntered || entryStage >= 3 ? 'none' : 'translateY(16px)',
-              transition: isEntered ? 'none' : 'opacity 0.7s ease-out, transform 0.7s ease-out',
-            }}
-            className="font-display text-[16px] min-[360px]:text-[18px] min-[390px]:text-[20px] sm:text-2xl md:text-3xl text-zinc-100 font-semibold tracking-tight leading-snug mb-2 min-[360px]:mb-2.5 sm:mb-4 w-full max-w-[380px] sm:max-w-none"
-          >
-            I build things to understand how they work.
-          </div>
-
-          {/* Human-written Supporting Copy */}
-          <p
-            style={{
-              opacity: isEntered || entryStage >= 3 ? 1 : 0,
-              transform: isEntered || entryStage >= 3 ? 'none' : 'translateY(16px)',
-              transition: isEntered ? 'none' : 'opacity 0.7s ease-out 0.05s, transform 0.7s ease-out 0.05s',
-            }}
-            className="font-body text-xs min-[360px]:text-[13px] min-[390px]:text-sm sm:text-lg text-zinc-300 font-normal leading-relaxed mb-3.5 min-[360px]:mb-4 sm:mb-8 w-full max-w-[360px] min-[390px]:max-w-[420px] sm:max-w-xl"
-          >
-            Exploring mathematics, data, machine learning and software through experiments, systems and things I can actually build.
-          </p>
-
-          {/* Editorial Actions: Touch-first stacked layout on mobile, horizontal row on tablet/desktop */}
-          <div
-            style={{
-              opacity: isEntered || entryStage >= 3 ? 1 : 0,
-              transform: isEntered || entryStage >= 3 ? 'none' : 'translateY(12px)',
-              transition: isEntered ? 'none' : 'opacity 0.6s ease-out 0.1s, transform 0.6s ease-out 0.1s',
-            }}
-            className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-4 font-body w-full sm:w-auto"
-          >
             <button
               type="button"
               onClick={() => {
-                playSound('open');
-                onExplore();
+                playSound('select');
+                if (onOpenResearchCanvas3D) onOpenResearchCanvas3D('phase-05');
+                else onSelectNavTab?.('notebook');
               }}
-              className="w-full sm:w-auto justify-center px-4 py-2.5 min-[360px]:py-3 sm:px-6 sm:py-3.5 rounded-xl bg-rose-600 hover:bg-rose-500 active:bg-rose-700 text-white font-semibold text-xs sm:text-sm tracking-wider uppercase transition-all shadow-[0_0_20px_rgba(225,29,72,0.35)] hover:shadow-[0_0_32px_rgba(225,29,72,0.6)] flex items-center gap-2 group active:scale-[0.98] cursor-pointer min-h-[44px] sm:min-h-0"
+              className="px-2 py-0.5 rounded-md bg-white/[0.04] hover:bg-white/[0.09] border border-white/[0.08] hover:border-rose-500/40 font-mono text-[9px] sm:text-[10px] text-zinc-300 hover:text-white uppercase transition-all cursor-pointer"
             >
-              <span>ENTER SYSTEM</span>
-              <ArrowRight className="w-3.5 h-3.5 min-[360px]:w-4 min-[360px]:h-4 transition-transform group-hover:translate-x-1" />
+              [01 // COMPUTATIONAL GRAPHS]
             </button>
 
             <button
               type="button"
               onClick={() => {
-                playSound('secondaryClick');
-                onViewWork();
+                playSound('select');
+                if (onOpenResearchCanvas3D) onOpenResearchCanvas3D('phase-05');
+                else onSelectNavTab?.('notebook');
               }}
-              className="w-full sm:w-auto justify-center px-4 py-2.5 min-[360px]:py-3 sm:px-6 sm:py-3.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] active:bg-white/[0.12] text-zinc-200 hover:text-white border border-white/[0.12] hover:border-white/[0.25] font-semibold text-xs sm:text-sm tracking-wider uppercase transition-all active:scale-[0.98] cursor-pointer flex items-center gap-2 min-h-[44px] sm:min-h-0"
+              className="px-2 py-0.5 rounded-md bg-white/[0.04] hover:bg-white/[0.09] border border-white/[0.08] hover:border-rose-500/40 font-mono text-[9px] sm:text-[10px] text-zinc-300 hover:text-white uppercase transition-all cursor-pointer"
             >
-              <Compass className="w-3.5 h-3.5 min-[360px]:w-4 min-[360px]:h-4 text-rose-400 shrink-0" />
-              <span className="whitespace-nowrap">VIEW RESEARCH</span>
+              [02 // RIEMANNIAN DYNAMICS]
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                playSound('select');
+                if (onOpenResearchCanvas3D) onOpenResearchCanvas3D('phase-04');
+                else onSelectNavTab?.('notebook');
+              }}
+              className="hidden sm:inline-block px-2 py-0.5 rounded-md bg-white/[0.04] hover:bg-white/[0.09] border border-white/[0.08] hover:border-rose-500/40 font-mono text-[9px] sm:text-[10px] text-zinc-300 hover:text-white uppercase transition-all cursor-pointer"
+            >
+              [03 // KV-CACHE OPTIMIZATION]
             </button>
           </div>
 
-          {/* Mobile Computational Artifact & Telemetry Region (Specifically resolves empty dead space on mobile) */}
+          {/* Format View 01: EDITORIAL (Default) */}
+          {formatMode === 'editorial' && (
+            <div className="w-full">
+              {/* Directionally Masked Monumental Display Name */}
+              <div className="overflow-hidden py-1 -my-1 mb-2 min-[360px]:mb-2.5 sm:mb-5">
+                <h1
+                  style={{
+                    transform:
+                      reducedMotion || isEntered || entryStage >= 2 ? 'translateY(0)' : 'translateY(100%)',
+                    opacity: isEntered || entryStage >= 2 ? 1 : 0,
+                    transition: isEntered
+                      ? 'none'
+                      : 'transform 0.8s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.8s ease-out',
+                  }}
+                  className="leading-[0.96] sm:leading-[0.92] select-none tracking-tight"
+                >
+                  <span className="block font-display text-[38px] min-[360px]:text-[44px] min-[390px]:text-[48px] min-[412px]:text-[52px] sm:text-7xl md:text-8xl xl:text-9xl 2xl:text-[10rem] font-black text-white tracking-[-0.03em] uppercase break-words">
+                    SHUBHAM
+                  </span>
+                  <span className="block font-display text-[27px] min-[360px]:text-[31px] min-[390px]:text-[34px] min-[412px]:text-[37px] sm:text-7xl md:text-8xl xl:text-9xl 2xl:text-[10rem] font-light text-zinc-400/80 sm:text-zinc-400/90 tracking-[0.16em] min-[360px]:tracking-[0.18em] sm:tracking-[-0.02em] uppercase mt-0.5 sm:mt-1 pl-0.5 sm:pl-0 break-words">
+                    SHARMA
+                  </span>
+                </h1>
+              </div>
+
+              {/* Core Personal Statement */}
+              <div
+                style={{
+                  opacity: isEntered || entryStage >= 3 ? 1 : 0,
+                  transform: isEntered || entryStage >= 3 ? 'none' : 'translateY(16px)',
+                  transition: isEntered ? 'none' : 'opacity 0.7s ease-out, transform 0.7s ease-out',
+                }}
+                className="font-display text-[16px] min-[360px]:text-[18px] min-[390px]:text-[20px] sm:text-2xl md:text-3xl text-zinc-100 font-semibold tracking-tight leading-snug mb-2 min-[360px]:mb-2.5 sm:mb-4 w-full max-w-[380px] sm:max-w-none"
+              >
+                I build things to understand how they work.
+              </div>
+
+              {/* Supporting Copy */}
+              <p
+                style={{
+                  opacity: isEntered || entryStage >= 3 ? 1 : 0,
+                  transform: isEntered || entryStage >= 3 ? 'none' : 'translateY(16px)',
+                  transition: isEntered ? 'none' : 'opacity 0.7s ease-out 0.05s, transform 0.7s ease-out 0.05s',
+                }}
+                className="font-body text-xs min-[360px]:text-[13px] min-[390px]:text-sm sm:text-lg text-zinc-300 font-normal leading-relaxed mb-3.5 min-[360px]:mb-4 sm:mb-8 w-full max-w-[360px] min-[390px]:max-w-[420px] sm:max-w-xl"
+              >
+                Exploring mathematics, data, machine learning and software through experiments, systems and things I can actually build.
+              </p>
+
+              {/* Action Buttons */}
+              <div
+                style={{
+                  opacity: isEntered || entryStage >= 3 ? 1 : 0,
+                  transform: isEntered || entryStage >= 3 ? 'none' : 'translateY(12px)',
+                  transition: isEntered ? 'none' : 'opacity 0.6s ease-out 0.1s, transform 0.6s ease-out 0.1s',
+                }}
+                className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-4 font-body w-full sm:w-auto"
+              >
+                <button
+                  type="button"
+                  onClick={() => {
+                    playSound('open');
+                    onExplore();
+                  }}
+                  className="w-full sm:w-auto justify-center px-4 py-2.5 min-[360px]:py-3 sm:px-6 sm:py-3.5 rounded-xl bg-rose-600 hover:bg-rose-500 active:bg-rose-700 text-white font-semibold text-xs sm:text-sm tracking-wider uppercase transition-all shadow-[0_0_20px_rgba(225,29,72,0.35)] hover:shadow-[0_0_32px_rgba(225,29,72,0.6)] flex items-center gap-2 group active:scale-[0.98] cursor-pointer min-h-[44px] sm:min-h-0"
+                >
+                  <span>ENTER SYSTEM</span>
+                  <ArrowRight className="w-3.5 h-3.5 min-[360px]:w-4 min-[360px]:h-4 transition-transform group-hover:translate-x-1" />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    playSound('secondaryClick');
+                    onViewWork();
+                  }}
+                  className="w-full sm:w-auto justify-center px-4 py-2.5 min-[360px]:py-3 sm:px-6 sm:py-3.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] active:bg-white/[0.12] text-zinc-200 hover:text-white border border-white/[0.12] hover:border-white/[0.25] font-semibold text-xs sm:text-sm tracking-wider uppercase transition-all active:scale-[0.98] cursor-pointer flex items-center gap-2 min-h-[44px] sm:min-h-0"
+                >
+                  <Compass className="w-3.5 h-3.5 min-[360px]:w-4 min-[360px]:h-4 text-rose-400 shrink-0" />
+                  <span className="whitespace-nowrap">VIEW RESEARCH</span>
+                </button>
+
+                {onOpenResume && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      playSound('select');
+                      onOpenResume();
+                    }}
+                    className="w-full sm:w-auto justify-center px-3.5 py-2.5 sm:px-4 sm:py-3.5 rounded-xl bg-white/[0.025] hover:bg-white/[0.06] text-zinc-400 hover:text-white border border-white/[0.08] font-semibold text-xs sm:text-sm tracking-wider uppercase transition-all cursor-pointer flex items-center gap-2 min-h-[44px] sm:min-h-0"
+                  >
+                    <span>CURRICULUM VITAE</span>
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Format View 02: TELEMETRY (System Architecture & Computational Spec) */}
+          {formatMode === 'telemetry' && (
+            <div className="w-full max-w-2xl p-4 sm:p-6 rounded-2xl bg-[#0e1117]/90 border border-white/[0.12] backdrop-blur-md shadow-2xl space-y-5 animate-in fade-in duration-300">
+              <div className="flex items-center justify-between border-b border-white/[0.08] pb-3">
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-pulse shadow-[0_0_8px_#f43f5e]" />
+                  <span className="font-tech text-xs sm:text-sm font-bold tracking-widest text-zinc-100 uppercase">
+                    SYSTEM // COMPUTATIONAL TELEMETRY
+                  </span>
+                </div>
+                <span className="font-mono text-[10px] text-rose-400/90 font-medium">
+                  NODE_ID: SF-2026-IITJ
+                </span>
+              </div>
+
+              {/* Realtime Architecture Matrix */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                <div className="p-3 rounded-lg bg-white/[0.03] border border-white/[0.06] space-y-1">
+                  <span className="font-tech text-[9.5px] uppercase tracking-wider text-zinc-400 block">
+                    Latent Dimensions
+                  </span>
+                  <span className="font-tech text-sm sm:text-base font-bold text-white block">
+                    512-D Spherical
+                  </span>
+                  <span className="font-mono text-[9px] text-rose-400 block">Non-Euclidean Geodesics</span>
+                </div>
+
+                <div className="p-3 rounded-lg bg-white/[0.03] border border-white/[0.06] space-y-1">
+                  <span className="font-tech text-[9.5px] uppercase tracking-wider text-zinc-400 block">
+                    Compute Graphics
+                  </span>
+                  <span className="font-tech text-sm sm:text-base font-bold text-white block">
+                    WebGL / Canvas
+                  </span>
+                  <span className="font-mono text-[9px] text-emerald-400 block">Constant 60 FPS Target</span>
+                </div>
+
+                <div className="p-3 rounded-lg bg-white/[0.03] border border-white/[0.06] space-y-1 col-span-2 sm:col-span-1">
+                  <span className="font-tech text-[9.5px] uppercase tracking-wider text-zinc-400 block">
+                    Autograd Engine
+                  </span>
+                  <span className="font-tech text-sm sm:text-base font-bold text-white block">
+                    Reverse-Mode DAG
+                  </span>
+                  <span className="font-mono text-[9px] text-zinc-400 block">Tape Recording Tape</span>
+                </div>
+              </div>
+
+              <p className="font-body text-xs sm:text-sm text-zinc-300 leading-relaxed">
+                Active computational research encompasses score-matching vector fields, KV-cache tiling to minimize HBM IO overhead, and hyperspherical contrastive uniformity under InfoNCE formulations.
+              </p>
+
+              <div className="flex flex-wrap items-center gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    playSound('open');
+                    if (onOpenResearchCanvas3D) onOpenResearchCanvas3D('phase-05');
+                    else onExplore();
+                  }}
+                  className="px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-semibold text-xs tracking-wider uppercase flex items-center gap-2 cursor-pointer transition-all shadow-[0_0_16px_rgba(225,29,72,0.35)]"
+                >
+                  <span>LAUNCH 3D MANIFOLD EXPLORER</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    playSound('select');
+                    onSelectNavTab?.('notebook');
+                  }}
+                  className="px-4 py-2.5 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] text-zinc-200 border border-white/[0.1] font-semibold text-xs tracking-wider uppercase cursor-pointer transition-all"
+                >
+                  <span>CHRONICLE RESEARCH LAB</span>
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Format View 03: EXECUTIVE (Credentials & Academic Overview) */}
+          {formatMode === 'executive' && (
+            <div className="w-full max-w-2xl p-4 sm:p-6 rounded-2xl bg-[#0e1117]/90 border border-white/[0.12] backdrop-blur-md shadow-2xl space-y-4 animate-in fade-in duration-300">
+              <div className="flex items-center justify-between border-b border-white/[0.08] pb-3">
+                <div className="space-y-0.5">
+                  <span className="font-display text-base sm:text-lg font-bold text-white uppercase tracking-wider block">
+                    SHUBHAM SHARMA
+                  </span>
+                  <span className="font-mono text-xs text-rose-400 font-semibold block">
+                    AI &amp; Data Science Scholar &bull; IIT Jodhpur
+                  </span>
+                </div>
+                <span className="px-2.5 py-1 rounded-md bg-emerald-500/10 border border-emerald-500/30 font-mono text-[9px] font-bold text-emerald-400 tracking-wider uppercase">
+                  VERIFIED PROFILE
+                </span>
+              </div>
+
+              <div className="space-y-2">
+                <span className="font-tech text-[10px] uppercase tracking-widest text-zinc-400 font-bold block">
+                  RESEARCH PHILOSOPHY &amp; OBJECTIVE
+                </span>
+                <p className="font-body text-xs sm:text-sm text-zinc-200 italic leading-relaxed bg-white/[0.02] p-3 rounded-lg border border-white/[0.05]">
+                  &ldquo;I work for a research-oriented approach towards a descriptive data-driven environment that focuses on purpose rather than just plain definition.&rdquo;
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                <div className="p-3 rounded-lg bg-white/[0.03] border border-white/[0.06] space-y-1">
+                  <span className="font-tech text-[9.5px] uppercase tracking-wider text-rose-400 block font-semibold">
+                    Academic Foundation
+                  </span>
+                  <span className="font-body text-xs font-semibold text-zinc-100 block">
+                    Indian Institute of Technology Jodhpur
+                  </span>
+                  <span className="font-mono text-[10px] text-zinc-400 block">
+                    Bachelor of Science (B.S.) in AI &amp; Data Science (2025–2029)
+                  </span>
+                </div>
+
+                <div className="p-3 rounded-lg bg-white/[0.03] border border-white/[0.06] space-y-1">
+                  <span className="font-tech text-[9.5px] uppercase tracking-wider text-rose-400 block font-semibold">
+                    Industry &amp; Applied Practice
+                  </span>
+                  <span className="font-body text-xs font-semibold text-zinc-100 block">
+                    Doingly Analysis &bull; Visible Logic Labs
+                  </span>
+                  <span className="font-mono text-[10px] text-zinc-400 block">
+                    Quantitative modeling, client analytics &amp; systems
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-3 pt-2">
+                {onOpenResume && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      playSound('open');
+                      onOpenResume();
+                    }}
+                    className="px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-semibold text-xs tracking-wider uppercase flex items-center gap-2 cursor-pointer transition-all shadow-[0_0_16px_rgba(225,29,72,0.35)]"
+                  >
+                    <span>OPEN / PRINT CURRICULUM VITAE</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </button>
+                )}
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    playSound('select');
+                    onViewWork();
+                  }}
+                  className="px-4 py-2.5 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] text-zinc-200 border border-white/[0.1] font-semibold text-xs tracking-wider uppercase cursor-pointer transition-all"
+                >
+                  <span>BROWSE ARCHIVED PROJECTS</span>
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Mobile Computational Domain Chips */}
           <div
             style={{
               opacity: isEntered || entryStage >= 4 ? 1 : 0,
@@ -340,7 +591,6 @@ const EditorialCoverComponent: React.FC<EditorialCoverProps> = ({
             }}
             className="mobile-telemetry-panel sm:hidden w-full mt-3 min-[390px]:mt-4 p-3 min-[360px]:p-3.5 rounded-xl bg-white/[0.025] border border-white/[0.08] backdrop-blur-sm relative overflow-hidden"
           >
-            {/* Top Telemetry Header */}
             <div className="flex items-center justify-between border-b border-white/[0.06] pb-2 mb-2">
               <div className="flex items-center gap-2">
                 <span className="relative flex h-2 w-2">
@@ -356,7 +606,6 @@ const EditorialCoverComponent: React.FC<EditorialCoverProps> = ({
               </span>
             </div>
 
-            {/* Computational Domain Chips */}
             <div className="flex flex-wrap gap-1.5">
               {[
                 'STATISTICAL LEARNING',
@@ -374,7 +623,6 @@ const EditorialCoverComponent: React.FC<EditorialCoverProps> = ({
               ))}
             </div>
 
-            {/* Subtle bottom telemetry metric */}
             <div className="mt-2.5 pt-2 border-t border-white/[0.05] flex items-center justify-between text-[9px] font-mono text-zinc-400">
               <span className="truncate">ENG &bull; ML SYSTEMS &bull; RESEARCH</span>
               <span className="text-emerald-400 font-semibold shrink-0">READY &bull;</span>
@@ -382,7 +630,7 @@ const EditorialCoverComponent: React.FC<EditorialCoverProps> = ({
           </div>
         </div>
 
-        {/* Right Column: Negative Space & Editorial Spec Column (Parallax Sub-layer) */}
+        {/* Right Column: Negative Space & Editorial Spec Column */}
         <div
           style={{
             transform: `translate3d(0, ${(specsTranslateY + (isEntered || entryStage >= 3 ? 0 : 16)).toFixed(1)}px, 0)`,
@@ -402,12 +650,19 @@ const EditorialCoverComponent: React.FC<EditorialCoverProps> = ({
               'COMPUTATIONAL PIPELINES',
               'TENSOR OPTIMIZATION',
             ].map((tag) => (
-              <div
+              <button
                 key={tag}
-                className="font-body text-xs text-zinc-400 font-medium tracking-[0.2em] uppercase hover:text-rose-300 transition-colors"
+                type="button"
+                onClick={() => {
+                  playSound('select');
+                  onSelectNavTab?.('notebook');
+                }}
+                className="font-body text-xs text-zinc-400 hover:text-rose-300 font-medium tracking-[0.2em] uppercase transition-colors block ml-auto cursor-pointer text-right group"
               >
-                {tag}
-              </div>
+                <span className="group-hover:translate-x-1 inline-block transition-transform">
+                  {tag} &rarr;
+                </span>
+              </button>
             ))}
           </div>
 

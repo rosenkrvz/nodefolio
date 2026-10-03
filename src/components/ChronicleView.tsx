@@ -497,19 +497,23 @@ export const ChronicleView: React.FC<ChronicleViewProps> = ({
 
   return (
     <div className="relative w-full min-h-screen bg-[#14171c] text-[#ededed] font-body select-text overflow-x-hidden">
-      {/* ═══════════ COMPUTATIONAL LAB BLUEPRINT & TELEMETRY ATMOSPHERE ═══════════ */}
+      {/* ═══════════ UNIFIED TECHNICAL ATMOSPHERE (HARMONIZED WITH HOME & WORK TABS) ═══════════ */}
       <div
         className="fixed inset-0 pointer-events-none overflow-hidden z-0"
         aria-hidden="true"
       >
-        {/* Deep Slate Lab Base */}
-        <div className="absolute inset-0 bg-[#0e1117]" />
+        {/* Signature Diagonal Technical Background matching Home & Work canvas */}
+        <div className="absolute inset-0 pattern-bg opacity-35">
+          <div className="cube-svg opacity-45" />
+        </div>
 
-        {/* Subtle Laboratory Dot Lattice Matrix */}
-        <div className="absolute inset-0 opacity-40 bg-[radial-gradient(#333a48_1px,transparent_1px)] [background-size:24px_24px]" />
+        {/* Deep Canvas Tone & Vignette */}
+        <div className="absolute inset-0 bg-[#14171c]/75" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_0%,rgba(20,23,28,0.4)_0%,rgba(20,23,28,0.85)_100%)]" />
 
-        {/* Engineering CAD Blueprint Grid lines */}
-        <div className="absolute inset-0 opacity-15 bg-[linear-gradient(to_right,#ffffff0f_1px,transparent_1px),linear-gradient(to_bottom,#ffffff0f_1px,transparent_1px)] [background-size:72px_72px]" />
+        {/* Engineering CAD Blueprint Grid lines & Laboratory Dot Lattice */}
+        <div className="absolute inset-0 opacity-25 bg-[radial-gradient(#4b5563_1px,transparent_1px)] [background-size:24px_24px]" />
+        <div className="absolute inset-0 opacity-10 bg-[linear-gradient(to_right,#ffffff0f_1px,transparent_1px),linear-gradient(to_bottom,#ffffff0f_1px,transparent_1px)] [background-size:72px_72px]" />
 
         {/* Ambient Top Glow for Laboratory Workbench */}
         <div className="absolute -top-32 left-1/2 -translate-x-1/2 w-[850px] h-[340px] bg-rose-500/[0.04] blur-[120px] rounded-full" />

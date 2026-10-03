@@ -2306,6 +2306,12 @@ export default function App() {
                 activeNavTab={activeNavTab}
                 onExplore={handleExplore}
                 onViewWork={() => handleSelectNavTab('projects')}
+                onSelectNavTab={(tab) => handleSelectNavTab(tab as any)}
+                onOpenResume={() => setIsResumeOpen(true)}
+                onOpenResearchCanvas3D={(phaseId) => {
+                  playSound('open');
+                  setActiveResearchCanvasPhase(phaseId || 'phase-05');
+                }}
               />
             </div>
           </div>
