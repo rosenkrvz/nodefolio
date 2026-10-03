@@ -402,8 +402,9 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
     Array<{ id: string; label: string; sublabel?: string; screenX: number; screenY: number; visible: boolean }>
   >([]);
 
-  // Orientation Gizmo Ref (direct DOM style update to eliminate 60fps React re-renders)
+  // Orientation Gizmo Refs (direct DOM style update to eliminate 60fps React re-renders)
   const gizmoElRef = useRef<HTMLDivElement | null>(null);
+  const dockedGizmoElRef = useRef<HTMLDivElement | null>(null);
 
   // References
   const containerRef = useRef<HTMLDivElement>(null);
@@ -1545,9 +1546,13 @@ ${currentPhaseMeta.description}
         }
 
         // Calculate 3D orientation gizmo transform matrix directly on ref (zero React state overhead)
+        const m = camera.matrixWorldInverse;
+        const matrixStr = `matrix3d(${m.elements[0]}, ${m.elements[1]}, ${m.elements[2]}, 0, ${m.elements[4]}, ${m.elements[5]}, ${m.elements[6]}, 0, ${m.elements[8]}, ${m.elements[9]}, ${m.elements[10]}, 0, 0, 0, 0, 1)`;
         if (gizmoElRef.current) {
-          const m = camera.matrixWorldInverse;
-          gizmoElRef.current.style.transform = `matrix3d(${m.elements[0]}, ${m.elements[1]}, ${m.elements[2]}, 0, ${m.elements[4]}, ${m.elements[5]}, ${m.elements[6]}, 0, ${m.elements[8]}, ${m.elements[9]}, ${m.elements[10]}, 0, 0, 0, 0, 1)`;
+          gizmoElRef.current.style.transform = matrixStr;
+        }
+        if (dockedGizmoElRef.current) {
+          dockedGizmoElRef.current.style.transform = matrixStr;
         }
       }
 
@@ -2826,18 +2831,18 @@ ${currentPhaseMeta.description}
       )}
 
       {/* ───────────────────────────────────────────────────────────────────
-          BLENDER TOP-RIGHT NAVIGATION GIZMO & VIEW CONTROLS
+          BLENDER GIMBAL & VIEWPORT NAVIGATION DOCK
           Only shown floating on canvas when N-Panel is closed!
           When N-Panel is open, it docks seamlessly inside the N-Panel toolbar!
          ─────────────────────────────────────────────────────────────────── */}
       {showGizmo && !nPanelOpen && (
         <div
-          className="hidden sm:flex flex-col items-center gap-1 absolute top-11 right-3.5 z-20 pointer-events-none select-none transition-all duration-200 animate-in fade-in duration-150"
+          className="hidden sm:flex flex-col items-center gap-1.5 fixed top-12 right-12 z-20 pointer-events-none select-none transition-all duration-200 animate-in fade-in duration-150"
         >
-          <div className="pointer-events-auto p-1 bg-[#202020]/95 backdrop-blur-md border border-[#383838] rounded-[2px] shadow-2xl flex flex-col items-center gap-1">
+          <div className="pointer-events-auto w-[68px] p-1.5 bg-[#1a1d24]/95 backdrop-blur-md border border-white/10 hover:border-white/20 rounded-md shadow-2xl flex flex-col items-center gap-1.5">
             {/* Header Reticle with Dock Shortcut */}
-            <div className="w-full flex items-center justify-between px-1 text-[8px] font-mono text-zinc-400 uppercase tracking-widest border-b border-[#333] pb-0.5">
-              <span>NAV</span>
+            <div className="w-full flex items-center justify-between px-0.5 text-[8px] font-mono text-zinc-400 uppercase tracking-wider border-b border-white/[0.08] pb-1">
+              <span className="font-semibold text-zinc-300">GIMBAL</span>
               <button
                 type="button"
                 onClick={() => {
@@ -2845,16 +2850,16 @@ ${currentPhaseMeta.description}
                   setNPanelOpen(true);
                 }}
                 title="Dock inside Sidebar [N]"
-                className="text-zinc-500 hover:text-rose-400 transition-colors cursor-pointer text-[7.5px]"
+                className="text-zinc-500 hover:text-rose-400 transition-colors cursor-pointer text-[7.5px] px-1 py-0.2 rounded hover:bg-white/[0.06]"
               >
-                DOCK ◀
+                DOCK
               </button>
             </div>
 
             {/* Interactive Orientation Gimbal (Blender Style 3D Cube/Axis Dial) */}
             <div
               aria-label="3D Orientation Gizmo"
-              className="relative w-14 h-14 rounded-[2px] bg-[#1a1a1a] border border-[#333] flex items-center justify-center shadow-inner group"
+              className="relative w-14 h-14 rounded bg-[#13151b] border border-white/10 flex items-center justify-center shadow-inner group"
             >
               <div className="absolute w-1.5 h-1.5 rounded-full bg-white z-20 pointer-events-none" />
               <div
@@ -2898,12 +2903,12 @@ ${currentPhaseMeta.description}
             </div>
 
             {/* Blender Stacked Viewport Navigation Pills */}
-            <div className="w-full flex flex-col gap-0.5 p-0.5 bg-[#181818] border border-[#2e2e2e] rounded-[2px]">
+            <div className="w-full flex flex-col gap-0.5 p-0.5 bg-[#13151b] border border-white/10 rounded">
               <button
                 type="button"
                 onClick={() => handleZoom('in')}
                 title="Zoom In [Scroll Up]"
-                className="w-full h-5 flex items-center justify-center rounded-[2px] text-zinc-400 hover:text-white hover:bg-white/[0.08] transition-colors cursor-pointer text-xs font-bold"
+                className="w-full h-5 flex items-center justify-center rounded text-zinc-400 hover:text-white hover:bg-white/[0.08] transition-colors cursor-pointer text-xs font-bold"
               >
                 +
               </button>
@@ -2911,7 +2916,7 @@ ${currentPhaseMeta.description}
                 type="button"
                 onClick={() => handleZoom('out')}
                 title="Zoom Out [Scroll Down]"
-                className="w-full h-5 flex items-center justify-center rounded-[2px] text-zinc-400 hover:text-white hover:bg-white/[0.08] transition-colors cursor-pointer text-xs font-bold"
+                className="w-full h-5 flex items-center justify-center rounded text-zinc-400 hover:text-white hover:bg-white/[0.08] transition-colors cursor-pointer text-xs font-bold"
               >
                 −
               </button>
@@ -2919,7 +2924,7 @@ ${currentPhaseMeta.description}
                 type="button"
                 onClick={handleResetView}
                 title="Center View to Artifact [R]"
-                className="w-full h-5 flex items-center justify-center rounded-[2px] text-zinc-400 hover:text-white hover:bg-white/[0.08] transition-colors cursor-pointer"
+                className="w-full h-5 flex items-center justify-center rounded text-zinc-400 hover:text-white hover:bg-white/[0.08] transition-colors cursor-pointer"
               >
                 <RotateCcw className="w-3 h-3" />
               </button>
@@ -2931,7 +2936,7 @@ ${currentPhaseMeta.description}
       {/* ───────────────────────────────────────────────────────────────────
           BLENDER N-PANEL: RIGHT PROPERTIES SHELF (Toggle: N)
          ─────────────────────────────────────────────────────────────────── */}
-      {/* Collapsed Tab Strip Handle on far right with smooth transition */}
+      {/* Collapsed Tab Strip Handle on far right with clean non-overlapping spacing */}
       <button
         type="button"
         onClick={() => {
@@ -2939,12 +2944,17 @@ ${currentPhaseMeta.description}
           setNPanelOpen(true);
         }}
         title="Open Properties Sidebar [N]"
-        className={`hidden md:flex absolute right-0 top-11 z-30 py-2 px-1 bg-[#202020]/90 hover:bg-[#282828] border-l border-y border-[#383838] text-zinc-400 hover:text-white text-[10px] font-mono rounded-l-[2px] shadow-lg cursor-pointer flex-col items-center gap-1.5 transition-all duration-300 ease-in-out ${
+        className={`hidden md:flex fixed right-0 top-12 z-30 w-7 py-3 px-1 bg-[#1a1d24]/95 hover:bg-[#222732] border-l border-y border-white/10 hover:border-rose-500/40 text-zinc-300 hover:text-white rounded-l-md shadow-2xl cursor-pointer flex-col items-center justify-center gap-1.5 transition-all duration-300 ease-in-out group ${
           nPanelOpen ? 'translate-x-full opacity-0 pointer-events-none' : 'translate-x-0 opacity-100 pointer-events-auto'
         }`}
       >
-        <span className="text-rose-400">◀</span>
-        <span className="[writing-mode:vertical-lr] tracking-widest font-semibold">PROPERTIES</span>
+        <ChevronLeft className="w-3.5 h-3.5 text-rose-400 transition-transform group-hover:-translate-x-0.5" />
+        <span className="[writing-mode:vertical-lr] tracking-[0.25em] font-mono text-[9px] font-bold uppercase select-none text-zinc-300 group-hover:text-rose-200 transition-colors my-1">
+          PROPERTIES
+        </span>
+        <kbd className="text-[7.5px] font-mono text-zinc-400 bg-white/[0.08] px-1 py-0.5 rounded-[2px] tracking-wider">
+          N
+        </kbd>
       </button>
 
       {/* Expanded N-Panel Sidebar with smooth swipe and de-swipe animation */}
@@ -3001,7 +3011,7 @@ ${currentPhaseMeta.description}
                 >
                   <div className="absolute w-1.5 h-1.5 rounded-full bg-white z-20 pointer-events-none" />
                   <div
-                    ref={gizmoElRef}
+                    ref={dockedGizmoElRef}
                     className="w-8 h-8 relative transform-gpu flex items-center justify-center pointer-events-none"
                     style={{ transformStyle: 'preserve-3d', transformOrigin: '50% 50% 0' }}
                   >
