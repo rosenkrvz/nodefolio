@@ -11,6 +11,10 @@ import { SplineWires } from './components/SplineWires';
 import { GraphNode } from './components/GraphNode';
 import { TopNavbar } from './components/TopNavbar';
 import { CanvasControlsDock } from './components/CanvasControlsDock';
+import { WorkspaceCADSubNavbar } from './components/workspace/WorkspaceCADSubNavbar';
+import { WorkspaceCADToolRail, WorkspaceToolMode } from './components/workspace/WorkspaceCADToolRail';
+import { WorkspaceCADInspector } from './components/workspace/WorkspaceCADInspector';
+import { WorkspaceCADStatusBar } from './components/workspace/WorkspaceCADStatusBar';
 import { EditorialCover } from './components/EditorialCover';
 import { ArchitecturalReveal } from './components/ArchitecturalReveal';
 import { FocusedNodeModal } from './components/FocusedNodeModal';
@@ -322,6 +326,8 @@ export default function App() {
   const [showGrid, setShowGrid] = useState<boolean>(true);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [activeConnectionId, setActiveConnectionId] = useState<string | null>(null);
+  const [isCADSidebarOpen, setIsCADSidebarOpen] = useState<boolean>(false);
+  const [cadToolMode, setCadToolMode] = useState<WorkspaceToolMode>('select');
 
   // Canvas pan & zoom transform (centered at 57% scale by default, matching canonical configuration)
   const [transform, setTransform] = useState<CanvasTransform>({ x: 0, y: -139, scale: 0.57 });
@@ -1709,6 +1715,87 @@ export default function App() {
     centerViewForPreset(activePreset);
   }, [centerViewForPreset, activePreset]);
 
+  // Zoom In Handler
+  const handleZoomIn = useCallback(() => {
+    playSound('zoom');
+    setTransform((p) => {
+      const ps = typeof p?.scale === 'number' && isFinite(p.scale) && p.scale > 0 ? p.scale : 0.60;
+      const px = typeof p?.x === 'number' && isFinite(p.x) ? p.x : 0;
+      const py = typeof p?.y === 'number' && isFinite(p.y) ? p.y : 0;
+      const nextScale = Math.min(2.20, Math.round((ps + 0.01) * 100) / 100);
+      lastZoomBracketRef.current = Math.round(nextScale * 100);
+      const vw = typeof window !== 'undefined' ? window.innerWidth : 1200;
+      const vh = typeof window !== 'undefined' ? window.innerHeight : 800;
+      const newX = Math.round((vw / 2) - ((vw / 2) - px) * (nextScale / ps));
+      const newY = Math.round(((vh + 12) / 2) - (((vh + 12) / 2) - py) * (nextScale / ps));
+      return { x: newX, y: newY, scale: nextScale };
+    });
+  }, []);
+
+  // Zoom Out Handler
+  const handleZoomOut = useCallback(() => {
+    playSound('zoom');
+    setTransform((p) => {
+      const ps = typeof p?.scale === 'number' && isFinite(p.scale) && p.scale > 0 ? p.scale : 0.60;
+      const px = typeof p?.x === 'number' && isFinite(p.x) ? p.x : 0;
+      const py = typeof p?.y === 'number' && isFinite(p.y) ? p.y : 0;
+      const nextScale = Math.max(0.25, Math.round((ps - 0.01) * 100) / 100);
+      lastZoomBracketRef.current = Math.round(nextScale * 100);
+      const vw = typeof window !== 'undefined' ? window.innerWidth : 1200;
+      const vh = typeof window !== 'undefined' ? window.innerHeight : 800;
+      const newX = Math.round((vw / 2) - ((vw / 2) - px) * (nextScale / ps));
+      const newY = Math.round(((vh + 12) / 2) - (((vh + 12) / 2) - py) * (nextScale / ps));
+      return { x: newX, y: newY, scale: nextScale };
+    });
+  }, []);
+
+  // Studio CAD Keyboard Shortcuts for Spatial Workspace
+  useEffect(() => {
+    const handleCADKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (
+        target?.tagName === 'INPUT' ||
+        target?.tagName === 'TEXTAREA' ||
+        target?.isContentEditable ||
+        document.querySelector('[role="dialog"]')
+      ) {
+        return;
+      }
+
+      const inWorkspace = activeNavTabRef.current === 'network' || activeNavTabRef.current === 'projects' || scrollProgressRef.current >= 0.80;
+      if (!inWorkspace) return;
+
+      if (e.key === 'g' || e.key === 'G') {
+        e.preventDefault();
+        playSound('toggle');
+        setShowGrid((prev) => !prev);
+      } else if (e.key === 'n' || e.key === 'N') {
+        e.preventDefault();
+        playSound('toggle');
+        setIsCADSidebarOpen((prev) => !prev);
+      } else if (e.key === 's' || e.key === 'S') {
+        e.preventDefault();
+        playSound('connect');
+        setIsSimulating((prev) => !prev);
+      } else if (e.key === 'Home') {
+        e.preventDefault();
+        playSound('secondaryClick');
+        handleFitScreen();
+      } else if (e.key === 'w' || e.key === 'W') {
+        e.preventDefault();
+        playSound('click');
+        setCadToolMode('select');
+      } else if (e.key === 'h' || e.key === 'H') {
+        e.preventDefault();
+        playSound('click');
+        setCadToolMode('pan');
+      }
+    };
+
+    window.addEventListener('keydown', handleCADKeyDown);
+    return () => window.removeEventListener('keydown', handleCADKeyDown);
+  }, [handleFitScreen]);
+
   // Center strictly ONLY on initial mount and when activePreset explicitly changes (NOT on node drags or zooms)
   useEffect(() => {
     centerViewForPreset(activePreset);
@@ -2125,176 +2212,175 @@ export default function App() {
                     />
                   ) : (
                     <GraphErrorBoundary onResetGraph={handleResetGraph}>
-                      <div
-                        id="graph-workspace"
-                        aria-label="Interactive computational graph canvas"
-                        ref={canvasContainerRef}
-                        onMouseDown={handleCanvasMouseDown}
-                        onTouchStart={handleCanvasTouchStart}
-                        onClick={handleCanvasBackgroundClick}
-                        className="w-full h-full cursor-grab active:cursor-grabbing relative overflow-hidden touch-none"
-                      >
-                        {/* Subtle architectural background texture */}
-                        {showGrid && (
-                          <div className="absolute inset-0 pattern-bg pointer-events-none opacity-35" />
-                        )}
-
-                        {/* Spatial Transformed Canvas */}
-                        <div
-                          style={{
-                            transform: `translate(${transform.x}px, ${transform.y}px) scale(${transform.scale})`,
-                            transformOrigin: '0 0',
-                          }}
-                          className="w-full h-full min-w-[4400px] min-h-[4400px] relative pointer-events-auto overflow-visible"
-                        >
-                          {/* Spline Connections Layer with Focus/Depth Dimming */}
-                          <SplineWires
-                            connections={filteredConnections}
-                            pinPositions={pinPositions}
-                            isSimulating={isSimulating}
-                            wireStyle={wireStyle}
-                            activeConnectionId={activeConnectionId}
-                            selectedNodeId={selectedNodeId}
-                            onSelectConnection={handleSelectConnection}
-                            isMobile={false}
-                            canvasScale={transform.scale}
-                          />
-
-                          {/* Connected Graph Nodes (#0b0d12 carbon fiber) */}
-                          {effectiveNodes.map((effectiveNode) => (
-                            <GraphNode
-                              key={effectiveNode.id}
-                              node={effectiveNode}
-                              scale={transform.scale}
-                              isSelected={selectedNodeId === effectiveNode.id}
-                              isDimmed={selectedNodeId !== null && selectedNodeId !== effectiveNode.id}
-                              onSelectNode={handleSelectNode}
-                              onNodeDrag={handleNodeDrag}
-                              onNodeResize={handleNodeResize}
-                              onNodePinchEnd={handleNodePinchEnd}
-                              onDragStateChange={handleDragStateChange}
-                              onDeleteVisitorNode={handleDeleteVisitorNode}
-                              onOpenCertificateModal={handleOpenCertificateModal}
-                              onOpenProjectModal={handleOpenProjectModal}
-                              onOpenContactModal={handleOpenContactModal}
-                              onOpenResumeModal={handleOpenResumeModal}
-                              onOpenFocusedNode={handleOpenFocusedNode}
-                            />
-                          ))}
-                        </div>
-
-                        {/* Desktop Floating Dock Controls (Hidden on Mobile) */}
-                        <CanvasControlsDock
-                          scale={transform.scale}
-                          onZoomIn={() => {
-                            playSound('zoom');
-                            setTransform((p) => {
-                              const ps = typeof p?.scale === 'number' && isFinite(p.scale) && p.scale > 0 ? p.scale : 0.60;
-                              const px = typeof p?.x === 'number' && isFinite(p.x) ? p.x : 0;
-                              const py = typeof p?.y === 'number' && isFinite(p.y) ? p.y : 0;
-                              const nextScale = Math.min(2.20, Math.round((ps + 0.01) * 100) / 100);
-                              lastZoomBracketRef.current = Math.round(nextScale * 100);
-                              const vw = typeof window !== 'undefined' ? window.innerWidth : 1200;
-                              const vh = typeof window !== 'undefined' ? window.innerHeight : 800;
-                              const newX = Math.round((vw / 2) - ((vw / 2) - px) * (nextScale / ps));
-                              const newY = Math.round(((vh + 12) / 2) - (((vh + 12) / 2) - py) * (nextScale / ps));
-                              return { x: newX, y: newY, scale: nextScale };
-                            });
-                          }}
-                          onZoomOut={() => {
-                            playSound('zoom');
-                            setTransform((p) => {
-                              const ps = typeof p?.scale === 'number' && isFinite(p.scale) && p.scale > 0 ? p.scale : 0.60;
-                              const px = typeof p?.x === 'number' && isFinite(p.x) ? p.x : 0;
-                              const py = typeof p?.y === 'number' && isFinite(p.y) ? p.y : 0;
-                              const nextScale = Math.max(0.25, Math.round((ps - 0.01) * 100) / 100);
-                              lastZoomBracketRef.current = Math.round(nextScale * 100);
-                              const vw = typeof window !== 'undefined' ? window.innerWidth : 1200;
-                              const vh = typeof window !== 'undefined' ? window.innerHeight : 800;
-                              const newX = Math.round((vw / 2) - ((vw / 2) - px) * (nextScale / ps));
-                              const newY = Math.round(((vh + 12) / 2) - (((vh + 12) / 2) - py) * (nextScale / ps));
-                              return { x: newX, y: newY, scale: nextScale };
-                            });
-                          }}
-                          onFitScreen={() => {
+                      <div className="w-full h-full relative overflow-hidden flex flex-col">
+                        {/* 1. Studio CAD Viewport Sub-Navbar (Header Strip) */}
+                        <WorkspaceCADSubNavbar
+                          activePreset={activePreset as any}
+                          onSelectPreset={handleSelectPreset}
+                          wireStyle={wireStyle}
+                          onChangeWireStyle={(s) => {
                             playSound('secondaryClick');
-                            handleFitScreen();
+                            setWireStyle(s);
                           }}
                           showGrid={showGrid}
                           onToggleGrid={() => {
-                            playSound('secondaryClick');
+                            playSound('toggle');
                             setShowGrid(!showGrid);
-                          }}
-                          wireStyle={wireStyle}
-                          onCycleWireStyle={() => {
-                            playSound('secondaryClick');
-                            const styles: ('glow' | 'minimal' | 'cyber')[] = ['glow', 'minimal', 'cyber'];
-                            const next = styles[(styles.indexOf(wireStyle) + 1) % styles.length];
-                            setWireStyle(next);
                           }}
                           isSimulating={isSimulating}
                           onToggleSimulate={() => {
                             playSound('connect');
                             setIsSimulating(!isSimulating);
                           }}
-                          onReturnToCover={handleReturnToCover}
+                          onFitScreen={handleFitScreen}
+                          sidebarOpen={isCADSidebarOpen}
+                          onToggleSidebar={() => {
+                            playSound('toggle');
+                            setIsCADSidebarOpen(!isCADSidebarOpen);
+                          }}
                           onOpenAddNode={
                             (currentTabKey === 'project' || activeNavTab === 'projects' || activePreset === 'project')
                               ? () => setIsAddNodeOpen(true)
                               : undefined
                           }
+                          nodeCount={filteredNodes.length}
+                          splineCount={filteredConnections.length}
+                          scale={transform.scale}
                         />
-                      </div>
 
-                      {/* Desktop Unified Precision Workspace Footer Bar (Hidden on Mobile) */}
-                      <footer
-                        aria-label="Portfolio coordinates and workspace navigation"
-                        className="absolute bottom-3 inset-x-4 sm:inset-x-8 z-20 pointer-events-none hidden md:flex items-center justify-between text-[11px] sm:text-xs font-body text-zinc-400 select-none px-4 py-2 rounded-2xl bg-black/80 border border-white/10 backdrop-blur-md shadow-[0_4px_24px_rgba(0,0,0,0.65)]"
-                      >
-                        <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
-                          <span className="px-2 py-0.5 rounded bg-white/[0.08] border border-white/10 font-semibold text-white uppercase text-[10px] tracking-wider shrink-0">
-                            SPATIAL WORKSPACE
-                          </span>
-                          <span className="text-zinc-200 font-semibold font-display tracking-wider uppercase truncate hidden sm:inline">
-                            Shubham Sharma
-                          </span>
-                          <span className="text-zinc-600 hidden sm:inline">&bull;</span>
-                          <span className="text-rose-400 font-medium truncate">AI &amp; Data Science</span>
+                        {/* 2. Interactive CAD Spatial Viewport Canvas */}
+                        <div
+                          id="graph-workspace"
+                          aria-label="Interactive computational graph canvas"
+                          ref={canvasContainerRef}
+                          onMouseDown={handleCanvasMouseDown}
+                          onTouchStart={handleCanvasTouchStart}
+                          onClick={handleCanvasBackgroundClick}
+                          className="w-full flex-1 cursor-grab active:cursor-grabbing relative overflow-hidden touch-none"
+                        >
+                          {/* Background Grid Pattern */}
+                          {showGrid && (
+                            <div className="absolute inset-0 pattern-bg pointer-events-none opacity-35" />
+                          )}
+
+                          {/* Spatial Transformed Canvas */}
+                          <div
+                            style={{
+                              transform: `translate(${transform.x}px, ${transform.y}px) scale(${transform.scale})`,
+                              transformOrigin: '0 0',
+                            }}
+                            className="w-full h-full min-w-[4400px] min-h-[4400px] relative pointer-events-auto overflow-visible"
+                          >
+                            {/* Spline Connections Layer with Focus/Depth Dimming */}
+                            <SplineWires
+                              connections={filteredConnections}
+                              pinPositions={pinPositions}
+                              isSimulating={isSimulating}
+                              wireStyle={wireStyle}
+                              activeConnectionId={activeConnectionId}
+                              selectedNodeId={selectedNodeId}
+                              onSelectConnection={handleSelectConnection}
+                              isMobile={false}
+                              canvasScale={transform.scale}
+                            />
+
+                            {/* Connected Graph Nodes */}
+                            {effectiveNodes.map((effectiveNode) => (
+                              <GraphNode
+                                key={effectiveNode.id}
+                                node={effectiveNode}
+                                scale={transform.scale}
+                                isSelected={selectedNodeId === effectiveNode.id}
+                                isDimmed={selectedNodeId !== null && selectedNodeId !== effectiveNode.id}
+                                onSelectNode={handleSelectNode}
+                                onNodeDrag={handleNodeDrag}
+                                onNodeResize={handleNodeResize}
+                                onNodePinchEnd={handleNodePinchEnd}
+                                onDragStateChange={handleDragStateChange}
+                                onDeleteVisitorNode={handleDeleteVisitorNode}
+                                onOpenCertificateModal={handleOpenCertificateModal}
+                                onOpenProjectModal={handleOpenProjectModal}
+                                onOpenContactModal={handleOpenContactModal}
+                                onOpenResumeModal={handleOpenResumeModal}
+                                onOpenFocusedNode={handleOpenFocusedNode}
+                              />
+                            ))}
+                          </div>
+
+                          {/* 3. Studio CAD Tool Rail (Left T-Panel) */}
+                          <WorkspaceCADToolRail
+                            activeTool={cadToolMode}
+                            onSelectTool={setCadToolMode}
+                            scale={transform.scale}
+                            onZoomIn={handleZoomIn}
+                            onZoomOut={handleZoomOut}
+                            onFitScreen={handleFitScreen}
+                            showGrid={showGrid}
+                            onToggleGrid={() => {
+                              playSound('toggle');
+                              setShowGrid(!showGrid);
+                            }}
+                            wireStyle={wireStyle}
+                            onCycleWireStyle={() => {
+                              playSound('secondaryClick');
+                              const styles: ('glow' | 'minimal' | 'cyber')[] = ['glow', 'minimal', 'cyber'];
+                              const next = styles[(styles.indexOf(wireStyle) + 1) % styles.length];
+                              setWireStyle(next);
+                            }}
+                            isSimulating={isSimulating}
+                            onToggleSimulate={() => {
+                              playSound('connect');
+                              setIsSimulating(!isSimulating);
+                            }}
+                            onOpenAddNode={
+                              (currentTabKey === 'project' || activeNavTab === 'projects' || activePreset === 'project')
+                                ? () => setIsAddNodeOpen(true)
+                                : undefined
+                            }
+                          />
+
+                          {/* 4. Studio CAD Inspector (Right N-Panel Sidebar) */}
+                          <WorkspaceCADInspector
+                            isOpen={isCADSidebarOpen}
+                            onClose={() => setIsCADSidebarOpen(false)}
+                            selectedNode={filteredNodes.find((n) => n.id === selectedNodeId) || null}
+                            nodes={filteredNodes}
+                            connections={filteredConnections}
+                            onSelectNode={handleSelectNode}
+                            onOpenFocusedNode={handleOpenFocusedNode}
+                            transform={transform}
+                            onFitScreen={handleFitScreen}
+                            wireStyle={wireStyle}
+                            onChangeWireStyle={setWireStyle}
+                            isSimulating={isSimulating}
+                            onToggleSimulate={() => setIsSimulating(!isSimulating)}
+                            showGrid={showGrid}
+                            onToggleGrid={() => setShowGrid(!showGrid)}
+                            onOpenAddNode={
+                              (currentTabKey === 'project' || activeNavTab === 'projects' || activePreset === 'project')
+                                ? () => setIsAddNodeOpen(true)
+                                : undefined
+                            }
+                          />
                         </div>
 
-                        <div className="hidden lg:flex items-center gap-3 text-zinc-400 text-[11px]">
-                          <span>Drag background to pan</span>
-                          <span>&bull;</span>
-                          <span>Scroll wheel to zoom</span>
-                          <span>&bull;</span>
-                          <span>Drag nodes to arrange</span>
-                          <span>&bull;</span>
-                          <span className="text-zinc-300 font-medium">Resize edges to adjust node sizes</span>
-                        </div>
-
+                        {/* 5. Studio CAD Precision Status Bar (Footer Strip) */}
                         {(() => {
                           const visitorCount = filteredNodes.filter((n) => n.category === 'visitor').length;
                           const officialCount = filteredNodes.length - visitorCount;
                           return (
-                            <div className="flex items-center gap-2 text-zinc-300 font-medium text-[11px] shrink-0">
-                              <span>{officialCount} {activePreset === 'project' ? 'RESEARCH' : 'NETWORK'} NODES</span>
-                              {visitorCount > 0 && (
-                                <>
-                                  <span>+</span>
-                                  <span className="text-rose-400 font-semibold">{visitorCount} VISITOR NOTE{visitorCount > 1 ? 'S' : ''}</span>
-                                </>
-                              )}
-                              <span>/</span>
-                              <span>{filteredConnections.length} ACTIVE SPLINES</span>
-                              <span>&bull;</span>
-                              <span className="text-rose-500 font-bold flex items-center gap-1.5">
-                                <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
-                                LIVE
-                              </span>
-                            </div>
+                            <WorkspaceCADStatusBar
+                              activePreset={activePreset as any}
+                              nodeCount={officialCount}
+                              visitorCount={visitorCount}
+                              splineCount={filteredConnections.length}
+                              scale={transform.scale}
+                              onFitScreen={handleFitScreen}
+                              isSimulating={isSimulating}
+                            />
                           );
                         })()}
-                      </footer>
+                      </div>
                     </GraphErrorBoundary>
                   )}
                 </div>
