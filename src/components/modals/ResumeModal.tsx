@@ -233,9 +233,11 @@ export const ResumeModal: React.FC<ResumeModalProps> = ({ isOpen, onClose, nodes
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
             <div className="w-16 h-20 sm:w-20 sm:h-24 rounded-xl overflow-hidden border border-white/20 bg-white/[0.04] shadow-lg shrink-0">
               <img
-                src={profileNode?.avatar || '/assets/shubham_photo.jpg'}
+                src={profileNode?.avatar || '/assets/shubham_photo.webp'}
                 alt={profileNode?.name || 'Shubham Sharma'}
                 className="w-full h-full object-cover object-top"
+                loading="lazy"
+                decoding="async"
               />
             </div>
             <div className="flex-1 min-w-0">

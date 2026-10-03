@@ -23,7 +23,7 @@ export const INITIAL_NODES: NodeData[] = [
     profile: {
       name: 'Shubham Sharma',
       role: 'AI & Data Science',
-      avatar: '/assets/shubham_photo.jpg',
+      avatar: '/assets/shubham_photo.webp',
       bio: 'B.S. in AI & Data Science at Indian Institute of Technology Jodhpur. Research-driven practitioner pursuing descriptive data environments, mathematical modeling, and purposive computational systems.',
       location: 'Ghaziabad, India • IIT Jodhpur',
       status: 'Research & Engineering',
@@ -173,7 +173,7 @@ export const INITIAL_NODES: NodeData[] = [
         { label: 'Projection', value: '3D Manifold' },
         { label: 'Geometry', value: 'Riemannian' },
       ],
-      image: '/assets/latent_manifold_artifact.jpg',
+      image: '/assets/latent_manifold_artifact.webp',
       liveUrl: 'https://github.com/rosenkrvz/nodefolio',
       githubUrl: 'https://github.com/rosenkrvz/nodefolio',
     },

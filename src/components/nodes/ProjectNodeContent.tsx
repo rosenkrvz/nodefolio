@@ -15,7 +15,7 @@ export const ProjectNodeContent: React.FC<ProjectNodeContentProps> = ({
   project,
   onOpenModal,
 }) => {
-  const imageUrl = project.image || '/assets/latent_manifold_artifact.jpg';
+  const imageUrl = project.image || '/assets/latent_manifold_artifact.webp';
 
   const handleOpen = (e: React.MouseEvent | React.TouchEvent | React.KeyboardEvent) => {
     e.stopPropagation();

@@ -40,17 +40,24 @@ const TopNavbarComponent: React.FC<TopNavbarProps> = ({
 
   useEffect(() => {
     const update = () => {
-      setTimeStr(
-        new Date().toLocaleTimeString('en-US', {
-          hour: '2-digit',
-          minute: '2-digit',
-          hour12: true,
-        })
-      );
+      if (typeof document !== 'undefined' && document.hidden) return;
+      const next = new Date().toLocaleTimeString('en-US', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true,
+      });
+      setTimeStr((prev) => (prev !== next ? next : prev));
     };
     update();
-    const timer = setInterval(update, 1000);
-    return () => clearInterval(timer);
+    const timer = setInterval(update, 10000);
+    const handleVisibility = () => {
+      if (!document.hidden) update();
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => {
+      clearInterval(timer);
+      document.removeEventListener('visibilitychange', handleVisibility);
+    };
   }, []);
 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);

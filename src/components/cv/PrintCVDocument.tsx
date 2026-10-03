@@ -16,7 +16,7 @@ export const PrintCVDocument: React.FC<PrintCVDocumentProps> = ({ nodes }) => {
   const githubUser = 'github.com/rosenkrvz';
   const linkedinUser = 'linkedin.com/in/shubham-sharma';
   const portfolioUrl = 'nodefolio-rosenkrvz.vercel.app';
-  const photoUrl = profileNode?.avatar || '/assets/shubham_photo.jpg';
+  const photoUrl = profileNode?.avatar || '/assets/shubham_photo.webp';
 
   const objective =
     'I work for a research-oriented approach towards a descriptive data-driven environment that focuses on purpose rather than just plain definition.';

@@ -9,6 +9,7 @@ export const ClockNodeContent: React.FC = () => {
 
   useEffect(() => {
     const updateTime = () => {
+      if (typeof document !== 'undefined' && document.hidden) return;
       const now = new Date();
       setTimeStr(
         now.toLocaleTimeString('en-US', {
@@ -32,8 +33,15 @@ export const ClockNodeContent: React.FC = () => {
     };
 
     updateTime();
+    const handleVisibility = () => {
+      if (!document.hidden) updateTime();
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
     const interval = setInterval(updateTime, 1000);
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', handleVisibility);
+    };
   }, []);
 
   return (

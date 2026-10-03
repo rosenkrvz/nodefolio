@@ -49,11 +49,10 @@ const AddVisitorNodeModal = React.lazy(() =>
 import { useIsMobile } from './hooks/useIsMobile';
 import { MobileNodespace } from './components/MobileNodespace';
 import { GraphErrorBoundary } from './components/GraphErrorBoundary';
-import {
-  subscribeToCommunityVisitorNodes,
-  saveCommunityVisitorNode,
-  deleteCommunityVisitorNode,
-} from './lib/firebase';
+import { getDevicePerformanceTier } from './lib/performanceTier';
+
+// Dynamically import Firebase module so the 402 kB Firestore SDK is loaded off the critical path
+const loadFirebase = () => import('./lib/firebase');
 
 const VISITOR_STORAGE_KEY = 'nodefolio_visitor_notes';
 const VISITOR_STORAGE_VERSION = 'v2';
@@ -283,22 +282,53 @@ export default function App() {
     };
   });
 
-  // Real-time Firestore synchronization for community visitor nodes (Easter egg on Research tab)
+  // Initialize adaptive hardware performance tier for GPU & DOM optimization
   useEffect(() => {
-    const unsubscribe = subscribeToCommunityVisitorNodes((firestoreNodes) => {
-      if (!Array.isArray(firestoreNodes)) return;
-      setNodesByPreset((prev) => {
-        const officialResearch = prev.project.filter((n) => n.category !== 'visitor');
-        return {
-          ...prev,
-          project: [...officialResearch, ...firestoreNodes],
-        };
-      });
-    });
+    const tier = getDevicePerformanceTier();
+    document.documentElement.dataset.perfTier = tier;
+  }, []);
 
-    return () => {
-      unsubscribe();
+  // Real-time Firestore synchronization for community visitor nodes (Easter egg on Research tab)
+  // Defer until idle or after first render so it never blocks the initial critical path
+  useEffect(() => {
+    let unsubscribe: (() => void) | undefined;
+    let isCancelled = false;
+
+    const initFirebaseSync = () => {
+      loadFirebase()
+        .then(({ subscribeToCommunityVisitorNodes }) => {
+          if (isCancelled) return;
+          unsubscribe = subscribeToCommunityVisitorNodes((firestoreNodes) => {
+            if (!Array.isArray(firestoreNodes)) return;
+            setNodesByPreset((prev) => {
+              const officialResearch = prev.project.filter((n) => n.category !== 'visitor');
+              return {
+                ...prev,
+                project: [...officialResearch, ...firestoreNodes],
+              };
+            });
+          });
+        })
+        .catch((err) => {
+          console.info('[Firestore] Background sync deferred:', err);
+        });
     };
+
+    if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+      const id = (window as any).requestIdleCallback(initFirebaseSync, { timeout: 3000 });
+      return () => {
+        isCancelled = true;
+        (window as any).cancelIdleCallback?.(id);
+        unsubscribe?.();
+      };
+    } else {
+      const timer = setTimeout(initFirebaseSync, 1500);
+      return () => {
+        isCancelled = true;
+        clearTimeout(timer);
+        unsubscribe?.();
+      };
+    }
   }, []);
 
   const currentTabKey = activePreset === 'project' || activePreset === 'all' ? 'project' : 'network';
@@ -1117,10 +1147,16 @@ export default function App() {
       };
     });
 
-    // Save to Firestore real-time backend & local cache
-    saveCommunityVisitorNode(newNode).catch((err) => {
-      console.info('[Firestore] Background sync notice:', err);
-    });
+    // Save to Firestore real-time backend & local cache via dynamic import
+    loadFirebase()
+      .then(({ saveCommunityVisitorNode }) => {
+        saveCommunityVisitorNode(newNode).catch((err) => {
+          console.info('[Firestore] Background sync notice:', err);
+        });
+      })
+      .catch((err) => {
+        console.info('[Firestore] Module load notice:', err);
+      });
 
     // Immediately select and highlight the newly added visitor node
     setSelectedNodeId(newNode.id);
@@ -1161,9 +1197,15 @@ export default function App() {
       };
     });
 
-    deleteCommunityVisitorNode(nodeId).catch((err) => {
-      console.info('[Firestore] Background delete notice:', err);
-    });
+    loadFirebase()
+      .then(({ deleteCommunityVisitorNode }) => {
+        deleteCommunityVisitorNode(nodeId).catch((err) => {
+          console.info('[Firestore] Background delete notice:', err);
+        });
+      })
+      .catch((err) => {
+        console.info('[Firestore] Module load notice:', err);
+      });
   }, []);
 
   // Filter nodes & connections based on active preset

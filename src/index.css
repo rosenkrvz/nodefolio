@@ -583,3 +583,38 @@ html {
   scrollbar-width: none;
 }
 
+/* =========================================================================
+   ADAPTIVE HARDWARE PERFORMANCE TIERING
+   Subtly scales GPU-heavy compositing (blurs, filter passes) on low-end
+   hardware while maintaining 100% of the design, colors, and layout.
+   ========================================================================= */
+html[data-perf-tier="low"] .backdrop-blur-2xl,
+html[data-perf-tier="low"] .backdrop-blur-xl,
+html[data-perf-tier="low"] .backdrop-blur-lg {
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+}
+
+html[data-perf-tier="low"] .backdrop-blur-md,
+html[data-perf-tier="low"] .backdrop-blur-sm,
+html[data-perf-tier="low"] .backdrop-blur {
+  backdrop-filter: blur(4px) !important;
+  -webkit-backdrop-filter: blur(4px) !important;
+}
+
+/* Reduce composite layer box-shadows on low tier to prevent fillrate choking */
+html[data-perf-tier="low"] .shadow-2xl {
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5) !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+

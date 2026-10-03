@@ -45,6 +45,12 @@ class AudioManager {
         window.innerWidth < 768;
 
       this.registerFirstInteractionListener();
+
+      document.addEventListener('visibilitychange', () => {
+        if (document.hidden && this.ctx && this.ctx.state === 'running') {
+          this.ctx.suspend().catch(() => {});
+        }
+      });
     }
   }
 

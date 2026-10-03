@@ -19,8 +19,14 @@ export default defineConfig(() => {
               if (id.includes('three')) {
                 return 'vendor-three';
               }
-              if (id.includes('lucide-react')) {
+              if (id.includes('@untitledui/icons')) {
                 return 'vendor-icons';
+              }
+              if (id.includes('firebase')) {
+                return 'vendor-firebase';
+              }
+              if (id.includes('motion')) {
+                return 'vendor-motion';
               }
               if (id.includes('react') || id.includes('scheduler')) {
                 return 'vendor-react';

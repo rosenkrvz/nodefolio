@@ -56,10 +56,10 @@ export const WorkspaceCADInspector: React.FC<WorkspaceCADInspectorProps> = ({
   if (!isOpen) return null;
 
   const connectedInputs = selectedNode
-    ? connections.filter((c) => c.to === selectedNode.id)
+    ? connections.filter((c) => c.toNodeId === selectedNode.id)
     : [];
   const connectedOutputs = selectedNode
-    ? connections.filter((c) => c.from === selectedNode.id)
+    ? connections.filter((c) => c.fromNodeId === selectedNode.id)
     : [];
 
   return (
@@ -344,9 +344,9 @@ export const WorkspaceCADInspector: React.FC<WorkspaceCADInspectorProps> = ({
                     key={idx}
                     className="p-1.5 rounded-[2px] bg-[#1a1d26] border border-[#2b313d] text-[9.5px] text-zinc-300 flex items-center justify-between"
                   >
-                    <span className="truncate max-w-[100px] text-zinc-400">{c.from}</span>
+                    <span className="truncate max-w-[100px] text-zinc-400">{c.fromNodeId}</span>
                     <span className="text-rose-400 font-bold">&rarr;</span>
-                    <span className="truncate max-w-[100px] text-zinc-200">{c.to}</span>
+                    <span className="truncate max-w-[100px] text-zinc-200">{c.toNodeId}</span>
                   </div>
                 ))}
               </div>

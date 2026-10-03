@@ -237,9 +237,19 @@ export const FocusedNodeModal: React.FC<FocusedNodeModalProps> = ({
       );
       setTimeZone(Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC');
     };
+    if (!node || node.id !== 'node-clock') return;
     updateTime();
-    const timer = setInterval(updateTime, 1000);
-    return () => clearInterval(timer);
+    const handleVisibility = () => {
+      if (!document.hidden) updateTime();
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+    const timer = setInterval(() => {
+      if (!document.hidden) updateTime();
+    }, 1000);
+    return () => {
+      clearInterval(timer);
+      document.removeEventListener('visibilitychange', handleVisibility);
+    };
   }, [node]);
 
   if (!node) return null;
