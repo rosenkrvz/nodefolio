@@ -148,69 +148,7 @@ export function createPhase01Autograd(quality: QualityTier = 'high'): PhaseArtif
   const nodeMap = new Map<string, DAGNode>();
   nodes.forEach((n) => nodeMap.set(n.id, n));
 
-  // =========================================================================
-  // 2. Architectural Computational Glass Stage & Guideline Pedestals
-  // =========================================================================
-  const stageGroup = new THREE.Group();
-  group.add(stageGroup);
 
-  const stageWidth = 17.5;
-  const stageDepth = 8.5;
-  const stageBaseGeo = new THREE.BoxGeometry(stageWidth, 0.12, stageDepth);
-  disposables.push(stageBaseGeo);
-
-  const stageBaseMat = new THREE.MeshStandardMaterial({
-    color: 0x070b14,
-    roughness: 0.3,
-    metalness: 0.6,
-    transparent: true,
-    opacity: 0.85,
-  });
-  disposables.push(stageBaseMat);
-  const stageBase = new THREE.Mesh(stageBaseGeo, stageBaseMat);
-  stageBase.position.set(0.5, -4.2, 0);
-  stageGroup.add(stageBase);
-
-  // Stage Wireframe Grid
-  const stageWireGeo = new THREE.WireframeGeometry(stageBaseGeo);
-  const stageWireMat = new THREE.LineBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.18 });
-  disposables.push(stageWireGeo, stageWireMat);
-  const stageWire = new THREE.LineSegments(stageWireGeo, stageWireMat);
-  stageWire.position.copy(stageBase.position);
-  stageGroup.add(stageWire);
-
-  // Stage Rail Markers (Topological Layers [00] to [04])
-  const stageXs = [-6.2, -2.4, 1.2, 4.2, 7.2];
-  stageXs.forEach((sx) => {
-    const railGeo = new THREE.BufferGeometry().setFromPoints([
-      new THREE.Vector3(sx, -4.13, -stageDepth / 2 + 0.5),
-      new THREE.Vector3(sx, -4.13, stageDepth / 2 - 0.5),
-    ]);
-    const railMat = new THREE.LineBasicMaterial({ color: 0xf43f5e, transparent: true, opacity: 0.28 });
-    disposables.push(railGeo, railMat);
-    stageGroup.add(new THREE.Line(railGeo, railMat));
-  });
-
-  // Vertical Laser Guidelines from each node down to the stage base
-  const guideMat = new THREE.LineBasicMaterial({ color: 0x64748b, transparent: true, opacity: 0.22 });
-  disposables.push(guideMat);
-  nodes.forEach((n) => {
-    const guideGeo = new THREE.BufferGeometry().setFromPoints([
-      n.pos,
-      new THREE.Vector3(n.pos.x, -4.13, n.pos.z),
-    ]);
-    disposables.push(guideGeo);
-    stageGroup.add(new THREE.Line(guideGeo, guideMat));
-
-    // Base pedestal disc
-    const discGeo = new THREE.RingGeometry(0.24, 0.32, 16);
-    const discMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8, side: THREE.DoubleSide, transparent: true, opacity: 0.35 });
-    disposables.push(discGeo, discMat);
-    const disc = new THREE.Mesh(discGeo, discMat);
-    disc.position.set(n.pos.x, -4.12, n.pos.z);
-    disc.rotation.x = Math.PI / 2;
-    stageGroup.add(disc);
-  });
 
   // =========================================================================
   // 3. Node Geometries & Materials
@@ -465,14 +403,11 @@ export function createPhase01Autograd(quality: QualityTier = 'high'): PhaseArtif
 
   const toggleLayer = (layer: LayerType, visible: boolean) => {
     if (layer === 'geometry') {
-      stageGroup.visible = visible;
       nodeMeshes.forEach((m) => { m.visible = visible; });
     } else if (layer === 'trajectories') {
       edges.forEach((e) => { e.line.visible = visible; });
       pulseParticles.forEach((p) => { p.mesh.visible = visible; });
       lossBeacon.visible = visible;
-    } else if (layer === 'clusters') {
-      stageGroup.visible = visible;
     }
   };
 

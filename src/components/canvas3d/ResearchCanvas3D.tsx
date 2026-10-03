@@ -1373,11 +1373,11 @@ ${currentPhaseMeta.description}
     keyLight.position.set(12, 18, 14);
     scene.add(keyLight);
 
-    const fillLight = new THREE.DirectionalLight(0xbe123c, 0.85);
+    const fillLight = new THREE.DirectionalLight(0x94a3b8, 0.65);
     fillLight.position.set(-14, -8, -10);
     scene.add(fillLight);
 
-    const rimLight = new THREE.DirectionalLight(0xfb7185, 0.7);
+    const rimLight = new THREE.DirectionalLight(0xe2e8f0, 0.55);
     rimLight.position.set(0, 15, -15);
     scene.add(rimLight);
 

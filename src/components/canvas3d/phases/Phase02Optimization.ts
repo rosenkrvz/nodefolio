@@ -123,67 +123,7 @@ export function createPhase02Optimization(quality: QualityTier = 'high'): PhaseA
     isoGroup.add(isoLine);
   });
 
-  // =========================================================================
-  // 4. KKT Primal-Dual Constraint Half-Space & Cutting Hyperplane
-  // Inequality Constraint: g(x, z) = 0.52 * x + 0.85 * z - 1.15 <= 0
-  // =========================================================================
-  const kktGroup = new THREE.Group();
-  group.add(kktGroup);
 
-  const planeWidth = 7.5;
-  const planeHeight = 4.8;
-  const constraintPlaneGeo = new THREE.PlaneGeometry(planeWidth, planeHeight);
-  disposables.push(constraintPlaneGeo);
-
-  const constraintPlaneMat = new THREE.MeshStandardMaterial({
-    color: 0x0284c7,
-    emissive: 0x0369a1,
-    emissiveIntensity: 0.4,
-    transparent: true,
-    opacity: 0.22,
-    side: THREE.DoubleSide,
-    roughness: 0.2,
-  });
-  disposables.push(constraintPlaneMat);
-
-  const constraintMesh = new THREE.Mesh(constraintPlaneGeo, constraintPlaneMat);
-  // Position and orient constraint plane cutting through paraboloid
-  constraintMesh.position.set(0.6, 2.2, 0.9);
-  constraintMesh.rotation.y = Math.atan2(0.52, 0.85);
-  kktGroup.add(constraintMesh);
-
-  // Constraint Boundary Wireframe & Normal Vector Arrow (Lagrange Multiplier λ*)
-  const planeWireGeo = new THREE.WireframeGeometry(constraintPlaneGeo);
-  const planeWireMat = new THREE.LineBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.65 });
-  disposables.push(planeWireGeo, planeWireMat);
-  const planeWire = new THREE.LineSegments(planeWireGeo, planeWireMat);
-  constraintMesh.add(planeWire);
-
-  // KKT Optimal Tangent Contact Point
-  const kktPointPos = new THREE.Vector3(0.55, computeLoss(0.55, 0.88), 0.88);
-  const kktMarkerGeo = new THREE.SphereGeometry(0.22, 16, 16);
-  const kktMarkerMat = new THREE.MeshStandardMaterial({
-    color: 0x38bdf8,
-    emissive: 0x0284c7,
-    emissiveIntensity: 0.9,
-    roughness: 0.2,
-  });
-  disposables.push(kktMarkerGeo, kktMarkerMat);
-  const kktMarker = new THREE.Mesh(kktMarkerGeo, kktMarkerMat);
-  kktMarker.position.copy(kktPointPos);
-  kktGroup.add(kktMarker);
-
-  // Lagrange Multiplier Dual Vector Arrow at KKT point: ∇f(x*) = -λ* ∇g(x*)
-  const kktArrow = new THREE.ArrowHelper(
-    new THREE.Vector3(0.52, 0.3, 0.85).normalize(),
-    kktPointPos,
-    1.1,
-    0x38bdf8,
-    0.24,
-    0.12
-  );
-  kktGroup.add(kktArrow);
-  disposables.push(kktArrow.line.geometry, kktArrow.cone.geometry);
 
   // =========================================================================
   // 5. Global Unconstrained Minimum θ* at origin (0, 0, 0)
@@ -331,26 +271,6 @@ export function createPhase02Optimization(quality: QualityTier = 'high'): PhaseA
       },
     },
     {
-      mesh: constraintMesh,
-      data: {
-        id: 'opt-kkt-plane',
-        name: 'KKT Constraint Boundary & Dual Multiplier',
-        symbol: 'g(θ) ≤ 0',
-        type: 'FEASIBILITY DOMAIN',
-        role: 'Linear Half-Space Cutting Plane',
-        dimension: 'Dual Space λ* ≥ 0',
-        properties: {
-          'Primal Constraint': '0.52x + 0.85z - 1.15 ≤ 0',
-          'Stationarity': '∇f(θ*) + λ* ∇g(θ*) = 0',
-          'Slackness Condition': 'λ* · g(θ*) = 0',
-          'Dual Feasibility': 'λ* = 0.428 ≥ 0',
-          'Status': 'Active Binding Constraint',
-        },
-        description: 'Karush-Kuhn-Tucker (KKT) constraint plane partitioning the parameter space into feasible and infeasible sets. At the constrained optimum θ*, the objective gradient is precisely counterbalanced by the constraint normal.',
-        worldPosition: constraintMesh.position.clone(),
-      },
-    },
-    {
       mesh: minMarker,
       data: {
         id: 'opt-minimum',
@@ -395,15 +315,10 @@ export function createPhase02Optimization(quality: QualityTier = 'high'): PhaseA
   const onSelectObject = (item: InspectableItem | null) => {
     if (!item) {
       surfaceMat.opacity = 0.94;
-      constraintPlaneMat.opacity = 0.22;
       momTubeMat.emissiveIntensity = 0.9;
       minMarkerMat.emissiveIntensity = 0.9;
     } else if (item.id === 'opt-surface') {
       surfaceMat.opacity = 0.98;
-      constraintPlaneMat.opacity = 0.12;
-    } else if (item.id === 'opt-kkt-plane') {
-      constraintPlaneMat.opacity = 0.45;
-      constraintPlaneMat.emissiveIntensity = 0.8;
     } else if (item.id === 'opt-minimum') {
       minMarkerMat.emissiveIntensity = 1.4;
     } else if (item.id === 'opt-momentum-traj') {
@@ -428,9 +343,6 @@ export function createPhase02Optimization(quality: QualityTier = 'high'): PhaseA
     // Pulsing minimum ring
     const s = 1.0 + Math.sin(time * 2.8) * 0.12;
     minRing.scale.set(s, s, s);
-
-    // Subtle constraint plane breathing
-    constraintPlaneMat.opacity = 0.22 + Math.sin(time * 1.8) * 0.04;
   };
 
   const toggleLayer = (layer: LayerType, visible: boolean) => {
@@ -446,13 +358,12 @@ export function createPhase02Optimization(quality: QualityTier = 'high'): PhaseA
     } else if (layer === 'clusters') {
       minMarker.visible = visible;
       minRing.visible = visible;
-      kktGroup.visible = visible;
     }
   };
 
   const getAnnotations = (): SpatialAnnotation[] => [
     { id: 'theta-init', label: 'Initial Point θ₀', sublabel: 'f(θ₀) = 3.92, Step 0', position: new THREE.Vector3(-4.8, 4.2, 3.6) },
-    { id: 'kkt-boundary', label: 'KKT Constraint g(θ) ≤ 0', sublabel: 'λ* = 0.428, Active Binding', position: new THREE.Vector3(0.6, 2.6, 0.9) },
+    { id: 'sgd-path', label: 'Vanilla SGD (No Momentum)', sublabel: 'Transverse Ravine Oscillation', position: new THREE.Vector3(-3.2, 2.8, 2.2) },
     { id: 'theta-star', label: 'Global Minimum θ*', sublabel: '∇f(θ*) = 0, Loss = 0.00', position: new THREE.Vector3(0, 0.45, 0) },
   ];
 

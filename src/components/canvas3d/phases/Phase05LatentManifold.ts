@@ -438,41 +438,7 @@ export function createPhase05LatentManifold(quality: QualityTier = 'high'): Phas
     },
   });
 
-  // Riemannian Tangent Space T_p M at Saddle Point Bridge
-  const tangentSpaceGroup = new THREE.Group();
-  const bridgeY = evalManifoldHeight(cBridge.x, cBridge.z);
-  const bridgeNorm = evalNormal(cBridge.x, cBridge.z);
-  tangentSpaceGroup.position.set(cBridge.x, bridgeY, cBridge.z).addScaledVector(bridgeNorm, 0.04);
-  tangentSpaceGroup.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), bridgeNorm);
 
-  const tangentDiscGeo = new THREE.CircleGeometry(1.2, 24);
-  const tangentDiscMat = new THREE.MeshBasicMaterial({
-    color: 0x38bdf8,
-    transparent: true,
-    opacity: 0.18,
-    side: THREE.DoubleSide,
-  });
-  disposables.push(tangentDiscGeo, tangentDiscMat);
-  const tangentDisc = new THREE.Mesh(tangentDiscGeo, tangentDiscMat);
-  tangentDisc.rotation.x = Math.PI / 2;
-  tangentSpaceGroup.add(tangentDisc);
-
-  // Tangent Coordinate Axes
-  const tAxisGeo = new THREE.BufferGeometry().setFromPoints([
-    new THREE.Vector3(-1.1, 0, 0),
-    new THREE.Vector3(1.1, 0, 0),
-  ]);
-  const tAxisMat = new THREE.LineBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.6 });
-  disposables.push(tAxisGeo, tAxisMat);
-  tangentSpaceGroup.add(new THREE.Line(tAxisGeo, tAxisMat));
-
-  const tAxis2Geo = new THREE.BufferGeometry().setFromPoints([
-    new THREE.Vector3(0, 0, -1.1),
-    new THREE.Vector3(0, 0, 1.1),
-  ]);
-  disposables.push(tAxis2Geo);
-  tangentSpaceGroup.add(new THREE.Line(tAxis2Geo, tAxisMat));
-  group.add(tangentSpaceGroup);
 
   // Traveling Geodesic Particles
   const particleGeo = new THREE.SphereGeometry(0.18, 14, 14);
