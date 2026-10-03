@@ -510,10 +510,6 @@ export const ChronicleView: React.FC<ChronicleViewProps> = ({
       {/* Subtle Coordinate Grid Overlay */}
       <div className="fixed inset-0 pointer-events-none bg-canvas-dots-overlay opacity-60 z-0" aria-hidden="true" />
 
-      {/* Subtle Crimson Ambient Glow */}
-      <div className="fixed inset-0 pointer-events-none bg-[radial-gradient(ellipse_at_80%_25%,rgba(225,29,72,0.14),transparent_55%)] z-0" aria-hidden="true" />
-      <div className="fixed inset-0 pointer-events-none bg-[radial-gradient(ellipse_at_10%_80%,rgba(225,29,72,0.06),transparent_50%)] z-0" aria-hidden="true" />
-
       {/* ═══════════ ARCHITECTURAL TELEMETRY MARGIN RAILS (Ultrawide / Zoom-out) ═══════════ */}
       {/* Left Margin Telemetry Rail */}
       <div className="hidden 2xl:flex fixed left-5 top-24 bottom-16 flex-col justify-between items-center pointer-events-none z-10 text-[9px] font-mono text-zinc-600 select-none tracking-widest uppercase">

@@ -457,13 +457,7 @@ export function createPhase05LatentManifold(quality: QualityTier = 'high'): Phas
   group.add(tangentArrow);
   disposables.push(tangentArrow.line.geometry, tangentArrow.cone.geometry);
 
-  // Grounded Spatial Reference Grid
-  const baseGrid = new THREE.GridHelper(14, 14, 0x1e293b, 0x0f172a);
-  baseGrid.position.y = -3.2;
-  (baseGrid.material as THREE.Material).transparent = true;
-  (baseGrid.material as THREE.Material).opacity = 0.35;
-  group.add(baseGrid);
-  disposables.push(baseGrid.geometry, baseGrid.material as THREE.Material);
+
 
   // Interaction Handler
   const onSelectObject = (item: InspectableItem | null) => {
@@ -524,7 +518,7 @@ export function createPhase05LatentManifold(quality: QualityTier = 'high'): Phas
       particle1.visible = visible;
       tangentArrow.visible = visible;
     } else if (layer === 'grid') {
-      baseGrid.visible = visible;
+      // Grid helper removed
     }
   };
 

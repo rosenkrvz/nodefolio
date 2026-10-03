@@ -202,12 +202,7 @@ export const ResearchEntryLoader: React.FC<ResearchEntryLoaderProps> = ({
         }
       `}</style>
 
-      {/* Ambient background atmosphere matching Research visual language */}
-      <div
-        className={`absolute inset-0 pointer-events-none bg-[radial-gradient(ellipse_at_center,rgba(225,29,72,0.08)_0%,transparent_65%)] transition-opacity duration-1000 ease-out ${
-          hasEntered && !isFadingOut ? 'opacity-100' : 'opacity-0'
-        }`}
-      />
+
       <div
         className={`absolute inset-0 pointer-events-none transition-opacity duration-700 ease-out ${
           hasEntered && !isFadingOut ? 'opacity-25' : 'opacity-0'

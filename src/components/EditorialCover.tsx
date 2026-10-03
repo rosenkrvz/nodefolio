@@ -162,16 +162,6 @@ const EditorialCoverComponent: React.FC<EditorialCoverProps> = ({
         </div>
       </div>
 
-      {/* Crimson Ambient Aura Glow behind the cover */}
-      <div
-        style={{
-          opacity: isEntered || entryStage >= 1 ? 0.38 : 0,
-          transition: isEntered ? 'none' : 'opacity 0.8s ease-out',
-        }}
-        className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] sm:w-[600px] h-[260px] sm:h-[350px] max-w-full bg-rose-900/25 rounded-full blur-[90px] sm:blur-[120px] pointer-events-none z-0"
-        aria-hidden="true"
-      />
-
       {/* Mobile-specific Text Contrast Vignette: softens diagonal background behind typography while letting perimeter geometry breathe */}
       <div
         className="absolute inset-0 pointer-events-none bg-[radial-gradient(ellipse_at_30%_45%,rgba(20,23,28,0.85)_0%,rgba(20,23,28,0.4)_65%,transparent_100%)] sm:hidden z-0"
@@ -180,9 +170,6 @@ const EditorialCoverComponent: React.FC<EditorialCoverProps> = ({
 
       {/* Subtle Coordinate Grid Overlay */}
       <div className="absolute inset-0 pointer-events-none bg-canvas-dots-overlay opacity-60 z-0" aria-hidden="true" />
-
-      {/* Subtle Crimson Ambient Glow */}
-      <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(ellipse_at_80%_25%,rgba(225,29,72,0.14),transparent_55%)] z-0" aria-hidden="true" />
 
       {/* Crimson Seam Glow Indicator when lifting */}
       {isLifting && (

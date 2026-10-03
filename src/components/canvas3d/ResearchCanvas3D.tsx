@@ -124,8 +124,8 @@ const ToolRailButton = React.forwardRef<HTMLButtonElement, ToolRailButtonProps>(
         aria-haspopup={ariaHasPopup}
         className={`relative w-8 h-8 rounded-[2px] flex items-center justify-center cursor-pointer select-none transition-all duration-150 border ${
           active
-            ? 'bg-rose-600/90 text-white border-rose-400/80 shadow-[0_0_8px_rgba(244,63,94,0.4)]'
-            : 'bg-[#2a2a2a]/80 text-zinc-400 hover:text-white hover:bg-[#383838] border-[#3e3e3e]/80 hover:border-[#555]'
+            ? 'bg-[#272b35] text-white border-rose-500/80 shadow-[0_0_8px_rgba(244,63,94,0.35)] ring-1 ring-rose-500/30'
+            : 'bg-[#242424]/90 text-zinc-400 hover:text-white hover:bg-[#303030] border-[#383838] hover:border-[#4d4d4d]'
         }`}
       >
         <span className="relative z-10 block">{children}</span>
@@ -251,6 +251,7 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
 
   // Dedicated Research Entry / Preloader State
   const [isInitialEntryLoading, setIsInitialEntryLoading] = useState<boolean>(isInitialEntry !== false);
+  const [isPhaseSwitching, setIsPhaseSwitching] = useState<boolean>(false);
   const [isSceneReady, setIsSceneReady] = useState<boolean>(false);
   const [sceneInitError, setSceneInitError] = useState<string | null>(null);
   const [initAttempt, setInitAttempt] = useState<number>(0);
@@ -356,16 +357,24 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
     };
   };
 
-  // Discrete Viewport Zoom
+  // Discrete Viewport Zoom with smooth cinematic animation
   const handleZoom = (direction: 'in' | 'out') => {
     playSound('hover');
     const camera = cameraRef.current;
     const controls = controlsRef.current;
     if (!camera || !controls) return;
-    const factor = direction === 'in' ? 0.75 : 1.35;
+    const factor = direction === 'in' ? 0.72 : 1.38;
     const offset = camera.position.clone().sub(controls.target).multiplyScalar(factor);
-    camera.position.copy(controls.target).add(offset);
-    controls.update();
+    const endPos = controls.target.clone().add(offset);
+
+    cameraFocusTarget.current = {
+      active: true,
+      startPos: camera.position.clone(),
+      endPos,
+      startTarget: controls.target.clone(),
+      endTarget: controls.target.clone(),
+      progress: 0,
+    };
   };
 
   // Keep Three.js OrbitControls auto-rotate synchronized
@@ -1573,6 +1582,7 @@ ${currentPhaseMeta.description}
   const handleSelectPhase = (phaseId: ResearchPhaseId) => {
     if (phaseId === activePhaseId) return;
     playSound('click');
+    setIsPhaseSwitching(true);
     setActivePhaseId(phaseId);
     currentPhaseIdRef.current = phaseId;
     switchArtifact(phaseId, activeTier);
@@ -1617,12 +1627,6 @@ ${currentPhaseMeta.description}
 
         {/* Animated drifting technical ambient bands */}
         <div className="cube-svg opacity-35" />
-
-        {/* Crimson ambient aura glow centered behind the 3D artifact */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] sm:w-[800px] h-[360px] sm:h-[500px] max-w-full bg-rose-900/20 rounded-full blur-[110px] pointer-events-none" />
-
-        {/* Subtle secondary crimson ambient glow */}
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_75%_25%,rgba(225,29,72,0.12),transparent_55%)] pointer-events-none" />
 
         {/* ── Webpage Coordinate & Architectural Grid Layer (Toggleable) ── */}
         <div
@@ -2579,169 +2583,171 @@ ${currentPhaseMeta.description}
           BLENDER T-PANEL: LEFT TOOL SHELF (Toggle: T)
          ─────────────────────────────────────────────────────────────────── */}
       <div className="absolute left-2 top-11 z-30 flex items-start gap-1 pointer-events-none select-none">
-        {/* Main Tool Column */}
-        {tPanelOpen && (
-          <aside
-            aria-label="Blender 3D Tool Shelf"
-            className="pointer-events-auto flex flex-col gap-1 p-1 bg-[#202020]/95 backdrop-blur-md border border-[#383838] rounded-[2px] shadow-2xl animate-in fade-in slide-in-from-left-2 duration-150"
+        {/* Main Tool Column with smooth swipe / de-swipe transition */}
+        <aside
+          aria-label="Blender 3D Tool Shelf"
+          className={`pointer-events-auto flex flex-col gap-1 p-1 bg-[#202020]/95 backdrop-blur-md border border-[#383838] rounded-[2px] shadow-2xl transition-all duration-300 ease-in-out ${
+            tPanelOpen
+              ? 'translate-x-0 opacity-100 pointer-events-auto'
+              : '-translate-x-14 opacity-0 pointer-events-none'
+          }`}
+        >
+          {/* Tool: Select Box (W) */}
+          <ToolRailButton
+            active={activeTool === 'select'}
+            onClick={() => {
+              playSound('click');
+              setActiveTool('select');
+            }}
+            title="Select Box [W] (Click objects to inspect)"
           >
-            {/* Tool: Select Box (W) */}
+            <BlenderBoxIcon className={`w-4 h-4 ${activeTool === 'select' ? 'text-white' : 'text-zinc-300'}`} />
+          </ToolRailButton>
+
+          {/* Tool: 3D Cursor (C) */}
+          <ToolRailButton
+            active={activeTool === 'cursor'}
+            onClick={() => {
+              playSound('click');
+              setActiveTool('cursor');
+            }}
+            title="3D Cursor [C]"
+          >
+            <CursorTargetIcon className={`w-4 h-4 ${activeTool === 'cursor' ? 'text-amber-300' : 'text-amber-400'}`} />
+          </ToolRailButton>
+
+          {/* Tool: Orbit / Turntable (Space) */}
+          <ToolRailButton
+            active={isAutoRotate}
+            onClick={() => {
+              playSound('toggle');
+              setIsAutoRotate((prev) => !prev);
+            }}
+            title={isAutoRotate ? 'Turntable Running [Space]' : 'Turntable Auto-Rotate [Space]'}
+          >
+            <OrbitIcon className={`w-4 h-4 ${isAutoRotate ? 'text-rose-400 animate-spin' : 'text-zinc-300'}`} />
+          </ToolRailButton>
+
+          <div className="w-full h-px bg-[#383838] my-0.5" />
+
+          {/* Tool: Visual Layers Popover */}
+          <div className="relative">
             <ToolRailButton
-              active={activeTool === 'select'}
+              ref={leftLayersBtnRef}
+              active={showLeftLayersMenu}
               onClick={() => {
                 playSound('click');
-                setActiveTool('select');
+                setShowLeftLayersMenu((prev) => !prev);
+                setShowOverlaysMenu(false);
               }}
-              title="Select Box [W] (Click objects to inspect)"
+              ariaExpanded={showLeftLayersMenu}
+              ariaHasPopup="dialog"
+              title="Viewport Overlays & Layers"
             >
-              <BlenderBoxIcon className="w-4 h-4 text-zinc-200" />
+              <Layers className={`w-4 h-4 ${showLeftLayersMenu ? 'text-white' : 'text-zinc-300'}`} />
             </ToolRailButton>
 
-            {/* Tool: 3D Cursor (C) */}
-            <ToolRailButton
-              active={activeTool === 'cursor'}
-              onClick={() => {
-                playSound('click');
-                setActiveTool('cursor');
-              }}
-              title="3D Cursor [C]"
-            >
-              <CursorTargetIcon className="w-4 h-4 text-amber-400" />
-            </ToolRailButton>
-
-            {/* Tool: Orbit / Turntable (Space) */}
-            <ToolRailButton
-              active={isAutoRotate}
-              onClick={() => {
-                playSound('toggle');
-                setIsAutoRotate((prev) => !prev);
-              }}
-              title={isAutoRotate ? 'Turntable Running [Space]' : 'Turntable Auto-Rotate [Space]'}
-            >
-              <OrbitIcon className={`w-4 h-4 ${isAutoRotate ? 'text-rose-400 animate-spin' : 'text-zinc-300'}`} />
-            </ToolRailButton>
-
-            <div className="w-full h-px bg-[#383838] my-0.5" />
-
-            {/* Tool: Visual Layers Popover */}
-            <div className="relative">
-              <ToolRailButton
-                ref={leftLayersBtnRef}
-                active={showLeftLayersMenu}
-                onClick={() => {
-                  playSound('click');
-                  setShowLeftLayersMenu((prev) => !prev);
-                  setShowOverlaysMenu(false);
-                }}
-                ariaExpanded={showLeftLayersMenu}
-                ariaHasPopup="dialog"
-                title="Viewport Overlays & Layers"
+            {/* Blender Layer / Overlays Menu */}
+            {showLeftLayersMenu && (
+              <div
+                ref={leftLayersMenuRef}
+                role="dialog"
+                aria-label="Visual Layers Configuration"
+                className="absolute left-full ml-2 top-0 w-52 p-2 bg-[#232323] border border-[#383838] rounded-[2px] shadow-2xl z-40 space-y-2 text-xs select-none"
               >
-                <Layers className="w-4 h-4 text-zinc-300" />
-              </ToolRailButton>
-
-              {/* Blender Layer / Overlays Menu */}
-              {showLeftLayersMenu && (
-                <div
-                  ref={leftLayersMenuRef}
-                  role="dialog"
-                  aria-label="Visual Layers Configuration"
-                  className="absolute left-full ml-2 top-0 w-52 p-2 bg-[#232323] border border-[#3e3e3e] rounded-[2px] shadow-2xl z-40 space-y-2 text-xs select-none"
-                >
-                  <div className="flex items-center justify-between border-b border-[#383838] pb-1.5">
-                    <span className="font-mono text-[10px] text-zinc-300 uppercase tracking-wider font-bold">
-                      VIEWPORT LAYERS
-                    </span>
-                    <span className="font-mono text-[9px] text-zinc-400 bg-[#1a1a1a] px-1 py-0.2 rounded-[2px] border border-[#333]">
-                      {Object.values(activeLayers).filter(Boolean).length}/5
-                    </span>
-                  </div>
-
-                  <div className="space-y-0.5">
-                    {(['geometry', 'trajectories', 'clusters', 'grid', 'annotations'] as const).map((layer) => (
-                      <label
-                        key={layer}
-                        className="flex items-center justify-between text-zinc-300 hover:text-white cursor-pointer py-1 px-1.5 rounded-[2px] hover:bg-white/[0.06] transition-colors select-none group"
-                      >
-                        <div className="flex items-center gap-2">
-                          <span
-                            className="w-1.5 h-1.5 rounded-[1px] transition-all duration-200"
-                            style={{
-                              backgroundColor: activeLayers[layer] ? '#f43f5e' : 'rgba(255,255,255,0.2)',
-                            }}
-                          />
-                          <span className="capitalize font-mono text-[11px] tracking-wide text-zinc-300 group-hover:text-white">
-                            {layer}
-                          </span>
-                        </div>
-                        <input
-                          type="checkbox"
-                          checked={activeLayers[layer]}
-                          onChange={() => handleToggleLayer(layer)}
-                          className="accent-rose-500 w-3.5 h-3.5 cursor-pointer rounded-[2px]"
-                        />
-                      </label>
-                    ))}
-                  </div>
+                <div className="flex items-center justify-between border-b border-[#383838] pb-1.5">
+                  <span className="font-mono text-[10px] text-zinc-300 uppercase tracking-wider font-bold">
+                    VIEWPORT LAYERS
+                  </span>
+                  <span className="font-mono text-[9px] text-zinc-400 bg-[#1a1a1a] px-1 py-0.2 rounded-[2px] border border-[#333]">
+                    {Object.values(activeLayers).filter(Boolean).length}/5
+                  </span>
                 </div>
-              )}
-            </div>
 
-            {/* Tool: Grid Quick Toggle [G] */}
-            <ToolRailButton
-              active={activeLayers.grid}
-              onClick={() => handleToggleLayer('grid')}
-              title={`Toggle Grid [G] (${activeLayers.grid ? 'Active' : 'Disabled'})`}
-            >
-              <Grid className={`w-4 h-4 ${activeLayers.grid ? 'text-rose-400' : 'text-zinc-300'}`} />
-            </ToolRailButton>
+                <div className="space-y-0.5">
+                  {(['geometry', 'trajectories', 'clusters', 'grid', 'annotations'] as const).map((layer) => (
+                    <label
+                      key={layer}
+                      className="flex items-center justify-between text-zinc-300 hover:text-white cursor-pointer py-1 px-1.5 rounded-[2px] hover:bg-white/[0.06] transition-colors select-none group"
+                    >
+                      <div className="flex items-center gap-2">
+                        <span
+                          className="w-1.5 h-1.5 rounded-[1px] transition-all duration-200"
+                          style={{
+                            backgroundColor: activeLayers[layer] ? '#f43f5e' : 'rgba(255,255,255,0.2)',
+                          }}
+                        />
+                        <span className="capitalize font-mono text-[11px] tracking-wide text-zinc-300 group-hover:text-white">
+                          {layer}
+                        </span>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={activeLayers[layer]}
+                        onChange={() => handleToggleLayer(layer)}
+                        className="accent-rose-500 w-3.5 h-3.5 cursor-pointer rounded-[2px]"
+                      />
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
 
-            {/* Tool: 3D Annotations Toggle */}
-            <ToolRailButton
-              active={showAnnotations}
-              onClick={() => handleToggleLayer('annotations')}
-              title="Toggle Spatial Annotations"
-            >
-              <Eye className="w-4 h-4 text-zinc-300" />
-            </ToolRailButton>
+          {/* Tool: Grid Quick Toggle [G] */}
+          <ToolRailButton
+            active={activeLayers.grid}
+            onClick={() => handleToggleLayer('grid')}
+            title={`Toggle Grid [G] (${activeLayers.grid ? 'Active' : 'Disabled'})`}
+          >
+            <Grid className={`w-4 h-4 ${activeLayers.grid ? 'text-white' : 'text-zinc-300'}`} />
+          </ToolRailButton>
 
-            {/* Tool: Zoom In (+) */}
-            <ToolRailButton
-              onClick={() => handleZoom('in')}
-              title="Zoom In [Scroll Up]"
-            >
-              <Plus className="w-4 h-4 text-zinc-300" />
-            </ToolRailButton>
+          {/* Tool: 3D Annotations Toggle */}
+          <ToolRailButton
+            active={showAnnotations}
+            onClick={() => handleToggleLayer('annotations')}
+            title="Toggle Spatial Annotations"
+          >
+            <Eye className={`w-4 h-4 ${showAnnotations ? 'text-white' : 'text-zinc-300'}`} />
+          </ToolRailButton>
 
-            {/* Tool: Zoom Out (−) */}
-            <ToolRailButton
-              onClick={() => handleZoom('out')}
-              title="Zoom Out [Scroll Down]"
-            >
-              <Minus className="w-4 h-4 text-zinc-300" />
-            </ToolRailButton>
+          {/* Tool: Zoom In (+) */}
+          <ToolRailButton
+            onClick={() => handleZoom('in')}
+            title="Zoom In [Scroll Up]"
+          >
+            <Plus className="w-4 h-4 text-zinc-300" />
+          </ToolRailButton>
 
-            {/* Tool: Reset View [R] */}
-            <ToolRailButton
-              onClick={handleResetView}
-              title="Reset Viewport Camera [R]"
-            >
-              <RotateCcw className="w-4 h-4 text-zinc-300 hover:rotate-[-45deg] transition-transform" />
-            </ToolRailButton>
+          {/* Tool: Zoom Out (−) */}
+          <ToolRailButton
+            onClick={() => handleZoom('out')}
+            title="Zoom Out [Scroll Down]"
+          >
+            <Minus className="w-4 h-4 text-zinc-300" />
+          </ToolRailButton>
 
-            {/* Tool: Phase Overview Card Toggle */}
-            <ToolRailButton
-              active={showIntroCard}
-              onClick={() => {
-                playSound('toggle');
-                setShowIntroCard((prev) => !prev);
-              }}
-              title={showIntroCard ? 'Hide Phase Specification' : 'Show Phase Specification'}
-            >
-              <Search className="w-4 h-4 text-zinc-300" />
-            </ToolRailButton>
-          </aside>
-        )}
+          {/* Tool: Reset View [R] */}
+          <ToolRailButton
+            onClick={handleResetView}
+            title="Reset Viewport Camera [R]"
+          >
+            <RotateCcw className="w-4 h-4 text-zinc-300 hover:rotate-[-45deg] transition-transform" />
+          </ToolRailButton>
+
+          {/* Tool: Phase Overview Card Toggle */}
+          <ToolRailButton
+            active={showIntroCard}
+            onClick={() => {
+              playSound('toggle');
+              setShowIntroCard((prev) => !prev);
+            }}
+            title={showIntroCard ? 'Hide Phase Specification' : 'Show Phase Specification'}
+          >
+            <Search className={`w-4 h-4 ${showIntroCard ? 'text-white' : 'text-zinc-300'}`} />
+          </ToolRailButton>
+        </aside>
 
         {/* Small T-Panel Tab to expand/collapse (Hotkey: T) */}
         <button
@@ -2751,7 +2757,7 @@ ${currentPhaseMeta.description}
             setTPanelOpen((prev) => !prev);
           }}
           title={`Toggle Toolbar [T] (${tPanelOpen ? 'Collapse' : 'Expand'})`}
-          className="pointer-events-auto h-7 px-1 bg-[#202020]/90 hover:bg-[#2e2e2e] border border-[#383838] rounded-[2px] text-zinc-400 hover:text-white flex items-center justify-center text-[9px] font-mono transition-colors cursor-pointer"
+          className="pointer-events-auto h-7 px-1.5 bg-[#202020]/90 hover:bg-[#2e2e2e] border border-[#383838] rounded-[2px] text-zinc-400 hover:text-white flex items-center justify-center text-[9px] font-mono transition-all duration-300 cursor-pointer shadow-md"
         >
           {tPanelOpen ? '◀' : 'T ▶'}
         </button>
@@ -2906,29 +2912,30 @@ ${currentPhaseMeta.description}
       {/* ───────────────────────────────────────────────────────────────────
           BLENDER N-PANEL: RIGHT PROPERTIES SHELF (Toggle: N)
          ─────────────────────────────────────────────────────────────────── */}
-      {/* Collapsed Tab Strip Handle on far right if closed */}
-      {!nPanelOpen && (
-        <button
-          type="button"
-          onClick={() => {
-            playSound('toggle');
-            setNPanelOpen(true);
-          }}
-          title="Open Properties Sidebar [N]"
-          className="hidden md:flex absolute right-0 top-11 z-30 py-2 px-1 bg-[#202020]/90 hover:bg-[#282828] border-l border-y border-[#383838] text-zinc-400 hover:text-white text-[10px] font-mono rounded-l-[2px] shadow-lg cursor-pointer flex-col items-center gap-1.5"
-        >
-          <span className="text-rose-400">◀</span>
-          <span className="[writing-mode:vertical-lr] tracking-widest font-semibold">PROPERTIES</span>
-        </button>
-      )}
+      {/* Collapsed Tab Strip Handle on far right with smooth transition */}
+      <button
+        type="button"
+        onClick={() => {
+          playSound('toggle');
+          setNPanelOpen(true);
+        }}
+        title="Open Properties Sidebar [N]"
+        className={`hidden md:flex absolute right-0 top-11 z-30 py-2 px-1 bg-[#202020]/90 hover:bg-[#282828] border-l border-y border-[#383838] text-zinc-400 hover:text-white text-[10px] font-mono rounded-l-[2px] shadow-lg cursor-pointer flex-col items-center gap-1.5 transition-all duration-300 ease-in-out ${
+          nPanelOpen ? 'translate-x-full opacity-0 pointer-events-none' : 'translate-x-0 opacity-100 pointer-events-auto'
+        }`}
+      >
+        <span className="text-rose-400">◀</span>
+        <span className="[writing-mode:vertical-lr] tracking-widest font-semibold">PROPERTIES</span>
+      </button>
 
-      {/* Expanded N-Panel Sidebar */}
-      {nPanelOpen && (
-        <aside
-          role="region"
-          aria-label="Blender 3D Properties Shelf"
-          className="fixed top-9 right-0 bottom-14 w-80 max-w-[85vw] bg-[#222222] border-l border-[#383838] z-30 flex flex-col font-sans select-none text-zinc-300 shadow-2xl animate-in slide-in-from-right duration-200"
-        >
+      {/* Expanded N-Panel Sidebar with smooth swipe and de-swipe animation */}
+      <aside
+        role="region"
+        aria-label="Blender 3D Properties Shelf"
+        className={`fixed top-9 right-0 bottom-14 w-80 max-w-[85vw] bg-[#222222] border-l border-[#383838] z-30 flex flex-col font-sans select-none text-zinc-300 shadow-2xl transition-transform duration-300 ease-in-out ${
+          nPanelOpen ? 'translate-x-0 pointer-events-auto' : 'translate-x-full pointer-events-none'
+        }`}
+      >
           {/* N-Panel Tab Bar ([ Item ] [ Tool ] [ View ]) */}
           <div className="flex items-center justify-between bg-[#1c1c1c] border-b border-[#383838] px-1 h-7 shrink-0">
             <div className="flex items-center gap-0.5">
@@ -3729,7 +3736,6 @@ ${currentPhaseMeta.description}
             )}
           </div>
         </aside>
-      )}
 
       {/* ───────────────────────────────────────────────────────────────────
           BLENDER BOTTOM TIMELINE & STATUS BAR
@@ -3835,12 +3841,8 @@ ${currentPhaseMeta.description}
             })}
           </div>
 
-          {/* Right: Active Phase Thumbnail & Quick Settings */}
+          {/* Right: Quick Settings / Fullscreen */}
           <div className="flex items-center gap-1.5">
-            <div className="hidden lg:block w-7 h-5 overflow-hidden rounded-[1px] border border-[#383838]">
-              <MiniArtifactPreview phaseId={activePhaseId} active={true} className="w-full h-full" />
-            </div>
-
             <button
               type="button"
               onClick={handleToggleFullscreen}
@@ -3893,21 +3895,28 @@ ${currentPhaseMeta.description}
         </div>
       </footer>
 
-      {/* ── Dedicated Full-Screen Research Entry System (Section-to-Research) ── */}
-      {isInitialEntryLoading && (
+      {/* ── Dedicated Full-Screen Research Entry / Phase Switching Transition System ── */}
+      {(isInitialEntryLoading || isPhaseSwitching) && (
         <ResearchEntryLoader
-          isSceneReady={isSceneReady}
+          key={activePhaseId}
+          isSceneReady={isInitialEntryLoading ? isSceneReady : !isLoadingGeometry}
           phaseTitle={currentPhaseMeta.title}
           phaseNumeral={currentPhaseMeta.numeral}
-          minDurationMs={1200}
-          error={sceneInitError}
+          minDurationMs={isInitialEntryLoading ? 1200 : 750}
+          error={isInitialEntryLoading ? sceneInitError : null}
           onRetry={() => {
             setSceneInitError(null);
             setIsSceneReady(false);
             setInitAttempt((prev) => prev + 1);
           }}
           onAbort={() => onExit(currentPhaseMeta.chronicleId)}
-          onTransitionComplete={handleEntryTransitionComplete}
+          onTransitionComplete={() => {
+            if (isInitialEntryLoading) {
+              handleEntryTransitionComplete();
+            } else {
+              setIsPhaseSwitching(false);
+            }
+          }}
         />
       )}
     </div>
