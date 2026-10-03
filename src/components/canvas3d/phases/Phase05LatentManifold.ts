@@ -116,6 +116,8 @@ export function createPhase05LatentManifold(quality: QualityTier = 'high'): Phas
   const WIDTH = 12.8;
   const DEPTH = 12.8;
   const surfaceGeo = new THREE.PlaneGeometry(WIDTH, DEPTH, gridRes, gridRes);
+  // Rotate geometry once so X and Z are horizontal and Y is vertical in world space
+  surfaceGeo.rotateX(-Math.PI / 2);
   disposables.push(surfaceGeo);
 
   const posAttr = surfaceGeo.attributes.position;
@@ -129,9 +131,9 @@ export function createPhase05LatentManifold(quality: QualityTier = 'high'): Phas
 
   for (let i = 0; i < posAttr.count; i++) {
     const x = posAttr.getX(i);
-    const z = posAttr.getY(i);
+    const z = posAttr.getZ(i);
     const yHeight = evalManifoldHeight(x, z);
-    posAttr.setZ(i, yHeight);
+    posAttr.setY(i, yHeight);
 
     const normH = Math.min(Math.max((yHeight + 2.4) / 4.8, 0), 1);
     const density = evalDensity(x, z);
@@ -179,7 +181,6 @@ export function createPhase05LatentManifold(quality: QualityTier = 'high'): Phas
   disposables.push(surfaceMat);
 
   const surfaceMesh = new THREE.Mesh(surfaceGeo, surfaceMat);
-  surfaceMesh.rotation.x = -Math.PI / 2;
   group.add(surfaceMesh);
 
   // Wireframe
@@ -191,8 +192,7 @@ export function createPhase05LatentManifold(quality: QualityTier = 'high'): Phas
   });
   disposables.push(wireMat);
   const wireMesh = new THREE.Mesh(surfaceGeo, wireMat);
-  wireMesh.rotation.x = -Math.PI / 2;
-  wireMesh.position.y = 0.008;
+  wireMesh.position.y = 0.005;
   group.add(wireMesh);
 
   // Metric Coordinate Isolines
@@ -216,7 +216,7 @@ export function createPhase05LatentManifold(quality: QualityTier = 'high'): Phas
       const zVal = -DEPTH / 2 + (s / isoSteps) * DEPTH;
       const yVal = evalManifoldHeight(xVal, zVal);
       const norm = evalNormal(xVal, zVal);
-      pts.push(new THREE.Vector3(xVal, yVal, zVal).addScaledVector(norm, 0.015));
+      pts.push(new THREE.Vector3(xVal, yVal, zVal).addScaledVector(norm, 0.035));
     }
     const isoGeo = new THREE.BufferGeometry().setFromPoints(pts);
     disposables.push(isoGeo);
@@ -230,7 +230,7 @@ export function createPhase05LatentManifold(quality: QualityTier = 'high'): Phas
       const xVal = -WIDTH / 2 + (s / isoSteps) * WIDTH;
       const yVal = evalManifoldHeight(xVal, zVal);
       const norm = evalNormal(xVal, zVal);
-      pts.push(new THREE.Vector3(xVal, yVal, zVal).addScaledVector(norm, 0.015));
+      pts.push(new THREE.Vector3(xVal, yVal, zVal).addScaledVector(norm, 0.035));
     }
     const isoGeo = new THREE.BufferGeometry().setFromPoints(pts);
     disposables.push(isoGeo);
@@ -374,7 +374,7 @@ export function createPhase05LatentManifold(quality: QualityTier = 'high'): Phas
   const cBridge = clusterDefinitions[2];
   const cD = clusterDefinitions[3];
 
-  const buildSurfaceGeodesicCurve = (waypoints2D: THREE.Vector2[], stepsPerSegment: number = 32) => {
+  const buildSurfaceGeodesicCurve = (waypoints2D: THREE.Vector2[], stepsPerSegment: number = 36) => {
     const rawSpline = new THREE.SplineCurve(waypoints2D);
     const sampleCount = (waypoints2D.length - 1) * stepsPerSegment;
     const pts2D = rawSpline.getPoints(sampleCount);
@@ -383,7 +383,8 @@ export function createPhase05LatentManifold(quality: QualityTier = 'high'): Phas
     pts2D.forEach((p) => {
       const y = evalManifoldHeight(p.x, p.y);
       const norm = evalNormal(p.x, p.y);
-      pts3D.push(new THREE.Vector3(p.x, y, p.y).addScaledVector(norm, 0.045));
+      // Strictly lifted along local surface normal (0.085m) to guarantee NO surface clipping
+      pts3D.push(new THREE.Vector3(p.x, y, p.y).addScaledVector(norm, 0.085));
     });
 
     return new THREE.CatmullRomCurve3(pts3D);
@@ -397,19 +398,23 @@ export function createPhase05LatentManifold(quality: QualityTier = 'high'): Phas
     new THREE.Vector2(cB.x, cB.z),
     new THREE.Vector2((cB.x + cD.x) / 2 + 0.5, (cB.z + cD.z) / 2),
     new THREE.Vector2(cD.x, cD.z),
-  ], quality === 'low' ? 20 : 36);
+  ], quality === 'low' ? 24 : 40);
 
-  const highway1Pts = highway1Curve.getPoints(quality === 'low' ? 100 : 180);
-  const highway1Geo = new THREE.BufferGeometry().setFromPoints(highway1Pts);
-  disposables.push(highway1Geo);
+  // 3D Luminous Geodesic Conduit Tube (eliminates hairline clipping)
+  const tubeRadialSegs = quality === 'low' ? 6 : 8;
+  const tubeTubularSegs = quality === 'low' ? 80 : 140;
+  const highwayTubeGeo = new THREE.TubeGeometry(highway1Curve, tubeTubularSegs, 0.042, tubeRadialSegs, false);
+  disposables.push(highwayTubeGeo);
 
-  const highway1Mat = new THREE.LineBasicMaterial({
+  const highwayTubeMat = new THREE.MeshStandardMaterial({
     color: 0xffffff,
-    transparent: true,
-    opacity: 0.9,
+    emissive: 0xf43f5e,
+    emissiveIntensity: 0.85,
+    roughness: 0.15,
+    metalness: 0.3,
   });
-  disposables.push(highway1Mat);
-  const highway1Line = new THREE.Line(highway1Geo, highway1Mat);
+  disposables.push(highwayTubeMat);
+  const highway1Line = new THREE.Mesh(highwayTubeGeo, highwayTubeMat);
   group.add(highway1Line);
 
   // Register Geodesic Trajectory as inspectable
@@ -432,6 +437,42 @@ export function createPhase05LatentManifold(quality: QualityTier = 'high'): Phas
       worldPosition: new THREE.Vector3(0, 0.4, 0),
     },
   });
+
+  // Riemannian Tangent Space T_p M at Saddle Point Bridge
+  const tangentSpaceGroup = new THREE.Group();
+  const bridgeY = evalManifoldHeight(cBridge.x, cBridge.z);
+  const bridgeNorm = evalNormal(cBridge.x, cBridge.z);
+  tangentSpaceGroup.position.set(cBridge.x, bridgeY, cBridge.z).addScaledVector(bridgeNorm, 0.04);
+  tangentSpaceGroup.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), bridgeNorm);
+
+  const tangentDiscGeo = new THREE.CircleGeometry(1.2, 24);
+  const tangentDiscMat = new THREE.MeshBasicMaterial({
+    color: 0x38bdf8,
+    transparent: true,
+    opacity: 0.18,
+    side: THREE.DoubleSide,
+  });
+  disposables.push(tangentDiscGeo, tangentDiscMat);
+  const tangentDisc = new THREE.Mesh(tangentDiscGeo, tangentDiscMat);
+  tangentDisc.rotation.x = Math.PI / 2;
+  tangentSpaceGroup.add(tangentDisc);
+
+  // Tangent Coordinate Axes
+  const tAxisGeo = new THREE.BufferGeometry().setFromPoints([
+    new THREE.Vector3(-1.1, 0, 0),
+    new THREE.Vector3(1.1, 0, 0),
+  ]);
+  const tAxisMat = new THREE.LineBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.6 });
+  disposables.push(tAxisGeo, tAxisMat);
+  tangentSpaceGroup.add(new THREE.Line(tAxisGeo, tAxisMat));
+
+  const tAxis2Geo = new THREE.BufferGeometry().setFromPoints([
+    new THREE.Vector3(0, 0, -1.1),
+    new THREE.Vector3(0, 0, 1.1),
+  ]);
+  disposables.push(tAxis2Geo);
+  tangentSpaceGroup.add(new THREE.Line(tAxis2Geo, tAxisMat));
+  group.add(tangentSpaceGroup);
 
   // Traveling Geodesic Particles
   const particleGeo = new THREE.SphereGeometry(0.18, 14, 14);
@@ -466,7 +507,7 @@ export function createPhase05LatentManifold(quality: QualityTier = 'high'): Phas
         (m.material as THREE.MeshStandardMaterial).emissiveIntensity = 0.9;
         m.scale.set(1, 1, 1);
       });
-      highway1Mat.opacity = 0.9;
+      highwayTubeMat.emissiveIntensity = 0.85;
       return;
     }
 
@@ -482,7 +523,7 @@ export function createPhase05LatentManifold(quality: QualityTier = 'high'): Phas
         }
       });
     } else if (item.id === 'geodesic-highway') {
-      highway1Mat.opacity = 1.0;
+      highwayTubeMat.emissiveIntensity = 1.3;
     }
   };
 

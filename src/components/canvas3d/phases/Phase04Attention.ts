@@ -6,35 +6,107 @@ interface AttentionBeam {
   kIdx: number;
   weight: number;
   line: THREE.Line;
-  curve: THREE.LineCurve3;
+  curve: THREE.CatmullRomCurve3;
 }
 
 export function createPhase04Attention(quality: QualityTier = 'high'): PhaseArtifactInstance {
   const group = new THREE.Group();
-  group.name = 'phase-04-attention';
+  group.name = 'phase-04-flash-attention';
 
   const disposables: { dispose: () => void }[] = [];
 
   const NUM_TOKENS = 6;
-  const SPACING = 2.1;
+  const SPACING = 2.2;
   const X_OFFSET = -((NUM_TOKENS - 1) * SPACING) / 2;
 
-  // 1. Query Tokens Layer (Top Plane, Y = 2.4)
+  const inspectables: { mesh: THREE.Object3D; data: InspectableItem }[] = [];
+
+  // =========================================================================
+  // 1. TOP TIER: HIGH BANDWIDTH MEMORY (HBM3e) GLOBAL STORAGE SLAB
+  // =========================================================================
+  const hbmGroup = new THREE.Group();
+  group.add(hbmGroup);
+
+  const slabWidth = NUM_TOKENS * SPACING + 2.4;
+  const slabGeo = new THREE.BoxGeometry(slabWidth, 0.22, 3.2);
+  disposables.push(slabGeo);
+
+  const siliconMat = new THREE.MeshStandardMaterial({
+    color: 0x090d16,
+    roughness: 0.25,
+    metalness: 0.85,
+    emissive: 0x050811,
+  });
+  disposables.push(siliconMat);
+
+  const topSlab = new THREE.Mesh(slabGeo, siliconMat);
+  topSlab.position.set(0, 3.2, 0);
+  hbmGroup.add(topSlab);
+
+  // Silicon wafer edge chamfer / gold trace bus
+  const waferBusMat = new THREE.LineBasicMaterial({
+    color: 0x38bdf8,
+    transparent: true,
+    opacity: 0.65,
+  });
+  disposables.push(waferBusMat);
+
+  const topBusPoints = [
+    new THREE.Vector3(-slabWidth / 2, 3.32, -1.5),
+    new THREE.Vector3(slabWidth / 2, 3.32, -1.5),
+    new THREE.Vector3(slabWidth / 2, 3.32, 1.5),
+    new THREE.Vector3(-slabWidth / 2, 3.32, 1.5),
+    new THREE.Vector3(-slabWidth / 2, 3.32, -1.5),
+  ];
+  const topBusGeo = new THREE.BufferGeometry().setFromPoints(topBusPoints);
+  disposables.push(topBusGeo);
+  const topBusLine = new THREE.Line(topBusGeo, waferBusMat);
+  hbmGroup.add(topBusLine);
+
+  // Micro-circuit traces across the HBM bus
+  const traceGeo = new THREE.BufferGeometry();
+  const tracePoints: THREE.Vector3[] = [];
+  for (let i = 0; i < NUM_TOKENS; i++) {
+    const x = X_OFFSET + i * SPACING;
+    tracePoints.push(new THREE.Vector3(x, 3.32, -1.3), new THREE.Vector3(x, 3.32, 1.3));
+    tracePoints.push(new THREE.Vector3(x - 0.4, 3.32, 0), new THREE.Vector3(x + 0.4, 3.32, 0));
+  }
+  traceGeo.setFromPoints(tracePoints);
+  disposables.push(traceGeo);
+  const traceMat = new THREE.LineBasicMaterial({ color: 0x0284c7, transparent: true, opacity: 0.4 });
+  disposables.push(traceMat);
+  const traceLines = new THREE.LineSegments(traceGeo, traceMat);
+  hbmGroup.add(traceLines);
+
+  inspectables.push({
+    mesh: topSlab,
+    data: {
+      id: 'hbm-global-memory',
+      name: 'HBM3e Global Memory Bus',
+      symbol: 'HBM3e 96GB',
+      type: 'MEMORY HIERARCHY',
+      role: 'Sequence Parameter & Activation Storage',
+      dimension: 'Bandwidth: 3.35 TB/s | Capacity: 96 GB',
+      properties: {
+        'Memory Architecture': 'High Bandwidth Memory 3e (Stacked Silicon)',
+        'Standard Attention IO': 'O(N²) High-latency Global Memory Round-trips',
+        'FlashAttention Optimization': 'Fused kernel eliminates intermediate N×N materialization',
+        'Memory Footprint': 'Linear O(N) IO Traffic to Global SRAM',
+      },
+      description: 'Global GPU Device Memory holding full contextual tokens and model parameters. Standard self-attention incurs quadratic bottleneck here; FlashAttention streams blocks directly into fast On-Chip SRAM.',
+      worldPosition: topSlab.position.clone(),
+    },
+  });
+
+  // =========================================================================
+  // 2. QUERY TOKENS LAYER: Q_i = X_i W_Q (Floating at Y = 2.4)
+  // =========================================================================
   const qPositions: THREE.Vector3[] = [];
   const qMeshes: THREE.Mesh[] = [];
-  const tokenBoxGeo = new THREE.BoxGeometry(0.8, 0.35, 0.8);
+  const tokenBoxGeo = new THREE.BoxGeometry(0.88, 0.42, 0.88);
   disposables.push(tokenBoxGeo);
 
-  const qMat = new THREE.MeshStandardMaterial({
-    color: 0xe11d48,
-    roughness: 0.3,
-    metalness: 0.5,
-    emissive: 0xbe123c,
-    emissiveIntensity: 0.6,
-  });
-  disposables.push(qMat);
-
-  const tokenTokensLabels = [
+  const tokenLabels = [
     'Q₀: [BOS]',
     'Q₁: "Attention"',
     'Q₂: "Is"',
@@ -43,130 +115,264 @@ export function createPhase04Attention(quality: QualityTier = 'high'): PhaseArti
     'Q₅: "Need"',
   ];
 
-  const inspectables: { mesh: THREE.Object3D; data: InspectableItem }[] = [];
-
   for (let i = 0; i < NUM_TOKENS; i++) {
     const x = X_OFFSET + i * SPACING;
-    const pos = new THREE.Vector3(x, 2.4, 0);
+    const pos = new THREE.Vector3(x, 2.35, 0);
     qPositions.push(pos);
 
-    const box = new THREE.Mesh(tokenBoxGeo, qMat.clone());
-    disposables.push(box.material as THREE.Material);
-    box.position.copy(pos);
-    group.add(box);
-    qMeshes.push(box);
+    const qMat = new THREE.MeshStandardMaterial({
+      color: 0xbe123c,
+      roughness: 0.2,
+      metalness: 0.7,
+      emissive: 0x9f1239,
+      emissiveIntensity: 0.65,
+    });
+    disposables.push(qMat);
 
-    // Frame outline
-    const wireGeo = new THREE.WireframeGeometry(tokenBoxGeo);
-    const wireMat = new THREE.LineBasicMaterial({ color: 0xff4d6d });
-    disposables.push(wireGeo, wireMat);
-    const wire = new THREE.LineSegments(wireGeo, wireMat);
-    wire.position.copy(pos);
-    group.add(wire);
+    const qMesh = new THREE.Mesh(tokenBoxGeo, qMat);
+    qMesh.position.copy(pos);
+    group.add(qMesh);
+    qMeshes.push(qMesh);
 
-    // Register inspectable Query token
+    // Luminous halo collar
+    const collarGeo = new THREE.TorusGeometry(0.55, 0.022, 8, 32);
+    const collarMat = new THREE.MeshBasicMaterial({ color: 0xf43f5e, transparent: true, opacity: 0.8 });
+    disposables.push(collarGeo, collarMat);
+    const collar = new THREE.Mesh(collarGeo, collarMat);
+    collar.rotation.x = Math.PI / 2;
+    collar.position.copy(pos);
+    group.add(collar);
+
     inspectables.push({
-      mesh: box,
+      mesh: qMesh,
       data: {
         id: `query-token-${i}`,
-        name: `Query Token ${tokenTokensLabels[i]}`,
+        name: `Query Token ${tokenLabels[i]}`,
         symbol: `Q_{${i}}`,
         type: 'QUERY PROJECTION',
-        role: 'Attention Search Vector',
-        dimension: 'Bilinear Dimension d_k = 64',
+        role: 'Attention Search Probe',
+        dimension: 'Bilinear Query Subspace d_k = 64',
         properties: {
           'Token Index': `i = ${i}`,
-          'Projection': 'Q_i = X_i W_Q',
-          'Softmax Normalizer': 'Σ_j exp(Q_i K_j^T / √d_k)',
+          'Subspace Mapping': 'Q_i = X_i W_Q',
+          'Softmax Normalizer': 'Σ_j exp((Q_i · K_j) / √d_k)',
           'Top Key Target': i === 1 ? 'K₁ (Self-Salience) & K₃' : `K_{${i}} (Diagonal Focus)`,
-          'Memory Location': 'On-Chip SRAM Cache Line',
+          'SRAM Block': `Block Row B_r = 64`,
         },
-        description: `Query projection vector Q_${i} driving multi-head attention routing. Clicking this token isolates its exact attention distribution over all Key vectors.`,
+        description: `Query representation Q_${i} driving multi-head attention routing. Interacting isolates its exact attention affinity distribution over the Key context matrix.`,
         worldPosition: pos.clone(),
       },
     });
   }
 
-  // 2. Key / Value Tokens Layer (Bottom Plane, Y = -2.4)
+  // =========================================================================
+  // 3. MIDDLE TIER: ON-CHIP SRAM TENSOR CORE DIE & ONLINE SOFTMAX TILING
+  // =========================================================================
+  const sramGroup = new THREE.Group();
+  group.add(sramGroup);
+
+  // Fast SRAM Cache boundary (frosted glowing plane)
+  const sramPlatformGeo = new THREE.BoxGeometry(slabWidth - 0.6, 0.1, 2.4);
+  disposables.push(sramPlatformGeo);
+  const sramPlatformMat = new THREE.MeshStandardMaterial({
+    color: 0x0f172a,
+    roughness: 0.15,
+    metalness: 0.9,
+    transparent: true,
+    opacity: 0.65,
+  });
+  disposables.push(sramPlatformMat);
+  const sramFloor = new THREE.Mesh(sramPlatformGeo, sramPlatformMat);
+  sramFloor.position.set(0, 0, 0);
+  sramGroup.add(sramFloor);
+
+  // Bounding laser frame representing 192KB On-Chip SRAM boundary
+  const sramWireGeo = new THREE.WireframeGeometry(sramPlatformGeo);
+  const sramWireMat = new THREE.LineBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.45 });
+  disposables.push(sramWireGeo, sramWireMat);
+  const sramWire = new THREE.LineSegments(sramWireGeo, sramWireMat);
+  sramWire.position.set(0, 0, 0);
+  sramGroup.add(sramWire);
+
+  // Online Softmax Running Statistics Register ($m_i$, $l_i$)
+  const regGeo = new THREE.CylinderGeometry(0.35, 0.35, 0.12, 16);
+  disposables.push(regGeo);
+  const regMat = new THREE.MeshStandardMaterial({
+    color: 0x10b981,
+    roughness: 0.2,
+    metalness: 0.8,
+    emissive: 0x059669,
+    emissiveIntensity: 0.6,
+  });
+  disposables.push(regMat);
+
+  const onlineSoftmaxReg = new THREE.Mesh(regGeo, regMat);
+  onlineSoftmaxReg.position.set(0, 0.12, 0);
+  sramGroup.add(onlineSoftmaxReg);
+
+  // Orbiting indicator ring around Online Softmax
+  const statRingGeo = new THREE.TorusGeometry(0.55, 0.02, 12, 32);
+  const statRingMat = new THREE.MeshBasicMaterial({ color: 0x34d399, transparent: true, opacity: 0.85 });
+  disposables.push(statRingGeo, statRingMat);
+  const statRing = new THREE.Mesh(statRingGeo, statRingMat);
+  statRing.rotation.x = Math.PI / 2;
+  statRing.position.set(0, 0.12, 0);
+  sramGroup.add(statRing);
+
+  // Micro Tile Matrix Cells ($B_r \times B_c$ GEMM tiles)
+  const TILE_ROWS = 4;
+  const TILE_COLS = 6;
+  const tileGeo = new THREE.PlaneGeometry(0.38, 0.28);
+  disposables.push(tileGeo);
+  const tileMeshes: THREE.Mesh[] = [];
+
+  for (let r = 0; r < TILE_ROWS; r++) {
+    for (let c = 0; c < TILE_COLS; c++) {
+      const u = (c - (TILE_COLS - 1) / 2) * 0.58;
+      const v = (r - (TILE_ROWS - 1) / 2) * 0.44;
+      const tileMat = new THREE.MeshBasicMaterial({
+        color: (r + c) % 2 === 0 ? 0x0284c7 : 0xe11d48,
+        transparent: true,
+        opacity: 0.35,
+        side: THREE.DoubleSide,
+      });
+      disposables.push(tileMat);
+      const tile = new THREE.Mesh(tileGeo, tileMat);
+      tile.rotation.x = -Math.PI / 2;
+      tile.position.set(u, 0.06, v);
+      sramGroup.add(tile);
+      tileMeshes.push(tile);
+    }
+  }
+
+  inspectables.push({
+    mesh: onlineSoftmaxReg,
+    data: {
+      id: 'sram-online-softmax',
+      name: 'On-Chip SRAM Online Softmax Register',
+      symbol: 'm_i, l_i (192 KB SRAM)',
+      type: 'KERNEL REGISTRY',
+      role: 'Incremental Softmax Rescaling Engine',
+      dimension: 'SRAM Cache: 192 KB | Rescaling IO: O(1)',
+      properties: {
+        'Running Max m_i': 'm_i = max(m_i^(old), max_j(S_{ij}))',
+        'Running Sum l_i': 'l_i = exp(m_i^(old) - m_i) l_i^(old) + Σ exp(S_{ij} - m_i)',
+        'Output Update': 'O_i = diag(l_i)^(-1) [diag(l_i^(old)) O_i^(old) + P_{ij} V_j]',
+        'Bandwidth Gain': '4.2× Wall-clock Speedup over Standard Attention',
+      },
+      description: 'Core FlashAttention innovation: Online Softmax algorithm computes normalizers incrementally in SRAM without ever saving the massive N×N attention matrix to global GPU memory.',
+      worldPosition: onlineSoftmaxReg.position.clone(),
+    },
+  });
+
+  // =========================================================================
+  // 4. BOTTOM TIER: KEY / VALUE PROJECTIONS & CACHE (Y = -2.4)
+  // =========================================================================
+  const kvGroup = new THREE.Group();
+  group.add(kvGroup);
+
+  const botSlab = new THREE.Mesh(slabGeo, siliconMat);
+  botSlab.position.set(0, -3.2, 0);
+  kvGroup.add(botSlab);
+
+  const botBusPoints = [
+    new THREE.Vector3(-slabWidth / 2, -3.08, -1.5),
+    new THREE.Vector3(slabWidth / 2, -3.08, -1.5),
+    new THREE.Vector3(slabWidth / 2, -3.08, 1.5),
+    new THREE.Vector3(-slabWidth / 2, -3.08, 1.5),
+    new THREE.Vector3(-slabWidth / 2, -3.08, -1.5),
+  ];
+  const botBusGeo = new THREE.BufferGeometry().setFromPoints(botBusPoints);
+  disposables.push(botBusGeo);
+  const botBusLine = new THREE.Line(botBusGeo, waferBusMat);
+  kvGroup.add(botBusLine);
+
   const kPositions: THREE.Vector3[] = [];
   const kMeshes: THREE.Mesh[] = [];
-  const kMat = new THREE.MeshStandardMaterial({
-    color: 0x3b82f6,
-    roughness: 0.3,
-    metalness: 0.5,
-    emissive: 0x1d4ed8,
-    emissiveIntensity: 0.5,
-  });
-  disposables.push(kMat);
 
   for (let j = 0; j < NUM_TOKENS; j++) {
     const x = X_OFFSET + j * SPACING;
-    const pos = new THREE.Vector3(x, -2.4, 0);
+    const pos = new THREE.Vector3(x, -2.35, 0);
     kPositions.push(pos);
 
-    const box = new THREE.Mesh(tokenBoxGeo, kMat.clone());
-    disposables.push(box.material as THREE.Material);
-    box.position.copy(pos);
-    group.add(box);
-    kMeshes.push(box);
+    // Split dual-core block: Key (Left/Blue) and Value (Right/Emerald)
+    const kMat = new THREE.MeshStandardMaterial({
+      color: 0x2563eb,
+      roughness: 0.2,
+      metalness: 0.7,
+      emissive: 0x1d4ed8,
+      emissiveIntensity: 0.55,
+    });
+    disposables.push(kMat);
 
-    const wireGeo = new THREE.WireframeGeometry(tokenBoxGeo);
-    const wireMat = new THREE.LineBasicMaterial({ color: 0x60a5fa });
-    disposables.push(wireGeo, wireMat);
-    const wire = new THREE.LineSegments(wireGeo, wireMat);
-    wire.position.copy(pos);
-    group.add(wire);
+    const kMesh = new THREE.Mesh(tokenBoxGeo, kMat);
+    kMesh.position.copy(pos);
+    group.add(kMesh);
+    kMeshes.push(kMesh);
 
-    // Register inspectable Key token
+    // KV Cache status indicator halo
+    const kCollarGeo = new THREE.TorusGeometry(0.55, 0.022, 8, 32);
+    const kCollarMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.75 });
+    disposables.push(kCollarGeo, kCollarMat);
+    const kCollar = new THREE.Mesh(kCollarGeo, kCollarMat);
+    kCollar.rotation.x = Math.PI / 2;
+    kCollar.position.copy(pos);
+    group.add(kCollar);
+
     inspectables.push({
-      mesh: box,
+      mesh: kMesh,
       data: {
         id: `key-token-${j}`,
-        name: `Key Token K_{${j}}`,
-        symbol: `K_{${j}}`,
+        name: `Key / Value Token K_{${j}}`,
+        symbol: `[K_{${j}} | V_{${j}}]`,
         type: 'KEY / VALUE PROJECTION',
         role: 'Context Index & Value Carrier',
         dimension: 'KV-Cache Slot d_v = 64',
         properties: {
           'Slot Index': `j = ${j}`,
-          'Projection': 'K_j = X_j W_K',
-          'KV Cache Status': 'Cached (Zero Recomputation)',
-          'Memory Residence': 'Tiled Fast SRAM Block',
+          'Key Projection': 'K_j = X_j W_K',
+          'Value Projection': 'V_j = X_j W_V',
+          'KV Cache Status': 'Cached in Fast SRAM Tile (Zero Recompute)',
+          'Tiled Block': `Block Column B_c = 128`,
         },
-        description: `Key representation K_${j} storing context embedding in the persistent KV-cache for autoregressive sequence decoding without global HBM round-trips.`,
+        description: `Key representation K_${j} and Value embedding V_${j} loaded as a block tile into fast SRAM, preventing repetitive DRAM memory latency during generation.`,
         worldPosition: pos.clone(),
       },
     });
   }
 
-  // 3. Attention Beams Matrix
+  // =========================================================================
+  // 5. ATTENTION AFFINITY BEAMS & ENERGY TRANSFER FLUX
+  // =========================================================================
   const beams: AttentionBeam[] = [];
   const beamGroup = new THREE.Group();
   group.add(beamGroup);
 
-  const beamLineGeo = new THREE.BufferGeometry();
-  disposables.push(beamLineGeo);
-
   for (let q = 0; q < NUM_TOKENS; q++) {
     for (let k = 0; k < NUM_TOKENS; k++) {
       const dist = Math.abs(q - k);
-      let weight = Math.exp(-dist * 0.9);
-      if (k === 1 && q > 2) weight += 0.42;
+      let weight = Math.exp(-dist * 0.95);
+      if (k === 1 && q > 2) weight += 0.46; // Long-range salience attention head
       weight = Math.min(weight, 1.0);
 
       const qPos = qPositions[q];
       const kPos = kPositions[k];
 
-      const curve = new THREE.LineCurve3(qPos, kPos);
-      const points = curve.getPoints(quality === 'low' ? 6 : 12);
+      // Route smoothly through the SRAM intermediate plane
+      const midX = (qPos.x + kPos.x) * 0.5;
+      const midZ = Math.sin((q - k) * 0.4) * 0.45;
+      const midPoint = new THREE.Vector3(midX, 0, midZ);
+
+      const curve = new THREE.CatmullRomCurve3([qPos, midPoint, kPos]);
+      const points = curve.getPoints(quality === 'low' ? 8 : 16);
       const lineGeo = new THREE.BufferGeometry().setFromPoints(points);
       disposables.push(lineGeo);
 
-      const isHighAttention = weight > 0.4;
+      const isHigh = weight > 0.42;
       const lineMat = new THREE.LineBasicMaterial({
-        color: isHighAttention ? 0xf43f5e : 0x334155,
+        color: isHigh ? 0xf43f5e : 0x1e293b,
         transparent: true,
-        opacity: Math.max(weight * 0.75, 0.08),
+        opacity: isHigh ? Math.max(weight * 0.85, 0.25) : 0.06,
       });
       disposables.push(lineMat);
 
@@ -177,13 +383,17 @@ export function createPhase04Attention(quality: QualityTier = 'high'): PhaseArti
     }
   }
 
-  // 4. Dynamic routing pulse particles along active beams
-  const activeBeams = beams.filter((b) => b.weight > 0.45);
-  const pulseGeo = new THREE.SphereGeometry(0.1, 8, 8);
-  const pulseMat = new THREE.MeshBasicMaterial({ color: 0xff3b5c });
-  disposables.push(pulseGeo, pulseMat);
+  // =========================================================================
+  // 6. FLASHATTENTION DATAFLOW PACKETS (IO BEAMS)
+  // =========================================================================
+  const activeBeams = beams.filter((b) => b.weight > 0.42);
+  const pulseGeo = new THREE.SphereGeometry(0.085, 8, 8);
+  disposables.push(pulseGeo);
 
-  const pulseCount = quality === 'low' ? Math.min(activeBeams.length, 6) : activeBeams.length;
+  const pulseMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8 });
+  disposables.push(pulseMat);
+
+  const pulseCount = quality === 'low' ? Math.min(activeBeams.length, 6) : activeBeams.length * 2;
   const pulses: { beam: AttentionBeam; t: number; speed: number; mesh: THREE.Mesh }[] = [];
 
   for (let i = 0; i < pulseCount; i++) {
@@ -193,61 +403,27 @@ export function createPhase04Attention(quality: QualityTier = 'high'): PhaseArti
     pulses.push({
       beam,
       t: (i / pulseCount) % 1.0,
-      speed: 0.38 + (i % 3) * 0.08,
+      speed: 0.35 + (i % 3) * 0.08,
       mesh: pMesh,
     });
   }
 
-  // 5. Tiled SRAM Cache Boundary
-  const frameGeo = new THREE.BoxGeometry(NUM_TOKENS * SPACING + 1.2, 0.08, 2.0);
-  const frameMat = new THREE.MeshBasicMaterial({
-    color: 0x475569,
-    transparent: true,
-    opacity: 0.25,
-    wireframe: true,
-  });
-  disposables.push(frameGeo, frameMat);
-
-  const topSram = new THREE.Mesh(frameGeo, frameMat);
-  topSram.position.set(0, 3.0, 0);
-  group.add(topSram);
-
-  const botSram = new THREE.Mesh(frameGeo, frameMat);
-  botSram.position.set(0, -3.0, 0);
-  group.add(botSram);
-
-  // Register SRAM cache as inspectable
-  inspectables.push({
-    mesh: topSram,
-    data: {
-      id: 'sram-tiling',
-      name: 'On-Chip SRAM Tiling Barrier',
-      symbol: 'SRAM 192KB',
-      type: 'MEMORY HIERARCHY',
-      role: 'FlashAttention Tiling Domain',
-      dimension: 'On-Chip Fast SRAM Cache',
-      properties: {
-        'Memory Bandwidth': '1.24 TB/s (Local SRAM)',
-        'Global HBM Traffic': '4.2× IO Reduction via Online Softmax',
-        'Materialized Matrix': 'O(1) Memory Overhead (Avoids N×N Matrix)',
-        'Hardware Utilization': '92.4% Tensor Core Compute Efficiency',
-      },
-      description: 'Hardware memory boundary representing fused kernel execution on GPU on-chip SRAM. Computes online softmax incrementally in the outer tiled loop to prevent quadratic N x N activation storage in global memory.',
-      worldPosition: topSram.position.clone(),
-    },
-  });
-
-  // Interaction: Highlight beams originating from selected token
+  // =========================================================================
+  // INTERACTION & SELECTION
+  // =========================================================================
   const onSelectObject = (item: InspectableItem | null) => {
     if (!item) {
-      // Restore all beams
       beams.forEach((b) => {
         const mat = b.line.material as THREE.LineBasicMaterial;
-        mat.color.setHex(b.weight > 0.4 ? 0xf43f5e : 0x334155);
-        mat.opacity = Math.max(b.weight * 0.75, 0.08);
+        mat.color.setHex(b.weight > 0.42 ? 0xf43f5e : 0x1e293b);
+        mat.opacity = b.weight > 0.42 ? Math.max(b.weight * 0.85, 0.25) : 0.06;
       });
       qMeshes.forEach((m) => {
-        (m.material as THREE.MeshStandardMaterial).emissiveIntensity = 0.6;
+        (m.material as THREE.MeshStandardMaterial).emissiveIntensity = 0.65;
+        m.scale.set(1, 1, 1);
+      });
+      kMeshes.forEach((m) => {
+        (m.material as THREE.MeshStandardMaterial).emissiveIntensity = 0.55;
         m.scale.set(1, 1, 1);
       });
       return;
@@ -256,45 +432,76 @@ export function createPhase04Attention(quality: QualityTier = 'high'): PhaseArti
     if (item.id.startsWith('query-token-')) {
       const qSelected = parseInt(item.id.replace('query-token-', ''), 10);
 
-      // Highlight selected query token
       qMeshes.forEach((m, idx) => {
         const mat = m.material as THREE.MeshStandardMaterial;
         if (idx === qSelected) {
-          mat.emissiveIntensity = 1.2;
+          mat.emissiveIntensity = 1.4;
           m.scale.set(1.2, 1.2, 1.2);
         } else {
-          mat.emissiveIntensity = 0.2;
+          mat.emissiveIntensity = 0.15;
           m.scale.set(0.9, 0.9, 0.9);
         }
       });
 
-      // Isolate beams
       beams.forEach((b) => {
         const mat = b.line.material as THREE.LineBasicMaterial;
         if (b.qIdx === qSelected) {
           mat.color.setHex(0xf43f5e);
-          mat.opacity = Math.max(b.weight * 1.0, 0.25);
+          mat.opacity = Math.max(b.weight * 1.0, 0.35);
         } else {
-          mat.color.setHex(0x1e293b);
-          mat.opacity = 0.03;
+          mat.color.setHex(0x0f172a);
+          mat.opacity = 0.02;
+        }
+      });
+    } else if (item.id.startsWith('key-token-')) {
+      const kSelected = parseInt(item.id.replace('key-token-', ''), 10);
+
+      kMeshes.forEach((m, idx) => {
+        const mat = m.material as THREE.MeshStandardMaterial;
+        if (idx === kSelected) {
+          mat.emissiveIntensity = 1.4;
+          m.scale.set(1.2, 1.2, 1.2);
+        } else {
+          mat.emissiveIntensity = 0.15;
+          m.scale.set(0.9, 0.9, 0.9);
+        }
+      });
+
+      beams.forEach((b) => {
+        const mat = b.line.material as THREE.LineBasicMaterial;
+        if (b.kIdx === kSelected) {
+          mat.color.setHex(0x38bdf8);
+          mat.opacity = Math.max(b.weight * 1.0, 0.35);
+        } else {
+          mat.color.setHex(0x0f172a);
+          mat.opacity = 0.02;
         }
       });
     }
   };
 
-  // Pre-allocated scratch vector for zero GC in update loop
-  const scratchPulse = new THREE.Vector3();
+  // Pre-allocated scratch vector
+  const scratchPos = new THREE.Vector3();
 
-  // Animation & Update loop
+  // Animation loop
   const update = (time: number, delta: number) => {
-    group.rotation.y = Math.sin(time * 0.24) * 0.14;
+    group.rotation.y = Math.sin(time * 0.22) * 0.12;
 
-    // Pulse particles flowing between Query and Key tokens
+    // Subtle rotation of Online Softmax register ring
+    statRing.rotation.z = time * 0.8;
+
+    // Animate tile matrix activity
+    tileMeshes.forEach((tm, idx) => {
+      const mat = tm.material as THREE.MeshBasicMaterial;
+      mat.opacity = 0.2 + Math.sin(time * 2.5 + idx * 0.3) * 0.15;
+    });
+
+    // Flow particles along attention routes
     pulses.forEach((p) => {
       p.t = (p.t + delta * p.speed) % 1.0;
-      p.beam.curve.getPoint(p.t, scratchPulse);
-      p.mesh.position.copy(scratchPulse);
-      const s = 0.8 + Math.sin(p.t * Math.PI) * 0.5;
+      p.beam.curve.getPoint(p.t, scratchPos);
+      p.mesh.position.copy(scratchPos);
+      const s = 0.7 + Math.sin(p.t * Math.PI) * 0.55;
       p.mesh.scale.set(s, s, s);
     });
   };
@@ -303,16 +510,33 @@ export function createPhase04Attention(quality: QualityTier = 'high'): PhaseArti
     if (layer === 'geometry' || layer === 'clusters') {
       qMeshes.forEach((m) => { m.visible = visible; });
       kMeshes.forEach((m) => { m.visible = visible; });
+      hbmGroup.visible = visible;
+      kvGroup.visible = visible;
     } else if (layer === 'trajectories') {
-      beams.forEach((b) => { b.line.visible = visible; });
+      beamGroup.visible = visible;
       pulses.forEach((p) => { p.mesh.visible = visible; });
     }
   };
 
   const getAnnotations = (): SpatialAnnotation[] => [
-    { id: 'query-1', label: 'Query Token q₁', sublabel: 'Context Embedding', position: qMeshes[0]?.position.clone().add(new THREE.Vector3(0, 0.45, 0)) || new THREE.Vector3(-4.5, 2.5, 0) },
-    { id: 'key-1', label: 'Key Token k₁', sublabel: 'Target Value Projection', position: kMeshes[0]?.position.clone().add(new THREE.Vector3(0, -0.45, 0)) || new THREE.Vector3(-4.5, -2.5, 0) },
-    { id: 'head-peak', label: 'Softmax Energy Beam', sublabel: 'Affinity weight = 0.88', position: new THREE.Vector3(0, 0, 0) },
+    {
+      id: 'query-1',
+      label: 'Query Vector Q₁',
+      sublabel: 'Attention Search Probe',
+      position: qMeshes[1]?.position.clone().add(new THREE.Vector3(0, 0.5, 0)) || new THREE.Vector3(-2.2, 2.8, 0),
+    },
+    {
+      id: 'online-softmax',
+      label: 'Online Softmax Tiling',
+      sublabel: 'SRAM 192KB (O(1) Memory)',
+      position: new THREE.Vector3(0, 0.45, 0),
+    },
+    {
+      id: 'key-1',
+      label: 'Key / Value Slot K₁',
+      sublabel: 'KV-Cache (Zero Recompute)',
+      position: kMeshes[1]?.position.clone().add(new THREE.Vector3(0, -0.5, 0)) || new THREE.Vector3(-2.2, -2.8, 0),
+    },
   ];
 
   const dispose = () => {

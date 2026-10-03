@@ -1319,6 +1319,8 @@ ${currentPhaseMeta.description}
     controls.zoomSpeed = 1.0;
     controls.enablePan = true;
     controls.panSpeed = 0.9;
+    controls.minPolarAngle = 0.05;
+    controls.maxPolarAngle = Math.PI - 0.05;
     controls.enabled = true;
     controlsRef.current = controls;
 

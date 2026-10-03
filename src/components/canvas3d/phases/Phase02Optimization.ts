@@ -7,40 +7,54 @@ export function createPhase02Optimization(quality: QualityTier = 'high'): PhaseA
 
   const disposables: { dispose: () => void }[] = [];
 
-  // 1. Loss function definition: strictly convex paraboloid with anisotropic curvature
-  // f(x, z) = 0.14 * (x^2 + 1.8 * z^2)
+  // =========================================================================
+  // 1. Strictly Convex Anisotropic Loss Landscape
+  // f(x, z) = 0.08 * (x^2 + 1.6 * z^2)
+  // Well-conditioned in X, steeper in Z (Condition Number κ = 1.60)
+  // =========================================================================
   const computeLoss = (x: number, z: number): number => {
-    return 0.14 * (x * x + 1.8 * z * z);
+    return 0.08 * (x * x + 1.6 * z * z);
   };
 
-  // 2. Build 3D parametric surface with adaptive resolution based on quality tier
-  const gridSize = quality === 'low' ? 24 : quality === 'medium' ? 36 : 48;
-  const EXTENT = 7.5;
+  const computeGradient = (x: number, z: number): { gx: number; gz: number } => {
+    return {
+      gx: 0.16 * x,
+      gz: 0.256 * z,
+    };
+  };
+
+  // 2. Continuous Paraboloid Surface Geometry (Pre-rotated so world space Y is UP)
+  const gridSize = quality === 'low' ? 28 : quality === 'medium' ? 40 : 54;
+  const EXTENT = 6.2;
   const planeGeo = new THREE.PlaneGeometry(EXTENT * 2, EXTENT * 2, gridSize, gridSize);
+  planeGeo.rotateX(-Math.PI / 2);
   disposables.push(planeGeo);
 
-  // Deform vertices to match loss function
   const posAttr = planeGeo.attributes.position;
   const colors = new Float32Array(posAttr.count * 3);
 
-  const baseColor = new THREE.Color(0x0a0e17);  // Deep slate obsidian
-  const midColor = new THREE.Color(0x881337);   // Metric wine crimson
-  const peakColor = new THREE.Color(0xfb7185);  // High energy rose
+  const baseColor = new THREE.Color(0x060911);   // Deep obsidian minimum basin
+  const midColor = new THREE.Color(0x881337);    // Crimson curvature midtone
+  const peakColor = new THREE.Color(0xf43f5e);   // High-loss rose ridge
 
   for (let i = 0; i < posAttr.count; i++) {
     const x = posAttr.getX(i);
-    const y = posAttr.getY(i); // In PlaneGeometry, Y maps to Z when rotated flat
-    const zLoss = computeLoss(x, y);
-    posAttr.setZ(i, zLoss);
+    const z = posAttr.getZ(i);
+    const yLoss = computeLoss(x, z);
+    posAttr.setY(i, yLoss);
 
-    // Normalized loss height (0 to 1)
-    const normH = Math.min(Math.max(zLoss / 7.2, 0), 1);
+    // Radial distance for soft boundary edge roll-off
+    const rDist = Math.sqrt(x * x + z * z) / (EXTENT * 1.25);
+    const edgeFade = 1.0 - Math.pow(Math.min(rDist, 1.0), 3.0);
+
+    const normH = Math.min(Math.max(yLoss / 4.6, 0), 1);
     const vertexColor = new THREE.Color();
     if (normH < 0.45) {
       vertexColor.lerpColors(baseColor, midColor, normH / 0.45);
     } else {
       vertexColor.lerpColors(midColor, peakColor, (normH - 0.45) / 0.55);
     }
+    vertexColor.multiplyScalar(0.45 + 0.55 * edgeFade);
 
     colors[i * 3] = vertexColor.r;
     colors[i * 3 + 1] = vertexColor.g;
@@ -50,11 +64,10 @@ export function createPhase02Optimization(quality: QualityTier = 'high'): PhaseA
   planeGeo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
   planeGeo.computeVertexNormals();
 
-  // Surface material (calibrated satin finish matching Phase 05)
   const surfaceMat = new THREE.MeshStandardMaterial({
     vertexColors: true,
-    roughness: 0.60,
-    metalness: 0.16,
+    roughness: 0.55,
+    metalness: 0.18,
     side: THREE.DoubleSide,
     transparent: true,
     opacity: 0.94,
@@ -64,230 +77,316 @@ export function createPhase02Optimization(quality: QualityTier = 'high'): PhaseA
   disposables.push(surfaceMat);
 
   const surfaceMesh = new THREE.Mesh(planeGeo, surfaceMat);
-  surfaceMesh.rotation.x = -Math.PI / 2;
   group.add(surfaceMesh);
 
-  // Wireframe contour overlay
+  // Wireframe lattice overlay
   const wireMat = new THREE.MeshBasicMaterial({
     color: 0xbe123c,
     wireframe: true,
     transparent: true,
-    opacity: quality === 'low' ? 0.06 : 0.09,
+    opacity: quality === 'low' ? 0.05 : 0.08,
   });
   disposables.push(wireMat);
   const wireMesh = new THREE.Mesh(planeGeo, wireMat);
-  wireMesh.rotation.x = -Math.PI / 2;
-  wireMesh.position.y = 0.01;
+  wireMesh.position.y = 0.005;
   group.add(wireMesh);
 
-  // 3. Contour Isolines at discrete energy levels
-  const isoLevels = [0.8, 1.8, 3.2, 5.0, 6.8];
-  const isoSegments = quality === 'low' ? 32 : 56;
+  // =========================================================================
+  // 3. Level-Set Contour Isolines & Orthogonal Gradient Ticks
+  // =========================================================================
+  const isoGroup = new THREE.Group();
+  group.add(isoGroup);
+
+  const isoLevels = [0.4, 1.0, 1.8, 2.8, 3.8];
+  const isoSegments = quality === 'low' ? 36 : 64;
 
   isoLevels.forEach((level) => {
-    const rx = Math.sqrt(level / 0.14);
-    const rz = Math.sqrt(level / (0.14 * 1.8));
+    const rx = Math.sqrt(level / 0.08);
+    const rz = Math.sqrt(level / (0.08 * 1.6));
 
     const curvePoints: THREE.Vector3[] = [];
     for (let s = 0; s <= isoSegments; s++) {
       const theta = (s / isoSegments) * Math.PI * 2;
       const x = rx * Math.cos(theta);
       const z = rz * Math.sin(theta);
-      curvePoints.push(new THREE.Vector3(x, level + 0.04, z));
+      curvePoints.push(new THREE.Vector3(x, level + 0.02, z));
     }
 
     const isoGeo = new THREE.BufferGeometry().setFromPoints(curvePoints);
     const isoMat = new THREE.LineBasicMaterial({
       color: 0xf43f5e,
       transparent: true,
-      opacity: 0.35,
+      opacity: 0.45,
     });
     disposables.push(isoGeo, isoMat);
     const isoLine = new THREE.Line(isoGeo, isoMat);
-    group.add(isoLine);
+    isoGroup.add(isoLine);
   });
 
-  // 4. Global Minimum Stationary Point θ* at origin (0, 0, 0)
-  const minMarkerGeo = new THREE.SphereGeometry(0.28, 20, 20);
+  // =========================================================================
+  // 4. KKT Primal-Dual Constraint Half-Space & Cutting Hyperplane
+  // Inequality Constraint: g(x, z) = 0.52 * x + 0.85 * z - 1.15 <= 0
+  // =========================================================================
+  const kktGroup = new THREE.Group();
+  group.add(kktGroup);
+
+  const planeWidth = 7.5;
+  const planeHeight = 4.8;
+  const constraintPlaneGeo = new THREE.PlaneGeometry(planeWidth, planeHeight);
+  disposables.push(constraintPlaneGeo);
+
+  const constraintPlaneMat = new THREE.MeshStandardMaterial({
+    color: 0x0284c7,
+    emissive: 0x0369a1,
+    emissiveIntensity: 0.4,
+    transparent: true,
+    opacity: 0.22,
+    side: THREE.DoubleSide,
+    roughness: 0.2,
+  });
+  disposables.push(constraintPlaneMat);
+
+  const constraintMesh = new THREE.Mesh(constraintPlaneGeo, constraintPlaneMat);
+  // Position and orient constraint plane cutting through paraboloid
+  constraintMesh.position.set(0.6, 2.2, 0.9);
+  constraintMesh.rotation.y = Math.atan2(0.52, 0.85);
+  kktGroup.add(constraintMesh);
+
+  // Constraint Boundary Wireframe & Normal Vector Arrow (Lagrange Multiplier λ*)
+  const planeWireGeo = new THREE.WireframeGeometry(constraintPlaneGeo);
+  const planeWireMat = new THREE.LineBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.65 });
+  disposables.push(planeWireGeo, planeWireMat);
+  const planeWire = new THREE.LineSegments(planeWireGeo, planeWireMat);
+  constraintMesh.add(planeWire);
+
+  // KKT Optimal Tangent Contact Point
+  const kktPointPos = new THREE.Vector3(0.55, computeLoss(0.55, 0.88), 0.88);
+  const kktMarkerGeo = new THREE.SphereGeometry(0.22, 16, 16);
+  const kktMarkerMat = new THREE.MeshStandardMaterial({
+    color: 0x38bdf8,
+    emissive: 0x0284c7,
+    emissiveIntensity: 0.9,
+    roughness: 0.2,
+  });
+  disposables.push(kktMarkerGeo, kktMarkerMat);
+  const kktMarker = new THREE.Mesh(kktMarkerGeo, kktMarkerMat);
+  kktMarker.position.copy(kktPointPos);
+  kktGroup.add(kktMarker);
+
+  // Lagrange Multiplier Dual Vector Arrow at KKT point: ∇f(x*) = -λ* ∇g(x*)
+  const kktArrow = new THREE.ArrowHelper(
+    new THREE.Vector3(0.52, 0.3, 0.85).normalize(),
+    kktPointPos,
+    1.1,
+    0x38bdf8,
+    0.24,
+    0.12
+  );
+  kktGroup.add(kktArrow);
+  disposables.push(kktArrow.line.geometry, kktArrow.cone.geometry);
+
+  // =========================================================================
+  // 5. Global Unconstrained Minimum θ* at origin (0, 0, 0)
+  // =========================================================================
+  const minMarkerGeo = new THREE.SphereGeometry(0.24, 20, 20);
   const minMarkerMat = new THREE.MeshStandardMaterial({
     color: 0x10b981,
     emissive: 0x059669,
-    emissiveIntensity: 0.85,
-    roughness: 0.25,
+    emissiveIntensity: 0.9,
+    roughness: 0.2,
   });
   disposables.push(minMarkerGeo, minMarkerMat);
   const minMarker = new THREE.Mesh(minMarkerGeo, minMarkerMat);
-  minMarker.position.set(0, 0.3, 0);
+  minMarker.position.set(0, 0.16, 0);
   group.add(minMarker);
 
-  // Pulsing target ring at minimum
-  const minRingGeo = new THREE.RingGeometry(0.48, 0.62, 32);
+  // Pulsing target ring at global minimum
+  const minRingGeo = new THREE.RingGeometry(0.42, 0.54, 32);
   const minRingMat = new THREE.MeshBasicMaterial({
     color: 0x10b981,
     side: THREE.DoubleSide,
     transparent: true,
-    opacity: 0.55,
+    opacity: 0.6,
   });
   disposables.push(minRingGeo, minRingMat);
   const minRing = new THREE.Mesh(minRingGeo, minRingMat);
   minRing.rotation.x = Math.PI / 2;
-  minRing.position.set(0, 0.08, 0);
+  minRing.position.set(0, 0.05, 0);
   group.add(minRing);
 
-  // 5. Optimization Trajectory (Discrete Gradient Descent Path)
-  const trajectoryPoints: THREE.Vector3[] = [];
-  let currX = -6.2;
-  let currZ = 4.2;
-  const learningRate = 0.08;
-  const STEPS = 34;
+  // Hessian Curvature Principal Axes (Eigenvectors at Minimum)
+  const hessianAxisXGeo = new THREE.BufferGeometry().setFromPoints([
+    new THREE.Vector3(-1.8, 0.04, 0),
+    new THREE.Vector3(1.8, 0.04, 0),
+  ]);
+  const hessianAxisZGeo = new THREE.BufferGeometry().setFromPoints([
+    new THREE.Vector3(0, 0.04, -1.4),
+    new THREE.Vector3(0, 0.04, 1.4),
+  ]);
+  const hessianMat = new THREE.LineBasicMaterial({ color: 0x10b981, transparent: true, opacity: 0.5 });
+  disposables.push(hessianAxisXGeo, hessianAxisZGeo, hessianMat);
+  group.add(new THREE.Line(hessianAxisXGeo, hessianMat));
+  group.add(new THREE.Line(hessianAxisZGeo, hessianMat));
 
-  for (let step = 0; step < STEPS; step++) {
-    const currY = computeLoss(currX, currZ);
-    trajectoryPoints.push(new THREE.Vector3(currX, currY + 0.1, currZ));
-
-    const gradX = 0.28 * currX;
-    const gradZ = 0.504 * currZ;
-
-    currX -= learningRate * gradX;
-    currZ -= learningRate * gradZ;
+  // =========================================================================
+  // 6. Dual Optimization Trajectories:
+  // Path A: Oscillating Vanilla SGD (No Momentum, bounces across steep valley)
+  // Path B: Accelerated Momentum / Nesterov (Damped, fast direct descent)
+  // =========================================================================
+  // Path A: Vanilla SGD
+  const sgdPoints: THREE.Vector3[] = [];
+  let sgdX = -4.8;
+  let sgdZ = 3.6;
+  const sgdLR = 0.11;
+  for (let s = 0; s < 28; s++) {
+    const y = computeLoss(sgdX, sgdZ);
+    sgdPoints.push(new THREE.Vector3(sgdX, y + 0.06, sgdZ));
+    const { gx, gz } = computeGradient(sgdX, sgdZ);
+    sgdX -= sgdLR * gx;
+    sgdZ -= sgdLR * gz;
   }
-  trajectoryPoints.push(new THREE.Vector3(0, 0.1, 0));
+  const sgdCurve = new THREE.CatmullRomCurve3(sgdPoints);
+  const sgdGeo = new THREE.BufferGeometry().setFromPoints(sgdCurve.getPoints(quality === 'low' ? 50 : 90));
+  const sgdMat = new THREE.LineBasicMaterial({ color: 0xf59e0b, transparent: true, opacity: 0.65 });
+  disposables.push(sgdGeo, sgdMat);
+  const sgdLine = new THREE.Line(sgdGeo, sgdMat);
+  group.add(sgdLine);
 
-  const trajCurve = new THREE.CatmullRomCurve3(trajectoryPoints);
-  const trajDensePoints = trajCurve.getPoints(quality === 'low' ? 60 : 120);
-  const trajGeo = new THREE.BufferGeometry().setFromPoints(trajDensePoints);
-  const trajMat = new THREE.LineBasicMaterial({
+  // Path B: Momentum Accelerated Gradient Descent (Primary Focus)
+  const momPoints: THREE.Vector3[] = [];
+  let momX = -4.8;
+  let momZ = 3.6;
+  let vx = 0;
+  let vz = 0;
+  const momBeta = 0.72;
+  const momLR = 0.09;
+  for (let s = 0; s < 32; s++) {
+    const y = computeLoss(momX, momZ);
+    momPoints.push(new THREE.Vector3(momX, y + 0.07, momZ));
+    const { gx, gz } = computeGradient(momX, momZ);
+    vx = momBeta * vx - momLR * gx;
+    vz = momBeta * vz - momLR * gz;
+    momX += vx;
+    momZ += vz;
+  }
+  momPoints.push(new THREE.Vector3(0, 0.08, 0));
+
+  const momCurve = new THREE.CatmullRomCurve3(momPoints);
+  const momTubeGeo = new THREE.TubeGeometry(momCurve, quality === 'low' ? 60 : 100, 0.038, 6, false);
+  const momTubeMat = new THREE.MeshStandardMaterial({
     color: 0xffffff,
-    transparent: true,
-    opacity: 0.88,
+    emissive: 0x10b981,
+    emissiveIntensity: 0.9,
+    roughness: 0.2,
   });
-  disposables.push(trajGeo, trajMat);
-  const trajLine = new THREE.Line(trajGeo, trajMat);
-  group.add(trajLine);
+  disposables.push(momTubeGeo, momTubeMat);
+  const momTubeMesh = new THREE.Mesh(momTubeGeo, momTubeMat);
+  group.add(momTubeMesh);
 
-  // High Performance Optimization: Use InstancedMesh for step marker dots
-  const stepCount = Math.floor(trajectoryPoints.length / 2);
-  const stepMarkerGeo = new THREE.SphereGeometry(0.09, 8, 8);
-  const stepMarkerMat = new THREE.MeshBasicMaterial({ color: 0xffe4e6 });
-  disposables.push(stepMarkerGeo, stepMarkerMat);
-
-  const stepInstancedMesh = new THREE.InstancedMesh(stepMarkerGeo, stepMarkerMat, stepCount);
-  const dummy = new THREE.Object3D();
-
-  let instIdx = 0;
-  for (let i = 0; i < trajectoryPoints.length && instIdx < stepCount; i += 2) {
-    dummy.position.copy(trajectoryPoints[i]);
-    dummy.updateMatrix();
-    stepInstancedMesh.setMatrixAt(instIdx, dummy.matrix);
-    instIdx++;
-  }
-  stepInstancedMesh.instanceMatrix.needsUpdate = true;
-  group.add(stepInstancedMesh);
-  disposables.push(stepInstancedMesh);
-
-  // Iterating descent particle
-  const descentParticleGeo = new THREE.SphereGeometry(0.24, 16, 16);
+  // Iterating descent particle along Momentum trajectory
+  const descentParticleGeo = new THREE.SphereGeometry(0.18, 16, 16);
   const descentParticleMat = new THREE.MeshStandardMaterial({
-    color: 0xff2d55,
-    emissive: 0xe11d48,
-    emissiveIntensity: 0.95,
+    color: 0xffffff,
+    emissive: 0x10b981,
+    emissiveIntensity: 1.0,
     roughness: 0.2,
   });
   disposables.push(descentParticleGeo, descentParticleMat);
   const descentParticle = new THREE.Mesh(descentParticleGeo, descentParticleMat);
   group.add(descentParticle);
 
-  // Gradient tangent arrow on particle
-  const arrowHelper = new THREE.ArrowHelper(
+  const descentArrow = new THREE.ArrowHelper(
     new THREE.Vector3(0, -1, 0),
     new THREE.Vector3(0, 0, 0),
-    1.1,
-    0xff2d55,
-    0.28,
-    0.15
+    0.95,
+    0x10b981,
+    0.22,
+    0.12
   );
-  group.add(arrowHelper);
-  disposables.push(arrowHelper.line.geometry, arrowHelper.cone.geometry);
+  group.add(descentArrow);
+  disposables.push(descentArrow.line.geometry, descentArrow.cone.geometry);
 
-  // 6. Register Inspectable Objects
+  // =========================================================================
+  // 7. Register Inspectables
+  // =========================================================================
   const inspectables: { mesh: THREE.Object3D; data: InspectableItem }[] = [
     {
       mesh: surfaceMesh,
       data: {
         id: 'opt-surface',
-        name: 'Convex Loss Surface',
+        name: 'Convex Loss Landscape f(θ)',
         symbol: 'f(θ)',
         type: 'OBJECTIVE LANDSCAPE',
-        role: 'Anisotropic Quadratic Paraboloid',
-        dimension: 'f: ℝ² → ℝ',
+        role: 'Anisotropic Quadratic Well',
+        dimension: 'Parameter Space θ ∈ ℝ²',
         properties: {
-          'Loss Function': 'f(x, z) = 0.14(x² + 1.8z²)',
-          'Hessian Matrix': 'diag([0.280, 0.504]) ≻ 0',
-          'Curvature Ratio': 'κ = 1.80 (Anisotropic)',
-          'Global Minimum': 'θ* = [0, 0], f(θ*) = 0',
-          'Topology': 'Strictly Convex Well',
+          'Loss Function': 'f(x, z) = 0.08(x² + 1.6z²)',
+          'Hessian Matrix ∇²f': 'diag([0.160, 0.256]) ≻ 0',
+          'Condition Number κ': '1.60 (Ill-Conditioned Valley)',
+          'Strong Convexity': 'α = 0.160, L = 0.256',
+          'Global Optimum': 'θ* = (0, 0), f(θ*) = 0',
         },
-        description: 'Continuous 3D loss surface with anisotropic quadratic curvature. The steepest descent gradient trajectory traverses orthogonal to the contour isolines toward the global minimum.',
+        description: 'Strictly convex loss basin with anisotropic quadratic curvature. Demonstrates why standard SGD oscillates along steep valley walls while Polyak momentum accelerates convergence down the central ridge.',
         worldPosition: new THREE.Vector3(0, 1.8, 0),
+      },
+    },
+    {
+      mesh: constraintMesh,
+      data: {
+        id: 'opt-kkt-plane',
+        name: 'KKT Constraint Boundary & Dual Multiplier',
+        symbol: 'g(θ) ≤ 0',
+        type: 'FEASIBILITY DOMAIN',
+        role: 'Linear Half-Space Cutting Plane',
+        dimension: 'Dual Space λ* ≥ 0',
+        properties: {
+          'Primal Constraint': '0.52x + 0.85z - 1.15 ≤ 0',
+          'Stationarity': '∇f(θ*) + λ* ∇g(θ*) = 0',
+          'Slackness Condition': 'λ* · g(θ*) = 0',
+          'Dual Feasibility': 'λ* = 0.428 ≥ 0',
+          'Status': 'Active Binding Constraint',
+        },
+        description: 'Karush-Kuhn-Tucker (KKT) constraint plane partitioning the parameter space into feasible and infeasible sets. At the constrained optimum θ*, the objective gradient is precisely counterbalanced by the constraint normal.',
+        worldPosition: constraintMesh.position.clone(),
       },
     },
     {
       mesh: minMarker,
       data: {
         id: 'opt-minimum',
-        name: 'Stationary Minimum θ*',
+        name: 'Global Stationary Minimum θ*',
         symbol: 'θ*',
         type: 'STATIONARY POINT',
-        role: 'Global Minimizer of Convex Objective',
-        dimension: 'Parameter Space θ ∈ ℝ²',
+        role: 'Unconstrained Minimizer',
+        dimension: '∇f(θ*) = 0',
         properties: {
-          'Coordinates': 'θ* = [0.000, 0.000]',
-          'Optimal Value': 'f(θ*) = 0.0000',
-          'Gradient Norm': '||∇f(θ*)|| = 0.0000',
-          'Hessian ∇²f': 'diag([0.280, 0.504]) ≻ 0',
-          'Condition': 'Strictly Convex Unique Minimum',
+          'Coordinates': 'θ* = (0.000, 0.000)',
+          'Optimal Loss': 'f(θ*) = 0.0000',
+          'Gradient Norm': '||∇f(θ*)|| = 0.000',
+          'Curvature Ratio': 'Hessian Eigenvalues: [0.16, 0.256]',
+          'Uniqueness': 'Strictly Convex (Unique Global Minimum)',
         },
-        description: 'First-order stationary point satisfying ∇f(θ*) = 0. Since the Hessian matrix is strictly positive definite across the entire domain, θ* is the unique global minimizer under Karush-Kuhn-Tucker (KKT) conditions.',
+        description: 'Global stationary point where the gradient identically vanishes. In convex optimization, every local minimum is guaranteed to be a global minimum.',
         worldPosition: minMarker.position.clone(),
       },
     },
     {
-      mesh: descentParticle,
+      mesh: momTubeMesh,
       data: {
-        id: 'opt-particle',
-        name: 'Iterative Descent State θₜ',
-        symbol: 'θₜ',
-        type: 'OPTIMIZER STATE',
-        role: 'Active Parameter Vector',
-        dimension: 'Step Index t ∈ [0, 34]',
+        id: 'opt-momentum-traj',
+        name: 'Momentum Accelerated Trajectory',
+        symbol: 'v_t = β v_{t-1} - η ∇f',
+        type: 'OPTIMIZER DYNAMICS',
+        role: 'Heavy-Ball Accelerated Path',
+        dimension: 'Convergence: O(1/t²)',
         properties: {
-          'Update Rule': 'θ_{t+1} = θ_t - η ∇f(θ_t)',
-          'Learning Rate η': '0.080',
-          'Search Direction': '-∇f(θ_t) (Steepest Descent)',
-          'Convergence': 'O(1/t) Sublinear Rate',
-          'Status': 'Actively Traversing Landscape',
+          'Momentum Coefficient β': '0.720',
+          'Learning Rate η': '0.090',
+          'Oscillation Damping': 'Damped across High-Curvature Axis',
+          'Comparison': 'Vanilla SGD (Amber) vs Momentum (Emerald)',
         },
-        description: 'Discrete optimization state vector traversing down the negative gradient vector field. Demonstrates iterative first-order convergence across an anisotropic quadratic well.',
-        worldPosition: descentParticle.position.clone(),
-      },
-    },
-    {
-      mesh: trajLine,
-      data: {
-        id: 'opt-trajectory',
-        name: 'Optimization Trajectory',
-        symbol: 'Γ(t)',
-        type: 'DESCENT PATH',
-        role: 'Parameter Convergence Curve',
-        dimension: 'Discrete Path: 34 Iterations',
-        properties: {
-          'Initial Point': 'θ₀ = [-6.20, +4.20]',
-          'Initial Loss': 'f(θ₀) = 7.742',
-          'Anisotropy Ratio': '1.80× Ill-Conditioned',
-          'Step Count': '34 Iterations',
-        },
-        description: 'Piecewise smooth curve tracking parameter values from initialization in a high-loss valley down to asymptotic convergence at the global minimum.',
-        worldPosition: new THREE.Vector3(-3.1, 3.8, 2.1),
+        description: 'Polyak heavy-ball momentum trajectory effectively damping transverse oscillations across the high-curvature axis while accumulating velocity down the principal descent ravine.',
+        worldPosition: new THREE.Vector3(-2.4, 1.8, 1.8),
       },
     },
   ];
@@ -296,63 +395,65 @@ export function createPhase02Optimization(quality: QualityTier = 'high'): PhaseA
   const onSelectObject = (item: InspectableItem | null) => {
     if (!item) {
       surfaceMat.opacity = 0.94;
-      surfaceMat.emissiveIntensity = 0.35;
-      trajMat.opacity = 0.88;
-      minMarkerMat.emissiveIntensity = 0.85;
-      descentParticleMat.emissiveIntensity = 0.95;
+      constraintPlaneMat.opacity = 0.22;
+      momTubeMat.emissiveIntensity = 0.9;
+      minMarkerMat.emissiveIntensity = 0.9;
     } else if (item.id === 'opt-surface') {
       surfaceMat.opacity = 0.98;
-      surfaceMat.emissiveIntensity = 0.65;
-      trajMat.opacity = 0.92;
+      constraintPlaneMat.opacity = 0.12;
+    } else if (item.id === 'opt-kkt-plane') {
+      constraintPlaneMat.opacity = 0.45;
+      constraintPlaneMat.emissiveIntensity = 0.8;
     } else if (item.id === 'opt-minimum') {
       minMarkerMat.emissiveIntensity = 1.4;
-      surfaceMat.opacity = 0.85;
-    } else if (item.id === 'opt-particle') {
-      descentParticleMat.emissiveIntensity = 1.4;
-    } else if (item.id === 'opt-trajectory') {
-      trajMat.opacity = 1.0;
+    } else if (item.id === 'opt-momentum-traj') {
+      momTubeMat.emissiveIntensity = 1.4;
     }
   };
 
-  // Pre-allocated scratch vector for zero GC in render loop
-  const scratchVec = new THREE.Vector3();
-  const scratchTangent = new THREE.Vector3();
+  const scratchPos = new THREE.Vector3();
+  const scratchTan = new THREE.Vector3();
+  let progress = 0;
 
-  // Animation & Update loop
-  let particleT = 0;
   const update = (time: number, delta: number) => {
-    particleT = (particleT + delta * 0.16) % 1.0;
+    progress = (progress + delta * 0.15) % 1.0;
 
-    trajCurve.getPointAt(particleT, scratchVec);
-    descentParticle.position.copy(scratchVec);
+    momCurve.getPointAt(progress, scratchPos);
+    descentParticle.position.copy(scratchPos);
 
-    trajCurve.getTangentAt(particleT, scratchTangent).normalize();
-    arrowHelper.position.copy(scratchVec);
-    arrowHelper.setDirection(scratchTangent);
+    momCurve.getTangentAt(progress, scratchTan).normalize();
+    descentArrow.position.copy(scratchPos);
+    descentArrow.setDirection(scratchTan);
 
     // Pulsing minimum ring
-    const scale = 1.0 + Math.sin(time * 2.8) * 0.12;
-    minRing.scale.set(scale, scale, scale);
+    const s = 1.0 + Math.sin(time * 2.8) * 0.12;
+    minRing.scale.set(s, s, s);
+
+    // Subtle constraint plane breathing
+    constraintPlaneMat.opacity = 0.22 + Math.sin(time * 1.8) * 0.04;
   };
 
   const toggleLayer = (layer: LayerType, visible: boolean) => {
     if (layer === 'geometry') {
       surfaceMesh.visible = visible;
       wireMesh.visible = visible;
+      isoGroup.visible = visible;
     } else if (layer === 'trajectories') {
-      trajLine.visible = visible;
+      sgdLine.visible = visible;
+      momTubeMesh.visible = visible;
       descentParticle.visible = visible;
-      arrowHelper.visible = visible;
+      descentArrow.visible = visible;
     } else if (layer === 'clusters') {
       minMarker.visible = visible;
       minRing.visible = visible;
+      kktGroup.visible = visible;
     }
   };
 
   const getAnnotations = (): SpatialAnnotation[] => [
-    { id: 'theta-init', label: 'Initial Parameter θ₀', sublabel: 'f(θ₀) = 5.64, Step 0', position: new THREE.Vector3(-6.2, 5.8, 4.2) },
-    { id: 'grad-descent', label: 'Steepest Descent ∇f(θ)', sublabel: 'η = 0.08, Linear Rate', position: new THREE.Vector3(-3.2, 2.8, 2.1) },
-    { id: 'theta-star', label: 'Global Minimum θ*', sublabel: '∇f(θ*) = 0, Loss = 0.00', position: new THREE.Vector3(0, 0.6, 0) },
+    { id: 'theta-init', label: 'Initial Point θ₀', sublabel: 'f(θ₀) = 3.92, Step 0', position: new THREE.Vector3(-4.8, 4.2, 3.6) },
+    { id: 'kkt-boundary', label: 'KKT Constraint g(θ) ≤ 0', sublabel: 'λ* = 0.428, Active Binding', position: new THREE.Vector3(0.6, 2.6, 0.9) },
+    { id: 'theta-star', label: 'Global Minimum θ*', sublabel: '∇f(θ*) = 0, Loss = 0.00', position: new THREE.Vector3(0, 0.45, 0) },
   ];
 
   const dispose = () => {
@@ -367,8 +468,8 @@ export function createPhase02Optimization(quality: QualityTier = 'high'): PhaseA
     group,
     update,
     dispose,
-    defaultCameraPosition: [0, 8.2, 13.8],
-    defaultTarget: [0, 1.2, 0],
+    defaultCameraPosition: [0, 5.2, 9.6],
+    defaultTarget: [0, 1.8, 0],
     getInspectableObjects: () => inspectables,
     onSelectObject,
     toggleLayer,

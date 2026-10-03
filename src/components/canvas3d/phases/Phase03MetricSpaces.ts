@@ -7,148 +7,314 @@ export function createPhase03MetricSpaces(quality: QualityTier = 'high'): PhaseA
 
   const disposables: { dispose: () => void }[] = [];
 
-  const RADIUS = 4.8;
+  const RADIUS = 4.6;
 
-  // 1. Hyperspherical metric surface S²
-  const sphereWidthSegs = quality === 'low' ? 18 : quality === 'medium' ? 26 : 36;
-  const sphereHeightSegs = quality === 'low' ? 12 : quality === 'medium' ? 18 : 24;
+  // =========================================================================
+  // 1. Holographic Unit Hypersphere S² (Obsidian Glass with Fresnel Rim)
+  // =========================================================================
+  const sphereWidthSegs = quality === 'low' ? 32 : quality === 'medium' ? 48 : 64;
+  const sphereHeightSegs = quality === 'low' ? 24 : quality === 'medium' ? 36 : 48;
   const sphereGeo = new THREE.SphereGeometry(RADIUS, sphereWidthSegs, sphereHeightSegs);
   disposables.push(sphereGeo);
 
   const sphereMat = new THREE.MeshStandardMaterial({
-    color: 0x070b14,
-    roughness: 0.55,
-    metalness: 0.2,
+    color: 0x0a101d,
+    roughness: 0.28,
+    metalness: 0.45,
     transparent: true,
-    opacity: 0.72,
-    emissive: new THREE.Color(0x0e1422),
-    emissiveIntensity: 0.3,
+    opacity: 0.82,
+    emissive: new THREE.Color(0x0f172a),
+    emissiveIntensity: 0.45,
   });
   disposables.push(sphereMat);
 
   const sphereMesh = new THREE.Mesh(sphereGeo, sphereMat);
   group.add(sphereMesh);
 
-  // Wireframe metric grid (parallels & meridians)
+  // Subtle Wireframe Metric Lattice
   const wireMat = new THREE.MeshBasicMaterial({
-    color: 0x3b82f6,
+    color: 0x38bdf8,
     wireframe: true,
     transparent: true,
-    opacity: quality === 'low' ? 0.08 : 0.12,
+    opacity: quality === 'low' ? 0.06 : 0.09,
   });
   disposables.push(wireMat);
   const wireMesh = new THREE.Mesh(sphereGeo, wireMat);
   group.add(wireMesh);
 
-  // Equator Great Circle
-  const equatorGeo = new THREE.BufferGeometry();
-  const eqPoints: THREE.Vector3[] = [];
-  const eqSteps = quality === 'low' ? 32 : 64;
-  for (let i = 0; i <= eqSteps; i++) {
-    const theta = (i / eqSteps) * Math.PI * 2;
-    eqPoints.push(new THREE.Vector3(Math.cos(theta) * (RADIUS + 0.02), 0, Math.sin(theta) * (RADIUS + 0.02)));
-  }
-  equatorGeo.setFromPoints(eqPoints);
-  disposables.push(equatorGeo);
+  // =========================================================================
+  // 2. Metric Grid Parallels (Latitudes) & Meridians (Longitudes)
+  // =========================================================================
+  const gridGroup = new THREE.Group();
+  group.add(gridGroup);
 
-  const eqMat = new THREE.LineBasicMaterial({
-    color: 0xe11d48,
+  const gridLineMat = new THREE.LineBasicMaterial({
+    color: 0x38bdf8,
     transparent: true,
-    opacity: 0.45,
+    opacity: 0.28,
   });
-  disposables.push(eqMat);
-  const equator = new THREE.Line(equatorGeo, eqMat);
-  group.add(equator);
+  disposables.push(gridLineMat);
 
-  // 2. Semantic Cluster Point Clouds - HIGH PERFORMANCE INSTANCED MESH
-  // Slashes 140 draw calls down to 1 single draw call!
-  const CLUSTERS = 4;
-  const pointsPerCluster = quality === 'low' ? 16 : quality === 'medium' ? 24 : 32;
-  const totalPoints = CLUSTERS * pointsPerCluster;
+  const equatorMat = new THREE.LineBasicMaterial({
+    color: 0xf43f5e,
+    transparent: true,
+    opacity: 0.65,
+  });
+  disposables.push(equatorMat);
 
-  const clusterCenters = [
-    new THREE.Vector3(0.6, 0.5, 0.6).normalize().multiplyScalar(RADIUS),
-    new THREE.Vector3(-0.7, 0.4, 0.5).normalize().multiplyScalar(RADIUS),
-    new THREE.Vector3(0.2, -0.8, 0.5).normalize().multiplyScalar(RADIUS),
-    new THREE.Vector3(-0.4, -0.4, -0.8).normalize().multiplyScalar(RADIUS),
+  const circleSteps = quality === 'low' ? 40 : 72;
+
+  // Parallels (Latitudes: -60°, -30°, 0°, +30°, +60°)
+  const latitudes = [-Math.PI / 3, -Math.PI / 6, 0, Math.PI / 6, Math.PI / 3];
+  latitudes.forEach((lat, idx) => {
+    const r = RADIUS * Math.cos(lat);
+    const y = RADIUS * Math.sin(lat);
+    const pts: THREE.Vector3[] = [];
+    for (let i = 0; i <= circleSteps; i++) {
+      const theta = (i / circleSteps) * Math.PI * 2;
+      pts.push(new THREE.Vector3(Math.cos(theta) * r, y, Math.sin(theta) * r));
+    }
+    const cGeo = new THREE.BufferGeometry().setFromPoints(pts);
+    disposables.push(cGeo);
+    const isEq = idx === 2;
+    const line = new THREE.Line(cGeo, isEq ? equatorMat : gridLineMat);
+    gridGroup.add(line);
+  });
+
+  // Meridians (Great Circles every 45°)
+  const meridianCount = 4;
+  for (let m = 0; m < meridianCount; m++) {
+    const phi = (m / meridianCount) * Math.PI;
+    const pts: THREE.Vector3[] = [];
+    for (let i = 0; i <= circleSteps; i++) {
+      const theta = (i / circleSteps) * Math.PI * 2;
+      // Circle on X-Y plane rotated around Y by phi
+      const x = RADIUS * Math.cos(theta) * Math.cos(phi);
+      const z = RADIUS * Math.cos(theta) * Math.sin(phi);
+      const y = RADIUS * Math.sin(theta);
+      pts.push(new THREE.Vector3(x, y, z));
+    }
+    const mGeo = new THREE.BufferGeometry().setFromPoints(pts);
+    disposables.push(mGeo);
+    const mLine = new THREE.Line(mGeo, gridLineMat);
+    gridGroup.add(mLine);
+  }
+
+  // Equatorial Celestial Ring with Orientation Ticks
+  const ringGeo = new THREE.RingGeometry(RADIUS + 0.05, RADIUS + 0.18, circleSteps);
+  const ringMat = new THREE.MeshBasicMaterial({
+    color: 0xf43f5e,
+    side: THREE.DoubleSide,
+    transparent: true,
+    opacity: 0.35,
+  });
+  disposables.push(ringGeo, ringMat);
+  const eqRing = new THREE.Mesh(ringGeo, ringMat);
+  eqRing.rotation.x = Math.PI / 2;
+  gridGroup.add(eqRing);
+
+  // =========================================================================
+  // 3. Multi-Modal Semantic Representation Clusters
+  // Vision (Cyan), Language (Purple), Audio (Amber), Multimodal Anchor (Rose)
+  // =========================================================================
+  const clusterDefinitions = [
+    {
+      id: 'cluster-multimodal',
+      name: 'Joint Multimodal Anchor Cluster',
+      symbol: 'z_{anchor}',
+      color: 0xf43f5e,
+      emissive: 0xe11d48,
+      center: new THREE.Vector3(0.55, 0.45, 0.7).normalize().multiplyScalar(RADIUS),
+      modality: 'Cross-Modal Latent Anchor',
+      desc: 'Normalized contrastive anchor embedding z_i on unit hypersphere S².',
+    },
+    {
+      id: 'cluster-vision',
+      name: 'Vision Representation Manifold',
+      symbol: 'z_{vision}',
+      color: 0x06b6d4,
+      emissive: 0x0891b2,
+      center: new THREE.Vector3(-0.65, 0.5, 0.55).normalize().multiplyScalar(RADIUS),
+      modality: 'Visual Transformer Patch Tokens',
+      desc: 'Dense visual patch embeddings mapped under InfoNCE alignment.',
+    },
+    {
+      id: 'cluster-language',
+      name: 'Language Representation Subspace',
+      symbol: 'z_{text}',
+      color: 0xa855f7,
+      emissive: 0x9333ea,
+      center: new THREE.Vector3(0.2, -0.75, 0.6).normalize().multiplyScalar(RADIUS),
+      modality: 'Causal Text Context Vectors',
+      desc: 'Self-supervised linguistic embeddings spanning semantic sub-manifolds.',
+    },
+    {
+      id: 'cluster-audio',
+      name: 'Acoustic / Symbolic Attractor',
+      symbol: 'z_{audio}',
+      color: 0xf59e0b,
+      emissive: 0xd97706,
+      center: new THREE.Vector3(-0.45, -0.45, -0.75).normalize().multiplyScalar(RADIUS),
+      modality: 'Spectral Latent Modality',
+      desc: 'Harmonic spectrogram representations separated via uniform repulsive loss.',
+    },
   ];
 
-  const pointGeo = new THREE.SphereGeometry(0.08, 8, 8);
-  const pointMat = new THREE.MeshBasicMaterial({
-    color: 0x94a3b8,
-    transparent: true,
-    opacity: 0.8,
-  });
-  disposables.push(pointGeo, pointMat);
+  const inspectables: { mesh: THREE.Object3D; data: InspectableItem }[] = [];
+  const centroidMeshes: THREE.Mesh[] = [];
 
-  const instancedPoints = new THREE.InstancedMesh(pointGeo, pointMat, totalPoints);
-  const dummy = new THREE.Object3D();
+  // Instanced Feature Embeddings across all clusters
+  const ptsPerCluster = quality === 'low' ? 24 : quality === 'medium' ? 36 : 48;
+  const totalPts = clusterDefinitions.length * ptsPerCluster;
+  const dotGeo = new THREE.SphereGeometry(0.065, 8, 8);
+  disposables.push(dotGeo);
+
+  const dotMat = new THREE.MeshBasicMaterial({
+    vertexColors: true,
+    transparent: true,
+    opacity: 0.88,
+  });
+  disposables.push(dotMat);
+
+  const instancedEmbeddings = new THREE.InstancedMesh(dotGeo, dotMat, totalPts);
+  const colorBuffer = new Float32Array(totalPts * 3);
+  const dummyObj = new THREE.Object3D();
 
   let pIdx = 0;
-  clusterCenters.forEach((center, cIdx) => {
-    for (let p = 0; p < pointsPerCluster; p++) {
-      const seed = p * 1.37 + cIdx * 4.19;
-      const ox = Math.sin(seed) * 1.2;
-      const oy = Math.cos(seed * 1.5) * 1.2;
-      const oz = Math.sin(seed * 2.1) * 1.2;
+  clusterDefinitions.forEach((cDef, cIdx) => {
+    const cColor = new THREE.Color(cDef.color);
 
-      const pt = new THREE.Vector3(center.x + ox, center.y + oy, center.z + oz)
-        .normalize()
-        .multiplyScalar(RADIUS + 0.04);
-
-      dummy.position.copy(pt);
-      dummy.updateMatrix();
-      instancedPoints.setMatrixAt(pIdx++, dummy.matrix);
-    }
-  });
-  instancedPoints.instanceMatrix.needsUpdate = true;
-  group.add(instancedPoints);
-  disposables.push(instancedPoints);
-
-  // Cluster centroid markers
-  const centroidMeshes: THREE.Mesh[] = [];
-  const centroidGeo = new THREE.SphereGeometry(0.18, 12, 12);
-  disposables.push(centroidGeo);
-
-  clusterCenters.forEach((center, cIdx) => {
+    // Centroid marker beacon
+    const cGeo = new THREE.SphereGeometry(0.22, 16, 16);
     const cMat = new THREE.MeshStandardMaterial({
-      color: cIdx === 0 ? 0xf43f5e : 0x64748b,
-      emissive: cIdx === 0 ? 0xe11d48 : 0x334155,
-      emissiveIntensity: 0.7,
-      roughness: 0.3,
+      color: cDef.color,
+      emissive: cDef.emissive,
+      emissiveIntensity: 0.9,
+      roughness: 0.25,
     });
-    disposables.push(cMat);
-    const centroid = new THREE.Mesh(centroidGeo, cMat);
-    centroid.position.copy(center.clone().multiplyScalar(1.01));
+    disposables.push(cGeo, cMat);
+    const centroid = new THREE.Mesh(cGeo, cMat);
+    centroid.position.copy(cDef.center.clone().multiplyScalar(1.015));
     group.add(centroid);
     centroidMeshes.push(centroid);
+
+    // Centroid halo
+    const haloGeo = new THREE.RingGeometry(0.32, 0.42, 24);
+    const haloMat = new THREE.MeshBasicMaterial({
+      color: cDef.color,
+      side: THREE.DoubleSide,
+      transparent: true,
+      opacity: 0.55,
+    });
+    disposables.push(haloGeo, haloMat);
+    const halo = new THREE.Mesh(haloGeo, haloMat);
+    halo.position.copy(cDef.center.clone().multiplyScalar(1.02));
+    halo.lookAt(cDef.center.clone().multiplyScalar(2.0));
+    group.add(halo);
+
+    // Von Mises-Fisher distribution point cloud around centroid
+    for (let p = 0; p < ptsPerCluster; p++) {
+      const seed = p * 1.618 + cIdx * 5.24;
+      const spread = 0.85;
+      const ox = (Math.sin(seed) + Math.cos(seed * 2.3)) * 0.5 * spread;
+      const oy = (Math.cos(seed * 1.4) + Math.sin(seed * 3.1)) * 0.5 * spread;
+      const oz = (Math.sin(seed * 2.7) + Math.cos(seed * 0.9)) * 0.5 * spread;
+
+      const pt = new THREE.Vector3(cDef.center.x + ox, cDef.center.y + oy, cDef.center.z + oz)
+        .normalize()
+        .multiplyScalar(RADIUS + 0.05);
+
+      dummyObj.position.copy(pt);
+      dummyObj.updateMatrix();
+      instancedEmbeddings.setMatrixAt(pIdx, dummyObj.matrix);
+
+      colorBuffer[pIdx * 3] = cColor.r;
+      colorBuffer[pIdx * 3 + 1] = cColor.g;
+      colorBuffer[pIdx * 3 + 2] = cColor.b;
+      pIdx++;
+    }
+
+    // Register inspectable cluster
+    inspectables.push({
+      mesh: centroid,
+      data: {
+        id: cDef.id,
+        name: cDef.name,
+        symbol: cDef.symbol,
+        type: 'HYPERSPHERICAL CLUSTER',
+        role: cDef.modality,
+        dimension: 'Dimension d = 512, ||z|| = 1.0',
+        properties: {
+          'Modality': cDef.modality,
+          'Hyperspherical Coordinates': `[${cDef.center.x.toFixed(2)}, ${cDef.center.y.toFixed(2)}, ${cDef.center.z.toFixed(2)}]`,
+          'Distribution Model': 'von Mises-Fisher vMF(μ, κ=14.2)',
+          'Uniformity Metric': 'Uniform Negative Separation',
+          'Status': 'Empirically Clustered',
+        },
+        description: cDef.desc,
+        worldPosition: centroid.position.clone(),
+      },
+    });
   });
 
-  // 3. Contrastive Pair Dynamics: Anchor (x), Positive (x⁺), Negative (x⁻)
-  const anchorPos = clusterCenters[0].clone().multiplyScalar(1.02);
-  const posOffset = new THREE.Vector3(0.45, 0.25, -0.2);
-  const positivePos = new THREE.Vector3().addVectors(anchorPos, posOffset).normalize().multiplyScalar(RADIUS * 1.02);
-  const negativePos = clusterCenters[1].clone().multiplyScalar(1.02);
+  instancedEmbeddings.instanceMatrix.needsUpdate = true;
+  instancedEmbeddings.instanceColor = new THREE.InstancedBufferAttribute(colorBuffer, 3);
+  group.add(instancedEmbeddings);
+  disposables.push(instancedEmbeddings);
 
-  // Anchor Mesh
-  const anchorGeo = new THREE.DodecahedronGeometry(0.3, 0);
+  // =========================================================================
+  // 4. Contrastive Triplet Dynamics (Anchor z, Positive z⁺, Negatives {z⁻})
+  // =========================================================================
+  const anchorCenter = clusterDefinitions[0].center;
+  const anchorPos = anchorCenter.clone().multiplyScalar(1.025);
+
+  // Positive Sample in same cluster
+  const positivePos = new THREE.Vector3(
+    anchorCenter.x + 0.42,
+    anchorCenter.y + 0.28,
+    anchorCenter.z - 0.22
+  ).normalize().multiplyScalar(RADIUS * 1.025);
+
+  // Negative Samples in opposing clusters
+  const negativePositions = [
+    clusterDefinitions[1].center.clone().multiplyScalar(1.025),
+    clusterDefinitions[2].center.clone().multiplyScalar(1.025),
+    clusterDefinitions[3].center.clone().multiplyScalar(1.025),
+  ];
+
+  // Anchor Mesh: Glowing Dodecahedron with temperature ring
+  const anchorGeo = new THREE.DodecahedronGeometry(0.28, 0);
   const anchorMat = new THREE.MeshStandardMaterial({
     color: 0xffffff,
-    emissive: 0xff2d55,
-    emissiveIntensity: 0.85,
-    roughness: 0.2,
+    emissive: 0xf43f5e,
+    emissiveIntensity: 1.0,
+    roughness: 0.15,
   });
   disposables.push(anchorGeo, anchorMat);
   const anchorMesh = new THREE.Mesh(anchorGeo, anchorMat);
   anchorMesh.position.copy(anchorPos);
   group.add(anchorMesh);
 
-  // Positive Mesh
-  const posGeo = new THREE.SphereGeometry(0.24, 16, 16);
+  // Temperature τ horizon disk around anchor
+  const tauRingGeo = new THREE.RingGeometry(0.55, 0.65, 32);
+  const tauRingMat = new THREE.MeshBasicMaterial({
+    color: 0xf43f5e,
+    side: THREE.DoubleSide,
+    transparent: true,
+    opacity: 0.5,
+  });
+  disposables.push(tauRingGeo, tauRingMat);
+  const tauRing = new THREE.Mesh(tauRingGeo, tauRingMat);
+  tauRing.position.copy(anchorPos.clone().multiplyScalar(1.01));
+  tauRing.lookAt(anchorPos.clone().multiplyScalar(2.0));
+  group.add(tauRing);
+
+  // Positive Sample Mesh (Emerald)
+  const posGeo = new THREE.SphereGeometry(0.22, 16, 16);
   const posMat = new THREE.MeshStandardMaterial({
     color: 0x10b981,
     emissive: 0x059669,
-    emissiveIntensity: 0.85,
+    emissiveIntensity: 0.9,
     roughness: 0.2,
   });
   disposables.push(posGeo, posMat);
@@ -156,23 +322,10 @@ export function createPhase03MetricSpaces(quality: QualityTier = 'high'): PhaseA
   posMesh.position.copy(positivePos);
   group.add(posMesh);
 
-  // Negative Mesh
-  const negGeo = new THREE.SphereGeometry(0.24, 16, 16);
-  const negMat = new THREE.MeshStandardMaterial({
-    color: 0x64748b,
-    emissive: 0x334155,
-    emissiveIntensity: 0.5,
-    roughness: 0.3,
-  });
-  disposables.push(negGeo, negMat);
-  const negMesh = new THREE.Mesh(negGeo, negMat);
-  negMesh.position.copy(negativePos);
-  group.add(negMesh);
-
-  // 4. Geodesic Great-Circle Arcs (Spherical SLERP on S²)
-  const createGeodesic = (p1: THREE.Vector3, p2: THREE.Vector3, color: number, opacity: number) => {
+  // Great-Circle Spherical Geodesic Generator on S²
+  const createSphericalGeodesic = (p1: THREE.Vector3, p2: THREE.Vector3, color: number, opacity: number, radiusOffset: number = 0.08) => {
     const points: THREE.Vector3[] = [];
-    const NUM_SEG = quality === 'low' ? 24 : 40;
+    const NUM_SEG = quality === 'low' ? 24 : 44;
     const v1 = p1.clone().normalize();
     const v2 = p2.clone().normalize();
 
@@ -181,7 +334,7 @@ export function createPhase03MetricSpaces(quality: QualityTier = 'high'): PhaseA
       const q1 = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(1, 0, 0), v1);
       const q2 = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(1, 0, 0), v2);
       q1.slerp(q2, t);
-      const v = new THREE.Vector3(1, 0, 0).applyQuaternion(q1).multiplyScalar(RADIUS + 0.08);
+      const v = new THREE.Vector3(1, 0, 0).applyQuaternion(q1).multiplyScalar(RADIUS + radiusOffset);
       points.push(v);
     }
 
@@ -191,167 +344,154 @@ export function createPhase03MetricSpaces(quality: QualityTier = 'high'): PhaseA
     return new THREE.Line(geo, mat);
   };
 
-  const attractiveArc = createGeodesic(anchorPos, positivePos, 0x10b981, 0.9);
+  // Attractive Arc: Anchor <-> Positive (Alignment Loss L_align)
+  const attractiveArc = createSphericalGeodesic(anchorPos, positivePos, 0x10b981, 0.95, 0.1);
   group.add(attractiveArc);
 
-  const repulsiveArc = createGeodesic(anchorPos, negativePos, 0xef4444, 0.45);
-  group.add(repulsiveArc);
+  // Repulsive Arcs: Anchor <-> Negatives (Uniformity Loss L_unif)
+  const repulsiveArcs: THREE.Line[] = [];
+  negativePositions.forEach((negPos) => {
+    const arc = createSphericalGeodesic(anchorPos, negPos, 0xf43f5e, 0.42, 0.08);
+    group.add(arc);
+    repulsiveArcs.push(arc);
+  });
 
-  // Pulse particle flowing between Anchor and Positive
-  const pulseGeo = new THREE.SphereGeometry(0.12, 10, 10);
+  // Animated Pull Pulse on Alignment Arc
+  const pulseGeo = new THREE.SphereGeometry(0.12, 12, 12);
   const pulseMat = new THREE.MeshBasicMaterial({ color: 0x34d399 });
   disposables.push(pulseGeo, pulseMat);
-  const pulseMesh = new THREE.Mesh(pulseGeo, pulseMat);
-  group.add(pulseMesh);
+  const alignPulse = new THREE.Mesh(pulseGeo, pulseMat);
+  group.add(alignPulse);
 
-  // 5. Register Inspectable Items
-  const inspectables: { mesh: THREE.Object3D; data: InspectableItem }[] = [
+  // Register Inspectable Objects
+  inspectables.push(
+    {
+      mesh: sphereMesh,
+      data: {
+        id: 'hypersphere-manifold',
+        name: 'Hypersphere Embedding Metric S²',
+        symbol: 'S² ⊂ ℝ³',
+        type: 'METRIC SPACE',
+        role: 'Normalized Unit Sphere',
+        dimension: 'Metric: d(u, v) = arccos(u · v)',
+        properties: {
+          'Geometry': 'Unit Hypersphere ||z|| = 1.0',
+          'Metric Space': 'Hyperspherical Riemannian Surface',
+          'Contrastive Loss': 'InfoNCE Loss with Softmax Normalizer',
+          'Temperature τ': '0.070 (Adaptive Scaling)',
+          'Uniformity Loss': 'L_unif = log E[exp(-2||u - v||²)]',
+          'Alignment Loss': 'L_align = E[||u - v⁺||²]',
+        },
+        description: 'Unit hypersphere representation space where contrastive learning optimizes two fundamental geometric properties: alignment of positive feature pairs and hyperspherical uniformity of negative distributions.',
+        worldPosition: new THREE.Vector3(0, 0, 0),
+      },
+    },
     {
       mesh: anchorMesh,
       data: {
-        id: 'metric-anchor',
-        name: 'Anchor Sample x',
-        symbol: 'x',
+        id: 'contrastive-anchor',
+        name: 'Contrastive Anchor Embedding z_i',
+        symbol: 'z_i',
         type: 'CONTRASTIVE ANCHOR',
-        role: 'Reference Embedding Representation',
-        dimension: 'Hyperspherical Vector x ∈ S²',
+        role: 'Query Sample Vector',
+        dimension: 'Normalized ||z_i|| = 1.0',
         properties: {
-          'Norm ||x||': '1.0000 (Unit Norm L₂)',
-          'InfoNCE Loss': 'ℒ_{InfoNCE} = -log[sim(x, x⁺) / Σ sim(x, x⁻)]',
-          'Temperature τ': '0.070 (Optimal Sharpening)',
-          'Topological Uniformity': '𝒰_{uniform} = 0.942',
+          'Temperature τ': '0.07 (Horizon Ring)',
+          'Positive Pair': 'z_i⁺ (Attractive Force)',
+          'Negative Repulsion': '3 Distributed Attractors',
+          'InfoNCE Prob': 'p_i = exp(z_i · z_i⁺ / τ) / Σ_j exp(z_i · z_j / τ)',
         },
-        description: 'Reference embedding vector projected onto the unit hypersphere. Contrastive InfoNCE learning attracts x towards its positive pair x⁺ while uniformly repelling all negative samples x⁻ across the spherical surface.',
+        description: 'Anchor representation vector driving contrastive optimization. Pulls positive augmentations closer along spherical geodesic paths while repelling dissimilar negative representations across the hypersphere.',
         worldPosition: anchorPos.clone(),
       },
     },
     {
       mesh: posMesh,
       data: {
-        id: 'metric-positive',
-        name: 'Positive Pair x⁺',
-        symbol: 'x⁺',
-        type: 'POSITIVE PAIR',
-        role: 'Semantically Aligned Representation',
-        dimension: 'Geodesic Distance on S²',
+        id: 'positive-embedding',
+        name: 'Positive Augmented Pair z_i⁺',
+        symbol: 'z_i⁺',
+        type: 'POSITIVE REPRESENTATION',
+        role: 'Attracted Semantic Counterpart',
+        dimension: 'Cosine Similarity: sim(z_i, z_i⁺) = 0.94',
         properties: {
-          'Cosine Similarity': 'cos(x, x⁺) = +0.892',
-          'Geodesic Arc d_g': '0.471 rad (Great Circle)',
-          'Mutual Information': 'I(x; x⁺) ≥ log(K) - ℒ_{InfoNCE}',
-          'Alignment Metric': '𝒪_{align} = E[||x - x⁺||²] = 0.052',
+          'Alignment Metric': 'L_align = ||z_i - z_i⁺||²',
+          'Geodesic Distance': 'θ = 0.28 rad (16.2°)',
+          'Status': 'Converged into Anchor Basin',
         },
-        description: 'Augmented or semantically equivalent representation pair. Contrastive optimization minimizes the geodesic distance d_g(x, x⁺) along the Riemannian metric arc.',
+        description: 'Semantically identical positive counterpart created via data augmentation. Minimizing geodesic arc distance directly enforces representational invariance.',
         worldPosition: positivePos.clone(),
       },
-    },
-    {
-      mesh: negMesh,
-      data: {
-        id: 'metric-negative',
-        name: 'Negative Sample x⁻',
-        symbol: 'x⁻',
-        type: 'NEGATIVE SAMPLE',
-        role: 'Contrastive Class Repulsion',
-        dimension: 'Hyperspherical Uniformity Field',
-        properties: {
-          'Cosine Similarity': 'cos(x, x⁻) = -0.342',
-          'Geodesic Arc d_g': '1.921 rad (Repulsive)',
-          'Uniformity Loss': 'log E[exp(-2||x - x⁻||²)]',
-          'Dimensional Collapse': 'Prevented (Hypersphere Full Capacity)',
-        },
-        description: 'Negative sample drawn from contrasting data classes. Repulsion prevents representation collapse by distributing embeddings uniformly across all spherical degrees of freedom.',
-        worldPosition: negativePos.clone(),
-      },
-    },
-    {
-      mesh: centroidMeshes[0],
-      data: {
-        id: 'metric-cluster-0',
-        name: 'Semantic Cluster 𝒞₀',
-        symbol: '𝒞₀',
-        type: 'EMBEDDING CLUSTER',
-        role: 'High-Density Latent Centroid',
-        dimension: `${pointsPerCluster} Embedded Points`,
-        properties: {
-          'Cluster Density': '0.845 pts / rad²',
-          'Dispersion σ': '0.182 rad',
-          'Singular Value Ratio': 'λ₁ / λ₂ = 1.14 (Isotropic)',
-        },
-        description: 'Dense neighborhood of semantic representations demonstrating natural geometric clustering without dimensional collapse on the unit hypersphere.',
-        worldPosition: centroidMeshes[0].position.clone(),
-      },
-    },
-  ];
+    }
+  );
 
   // Selection Handler
   const onSelectObject = (item: InspectableItem | null) => {
-    const attrMat = attractiveArc.material as THREE.LineBasicMaterial;
-    const repMat = repulsiveArc.material as THREE.LineBasicMaterial;
-
     if (!item) {
-      attrMat.opacity = 0.9;
-      repMat.opacity = 0.45;
-      anchorMat.emissiveIntensity = 0.85;
-      posMat.emissiveIntensity = 0.85;
-      negMat.emissiveIntensity = 0.5;
-    } else if (item.id === 'metric-anchor' || item.id === 'metric-positive') {
-      attrMat.opacity = 1.0;
-      repMat.opacity = 0.15;
-      anchorMat.emissiveIntensity = 1.2;
-      posMat.emissiveIntensity = 1.2;
-    } else if (item.id === 'metric-negative') {
-      attrMat.opacity = 0.2;
-      repMat.opacity = 0.9;
-      negMat.emissiveIntensity = 1.0;
+      sphereMat.opacity = 0.82;
+      anchorMat.emissiveIntensity = 1.0;
+      posMat.emissiveIntensity = 0.9;
+      repulsiveArcs.forEach((a) => { (a.material as THREE.LineBasicMaterial).opacity = 0.42; });
+      return;
+    }
+
+    if (item.id === 'contrastive-anchor') {
+      anchorMat.emissiveIntensity = 1.5;
+      repulsiveArcs.forEach((a) => { (a.material as THREE.LineBasicMaterial).opacity = 0.85; });
+    } else if (item.id === 'positive-embedding') {
+      posMat.emissiveIntensity = 1.4;
+    } else if (item.id.startsWith('cluster-')) {
+      centroidMeshes.forEach((c) => {
+        (c.material as THREE.MeshStandardMaterial).emissiveIntensity = 0.4;
+      });
+      const match = centroidMeshes.find((_, idx) => clusterDefinitions[idx].id === item.id);
+      if (match) (match.material as THREE.MeshStandardMaterial).emissiveIntensity = 1.4;
     }
   };
 
-  // Pre-allocated scratch vectors for zero GC in render loop
-  const scratchPos = new THREE.Vector3();
-  const v1 = anchorPos.clone().normalize();
-  const v2 = positivePos.clone().normalize();
-  const q1 = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(1, 0, 0), v1);
-  const q2 = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(1, 0, 0), v2);
-  const scratchQuat = new THREE.Quaternion();
+  // Pre-allocated vectors for slerp pulse in update loop
+  const qStart = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(1, 0, 0), anchorPos.clone().normalize());
+  const qEnd = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(1, 0, 0), positivePos.clone().normalize());
+  const qInterp = new THREE.Quaternion();
+  const pulseVec = new THREE.Vector3(1, 0, 0);
 
   let pulseT = 0;
   const update = (time: number, delta: number) => {
-    // Gentle rotation of the metric space
-    sphereMesh.rotation.y += delta * 0.035;
-    wireMesh.rotation.y += delta * 0.035;
-    instancedPoints.rotation.y += delta * 0.035;
+    // Elegant slow orbital rotation of hypersphere
+    group.rotation.y = time * 0.06;
 
-    // Pulse animation between Anchor and Positive
+    // Alignment pulse traveling between Anchor and Positive
     pulseT = (pulseT + delta * 0.45) % 1.0;
-    scratchQuat.copy(q1).slerp(q2, pulseT);
-    scratchPos.set(1, 0, 0).applyQuaternion(scratchQuat).multiplyScalar(RADIUS + 0.1);
-    pulseMesh.position.copy(scratchPos);
+    qInterp.copy(qStart).slerp(qEnd, pulseT);
+    pulseVec.set(1, 0, 0).applyQuaternion(qInterp).multiplyScalar(RADIUS + 0.1);
+    alignPulse.position.copy(pulseVec);
 
-    // Dynamic scale breathing on anchor
-    const scale = 1.0 + Math.sin(time * 2.4) * 0.08;
-    anchorMesh.scale.set(scale, scale, scale);
+    // Temperature ring breathing
+    tauRingMat.opacity = 0.4 + Math.sin(time * 3.0) * 0.15;
   };
 
   const toggleLayer = (layer: LayerType, visible: boolean) => {
     if (layer === 'geometry') {
       sphereMesh.visible = visible;
       wireMesh.visible = visible;
+      gridGroup.visible = visible;
     } else if (layer === 'clusters') {
-      instancedPoints.visible = visible;
-      anchorMesh.visible = visible;
-      posMesh.visible = visible;
-      negMesh.visible = visible;
+      centroidMeshes.forEach((m) => { m.visible = visible; });
+      instancedEmbeddings.visible = visible;
     } else if (layer === 'trajectories') {
       attractiveArc.visible = visible;
-      repulsiveArc.visible = visible;
-      pulseMesh.visible = visible;
+      repulsiveArcs.forEach((a) => { a.visible = visible; });
+      alignPulse.visible = visible;
+      anchorMesh.visible = visible;
+      posMesh.visible = visible;
+      tauRing.visible = visible;
     }
   };
 
   const getAnnotations = (): SpatialAnnotation[] => [
-    { id: 'anchor', label: 'Anchor Sample x', sublabel: 'Unit Norm ||x|| = 1.0', position: anchorPos.clone().multiplyScalar(1.15) },
-    { id: 'positive', label: 'Positive Pair x⁺', sublabel: 'cos(x, x⁺) = +0.892', position: positivePos.clone().multiplyScalar(1.15) },
-    { id: 'negative', label: 'Negative Sample x⁻', sublabel: 'Uniformly Repelled', position: negativePos.clone().multiplyScalar(1.15) },
+    { id: 'anchor-annot', label: 'Anchor z_i (τ = 0.07)', sublabel: 'Joint Multimodal Core', position: anchorPos.clone().multiplyScalar(1.08) },
+    { id: 'align-annot', label: 'Alignment L_align', sublabel: 'Attractive Geodesic Pull', position: new THREE.Vector3().addVectors(anchorPos, positivePos).multiplyScalar(0.55) },
+    { id: 'unif-annot', label: 'Uniformity L_unif', sublabel: 'Hyperspherical Dispersion', position: clusterDefinitions[1].center.clone().multiplyScalar(1.08) },
   ];
 
   const dispose = () => {
@@ -366,7 +506,7 @@ export function createPhase03MetricSpaces(quality: QualityTier = 'high'): PhaseA
     group,
     update,
     dispose,
-    defaultCameraPosition: [0, 2.2, 13.5],
+    defaultCameraPosition: [0, 2.5, 11.2],
     defaultTarget: [0, 0, 0],
     getInspectableObjects: () => inspectables,
     onSelectObject,
