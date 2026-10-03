@@ -17,13 +17,31 @@ import { FocusedNodeModal } from './components/FocusedNodeModal';
 import { CertificateModal } from './components/modals/CertificateModal';
 import { ProjectDetailModal } from './components/modals/ProjectDetailModal';
 import { ContactModal } from './components/modals/ContactModal';
-import { ResumeModal } from './components/modals/ResumeModal';
-import { PrintCVDocument } from './components/cv/PrintCVDocument';
-import { AddVisitorNodeModal } from './components/modals/AddVisitorNodeModal';
 import { InspectorListView } from './components/InspectorListView';
 import { ChronicleView } from './components/ChronicleView';
-import { ResearchCanvas3D } from './components/canvas3d/ResearchCanvas3D';
 import { playSound } from './lib/sound';
+
+// Code-split heavy modal & 3D canvas subsystems to keep initial page load lightweight & snappy on mobile/low-end devices
+const ResearchCanvas3D = React.lazy(() =>
+  import('./components/canvas3d/ResearchCanvas3D').then((m) => ({
+    default: m.ResearchCanvas3D,
+  }))
+);
+const ResumeModal = React.lazy(() =>
+  import('./components/modals/ResumeModal').then((m) => ({
+    default: m.ResumeModal,
+  }))
+);
+const PrintCVDocument = React.lazy(() =>
+  import('./components/cv/PrintCVDocument').then((m) => ({
+    default: m.PrintCVDocument,
+  }))
+);
+const AddVisitorNodeModal = React.lazy(() =>
+  import('./components/modals/AddVisitorNodeModal').then((m) => ({
+    default: m.AddVisitorNodeModal,
+  }))
+);
 import { useIsMobile } from './hooks/useIsMobile';
 import { MobileNodespace } from './components/MobileNodespace';
 import { GraphErrorBoundary } from './components/GraphErrorBoundary';
@@ -491,8 +509,20 @@ export default function App() {
   const [, setDriftTick] = useState(0);
 
   useEffect(() => {
-    if (!isSimulating || activeView !== 'canvas') {
-      setDriftOffsets({});
+    // Completely freeze drift calculations if 3D Research Canvas, modals, or other views are open
+    const isModalOrSubsystemOpen =
+      !!activeResearchCanvasPhase ||
+      !!focusedNode ||
+      !!selectedProject ||
+      !!selectedCertificate ||
+      isResumeOpen ||
+      isContactOpen ||
+      isAddNodeOpen;
+
+    if (!isSimulating || activeView !== 'canvas' || isModalOrSubsystemOpen) {
+      if (!isModalOrSubsystemOpen && (!isSimulating || activeView !== 'canvas')) {
+        setDriftOffsets({});
+      }
       return;
     }
 
@@ -594,7 +624,18 @@ export default function App() {
       stopLoop();
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, [isSimulating, activeView, NODE_DRIFT_PROFILES]);
+  }, [
+    isSimulating,
+    activeView,
+    NODE_DRIFT_PROFILES,
+    !!activeResearchCanvasPhase,
+    !!focusedNode,
+    !!selectedProject,
+    !!selectedCertificate,
+    isResumeOpen,
+    isContactOpen,
+    isAddNodeOpen,
+  ]);
 
   // ─── HIGH-PRECISION VELOCITY-AWARE SCROLL ENGINE & MAGNETIC SETTLE ─────────
   const startSettleRef = useRef<((target: 0 | 1, customDuration?: number) => void) | null>(null);
@@ -2337,22 +2378,31 @@ export default function App() {
         }}
       />
 
-      {/* Dedicated 3D Research Canvas Subsystem */}
+      {/* Dedicated 3D Research Canvas Subsystem - Lazily loaded on demand */}
       {activeResearchCanvasPhase && (
-        <ResearchCanvas3D
-          initialPhaseId={activeResearchCanvasPhase}
-          isInitialEntry={true}
-          onExit={(savedChronicleId) => {
-            setChronicleActivePhaseId(savedChronicleId);
-            setActiveResearchCanvasPhase(null);
-            handleSelectNavTab(previousTabRef.current || 'network');
-          }}
-          onNavigateToLab={(savedChronicleId) => {
-            setChronicleActivePhaseId(savedChronicleId);
-            setActiveResearchCanvasPhase(null);
-            handleSelectNavTab('notebook');
-          }}
-        />
+        <React.Suspense
+          fallback={
+            <div className="fixed inset-0 z-50 bg-[#14171c] flex flex-col items-center justify-center text-rose-500 font-mono text-xs tracking-widest uppercase gap-3">
+              <div className="w-8 h-8 rounded-full border border-rose-500/40 border-t-rose-500 animate-spin" />
+              <span>INITIALIZING NEURAL ARTIFACT ENGINE...</span>
+            </div>
+          }
+        >
+          <ResearchCanvas3D
+            initialPhaseId={activeResearchCanvasPhase}
+            isInitialEntry={true}
+            onExit={(savedChronicleId) => {
+              setChronicleActivePhaseId(savedChronicleId);
+              setActiveResearchCanvasPhase(null);
+              handleSelectNavTab(previousTabRef.current || 'network');
+            }}
+            onNavigateToLab={(savedChronicleId) => {
+              setChronicleActivePhaseId(savedChronicleId);
+              setActiveResearchCanvasPhase(null);
+              handleSelectNavTab('notebook');
+            }}
+          />
+        </React.Suspense>
       )}
 
       <ContactModal
@@ -2364,22 +2414,32 @@ export default function App() {
         email="marksrv047@gmail.com"
       />
 
-      <ResumeModal
-        isOpen={isResumeOpen}
-        onClose={() => setIsResumeOpen(false)}
-        nodes={nodes}
-      />
+      {isResumeOpen && (
+        <React.Suspense fallback={null}>
+          <ResumeModal
+            isOpen={isResumeOpen}
+            onClose={() => setIsResumeOpen(false)}
+            nodes={nodes}
+          />
+        </React.Suspense>
+      )}
 
       {/* Production Print A4 CV Document (Hidden on screen, active in @media print) */}
-      <PrintCVDocument nodes={nodes} />
+      <React.Suspense fallback={null}>
+        <PrintCVDocument nodes={nodes} />
+      </React.Suspense>
 
-      <AddVisitorNodeModal
-        isOpen={isAddNodeOpen}
-        onClose={() => setIsAddNodeOpen(false)}
-        onAddNode={handleAddVisitorNode}
-        existingVisitorCount={nodes.filter((n) => n.category === 'visitor').length}
-        currentTransform={transform}
-      />
+      {isAddNodeOpen && (
+        <React.Suspense fallback={null}>
+          <AddVisitorNodeModal
+            isOpen={isAddNodeOpen}
+            onClose={() => setIsAddNodeOpen(false)}
+            onAddNode={handleAddVisitorNode}
+            existingVisitorCount={nodes.filter((n) => n.category === 'visitor').length}
+            currentTransform={transform}
+          />
+        </React.Suspense>
+      )}
     </div>
   );
 }

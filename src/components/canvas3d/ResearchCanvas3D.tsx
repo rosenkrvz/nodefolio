@@ -1185,11 +1185,38 @@ ${currentPhaseMeta.description}
       // 1. Dispose old artifact
       if (activeArtifactRef.current) {
         scene.remove(activeArtifactRef.current.group);
+        // Deep recursive disposal of child geometries and materials
+        activeArtifactRef.current.group.traverse((child) => {
+          if ((child as THREE.Mesh).geometry) {
+            (child as THREE.Mesh).geometry.dispose();
+          }
+          if ((child as THREE.Mesh).material) {
+            const mat = (child as THREE.Mesh).material;
+            if (Array.isArray(mat)) {
+              mat.forEach((m) => m.dispose());
+            } else {
+              mat.dispose();
+            }
+          }
+        });
         activeArtifactRef.current.dispose();
         activeArtifactRef.current = null;
+        if (rendererRef.current) {
+          rendererRef.current.renderLists.dispose();
+        }
       }
       if (customProbesRef.current.length > 0) {
-        customProbesRef.current.forEach((g) => scene.remove(g));
+        customProbesRef.current.forEach((g) => {
+          scene.remove(g);
+          g.traverse((child) => {
+            if ((child as THREE.Mesh).geometry) (child as THREE.Mesh).geometry.dispose();
+            if ((child as THREE.Mesh).material) {
+              const mat = (child as THREE.Mesh).material;
+              if (Array.isArray(mat)) mat.forEach((m) => m.dispose());
+              else mat.dispose();
+            }
+          });
+        });
         customProbesRef.current = [];
       }
 
@@ -1286,17 +1313,31 @@ ${currentPhaseMeta.description}
     const camera = new THREE.PerspectiveCamera(46, width / height, 0.1, 100);
     cameraRef.current = camera;
 
-    // 3. WebGL Renderer with alpha transparency and capped DPR for high framerate
+    // 3. WebGL Renderer with device-adaptive DPR and quality settings
     let renderer: THREE.WebGLRenderer;
     try {
+      const isLowTier = activeTier === 'low';
+      const isMobile =
+        (typeof window !== 'undefined' && window.innerWidth < 768) ||
+        (typeof navigator !== 'undefined' &&
+          /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent));
+
       renderer = new THREE.WebGLRenderer({
-        antialias: true,
-        powerPreference: 'high-performance',
+        antialias: !isLowTier && !isMobile,
+        powerPreference: isLowTier ? 'default' : 'high-performance',
         alpha: true,
+        precision: isLowTier ? 'mediump' : 'highp',
+        stencil: false,
+        depth: true,
       });
       renderer.setClearColor(0x000000, 0);
       renderer.setSize(width, height);
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2.0));
+
+      // Adaptive DPR cap:
+      // Low-end / mobile: 1.0 (or max 1.25 on tablet) to avoid mobile GPU thermal throttling
+      // Medium / desktop: capped to 1.5 to eliminate 40% redundant fillrate on 4K/retina displays
+      const maxDpr = isLowTier ? 1.0 : (isMobile ? 1.2 : 1.5);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, maxDpr));
       renderer.toneMapping = THREE.ACESFilmicToneMapping;
       renderer.toneMappingExposure = 1.08;
       rendererRef.current = renderer;
@@ -1469,6 +1510,10 @@ ${currentPhaseMeta.description}
       if (w === 0 || h === 0) return;
       camera.aspect = w / h;
       camera.updateProjectionMatrix();
+      const isLowTier = activeTier === 'low';
+      const isMobile = w < 768;
+      const maxDpr = isLowTier ? 1.0 : (isMobile ? 1.2 : 1.5);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, maxDpr));
       renderer.setSize(w, h);
     };
 
@@ -1479,15 +1524,58 @@ ${currentPhaseMeta.description}
     }
     window.addEventListener('resize', onWindowResize);
 
-    // 8. Animation & Render Loop with Camera Slerp
+    // 8. Animation & Render Loop with Camera Slerp, Visibility Pause & Frame Pacing
     let lastTime = performance.now();
     let frameCount = 0;
     let lastStatsTime = performance.now();
+    let lastRenderTime = performance.now();
+    let isPaused = false;
+
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        isPaused = true;
+        if (animFrameIdRef.current) {
+          cancelAnimationFrame(animFrameIdRef.current);
+          animFrameIdRef.current = null;
+        }
+      } else {
+        isPaused = false;
+        lastTime = performance.now();
+        lastRenderTime = performance.now();
+        if (!animFrameIdRef.current) {
+          animFrameIdRef.current = requestAnimationFrame(animate);
+        }
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    const handleContextLost = (e: Event) => {
+      e.preventDefault();
+      if (animFrameIdRef.current) {
+        cancelAnimationFrame(animFrameIdRef.current);
+        animFrameIdRef.current = null;
+      }
+    };
+    const handleContextRestored = () => {
+      setInitAttempt((prev) => prev + 1);
+    };
+    renderer.domElement.addEventListener('webglcontextlost', handleContextLost, false);
+    renderer.domElement.addEventListener('webglcontextrestored', handleContextRestored, false);
 
     const animate = () => {
+      if (isPaused || document.hidden) return;
+
       animFrameIdRef.current = requestAnimationFrame(animate);
 
       const now = performance.now();
+
+      // Low-end frame pacing: throttle to ~35 FPS on low-tier to prevent thermal throttling
+      const targetInterval = activeTier === 'low' ? 28 : 0;
+      if (targetInterval > 0 && now - lastRenderTime < targetInterval) {
+        return;
+      }
+      lastRenderTime = now;
+
       const delta = Math.min((now - lastTime) / 1000, 0.1);
       lastTime = now;
 
@@ -1565,6 +1653,11 @@ ${currentPhaseMeta.description}
 
     // 9. Cleanup
     return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      if (renderer && renderer.domElement) {
+        renderer.domElement.removeEventListener('webglcontextlost', handleContextLost);
+        renderer.domElement.removeEventListener('webglcontextrestored', handleContextRestored);
+      }
       if (animFrameIdRef.current) {
         cancelAnimationFrame(animFrameIdRef.current);
       }
@@ -1577,9 +1670,18 @@ ${currentPhaseMeta.description}
       container.removeEventListener('pointerup', onPointerUp);
 
       if (activeArtifactRef.current) {
+        activeArtifactRef.current.group.traverse((child) => {
+          if ((child as THREE.Mesh).geometry) (child as THREE.Mesh).geometry.dispose();
+          if ((child as THREE.Mesh).material) {
+            const mat = (child as THREE.Mesh).material;
+            if (Array.isArray(mat)) mat.forEach((m) => m.dispose());
+            else mat.dispose();
+          }
+        });
         activeArtifactRef.current.dispose();
       }
       controls.dispose();
+      renderer.renderLists.dispose();
       renderer.dispose();
       if (container.contains(renderer.domElement)) {
         container.removeChild(renderer.domElement);
