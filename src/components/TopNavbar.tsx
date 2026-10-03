@@ -135,21 +135,6 @@ const TopNavbarComponent: React.FC<TopNavbarProps> = ({
               type="button"
               onClick={() => {
                 playSound('nav');
-                onSelectNavTab?.('projects');
-              }}
-              className={`relative px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
-                activeNavTab === 'projects'
-                  ? 'text-white bg-[#1e222b] border border-rose-500/40 shadow-[0_0_12px_rgba(244,63,94,0.18)]'
-                  : 'hover:text-white hover:bg-white/[0.04] border border-transparent'
-              }`}
-            >
-              {activeNavTab === 'projects' && <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shadow-[0_0_6px_#f43f5e]" />}
-              <span>RESEARCH</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                playSound('nav');
                 onSelectNavTab?.('notebook');
               }}
               className={`relative px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
@@ -160,6 +145,21 @@ const TopNavbarComponent: React.FC<TopNavbarProps> = ({
             >
               {activeNavTab === 'notebook' && <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shadow-[0_0_6px_#f43f5e]" />}
               <span>LAB</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                playSound('nav');
+                onSelectNavTab?.('projects');
+              }}
+              className={`relative px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
+                activeNavTab === 'projects'
+                  ? 'text-white bg-[#1e222b] border border-rose-500/40 shadow-[0_0_12px_rgba(244,63,94,0.18)]'
+                  : 'hover:text-white hover:bg-white/[0.04] border border-transparent'
+              }`}
+            >
+              {activeNavTab === 'projects' && <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shadow-[0_0_6px_#f43f5e]" />}
+              <span>RESEARCH</span>
             </button>
             {onOpenResume && (
               <button
@@ -184,7 +184,7 @@ const TopNavbarComponent: React.FC<TopNavbarProps> = ({
         {/* Mobile Minimal Section Pill */}
         <div className="hidden min-[420px]:flex md:hidden items-center px-1">
           <span className="text-[10px] font-tech font-bold text-zinc-300 bg-white/[0.06] border border-white/10 px-2 py-0.5 rounded-full uppercase tracking-wider">
-            {activeNavTab === 'projects' ? 'RESEARCH' : activeNavTab === 'network' ? 'WORK' : activeNavTab === 'notebook' ? 'LAB' : 'HOME'}
+            {activeNavTab === 'notebook' ? 'LAB' : activeNavTab === 'projects' ? 'RESEARCH' : activeNavTab === 'network' ? 'WORK' : 'HOME'}
           </span>
         </div>
 
@@ -293,21 +293,21 @@ const TopNavbarComponent: React.FC<TopNavbarProps> = ({
             </button>
             <button
               type="button"
-              onClick={() => handleMobileSelect('projects')}
-              className={`px-4 py-3 rounded-xl text-left transition-colors cursor-pointer ${
-                activeNavTab === 'projects' ? 'bg-white/10 text-white font-bold' : 'hover:bg-white/[0.06]'
-              }`}
-            >
-              Research
-            </button>
-            <button
-              type="button"
               onClick={() => handleMobileSelect('notebook')}
               className={`px-4 py-3 rounded-xl text-left transition-colors cursor-pointer ${
                 activeNavTab === 'notebook' ? 'bg-white/10 text-white font-bold' : 'hover:bg-white/[0.06]'
               }`}
             >
               Lab
+            </button>
+            <button
+              type="button"
+              onClick={() => handleMobileSelect('projects')}
+              className={`px-4 py-3 rounded-xl text-left transition-colors cursor-pointer ${
+                activeNavTab === 'projects' ? 'bg-white/10 text-white font-bold' : 'hover:bg-white/[0.06]'
+              }`}
+            >
+              Research
             </button>
             {onOpenResume && (
               <button

@@ -497,18 +497,26 @@ export const ChronicleView: React.FC<ChronicleViewProps> = ({
 
   return (
     <div className="relative w-full min-h-screen bg-[#14171c] text-[#ededed] font-body select-text overflow-x-hidden">
-      {/* ═══════════ EDITORIAL COVER MATCHING ARCHITECTURAL BACKDROP ═══════════ */}
+      {/* ═══════════ COMPUTATIONAL LAB BLUEPRINT & TELEMETRY ATMOSPHERE ═══════════ */}
       <div
         className="fixed inset-0 pointer-events-none overflow-hidden z-0"
         aria-hidden="true"
       >
-        <div className="pattern-bg">
-          <div className="cube-svg" />
-        </div>
+        {/* Deep Slate Lab Base */}
+        <div className="absolute inset-0 bg-[#0e1117]" />
+
+        {/* Subtle Laboratory Dot Lattice Matrix */}
+        <div className="absolute inset-0 opacity-40 bg-[radial-gradient(#333a48_1px,transparent_1px)] [background-size:24px_24px]" />
+
+        {/* Engineering CAD Blueprint Grid lines */}
+        <div className="absolute inset-0 opacity-15 bg-[linear-gradient(to_right,#ffffff0f_1px,transparent_1px),linear-gradient(to_bottom,#ffffff0f_1px,transparent_1px)] [background-size:72px_72px]" />
+
+        {/* Ambient Top Glow for Laboratory Workbench */}
+        <div className="absolute -top-32 left-1/2 -translate-x-1/2 w-[850px] h-[340px] bg-rose-500/[0.04] blur-[120px] rounded-full" />
       </div>
 
       {/* Subtle Coordinate Grid Overlay */}
-      <div className="fixed inset-0 pointer-events-none bg-canvas-dots-overlay opacity-60 z-0" aria-hidden="true" />
+      <div className="fixed inset-0 pointer-events-none bg-canvas-dots-overlay opacity-40 z-0" aria-hidden="true" />
 
       {/* ═══════════ ARCHITECTURAL TELEMETRY MARGIN RAILS (Ultrawide / Zoom-out) ═══════════ */}
       {/* Left Margin Telemetry Rail */}
@@ -537,170 +545,198 @@ export const ChronicleView: React.FC<ChronicleViewProps> = ({
         </div>
       </div>
 
-      {/* ═══════════ CINEMATIC EDITORIAL HERO SECTION ═══════════ */}
-      <header className="relative z-10 w-full pt-24 sm:pt-28 pb-12 px-4 sm:px-8 md:px-12 lg:px-16 2xl:px-20 border-b border-white/[0.08]">
+      {/* ═══════════ COMPUTATIONAL RESEARCH LABORATORY DOSSIER HEADER ═══════════ */}
+      <header className="relative z-10 w-full pt-20 sm:pt-24 pb-8 px-4 sm:px-8 md:px-12 lg:px-16 2xl:px-20 border-b border-white/[0.08]">
         <div className="w-full max-w-[1780px] 2xl:max-w-[1920px] 3xl:max-w-[2160px] mx-auto">
-          {/* Top Eyebrow & Brand Anchor */}
+          {/* Top Status & Telemetry Bar */}
           <div
             style={{
               opacity: entryStage >= 1 ? 1 : 0,
               transform: reducedMotion || entryStage >= 1 ? 'none' : 'translateY(-12px)',
-              transition: 'opacity 0.6s ease-out, transform 0.6s ease-out',
+              transition: 'opacity 0.5s ease-out, transform 0.5s ease-out',
             }}
-            className="flex items-center justify-between mb-10 pb-4 border-b border-white/[0.06]"
+            className="flex flex-wrap items-center justify-between gap-4 mb-6 pb-4 border-b border-white/[0.08]"
           >
             <div className="flex items-center gap-3 font-tech text-xs tracking-[0.25em] text-zinc-400 uppercase">
-              <BrandLogo variant="icon" size={15} className="text-rose-400 shrink-0" />
-              <span className="font-semibold text-zinc-200">CHRONICLE / 03</span>
-              <span className="text-zinc-600">&bull;</span>
-              <span className="hidden sm:inline text-zinc-400 font-mono">COMPUTATIONAL RESEARCH JOURNAL</span>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <span className="font-accent text-3xl leading-none text-rose-400/90 font-bold -mb-1">
-                2023 — 2026
-              </span>
+              <BrandLogo variant="icon" size={16} className="text-rose-400 shrink-0" />
+              <span className="font-semibold text-zinc-200">LABORATORY // RESEARCH &amp; THEORY</span>
               <span className="text-zinc-600 hidden sm:inline">&bull;</span>
-              <span className="hidden sm:inline font-tech text-[10px] tracking-widest text-zinc-400 uppercase">
-                VOL. IV
+              <span className="hidden sm:inline font-mono text-[11px] text-zinc-400">
+                {MILESTONES.length} EMPIRICAL MODULES
               </span>
             </div>
-          </div>
 
-          {/* Main Asymmetric Title Block */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 xl:gap-16 2xl:gap-24 items-end">
-            {/* Left: Directionally Masked Title & Pitch (col-span-8) */}
-            <div className="lg:col-span-8 flex flex-col items-start">
-              {/* Category Breadcrumb */}
-              <div
-                style={{
-                  opacity: entryStage >= 2 ? 1 : 0,
-                  transition: 'opacity 0.5s ease-out',
+            {/* Quick Action Navigation Buttons */}
+            <div className="flex items-center gap-2 sm:gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  playSound('click');
+                  onBackToCanvas();
                 }}
-                className="font-tech text-xs font-semibold tracking-[0.35em] uppercase text-rose-400 mb-3 flex items-center gap-2"
+                className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-zinc-300 hover:text-white border border-white/[0.12] hover:border-white/[0.25] font-tech font-semibold text-xs tracking-wider uppercase transition-all cursor-pointer flex items-center gap-2"
               >
-                <span>RESEARCH MILESTONES</span>
-                <span className="text-zinc-600">/</span>
-                <span>SYSTEMS KERNELS</span>
-                <span className="text-zinc-600">/</span>
-                <span>LATENT GEODESICS</span>
-              </div>
+                <ArrowLeft className="w-3.5 h-3.5 text-rose-400" />
+                <span>BACK TO CANVAS</span>
+              </button>
 
-              {/* Directionally Masked Monumental Display Title */}
-              <div className="overflow-hidden py-1 -my-1 mb-5">
-                <h1
-                  style={{
-                    transform:
-                      reducedMotion || entryStage >= 2 ? 'translateY(0)' : 'translateY(100%)',
-                    opacity: reducedMotion || entryStage >= 2 ? 1 : 0,
-                    transition:
-                      'transform 0.8s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.8s ease-out',
-                  }}
-                  className="leading-[0.95] sm:leading-[0.9] select-none tracking-tight"
-                >
-                  <span className="block font-display text-3xl min-[360px]:text-[32px] min-[400px]:text-4xl min-[480px]:text-5xl sm:text-7xl md:text-8xl xl:text-9xl 2xl:text-[10rem] font-black text-white tracking-[-0.03em] uppercase break-words">
-                    COMPUTATIONAL
-                  </span>
-                  <span className="block font-display text-3xl min-[360px]:text-[32px] min-[400px]:text-4xl min-[480px]:text-5xl sm:text-7xl md:text-8xl xl:text-9xl 2xl:text-[10rem] font-light text-zinc-400/90 tracking-[-0.02em] uppercase mt-1 break-words">
-                    CHRONICLE
-                  </span>
-                </h1>
-              </div>
-
-              {/* Supporting Editorial Statement */}
-              <p
-                style={{
-                  opacity: entryStage >= 3 ? 1 : 0,
-                  transform: reducedMotion || entryStage >= 3 ? 'none' : 'translateY(16px)',
-                  transition: 'opacity 0.7s ease-out, transform 0.7s ease-out',
-                }}
-                className="font-body text-base sm:text-lg xl:text-xl text-zinc-300 font-normal leading-relaxed mb-8 max-w-2xl xl:max-w-3xl 2xl:max-w-4xl"
-              >
-                An art-directed experimental journal logging investigations in Riemannian latent representations, hardware-aware attention kernels, contrastive metric geometry, and first-principles autodiff engines.
-              </p>
-
-              {/* Tactile Navigation Buttons */}
-              <div
-                style={{
-                  opacity: entryStage >= 3 ? 1 : 0,
-                  transform: reducedMotion || entryStage >= 3 ? 'none' : 'translateY(12px)',
-                  transition: 'opacity 0.6s ease-out 0.1s, transform 0.6s ease-out 0.1s',
-                }}
-                className="flex flex-wrap items-center gap-3 sm:gap-4 font-body w-full sm:w-auto"
-              >
+              {onOpenResearchCanvas3D && (
                 <button
                   type="button"
                   onClick={() => {
-                    playSound('click');
-                    onBackToCanvas();
+                    playSound('open');
+                    onOpenResearchCanvas3D(displayedMilestone.id);
                   }}
-                  className="w-full min-[400px]:w-auto justify-center px-4 sm:px-5 py-3 sm:py-3.5 rounded-md bg-white/[0.04] hover:bg-white/[0.08] text-zinc-200 hover:text-white border border-white/[0.12] hover:border-white/[0.25] font-semibold text-xs sm:text-sm tracking-wider uppercase transition-all active:scale-95 cursor-pointer flex items-center gap-2 group"
+                  className="px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-lg bg-[#1a1f2c] hover:bg-[#232a3b] text-rose-300 hover:text-white border border-rose-500/40 hover:border-rose-500/80 font-mono font-semibold text-xs tracking-wider uppercase transition-all shadow-[0_0_12px_rgba(244,63,94,0.18)] flex items-center gap-2 cursor-pointer"
+                  title="Launch 3D interactive viewport for this research phase"
                 >
-                  <ArrowLeft className="w-4 h-4 text-rose-400 transition-transform group-hover:-translate-x-1" />
-                  <span>BACK TO CANVAS</span>
+                  <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
+                  <span className="hidden min-[480px]:inline">3D VIEWPORT</span>
+                  <span className="min-[480px]:hidden">3D</span>
                 </button>
+              )}
 
-                {onOpenResearchCanvas3D && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      playSound('open');
-                      onOpenResearchCanvas3D(activeMilestone.id);
-                    }}
-                    className="w-full min-[400px]:w-auto justify-center px-4 sm:px-5 py-3 sm:py-3.5 rounded-md bg-[#191d26] hover:bg-[#202532] text-rose-200 hover:text-white border border-rose-500/40 hover:border-rose-500/80 font-mono font-semibold text-xs sm:text-sm tracking-wider uppercase transition-all shadow-[0_0_16px_rgba(244,63,94,0.18)] flex items-center gap-2 group cursor-pointer active:scale-95"
-                    title="Launch full 3D interactive viewport for this research phase"
-                  >
-                    <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
-                    <span>LAUNCH 3D VIEWPORT</span>
-                  </button>
-                )}
+              <a
+                href="#chronicle-ledger"
+                onClick={() => playSound('secondaryClick')}
+                className="px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-tech font-semibold text-xs tracking-wider uppercase transition-all shadow-[0_0_16px_rgba(244,63,94,0.3)] flex items-center gap-1.5 cursor-pointer"
+              >
+                <span>LEDGER</span>
+                <ChevronDown className="w-3.5 h-3.5" />
+              </a>
+            </div>
+          </div>
 
-                <a
-                  href="#chronicle-ledger"
-                  onClick={() => playSound('secondaryClick')}
-                  className="w-full min-[400px]:w-auto justify-center px-4 sm:px-5 py-3 sm:py-3.5 rounded-md bg-rose-600 hover:bg-rose-500 text-white font-semibold text-xs sm:text-sm tracking-wider uppercase transition-all shadow-[0_0_24px_rgba(244,63,94,0.35)] hover:shadow-[0_0_32px_rgba(244,63,94,0.55)] flex items-center gap-2 group active:scale-95 cursor-pointer"
-                >
-                  <span>EXPLORE CHRONICLE</span>
-                  <ChevronDown className="w-4 h-4 transition-transform group-hover:translate-y-0.5" />
-                </a>
+          {/* Laboratory Overview & Mission Statement */}
+          <div
+            style={{
+              opacity: entryStage >= 2 ? 1 : 0,
+              transform: reducedMotion || entryStage >= 2 ? 'none' : 'translateY(10px)',
+              transition: 'opacity 0.6s ease-out, transform 0.6s ease-out',
+            }}
+            className="mb-8"
+          >
+            <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
+              <div className="max-w-3xl">
+                <div className="flex items-center gap-2.5 font-tech text-xs tracking-[0.3em] uppercase text-rose-400 font-semibold mb-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shadow-[0_0_6px_#f43f5e]" />
+                  <span>COMPUTATIONAL FIELD NOTEBOOK &amp; THEORY LOGS</span>
+                </div>
+                <h1 className="font-tech text-2xl sm:text-3xl md:text-4xl lg:text-[42px] font-bold text-white tracking-tight uppercase leading-tight mb-3">
+                  Theoretical Formulations &amp; Systems Implementations
+                </h1>
+                <p className="font-body text-sm sm:text-base text-zinc-300 font-normal leading-relaxed">
+                  First-principles investigations in Riemannian latent representations, hardware-aware attention kernels, contrastive metric geometry, and reverse-mode autodiff engines—verified against executable computational codebases.
+                </p>
+              </div>
+
+              {/* Lab Specification Metrics */}
+              <div className="flex flex-wrap items-center gap-3 sm:gap-6 pt-3 lg:pt-0 lg:border-l lg:border-white/[0.08] lg:pl-8 shrink-0">
+                <div className="flex flex-col">
+                  <span className="font-tech text-[10px] text-zinc-400 uppercase tracking-widest">Active Phase</span>
+                  <span className="font-tech font-bold text-rose-400 text-base sm:text-lg">
+                    {displayedMilestone.phase}
+                  </span>
+                </div>
+                <div className="h-8 w-px bg-white/10 hidden sm:block" />
+                <div className="flex flex-col">
+                  <span className="font-tech text-[10px] text-zinc-400 uppercase tracking-widest">Benchmarks</span>
+                  <span className="font-tech font-bold text-white text-base sm:text-lg">
+                    02 Modules
+                  </span>
+                </div>
+                <div className="h-8 w-px bg-white/10 hidden sm:block" />
+                <div className="flex flex-col">
+                  <span className="font-tech text-[10px] text-zinc-400 uppercase tracking-widest">Engines</span>
+                  <span className="font-tech font-bold text-white text-base sm:text-lg">
+                    02 Built
+                  </span>
+                </div>
+                <div className="h-8 w-px bg-white/10 hidden sm:block" />
+                <div className="flex flex-col">
+                  <span className="font-tech text-[10px] text-zinc-400 uppercase tracking-widest">Formal Rigor</span>
+                  <span className="font-tech font-bold text-zinc-200 text-base sm:text-lg">
+                    KKT Duality
+                  </span>
+                </div>
               </div>
             </div>
+          </div>
 
-            {/* Right: Technical Index Specs (col-span-4) */}
-            <div
-              style={{
-                opacity: entryStage >= 3 ? 1 : 0,
-                transition: 'opacity 0.7s ease-out',
-              }}
-              className="hidden lg:flex lg:col-span-4 flex-col items-end text-right space-y-6 pl-8"
-            >
-              <div className="space-y-3 w-full max-w-[280px] xl:max-w-[340px]">
-                <div className="font-tech text-xs tracking-[0.25em] text-rose-400 uppercase font-semibold pb-2 border-b border-white/[0.08]">
-                  JOURNAL SPECIFICATION
-                </div>
-                {[
-                  { label: 'ACTIVE INVESTIGATION', value: activeMilestone.phase },
-                  { label: 'VERIFIED BENCHMARKS', value: '02 MODULES' },
-                  { label: 'SYSTEMS COMPLETED', value: '02 ENGINES' },
-                  { label: 'FORMAL RIGOR', value: 'KKT DUALITY' },
-                ].map((stat) => (
-                  <div key={stat.label} className="flex items-center justify-between text-xs xl:text-sm">
-                    <span className="font-tech text-zinc-400 uppercase tracking-wider text-[10px] xl:text-[11px]">
-                      {stat.label}
-                    </span>
-                    <span className="font-tech font-bold text-zinc-200">
-                      {stat.value}
-                    </span>
-                  </div>
-                ))}
-              </div>
+          {/* Interactive Project Discovery Cards (Direct Phase Access) */}
+          <div
+            style={{
+              opacity: entryStage >= 3 ? 1 : 0,
+              transform: reducedMotion || entryStage >= 3 ? 'none' : 'translateY(12px)',
+              transition: 'opacity 0.6s ease-out 0.1s, transform 0.6s ease-out 0.1s',
+            }}
+            className="pt-2"
+          >
+            <div className="text-[11px] font-tech uppercase tracking-[0.25em] text-zinc-400 mb-3 flex items-center justify-between">
+              <span>SELECT RESEARCH PHASE FOR THEORETICAL BREAKDOWN</span>
+              <span className="hidden md:inline text-zinc-400 font-mono">CLICK TO JUMP</span>
+            </div>
 
-              <div className="pt-4 border-t border-white/[0.06] max-w-[240px] xl:max-w-[300px]">
-                <p className="font-tech text-[10px] xl:text-[11px] text-zinc-400 uppercase tracking-widest leading-normal">
-                  All mathematical diagrams and kernel schematics are verified against working computational codebases.
-                </p>
-                <div className="w-6 h-0.5 bg-rose-500 mt-2 ml-auto" />
-              </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+              {MILESTONES.map((m) => {
+                const isSelected = m.id === displayedMilestone.id;
+                return (
+                  <button
+                    key={m.id}
+                    type="button"
+                    onClick={() => {
+                      playSound('click');
+                      handleSelectPhase(m.id);
+                    }}
+                    className={`group relative text-left p-3.5 sm:p-4 rounded-xl border transition-all duration-200 cursor-pointer ${
+                      isSelected
+                        ? 'bg-[#1b202c] border-rose-500/60 shadow-[0_0_20px_rgba(244,63,94,0.18)] scale-[1.01]'
+                        : 'bg-[#14171f]/80 hover:bg-[#181d26] border-white/[0.08] hover:border-white/[0.20]'
+                    }`}
+                  >
+                    {/* Top Row: Phase + Year */}
+                    <div className="flex items-center justify-between mb-2">
+                      <span
+                        className={`font-tech text-xs font-bold tracking-wider ${
+                          isSelected ? 'text-rose-400' : 'text-zinc-400 group-hover:text-zinc-200'
+                        }`}
+                      >
+                        {m.phase}
+                      </span>
+                      <span className="font-mono text-[10px] text-zinc-400">
+                        {m.displayYear || m.period.split('—')[0].trim()}
+                      </span>
+                    </div>
+
+                    {/* Topic Title */}
+                    <div className="font-tech font-bold text-sm text-white group-hover:text-rose-200 transition-colors line-clamp-1 mb-1">
+                      {m.shortTopic || m.title}
+                    </div>
+
+                    {/* SubTopic / Focus */}
+                    <p className="font-body text-xs text-zinc-400 line-clamp-2 leading-relaxed mb-3">
+                      {m.subTopic || m.thesis}
+                    </p>
+
+                    {/* Bottom Status Chip */}
+                    <div className="flex items-center justify-between pt-2 border-t border-white/[0.06]">
+                      <span
+                        className={`text-[9px] font-tech font-semibold tracking-wider uppercase px-2 py-0.5 rounded ${
+                          isSelected
+                            ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
+                            : 'bg-white/[0.04] text-zinc-400'
+                        }`}
+                      >
+                        {m.statusLabel}
+                      </span>
+
+                      {isSelected && (
+                        <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shadow-[0_0_6px_#f43f5e]" />
+                      )}
+                    </div>
+                  </button>
+                );
+              })}
             </div>
           </div>
         </div>
