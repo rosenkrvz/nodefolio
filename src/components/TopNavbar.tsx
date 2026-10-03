@@ -100,20 +100,21 @@ const TopNavbarComponent: React.FC<TopNavbarProps> = ({
           </button>
 
           {/* Desktop Quiet Navigation Tabs */}
-          <nav className="hidden md:flex items-center gap-1 text-xs text-zinc-400 uppercase tracking-widest font-semibold ml-4">
+          <nav className="hidden md:flex items-center gap-1.5 text-xs text-zinc-400 uppercase tracking-widest font-semibold ml-4">
             <button
               type="button"
               onClick={() => {
                 playSound('nav');
                 onSelectNavTab?.('home');
               }}
-              className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
+              className={`relative px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
                 activeNavTab === 'home'
-                  ? 'text-white bg-white/[0.08]'
-                  : 'hover:text-white hover:bg-white/[0.04]'
+                  ? 'text-white bg-[#1e222b] border border-rose-500/40 shadow-[0_0_12px_rgba(244,63,94,0.18)]'
+                  : 'hover:text-white hover:bg-white/[0.04] border border-transparent'
               }`}
             >
-              HOME
+              {activeNavTab === 'home' && <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shadow-[0_0_6px_#f43f5e]" />}
+              <span>HOME</span>
             </button>
             <button
               type="button"
@@ -121,13 +122,14 @@ const TopNavbarComponent: React.FC<TopNavbarProps> = ({
                 playSound('nav');
                 onSelectNavTab?.('network');
               }}
-              className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
+              className={`relative px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
                 activeNavTab === 'network'
-                  ? 'text-white bg-white/[0.08]'
-                  : 'hover:text-white hover:bg-white/[0.04]'
+                  ? 'text-white bg-[#1e222b] border border-rose-500/40 shadow-[0_0_12px_rgba(244,63,94,0.18)]'
+                  : 'hover:text-white hover:bg-white/[0.04] border border-transparent'
               }`}
             >
-              WORK
+              {activeNavTab === 'network' && <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shadow-[0_0_6px_#f43f5e]" />}
+              <span>WORK</span>
             </button>
             <button
               type="button"
@@ -135,13 +137,14 @@ const TopNavbarComponent: React.FC<TopNavbarProps> = ({
                 playSound('nav');
                 onSelectNavTab?.('projects');
               }}
-              className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
+              className={`relative px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
                 activeNavTab === 'projects'
-                  ? 'text-white bg-white/[0.08]'
-                  : 'hover:text-white hover:bg-white/[0.04]'
+                  ? 'text-white bg-[#1e222b] border border-rose-500/40 shadow-[0_0_12px_rgba(244,63,94,0.18)]'
+                  : 'hover:text-white hover:bg-white/[0.04] border border-transparent'
               }`}
             >
-              RESEARCH
+              {activeNavTab === 'projects' && <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shadow-[0_0_6px_#f43f5e]" />}
+              <span>RESEARCH</span>
             </button>
             <button
               type="button"
@@ -149,13 +152,14 @@ const TopNavbarComponent: React.FC<TopNavbarProps> = ({
                 playSound('nav');
                 onSelectNavTab?.('notebook');
               }}
-              className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
+              className={`relative px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
                 activeNavTab === 'notebook'
-                  ? 'text-white bg-white/[0.08]'
-                  : 'hover:text-white hover:bg-white/[0.04]'
+                  ? 'text-white bg-[#1e222b] border border-rose-500/40 shadow-[0_0_12px_rgba(244,63,94,0.18)]'
+                  : 'hover:text-white hover:bg-white/[0.04] border border-transparent'
               }`}
             >
-              LAB
+              {activeNavTab === 'notebook' && <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shadow-[0_0_6px_#f43f5e]" />}
+              <span>LAB</span>
             </button>
             {onOpenResume && (
               <button
@@ -165,10 +169,10 @@ const TopNavbarComponent: React.FC<TopNavbarProps> = ({
                   playSound('nav');
                   onOpenResume();
                 }}
-                className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
+                className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
                   isResumeOpen
-                    ? 'text-white bg-white/[0.08]'
-                    : 'hover:text-white hover:bg-white/[0.04]'
+                    ? 'text-white bg-[#1e222b] border border-rose-500/40 shadow-[0_0_12px_rgba(244,63,94,0.18)]'
+                    : 'hover:text-white hover:bg-white/[0.04] border border-transparent'
                 }`}
               >
                 CV

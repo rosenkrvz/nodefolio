@@ -138,6 +138,7 @@ ToolRailButton.displayName = 'ToolRailButton';
 interface ResearchCanvas3DProps {
   initialPhaseId?: string;
   onExit: (currentPhaseChronicleId: string) => void;
+  onNavigateToLab?: (currentPhaseChronicleId: string) => void;
   isInitialEntry?: boolean;
 }
 
@@ -231,6 +232,7 @@ const computeOptimalFraming = (
 export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
   initialPhaseId,
   onExit,
+  onNavigateToLab,
   isInitialEntry = true,
 }) => {
   const resolveInitialPhase = (): ResearchPhaseId => {
@@ -2793,16 +2795,33 @@ ${currentPhaseMeta.description}
             {currentPhaseMeta.description}
           </p>
 
-          <button
-            type="button"
-            onClick={() => {
-              playSound('click');
-              setShowIntroCard(false);
-            }}
-            className="w-full py-1.5 px-3 rounded-[2px] bg-rose-600 hover:bg-rose-500 text-white font-mono text-xs font-bold uppercase tracking-wider transition-all cursor-pointer text-center"
-          >
-            DISMISS / EXPLORE
-          </button>
+          <div className="flex flex-col gap-1.5 pt-1 border-t border-[#333]">
+            {onNavigateToLab && (
+              <button
+                type="button"
+                onClick={() => {
+                  playSound('nav');
+                  onNavigateToLab(currentPhaseMeta.chronicleId);
+                }}
+                className="w-full py-1.5 px-3 rounded-[2px] bg-white/[0.06] hover:bg-white/[0.12] text-zinc-200 hover:text-white border border-white/[0.15] hover:border-rose-400 font-mono text-[11px] font-semibold tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1.5 group"
+                title="Open detailed research theory, experiment derivation and notebook logs in Lab"
+              >
+                <span>READ THEORY IN LAB</span>
+                <span className="text-rose-400 text-xs transition-transform group-hover:translate-x-0.5">↗</span>
+              </button>
+            )}
+
+            <button
+              type="button"
+              onClick={() => {
+                playSound('click');
+                setShowIntroCard(false);
+              }}
+              className="w-full py-1.5 px-3 rounded-[2px] bg-rose-600 hover:bg-rose-500 text-white font-mono text-xs font-bold uppercase tracking-wider transition-all cursor-pointer text-center"
+            >
+              DISMISS / EXPLORE
+            </button>
+          </div>
         </aside>
       )}
 
@@ -3488,12 +3507,30 @@ ${currentPhaseMeta.description}
                         );
                       })()}
 
-                      {/* Copy Math Spec button */}
-                      <div className="pt-1 border-t border-[#292929]">
+                      {/* Deep Dive Theory in Lab button */}
+                      <div className="pt-1.5 space-y-1.5 border-t border-[#292929]">
+                        {onNavigateToLab && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              playSound('nav');
+                              onNavigateToLab(currentPhaseMeta.chronicleId);
+                            }}
+                            className="w-full py-1.5 px-2 bg-gradient-to-r from-rose-950/60 to-rose-900/40 hover:from-rose-900/80 hover:to-rose-800/60 border border-rose-500/50 hover:border-rose-400 text-rose-200 hover:text-white text-[10px] font-mono font-semibold rounded-[2px] flex items-center justify-between transition-all cursor-pointer shadow-sm group"
+                            title="Navigate to Lab Chronicle to read full theoretical derivations, benchmarks, and experimental logs"
+                          >
+                            <span className="flex items-center gap-1.5">
+                              <span className="w-1.5 h-1.5 rounded-full bg-rose-400 animate-pulse" />
+                              <span>VIEW FULL THEORY IN LAB</span>
+                            </span>
+                            <ArrowUpRight className="w-3 h-3 text-rose-300 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                          </button>
+                        )}
+
                         <button
                           type="button"
                           onClick={handleCopyMathSpec}
-                          className="w-full py-1.5 px-2 bg-[#252525] hover:bg-[#323232] text-zinc-300 hover:text-white text-[10px] font-sans rounded-[2px] flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                          className="w-full py-1 px-2 bg-[#252525] hover:bg-[#323232] text-zinc-300 hover:text-white text-[10px] font-sans rounded-[2px] flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
                         >
                           <Copy className="w-3 h-3 text-rose-400" />
                           <span>Copy Complete Math Spec</span>

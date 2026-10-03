@@ -2347,6 +2347,11 @@ export default function App() {
             setActiveResearchCanvasPhase(null);
             handleSelectNavTab(previousTabRef.current || 'network');
           }}
+          onNavigateToLab={(savedChronicleId) => {
+            setChronicleActivePhaseId(savedChronicleId);
+            setActiveResearchCanvasPhase(null);
+            handleSelectNavTab('notebook');
+          }}
         />
       )}
 

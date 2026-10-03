@@ -634,16 +634,31 @@ export const ChronicleView: React.FC<ChronicleViewProps> = ({
                     playSound('click');
                     onBackToCanvas();
                   }}
-                  className="w-full min-[400px]:w-auto justify-center px-5 sm:px-6 py-3 sm:py-3.5 rounded-md bg-white/[0.04] hover:bg-white/[0.08] text-zinc-200 hover:text-white border border-white/[0.12] hover:border-white/[0.25] font-semibold text-xs sm:text-sm tracking-wider uppercase transition-all active:scale-95 cursor-pointer flex items-center gap-2 group"
+                  className="w-full min-[400px]:w-auto justify-center px-4 sm:px-5 py-3 sm:py-3.5 rounded-md bg-white/[0.04] hover:bg-white/[0.08] text-zinc-200 hover:text-white border border-white/[0.12] hover:border-white/[0.25] font-semibold text-xs sm:text-sm tracking-wider uppercase transition-all active:scale-95 cursor-pointer flex items-center gap-2 group"
                 >
                   <ArrowLeft className="w-4 h-4 text-rose-400 transition-transform group-hover:-translate-x-1" />
                   <span>BACK TO CANVAS</span>
                 </button>
 
+                {onOpenResearchCanvas3D && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      playSound('open');
+                      onOpenResearchCanvas3D(activeMilestone.id);
+                    }}
+                    className="w-full min-[400px]:w-auto justify-center px-4 sm:px-5 py-3 sm:py-3.5 rounded-md bg-[#191d26] hover:bg-[#202532] text-rose-200 hover:text-white border border-rose-500/40 hover:border-rose-500/80 font-mono font-semibold text-xs sm:text-sm tracking-wider uppercase transition-all shadow-[0_0_16px_rgba(244,63,94,0.18)] flex items-center gap-2 group cursor-pointer active:scale-95"
+                    title="Launch full 3D interactive viewport for this research phase"
+                  >
+                    <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
+                    <span>LAUNCH 3D VIEWPORT</span>
+                  </button>
+                )}
+
                 <a
                   href="#chronicle-ledger"
                   onClick={() => playSound('secondaryClick')}
-                  className="w-full min-[400px]:w-auto justify-center px-5 sm:px-6 py-3 sm:py-3.5 rounded-md bg-rose-600 hover:bg-rose-500 text-white font-semibold text-xs sm:text-sm tracking-wider uppercase transition-all shadow-[0_0_24px_rgba(244,63,94,0.35)] hover:shadow-[0_0_32px_rgba(244,63,94,0.55)] flex items-center gap-2 group active:scale-95 cursor-pointer"
+                  className="w-full min-[400px]:w-auto justify-center px-4 sm:px-5 py-3 sm:py-3.5 rounded-md bg-rose-600 hover:bg-rose-500 text-white font-semibold text-xs sm:text-sm tracking-wider uppercase transition-all shadow-[0_0_24px_rgba(244,63,94,0.35)] hover:shadow-[0_0_32px_rgba(244,63,94,0.55)] flex items-center gap-2 group active:scale-95 cursor-pointer"
                 >
                   <span>EXPLORE CHRONICLE</span>
                   <ChevronDown className="w-4 h-4 transition-transform group-hover:translate-y-0.5" />

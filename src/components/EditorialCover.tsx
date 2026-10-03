@@ -241,13 +241,14 @@ const EditorialCoverComponent: React.FC<EditorialCoverProps> = ({
               opacity: isEntered || entryStage >= 2 ? 1 : 0,
               transition: isEntered ? 'none' : 'opacity 0.5s ease-out',
             }}
-            className="hidden sm:flex font-body text-xs font-semibold tracking-[0.3em] uppercase text-rose-400 mb-3 items-center gap-2"
+            className="hidden sm:flex font-mono text-[11px] font-semibold tracking-[0.25em] uppercase text-rose-400 mb-3 items-center gap-2"
           >
+            <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shadow-[0_0_8px_#f43f5e] animate-pulse" />
             <span>RESEARCH NOTEBOOK</span>
             <span className="text-zinc-600">/</span>
             <span>COMPUTATIONAL GRAPHS</span>
             <span className="text-zinc-600">/</span>
-            <span>STATISTICAL LEARNING</span>
+            <span>RIEMANNIAN DYNAMICS</span>
           </div>
 
           {/* Directionally Masked Monumental Display Name */}
