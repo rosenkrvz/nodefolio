@@ -143,28 +143,64 @@ interface ResearchCanvas3DProps {
 }
 
 // ─── Hardware & Performance Diagnostics ──────────────────────────────────────
+// ─── Hardware & Performance Diagnostics ──────────────────────────────────────
 const detectHardwareTier = (): QualityTier => {
-  if (typeof window === 'undefined') return 'medium';
-  const cores = typeof navigator !== 'undefined' ? navigator.hardwareConcurrency || 4 : 4;
-  const memory = typeof navigator !== 'undefined'
-    ? (navigator as unknown as { deviceMemory?: number }).deviceMemory || 4
-    : 4;
-  const isMobile =
-    /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
-    window.innerWidth < 768 ||
-    (navigator.maxTouchPoints > 0 && window.innerWidth < 1024);
+  if (typeof window === 'undefined') return 'high';
 
-  const prefersReducedMotion =
-    typeof window !== 'undefined' &&
-    window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  try {
+    // 1. Motion preferences
+    const prefersReducedMotion =
+      typeof window !== 'undefined' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (prefersReducedMotion) return 'low';
 
-  // Low for low-end devices (cores <= 4, memory <= 4, mobile/touch, or reduced motion)
-  if (cores <= 4 || memory <= 4 || isMobile || prefersReducedMotion) {
-    return 'low';
+    const cores = typeof navigator !== 'undefined' ? navigator.hardwareConcurrency || 4 : 4;
+    const memory = typeof navigator !== 'undefined'
+      ? (navigator as unknown as { deviceMemory?: number }).deviceMemory
+      : undefined;
+
+    const isMobile =
+      /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+      (window.innerWidth < 768 && ('ontouchstart' in window || navigator.maxTouchPoints > 0));
+
+    // 2. Inspect WebGL GPU renderer via unmasked renderer string
+    let isDedicatedGpu = false;
+    let isSoftwareGpu = false;
+    try {
+      const canvas = document.createElement('canvas');
+      const gl = (canvas.getContext('webgl') || canvas.getContext('experimental-webgl')) as WebGLRenderingContext | null;
+      if (gl) {
+        const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
+        if (debugInfo) {
+          const renderer = (gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL) || '').toLowerCase();
+          isDedicatedGpu = /rtx|gtx|geforce|radeon|apple m|quadro|titan|arc|adreno (6[5-9]|7[0-9]|8[0-9])/i.test(renderer);
+          isSoftwareGpu = /swiftshader|llvmpipe|basic render|software|intel.*(hd 2000|hd 3000|hd 4000)/i.test(renderer);
+        }
+      }
+    } catch {
+      // Fallback if WebGL context query fails
+    }
+
+    // A. Genuinely constrained / low-end hardware
+    if (isSoftwareGpu || cores <= 2 || (typeof memory === 'number' && memory <= 2)) {
+      return 'low';
+    }
+
+    // B. High-End Hardware (Dedicated GPU, 6+ CPU cores, 8GB+ memory, or standard desktop with 4+ cores)
+    if (isDedicatedGpu || (cores >= 6 && !isMobile) || (!isMobile && cores >= 4 && window.innerWidth >= 1024) || (typeof memory === 'number' && memory >= 8)) {
+      return 'high';
+    }
+
+    // C. Mobile phone or small tablet
+    if (isMobile) {
+      return 'medium';
+    }
+
+    // Default to high for all modern desktop environments
+    return 'high';
+  } catch {
+    return 'high';
   }
-
-  // Medium for high-end devices
-  return 'medium';
 };
 
 // ─── Dynamic Bounding-Box Auto-Framing Engine ────────────────────────────────
@@ -1333,10 +1369,11 @@ ${currentPhaseMeta.description}
       renderer.setClearColor(0x000000, 0);
       renderer.setSize(width, height);
 
-      // Adaptive DPR cap:
-      // Low-end / mobile: 1.0 (or max 1.25 on tablet) to avoid mobile GPU thermal throttling
-      // Medium / desktop: capped to 1.5 to eliminate 40% redundant fillrate on 4K/retina displays
-      const maxDpr = isLowTier ? 1.0 : (isMobile ? 1.2 : 1.5);
+      // Adaptive DPR scaling:
+      // High-end desktop: up to 2.0 native retina sharpness
+      // Medium / tablet: 1.25 to 1.5
+      // Low-end: capped to 1.0
+      const maxDpr = isLowTier ? 1.0 : (isMobile ? 1.25 : (activeTier === 'high' ? Math.min(window.devicePixelRatio || 1, 2.0) : 1.5));
       renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, maxDpr));
       renderer.toneMapping = THREE.ACESFilmicToneMapping;
       renderer.toneMappingExposure = 1.08;
@@ -1512,7 +1549,7 @@ ${currentPhaseMeta.description}
       camera.updateProjectionMatrix();
       const isLowTier = activeTier === 'low';
       const isMobile = w < 768;
-      const maxDpr = isLowTier ? 1.0 : (isMobile ? 1.2 : 1.5);
+      const maxDpr = isLowTier ? 1.0 : (isMobile ? 1.25 : (activeTier === 'high' ? Math.min(window.devicePixelRatio || 1, 2.0) : 1.5));
       renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, maxDpr));
       renderer.setSize(w, h);
     };
@@ -1569,8 +1606,8 @@ ${currentPhaseMeta.description}
 
       const now = performance.now();
 
-      // Low-end frame pacing: throttle to ~35 FPS on low-tier to prevent thermal throttling
-      const targetInterval = activeTier === 'low' ? 28 : 0;
+      // Frame pacing: uncap for high/medium (native 60/120/144Hz monitor refresh), cap to ~30 FPS on low-tier
+      const targetInterval = activeTier === 'low' ? 30 : 0;
       if (targetInterval > 0 && now - lastRenderTime < targetInterval) {
         return;
       }
