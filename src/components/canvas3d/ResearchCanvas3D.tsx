@@ -213,6 +213,7 @@ const computeOptimalFraming = (
   viewportH: number,
   isMobile: boolean
 ): { cameraPos: THREE.Vector3; target: THREE.Vector3; radius: number } | null => {
+  group.updateMatrixWorld(true);
   const box = new THREE.Box3();
 
   // Exclude helper objects (GridHelper, Reference planes, Gizmos) so bounding box measures true content
@@ -235,24 +236,40 @@ const computeOptimalFraming = (
   }
   if (box.isEmpty()) return null;
 
+  // Validate box bounds are finite
+  if (
+    !isFinite(box.min.x) ||
+    !isFinite(box.min.y) ||
+    !isFinite(box.min.z) ||
+    !isFinite(box.max.x) ||
+    !isFinite(box.max.y) ||
+    !isFinite(box.max.z)
+  ) {
+    return null;
+  }
+
   const center = new THREE.Vector3();
   box.getCenter(center);
   const size = new THREE.Vector3();
   box.getSize(size);
   const radius = Math.max(size.x, size.y, size.z) * 0.5 || 5.0;
 
+  if (!isFinite(radius) || radius <= 0.1) return null;
+
+  const validW = Math.max(viewportW, 320);
+  const validH = Math.max(viewportH, 240);
+  const aspect = validW / validH;
   const fovRad = (camera.fov * Math.PI) / 180;
-  const aspect = viewportW / viewportH;
 
-  // In portrait/mobile, Three.js fixed vertical FOV narrows horizontal FOV; scale distance outward
-  // On desktop, keep framing close, imposing, filling ~60% of viewport (distance ~15-16 units)
   const distanceScalar = isMobile ? Math.max(1.15, 1.0 / Math.sqrt(Math.max(aspect, 0.4))) : 1.18;
-  const dist = (radius * distanceScalar) / Math.sin(fovRad / 2);
+  const sinHalfFov = Math.sin(fovRad / 2);
+  if (!isFinite(sinHalfFov) || sinHalfFov <= 0.001) return null;
 
-  // Optical compensation: exact geometric center of the content (no arbitrary offset)
+  const dist = (radius * distanceScalar) / sinHalfFov;
+  if (!isFinite(dist) || dist <= 0.1 || dist > 100) return null;
+
   const target = center.clone();
 
-  // Pitch camera at a pleasing technical isometric angle (~23° pitch, ~15° yaw) matching Blender reference
   const pitchAngle = isMobile ? 0.35 : 0.40;
   const yawAngle = isMobile ? 0.18 : 0.26;
 
@@ -261,6 +278,17 @@ const computeOptimalFraming = (
     target.y + dist * Math.sin(pitchAngle),
     target.z + dist * Math.cos(yawAngle) * Math.cos(pitchAngle)
   );
+
+  if (
+    !isFinite(cameraPos.x) ||
+    !isFinite(cameraPos.y) ||
+    !isFinite(cameraPos.z) ||
+    !isFinite(target.x) ||
+    !isFinite(target.y) ||
+    !isFinite(target.z)
+  ) {
+    return null;
+  }
 
   return { cameraPos, target, radius };
 };
@@ -597,7 +625,13 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
     const controls = controlsRef.current;
     if (!camera || !controls) return;
 
-    const offsetDir = camera.position.clone().sub(controls.target).normalize();
+    const offsetDir = camera.position.clone().sub(controls.target);
+    const len = offsetDir.length();
+    if (len > 0.001) {
+      offsetDir.normalize();
+    } else {
+      offsetDir.set(0, 0.4, 1).normalize();
+    }
     const targetDistance = 4.8;
     const newCameraPos = targetWorldPos.clone().add(offsetDir.multiplyScalar(targetDistance));
 
@@ -627,8 +661,14 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
     const isMob = vw < 768;
 
     const framing = computeOptimalFraming(artifact.group, camera, vw, vh, isMob);
-    const endPos = framing ? framing.cameraPos : new THREE.Vector3(...artifact.defaultCameraPosition);
-    const endTarget = framing ? framing.target : new THREE.Vector3(...artifact.defaultTarget);
+    const endPos =
+      framing && isFinite(framing.cameraPos.x)
+        ? framing.cameraPos
+        : new THREE.Vector3(...artifact.defaultCameraPosition);
+    const endTarget =
+      framing && isFinite(framing.target.x)
+        ? framing.target
+        : new THREE.Vector3(...artifact.defaultTarget);
 
     cameraFocusTarget.current = {
       active: true,
@@ -1295,7 +1335,8 @@ ${currentPhaseMeta.description}
         newArtifact.toggleLayer?.(layer as LayerType, visible);
       });
 
-      // 3. Compute optimal dynamic framing
+      // 3. Compute optimal dynamic framing with matrix synchronization
+      newArtifact.group.updateMatrixWorld(true);
       const vw =
         containerRef.current && containerRef.current.clientWidth > 0
           ? containerRef.current.clientWidth
@@ -1313,20 +1354,27 @@ ${currentPhaseMeta.description}
       const isMob = vw < 768;
 
       const framing = computeOptimalFraming(newArtifact.group, camera, vw, vh, isMob);
-      if (framing) {
+      if (
+        framing &&
+        isFinite(framing.cameraPos.x) &&
+        isFinite(framing.cameraPos.y) &&
+        isFinite(framing.cameraPos.z) &&
+        isFinite(framing.target.x) &&
+        isFinite(framing.target.y) &&
+        isFinite(framing.target.z)
+      ) {
         camera.position.copy(framing.cameraPos);
         controls.target.copy(framing.target);
-        controls.update();
       } else {
         camera.position.set(...newArtifact.defaultCameraPosition);
         controls.target.set(...newArtifact.defaultTarget);
-        controls.update();
       }
+      camera.near = 0.1;
+      camera.far = 250;
+      camera.updateProjectionMatrix();
+      controls.update();
 
-      setLoadProgress(100);
-      setTimeout(() => {
-        setIsLoadingGeometry(false);
-      }, 180);
+      setIsLoadingGeometry(false);
     },
     [activeLayers]
   );
@@ -1643,7 +1691,26 @@ ${currentPhaseMeta.description}
         }
       }
 
-      controls.update();
+      // Self-healing camera guard: instantly restores view if position ever becomes non-finite
+      if (
+        !isFinite(camera.position.x) ||
+        !isFinite(camera.position.y) ||
+        !isFinite(camera.position.z) ||
+        !isFinite(controls.target.x) ||
+        !isFinite(controls.target.y) ||
+        !isFinite(controls.target.z)
+      ) {
+        const defPos = activeArtifactRef.current?.defaultCameraPosition || [3.8, 6.0, 14.0];
+        const defTgt = activeArtifactRef.current?.defaultTarget || [0, -0.2, 0];
+        camera.position.set(defPos[0], defPos[1], defPos[2]);
+        controls.target.set(defTgt[0], defTgt[1], defTgt[2]);
+        camera.near = 0.1;
+        camera.far = 250;
+        camera.updateProjectionMatrix();
+        controls.update();
+      } else {
+        controls.update();
+      }
 
       // Update active 3D artifact
       if (activeArtifactRef.current) {
@@ -1811,23 +1878,6 @@ ${currentPhaseMeta.description}
         style={{ touchAction: 'none' }}
       />
 
-        {/* ── Technical Minimal Loader (for fast in-canvas phase transitions) ── */}
-        {!isInitialEntryLoading && isLoadingGeometry && (
-          <div className="absolute inset-0 z-40 flex items-center justify-center bg-[#14171c]/80 backdrop-blur-md transition-opacity duration-200 pointer-events-none">
-            <div className="px-5 py-4 rounded-xl bg-black/85 border border-white/10 shadow-2xl flex flex-col items-center gap-2 max-w-xs text-center">
-              <span className="font-tech text-[10px] tracking-[0.25em] text-rose-400 font-semibold uppercase animate-pulse">
-                INITIALIZING RESEARCH ARTIFACT // PHASE {currentPhaseMeta.numeral}
-              </span>
-              <div className="w-48 h-1.5 bg-white/10 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-gradient-to-r from-rose-600 to-rose-400 transition-all duration-150 rounded-full"
-                  style={{ width: `${loadProgress}%` }}
-                />
-              </div>
-              <span className="font-mono text-[10px] text-zinc-400">{currentPhaseMeta.title}</span>
-            </div>
-          </div>
-        )}
 
         {/* ── Floating Hover Micro-Label ────────────────────────────────────── */}
       {hoveredItem && hoverLabelPos && !selectedItem && (
