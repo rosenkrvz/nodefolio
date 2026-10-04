@@ -51,6 +51,7 @@ interface GraphNodeProps {
   onOpenFocusedNode?: (node: NodeData) => void;
   onDragStateChange?: (nodeId: string, isDragging: boolean) => void;
   onDeleteVisitorNode?: (id: string) => void;
+  isPanMode?: boolean;
 }
 
 const CATEGORY_ICON_MAP: Record<string, React.ReactNode> = {
@@ -90,6 +91,7 @@ const GraphNodeComponent: React.FC<GraphNodeProps> = ({
   onOpenFocusedNode,
   onDragStateChange,
   onDeleteVisitorNode,
+  isPanMode = false,
 }) => {
   if (!node || typeof node !== 'object' || typeof node.x !== 'number' || !isFinite(node.x) || typeof node.y !== 'number' || !isFinite(node.y)) {
     return null;
@@ -384,6 +386,7 @@ const GraphNodeComponent: React.FC<GraphNodeProps> = ({
   // Mouse drag handler with threshold to preserve clean double-click gestures
   const handleMouseDown = (e: React.MouseEvent) => {
     if (e.button !== 0) return;
+    if (isPanMode) return;
 
     // Avoid dragging if clicking an interactive control like input/button/link/pin/resize-handle
     const target = e.target as HTMLElement;

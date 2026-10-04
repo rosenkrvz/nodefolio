@@ -415,22 +415,22 @@ export default function App() {
     string,
     { ampX: number; ampY: number; periodX: number; periodY: number; phaseX: number; phaseY: number }
   > = useMemo(() => ({
-    'node-profile': { ampX: 4, ampY: 7, periodX: 13.2, periodY: 10.4, phaseX: 0.3, phaseY: 1.1 },
-    'node-models': { ampX: 6, ampY: 5, periodX: 15.6, periodY: 12.8, phaseX: 1.8, phaseY: 2.4 },
-    'node-credentials': { ampX: 5, ampY: 6, periodX: 13.8, periodY: 14.5, phaseX: 3.1, phaseY: 0.7 },
-    'node-systems': { ampX: 6, ampY: 6, periodX: 16.4, periodY: 11.8, phaseX: 4.2, phaseY: 2.9 },
-    'node-project': { ampX: 3.5, ampY: 4, periodX: 18.0, periodY: 15.2, phaseX: 5.0, phaseY: 3.8 },
-    'node-clock': { ampX: 5, ampY: 3, periodX: 11.4, periodY: 9.6, phaseX: 0.9, phaseY: 4.5 },
-    'node-inference': { ampX: 5, ampY: 4, periodX: 14.2, periodY: 11.5, phaseX: 2.1, phaseY: 1.7 },
-    'node-optimization': { ampX: 4, ampY: 6, periodX: 16.0, periodY: 13.1, phaseX: 3.8, phaseY: 0.9 },
-    'node-pipeline': { ampX: 6, ampY: 4, periodX: 12.8, periodY: 15.4, phaseX: 1.2, phaseY: 3.4 },
-    'node-eval': { ampX: 4.5, ampY: 5.5, periodX: 15.1, periodY: 12.2, phaseX: 4.6, phaseY: 2.1 },
-    'node-vector': { ampX: 5.5, ampY: 4.5, periodX: 17.2, periodY: 14.0, phaseX: 0.8, phaseY: 4.1 },
-    'node-vision': { ampX: 4, ampY: 5, periodX: 13.6, periodY: 10.8, phaseX: 2.9, phaseY: 1.5 },
-    'node-generative': { ampX: 5, ampY: 6, periodX: 18.4, periodY: 13.8, phaseX: 5.2, phaseY: 3.1 },
-    'node-software': { ampX: 4.5, ampY: 4, periodX: 14.8, periodY: 16.2, phaseX: 1.9, phaseY: 0.6 },
-    'node-lab': { ampX: 6, ampY: 5, periodX: 15.5, periodY: 12.0, phaseX: 3.3, phaseY: 4.8 },
-    'node-computational': { ampX: 4, ampY: 4.5, periodX: 13.0, periodY: 14.6, phaseX: 4.1, phaseY: 2.7 },
+    'node-profile': { ampX: 10, ampY: 14, periodX: 4.8, periodY: 3.8, phaseX: 0.3, phaseY: 1.1 },
+    'node-models': { ampX: 12, ampY: 10, periodX: 5.2, periodY: 4.4, phaseX: 1.8, phaseY: 2.4 },
+    'node-credentials': { ampX: 11, ampY: 12, periodX: 4.9, periodY: 5.1, phaseX: 3.1, phaseY: 0.7 },
+    'node-systems': { ampX: 12, ampY: 12, periodX: 5.4, periodY: 4.2, phaseX: 4.2, phaseY: 2.9 },
+    'node-project': { ampX: 8, ampY: 10, periodX: 6.0, periodY: 5.0, phaseX: 5.0, phaseY: 3.8 },
+    'node-clock': { ampX: 10, ampY: 8, periodX: 4.2, periodY: 3.6, phaseX: 0.9, phaseY: 4.5 },
+    'node-inference': { ampX: 10, ampY: 9, periodX: 4.8, periodY: 4.0, phaseX: 2.1, phaseY: 1.7 },
+    'node-optimization': { ampX: 9, ampY: 12, periodX: 5.2, periodY: 4.5, phaseX: 3.8, phaseY: 0.9 },
+    'node-pipeline': { ampX: 12, ampY: 9, periodX: 4.4, periodY: 5.0, phaseX: 1.2, phaseY: 3.4 },
+    'node-eval': { ampX: 10, ampY: 11, periodX: 5.0, periodY: 4.2, phaseX: 4.6, phaseY: 2.1 },
+    'node-vector': { ampX: 11, ampY: 10, periodX: 5.6, periodY: 4.6, phaseX: 0.8, phaseY: 4.1 },
+    'node-vision': { ampX: 9, ampY: 11, periodX: 4.6, periodY: 3.9, phaseX: 2.9, phaseY: 1.5 },
+    'node-generative': { ampX: 11, ampY: 12, periodX: 5.8, periodY: 4.7, phaseX: 5.2, phaseY: 3.1 },
+    'node-software': { ampX: 10, ampY: 9, periodX: 4.9, periodY: 5.2, phaseX: 1.9, phaseY: 0.6 },
+    'node-lab': { ampX: 12, ampY: 11, periodX: 5.1, periodY: 4.3, phaseX: 3.3, phaseY: 4.8 },
+    'node-computational': { ampX: 9, ampY: 10, periodX: 4.5, periodY: 4.8, phaseX: 4.1, phaseY: 2.7 },
   }), []);
 
   // Subtle harmonic drift state
@@ -1332,9 +1332,16 @@ export default function App() {
   const handleCanvasMouseDown = (e: React.MouseEvent) => {
     const target = e.target as HTMLElement;
     if (
-      target.closest('.node-card') ||
-      target.closest('[id^="graph-node-"]') ||
+      cadToolMode !== 'pan' && (
+        target.closest('.node-card') ||
+        target.closest('[id^="graph-node-"]')
+      )
+    ) {
+      return;
+    }
+    if (
       target.closest('button') ||
+      target.closest('a') ||
       target.closest('.port-pin') ||
       target.closest('aside')
     ) {
@@ -1753,14 +1760,14 @@ export default function App() {
     centerViewForPreset(activePreset);
   }, [centerViewForPreset, activePreset]);
 
-  // Zoom In Handler
+  // Zoom In Handler - tangible 8% steps per click
   const handleZoomIn = useCallback(() => {
     playSound('zoom');
     setTransform((p) => {
       const ps = typeof p?.scale === 'number' && isFinite(p.scale) && p.scale > 0 ? p.scale : 0.60;
       const px = typeof p?.x === 'number' && isFinite(p.x) ? p.x : 0;
       const py = typeof p?.y === 'number' && isFinite(p.y) ? p.y : 0;
-      const nextScale = Math.min(2.20, Math.round((ps + 0.01) * 100) / 100);
+      const nextScale = Math.min(2.20, Math.round((ps + 0.08) * 100) / 100);
       lastZoomBracketRef.current = Math.round(nextScale * 100);
       const vw = typeof window !== 'undefined' ? window.innerWidth : 1200;
       const vh = typeof window !== 'undefined' ? window.innerHeight : 800;
@@ -1770,14 +1777,14 @@ export default function App() {
     });
   }, []);
 
-  // Zoom Out Handler
+  // Zoom Out Handler - tangible 8% steps per click
   const handleZoomOut = useCallback(() => {
     playSound('zoom');
     setTransform((p) => {
       const ps = typeof p?.scale === 'number' && isFinite(p.scale) && p.scale > 0 ? p.scale : 0.60;
       const px = typeof p?.x === 'number' && isFinite(p.x) ? p.x : 0;
       const py = typeof p?.y === 'number' && isFinite(p.y) ? p.y : 0;
-      const nextScale = Math.max(0.25, Math.round((ps - 0.01) * 100) / 100);
+      const nextScale = Math.max(0.25, Math.round((ps - 0.08) * 100) / 100);
       lastZoomBracketRef.current = Math.round(nextScale * 100);
       const vw = typeof window !== 'undefined' ? window.innerWidth : 1200;
       const vh = typeof window !== 'undefined' ? window.innerHeight : 800;
@@ -2262,11 +2269,20 @@ export default function App() {
                           onMouseDown={handleCanvasMouseDown}
                           onTouchStart={handleCanvasTouchStart}
                           onClick={handleCanvasBackgroundClick}
-                          className="w-full flex-1 cursor-grab active:cursor-grabbing relative overflow-hidden touch-none"
+                          className={`w-full flex-1 relative overflow-hidden touch-none ${
+                            cadToolMode === 'pan' ? 'cursor-grab active:cursor-grabbing' : 'cursor-default'
+                          }`}
                         >
-                          {/* Background Grid Pattern */}
+                          {/* Interactive CAD Coordinate Dot-Matrix Grid */}
                           {showGrid && (
-                            <div className="absolute inset-0 pattern-bg pointer-events-none opacity-35" />
+                            <div
+                              className="absolute inset-0 pointer-events-none z-0 transition-opacity duration-300"
+                              style={{
+                                backgroundImage: `radial-gradient(rgba(255, 255, 255, 0.16) 1.25px, transparent 1.25px)`,
+                                backgroundSize: `${Math.max(16, Math.round(28 * transform.scale))}px ${Math.max(16, Math.round(28 * transform.scale))}px`,
+                                backgroundPosition: `${transform.x % Math.max(16, Math.round(28 * transform.scale))}px ${transform.y % Math.max(16, Math.round(28 * transform.scale))}px`,
+                              }}
+                            />
                           )}
 
                           {/* Spatial Transformed Canvas */}
@@ -2309,6 +2325,7 @@ export default function App() {
                                 onOpenContactModal={handleOpenContactModal}
                                 onOpenResumeModal={handleOpenResumeModal}
                                 onOpenFocusedNode={handleOpenFocusedNode}
+                                isPanMode={cadToolMode === 'pan'}
                               />
                             ))}
                           </div>
@@ -2325,6 +2342,11 @@ export default function App() {
                             onToggleGrid={() => {
                               playSound('toggle');
                               setShowGrid(!showGrid);
+                            }}
+                            sidebarOpen={isCADSidebarOpen}
+                            onToggleSidebar={() => {
+                              playSound('toggle');
+                              setIsCADSidebarOpen(!isCADSidebarOpen);
                             }}
                             wireStyle={wireStyle}
                             onCycleWireStyle={() => {
