@@ -1,5 +1,5 @@
 import React from 'react';
-import { Layers, Grid, ChevronLeft, ChevronRight } from './icons';
+import { Layers, ChevronLeft, ChevronRight } from './icons';
 import { playSound } from '../lib/sound';
 
 interface MobileWorkspaceDockProps {
@@ -10,8 +10,6 @@ interface MobileWorkspaceDockProps {
   currentNodeIndex: number;
   totalNodes: number;
   onOpenIndex: () => void;
-  showGrid?: boolean;
-  onToggleGrid?: () => void;
 }
 
 export const MobileWorkspaceDock: React.FC<MobileWorkspaceDockProps> = ({
@@ -22,8 +20,6 @@ export const MobileWorkspaceDock: React.FC<MobileWorkspaceDockProps> = ({
   currentNodeIndex,
   totalNodes,
   onOpenIndex,
-  showGrid = true,
-  onToggleGrid,
 }) => {
   const indexStr = `${String(currentNodeIndex).padStart(2, '0')}/${String(totalNodes).padStart(2, '0')}`;
 
@@ -79,28 +75,6 @@ export const MobileWorkspaceDock: React.FC<MobileWorkspaceDockProps> = ({
           <ChevronRight className="w-4 h-4" />
         </button>
 
-        {/* Subtle Vertical Divider */}
-        <div className="w-[1px] h-6 bg-white/10 mx-0.5" />
-
-        {/* Grid Toggle Button: 44px min touch target */}
-        {onToggleGrid && (
-          <button
-            type="button"
-            onClick={() => {
-              playSound('secondaryClick');
-              onToggleGrid();
-            }}
-            title={showGrid ? 'Hide background grid' : 'Show background grid'}
-            aria-label={showGrid ? 'Hide background grid' : 'Show background grid'}
-            className={`w-11 h-11 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl transition-colors cursor-pointer ${
-              showGrid
-                ? 'text-rose-400 bg-rose-500/15 border border-rose-500/30'
-                : 'text-zinc-400 hover:text-white hover:bg-white/10 active:bg-white/20'
-            }`}
-          >
-            <Grid className="w-4 h-4" />
-          </button>
-        )}
       </div>
     </nav>
   );

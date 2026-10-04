@@ -102,7 +102,6 @@ export const MobileNodespace: React.FC<MobileNodespaceProps> = ({
   const [isTransitioning, setIsTransitioning] = useState<boolean>(false);
   const [activeTraversedConnId, setActiveTraversedConnId] = useState<string | null>(null);
   const [isIndexOpen, setIsIndexOpen] = useState<boolean>(false);
-  const [gridVisible, setGridVisible] = useState<boolean>(true);
 
   // Sync with external selectedNodeId changes
   useEffect(() => {
@@ -377,9 +376,7 @@ export const MobileNodespace: React.FC<MobileNodespaceProps> = ({
       className="w-full h-full relative overflow-hidden select-none touch-pan-y bg-[#090b10] flex flex-col items-center justify-center pt-2 sm:pt-4 pb-24 sm:pb-28"
     >
       {/* Subtle Spatial Canvas Background Grid */}
-      {gridVisible && (
-        <div className="absolute inset-0 pattern-bg pointer-events-none opacity-25" />
-      )}
+      <div className="absolute inset-0 pattern-bg pointer-events-none opacity-25" />
 
       {/* Atmospheric Spatial Glow behind active node */}
       <div
@@ -752,8 +749,6 @@ export const MobileNodespace: React.FC<MobileNodespaceProps> = ({
         currentNodeIndex={activeIndex + 1}
         totalNodes={nodes.length}
         onOpenIndex={() => setIsIndexOpen(true)}
-        showGrid={gridVisible}
-        onToggleGrid={() => setGridVisible((v) => !v)}
       />
 
       {/* Floating Bottom Telemetry Status Bar */}
