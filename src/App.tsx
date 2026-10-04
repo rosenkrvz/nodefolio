@@ -259,10 +259,12 @@ export default function App() {
   const initialTab = useMemo(() => getTabFromHash(), []);
   const [activeNavTab, setActiveNavTab] = useState<'home' | 'network' | 'projects' | 'lab' | 'notebook' | 'about'>(initialTab);
   const [scrollProgress, setScrollProgress] = useState<number>(0);
-  const [activePreset, setActivePreset] = useState<string>(initialTab === 'projects' ? 'project' : 'network');
+  const [activePreset, setActivePreset] = useState<string>('network');
   const [connections, setConnections] = useState<Connection[]>(ALL_INITIAL_CONNECTIONS);
   const [isAddNodeOpen, setIsAddNodeOpen] = useState<boolean>(false);
-  const [activeResearchCanvasPhase, setActiveResearchCanvasPhase] = useState<string | null>(null);
+  const [activeResearchCanvasPhase, setActiveResearchCanvasPhase] = useState<string | null>(
+    initialTab === 'projects' ? 'phase-05' : null
+  );
   const [chronicleActivePhaseId, setChronicleActivePhaseId] = useState<string>('m1');
 
   // Graph Data State:
@@ -2103,26 +2105,8 @@ export default function App() {
         window.scrollTo({ top: maxScroll, behavior: 'smooth' });
       }
     } else if (tab === 'projects') {
-      const wasOnTimeline = activeViewRef.current === 'timeline';
-      setActiveView('canvas');
-      setActivePreset('project');
-      setSelectedNodeId(null);
-      centerViewForPreset('project');
-      isProgrammaticScrollRef.current = true;
-      setTimeout(() => { isProgrammaticScrollRef.current = false; }, 500);
-
-      if (wasOnTimeline) {
-        // Coming from Chronicle — skip scroll animation, land instantly in workspace
-        targetProgressRef.current = 1;
-        currentProgressRef.current = 1;
-        setScrollProgress(1);
-        const maxScroll = typeof document !== 'undefined' ? document.documentElement.scrollHeight - window.innerHeight : 1000;
-        window.scrollTo({ top: maxScroll, behavior: 'instant' });
-      } else {
-        // Coming from Cover or already on canvas — original smooth scroll behavior
-        const maxScroll = typeof document !== 'undefined' ? document.documentElement.scrollHeight - window.innerHeight : 1000;
-        window.scrollTo({ top: maxScroll, behavior: 'smooth' });
-      }
+      // Revert RESEARCH tab back to showing the 3D artifacts for controlled visualizations
+      setActiveResearchCanvasPhase('phase-05');
     } else if (tab === 'lab') {
       const wasOnTimeline = activeViewRef.current === 'timeline';
       setActiveView('canvas');
@@ -2154,11 +2138,6 @@ export default function App() {
     playSound('secondaryClick');
     setActivePreset(preset);
     setSelectedNodeId(null);
-    if (preset === 'project') {
-      setActiveNavTab('projects');
-    } else if (preset === 'network') {
-      setActiveNavTab('network');
-    }
     centerViewForPreset(preset);
   }, [centerViewForPreset]);
 

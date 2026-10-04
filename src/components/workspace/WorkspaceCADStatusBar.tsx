@@ -205,7 +205,7 @@ export const WorkspaceCADStatusBar: React.FC<WorkspaceCADStatusBarProps> = ({
 
         <div className="hidden sm:block h-3.5 w-px bg-[#2b313d] mx-0.5" />
 
-        {/* Preset Switcher Pills */}
+        {/* Preset Indicator: Network workspace */}
         <div className="flex items-center gap-1 bg-[#191c24] p-0.5 rounded-[3px] border border-[#2b313d]">
           <button
             type="button"
@@ -213,29 +213,10 @@ export const WorkspaceCADStatusBar: React.FC<WorkspaceCADStatusBarProps> = ({
               playSound('nav');
               onSelectPreset('network');
             }}
-            className={`px-2 py-0.5 rounded-[2px] text-[10px] font-semibold uppercase tracking-wider transition-all cursor-pointer ${
-              activePreset === 'network'
-                ? 'bg-rose-600/30 text-white border border-rose-500/50 shadow-sm'
-                : 'text-zinc-400 hover:text-zinc-200'
-            }`}
+            className="px-2 py-0.5 rounded-[2px] text-[10px] font-semibold uppercase tracking-wider bg-rose-600/30 text-white border border-rose-500/50 shadow-sm cursor-pointer"
             title="Official core network graph"
           >
             NETWORK
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              playSound('nav');
-              onSelectPreset('project');
-            }}
-            className={`px-2 py-0.5 rounded-[2px] text-[10px] font-semibold uppercase tracking-wider transition-all cursor-pointer ${
-              activePreset === 'project'
-                ? 'bg-rose-600/30 text-white border border-rose-500/50 shadow-sm'
-                : 'text-zinc-400 hover:text-zinc-200'
-            }`}
-            title="Full research ecosystem and community graph"
-          >
-            RESEARCH
           </button>
         </div>
       </div>

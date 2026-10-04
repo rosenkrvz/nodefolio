@@ -768,7 +768,7 @@ export const MobileNodespace: React.FC<MobileNodespaceProps> = ({
         totalNodes={nodes.length}
         splineCount={connections.length}
         visitorCount={nodes.filter((n) => n.category === 'visitor').length}
-        presetName={activePreset === 'project' ? 'RESEARCH' : 'NETWORK'}
+        presetName="NETWORK"
         activeNodeTitle={activeNode?.title || 'Node'}
       />
 

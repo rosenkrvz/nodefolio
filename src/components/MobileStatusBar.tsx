@@ -14,7 +14,7 @@ export const MobileStatusBar: React.FC<MobileStatusBarProps> = ({
   totalNodes,
   splineCount,
   visitorCount = 0,
-  presetName = 'RESEARCH',
+  presetName = 'NETWORK',
 }) => {
   const nodeNumStr = String(currentNodeIndex).padStart(2, '0');
   const totalNumStr = String(totalNodes).padStart(2, '0');
