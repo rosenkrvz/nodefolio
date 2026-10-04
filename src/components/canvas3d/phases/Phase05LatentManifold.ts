@@ -167,6 +167,8 @@ export function createPhase05LatentManifold(quality: QualityTier = 'high'): Phas
 
   surfaceGeo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
   surfaceGeo.computeVertexNormals();
+  surfaceGeo.computeBoundingSphere();
+  surfaceGeo.computeBoundingBox();
 
   const surfaceMat = new THREE.MeshStandardMaterial({
     vertexColors: true,
@@ -175,12 +177,14 @@ export function createPhase05LatentManifold(quality: QualityTier = 'high'): Phas
     side: THREE.DoubleSide,
     transparent: true,
     opacity: 0.96,
+    depthWrite: true,
     emissive: new THREE.Color(0x16050b),
     emissiveIntensity: 0.4,
   });
   disposables.push(surfaceMat);
 
   const surfaceMesh = new THREE.Mesh(surfaceGeo, surfaceMat);
+  surfaceMesh.frustumCulled = false;
   group.add(surfaceMesh);
 
   // Wireframe
@@ -189,9 +193,11 @@ export function createPhase05LatentManifold(quality: QualityTier = 'high'): Phas
     wireframe: true,
     transparent: true,
     opacity: quality === 'low' ? 0.05 : 0.08,
+    depthWrite: false,
   });
   disposables.push(wireMat);
   const wireMesh = new THREE.Mesh(surfaceGeo, wireMat);
+  wireMesh.frustumCulled = false;
   wireMesh.position.y = 0.005;
   group.add(wireMesh);
 

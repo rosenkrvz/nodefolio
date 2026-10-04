@@ -63,6 +63,8 @@ export function createPhase02Optimization(quality: QualityTier = 'high'): PhaseA
 
   planeGeo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
   planeGeo.computeVertexNormals();
+  planeGeo.computeBoundingSphere();
+  planeGeo.computeBoundingBox();
 
   const surfaceMat = new THREE.MeshStandardMaterial({
     vertexColors: true,
@@ -71,12 +73,14 @@ export function createPhase02Optimization(quality: QualityTier = 'high'): PhaseA
     side: THREE.DoubleSide,
     transparent: true,
     opacity: 0.94,
+    depthWrite: true,
     emissive: new THREE.Color(0x16050b),
     emissiveIntensity: 0.35,
   });
   disposables.push(surfaceMat);
 
   const surfaceMesh = new THREE.Mesh(planeGeo, surfaceMat);
+  surfaceMesh.frustumCulled = false;
   group.add(surfaceMesh);
 
   // Wireframe lattice overlay

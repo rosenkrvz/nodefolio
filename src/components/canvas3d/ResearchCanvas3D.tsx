@@ -534,6 +534,15 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
     };
   }, []);
 
+  // Lock background scroll to prevent background scroll jitter and canvas flicker
+  useEffect(() => {
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = originalOverflow;
+    };
+  }, []);
+
   // ── Auto-close Viewport Overlays & Left Layers Menu when clicking outside ──
   useEffect(() => {
     if (!showOverlaysMenu && !showLeftLayersMenu) return;
@@ -1342,6 +1351,18 @@ ${currentPhaseMeta.description}
 
       scene.add(newArtifact.group);
       activeArtifactRef.current = newArtifact;
+
+      // Ensure zero frustum culling drops when camera rotates, pans, or zooms
+      newArtifact.group.traverse((child) => {
+        if ((child as THREE.Mesh).isMesh || (child as THREE.Line).isLine || (child as THREE.Points).isPoints) {
+          child.frustumCulled = false;
+          const geom = (child as THREE.Mesh).geometry;
+          if (geom) {
+            if (!geom.boundingSphere) geom.computeBoundingSphere?.();
+            if (!geom.boundingBox) geom.computeBoundingBox?.();
+          }
+        }
+      });
 
       const items = newArtifact.getInspectableObjects?.().map((i) => i.data) || [];
       setSceneInspectables(items);
@@ -3013,14 +3034,14 @@ ${currentPhaseMeta.description}
         </button>
       </div>
 
-      {/* Contextual Phase Specification Card (Right-Hand Inspector Panel, keeping left toolbar 100% clear) */}
+      {/* Contextual Phase Specification Card (Upper-Left Section, non-overlapping with tool shelf and top navbar) */}
       {showIntroCard && (
         <aside
           role="region"
           aria-label="Phase Context Introduction"
           className={`absolute ${
-            nPanelOpen ? 'right-[20.5rem]' : 'right-4'
-          } top-12 z-30 w-80 max-w-[calc(100vw-2.5rem)] p-3.5 bg-[#202020]/95 backdrop-blur-xl border border-[#383838] rounded-[2px] shadow-2xl pointer-events-auto text-zinc-300 select-none animate-in fade-in duration-200`}
+            tPanelOpen ? 'left-[4.75rem] sm:left-[5.25rem]' : 'left-9 sm:left-10'
+          } top-12 z-30 w-80 max-w-[calc(100vw-6rem)] p-3.5 bg-[#202020]/95 backdrop-blur-xl border border-[#383838] rounded-[2px] shadow-2xl pointer-events-auto text-zinc-300 select-none transition-[left] duration-300 animate-in fade-in duration-200`}
         >
           <div className="flex items-center justify-between border-b border-[#383838] pb-1.5 mb-2">
             <span className="font-mono text-[10px] font-bold text-rose-400 uppercase tracking-wider">
@@ -3082,9 +3103,7 @@ ${currentPhaseMeta.description}
          ─────────────────────────────────────────────────────────────────── */}
       {showGizmo && !nPanelOpen && (
         <div
-          className={`hidden sm:flex flex-col items-center gap-1.5 fixed ${
-            showIntroCard ? 'top-[380px]' : 'top-12'
-          } right-12 z-20 pointer-events-none select-none transition-all duration-300 animate-in fade-in duration-150`}
+          className="hidden sm:flex flex-col items-center gap-1.5 fixed top-12 right-12 z-20 pointer-events-none select-none transition-all duration-300 animate-in fade-in duration-150"
         >
           <div className="pointer-events-auto w-[68px] p-1.5 bg-[#1a1d24]/95 backdrop-blur-md border border-white/10 hover:border-white/20 rounded-md shadow-2xl flex flex-col items-center gap-1.5">
             {/* Header Reticle with Dock Shortcut */}
