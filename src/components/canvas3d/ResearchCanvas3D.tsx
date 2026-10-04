@@ -472,10 +472,10 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
   const detectedTierRef = useRef<QualityTier>(detectHardwareTier());
   const activeTier: QualityTier = qualityMode === 'auto' ? detectedTierRef.current : qualityMode;
 
-  // Selection & Hover Inspection State
-  const [hoveredItem, setHoveredItem] = useState<InspectableItem | null>(null);
+  // Selection State & Hover Inspection Direct DOM Refs (Zero React Re-render Overhead)
   const [selectedItem, setSelectedItem] = useState<InspectableItem | null>(null);
-  const [hoverLabelPos, setHoverLabelPos] = useState<{ x: number; y: number } | null>(null);
+  const hoverTooltipRef = useRef<HTMLDivElement | null>(null);
+  const hoverTooltipNameRef = useRef<HTMLSpanElement | null>(null);
 
   // Projected 3D Spatial Annotations
   const [projectedAnnotations, setProjectedAnnotations] = useState<
@@ -1325,7 +1325,9 @@ ${currentPhaseMeta.description}
       }
 
       setSelectedItem(null);
-      setHoveredItem(null);
+      if (hoverTooltipRef.current) {
+        hoverTooltipRef.current.style.display = 'none';
+      }
       setLoadProgress(65);
 
       // 2. Instantiate new artifact
@@ -1518,18 +1520,31 @@ ${currentPhaseMeta.description}
       setSceneInitError(err?.message || 'Failed to render initial 3D frame.');
     }
 
-    // 6. Interaction Event Handlers (Raycasting & Picking)
+    // 6. Interaction Event Handlers (Raycasting & Picking with Zero-Flicker Architecture)
     const raycaster = new THREE.Raycaster();
     raycaster.params.Line = { threshold: 0.35 };
     raycaster.params.Points = { threshold: 0.35 };
     const pointer = new THREE.Vector2();
     let isDraggingCanvas = false;
+    let dragTotalDistance = 0;
+    let hasOrbitMoved = false;
     let dragStartPos = { x: 0, y: 0 };
     let lastTapTime = 0;
 
+    const onControlsChange = () => {
+      hasOrbitMoved = true;
+    };
+    controls.addEventListener('change', onControlsChange);
+
     const onPointerDown = (e: PointerEvent) => {
       isDraggingCanvas = false;
+      dragTotalDistance = 0;
+      hasOrbitMoved = false;
       dragStartPos = { x: e.clientX, y: e.clientY };
+      // Hide hover tooltip immediately on pointer down to prevent overlay blocking
+      if (hoverTooltipRef.current) {
+        hoverTooltipRef.current.style.display = 'none';
+      }
       // Minimize intro card upon first deliberate interaction
       if (showIntroCard) {
         setShowIntroCard(false);
@@ -1540,7 +1555,18 @@ ${currentPhaseMeta.description}
       if (!container || !camera || !activeArtifactRef.current) return;
       const dx = Math.abs(e.clientX - dragStartPos.x);
       const dy = Math.abs(e.clientY - dragStartPos.y);
-      if (dx > 5 || dy > 5) isDraggingCanvas = true;
+      dragTotalDistance += Math.hypot(e.movementX, e.movementY);
+      if (dx > 4 || dy > 4 || dragTotalDistance > 6) {
+        isDraggingCanvas = true;
+      }
+
+      // If rotating/dragging or mouse button is held, suppress inspection hover completely
+      if (e.buttons > 0 || isDraggingCanvas || hasOrbitMoved) {
+        if (hoverTooltipRef.current) {
+          hoverTooltipRef.current.style.display = 'none';
+        }
+        return;
+      }
 
       const rect = container.getBoundingClientRect();
       pointer.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
@@ -1548,8 +1574,9 @@ ${currentPhaseMeta.description}
 
       const inspectables = activeArtifactRef.current.getInspectableObjects?.() || [];
       if (inspectables.length === 0) {
-        setHoveredItem(null);
-        setHoverLabelPos(null);
+        if (hoverTooltipRef.current) {
+          hoverTooltipRef.current.style.display = 'none';
+        }
         container.style.cursor = 'grab';
         return;
       }
@@ -1564,22 +1591,33 @@ ${currentPhaseMeta.description}
           (i) => i.mesh === hit.object || i.mesh.children.includes(hit.object)
         );
         if (match) {
-          setHoveredItem(match.data);
-          setHoverLabelPos({ x: e.clientX, y: e.clientY });
+          // Direct DOM manipulation - 0 React re-renders!
+          if (hoverTooltipRef.current && hoverTooltipNameRef.current) {
+            hoverTooltipNameRef.current.textContent = match.data.name;
+            hoverTooltipRef.current.style.transform = `translate3d(${e.clientX}px, ${e.clientY - 38}px, 0) translateX(-50%)`;
+            hoverTooltipRef.current.style.display = 'block';
+          }
           container.style.cursor = 'pointer';
           activeArtifactRef.current.onHoverObject?.(match.data);
           return;
         }
       }
 
-      setHoveredItem(null);
-      setHoverLabelPos(null);
+      if (hoverTooltipRef.current) {
+        hoverTooltipRef.current.style.display = 'none';
+      }
       container.style.cursor = 'grab';
       activeArtifactRef.current.onHoverObject?.(null);
     };
 
     const onPointerUp = (e: PointerEvent) => {
-      if (isDraggingCanvas) return;
+      const wasRotating = isDraggingCanvas || hasOrbitMoved || dragTotalDistance > 5;
+      isDraggingCanvas = false;
+      hasOrbitMoved = false;
+      dragTotalDistance = 0;
+
+      // If user was rotating the scene, strictly ignore inspection/selection
+      if (wasRotating) return;
       if (!container || !camera || !activeArtifactRef.current) return;
 
       const rect = container.getBoundingClientRect();
@@ -1623,9 +1661,16 @@ ${currentPhaseMeta.description}
       }
     };
 
+    const onPointerLeave = () => {
+      if (hoverTooltipRef.current) {
+        hoverTooltipRef.current.style.display = 'none';
+      }
+    };
+
     container.addEventListener('pointerdown', onPointerDown);
     container.addEventListener('pointermove', onPointerMove);
     container.addEventListener('pointerup', onPointerUp);
+    container.addEventListener('pointerleave', onPointerLeave);
 
     // 7. Dynamic Resize Observer (adapts to N-panel sidebar toggle & window resizing)
     let lastWidth = 0;
@@ -1842,9 +1887,11 @@ ${currentPhaseMeta.description}
         resizeObserver.disconnect();
       }
       window.removeEventListener('resize', onWindowResize);
+      controls.removeEventListener('change', onControlsChange);
       container.removeEventListener('pointerdown', onPointerDown);
       container.removeEventListener('pointermove', onPointerMove);
       container.removeEventListener('pointerup', onPointerUp);
+      container.removeEventListener('pointerleave', onPointerLeave);
 
       if (activeArtifactRef.current) {
         activeArtifactRef.current.group.traverse((child) => {
@@ -1942,26 +1989,22 @@ ${currentPhaseMeta.description}
         <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(ellipse_at_center,transparent_45%,rgba(14,17,22,0.78)_100%)]" />
       </div>
 
-      {/* 3D WebGL Canvas Viewport */}
+      {/* 3D WebGL Canvas Viewport (Rock-solid fixed fullscreen canvas) */}
       <div
         ref={containerRef}
-        className={`absolute top-0 left-0 bottom-0 cursor-grab active:cursor-grabbing transition-[right] duration-200 z-10 ${
-          nPanelOpen ? 'right-0 md:right-80' : 'right-0'
-        }`}
+        className="absolute inset-0 cursor-grab active:cursor-grabbing z-10"
         style={{ touchAction: 'none' }}
       />
 
-
-        {/* ── Floating Hover Micro-Label ────────────────────────────────────── */}
-      {hoveredItem && hoverLabelPos && !selectedItem && (
-        <div
-          className="fixed pointer-events-none z-30 px-2.5 py-1 rounded-md bg-black/90 border border-rose-500/40 shadow-lg text-[11px] text-zinc-200 transform -translate-x-1/2 -translate-y-9 transition-transform"
-          style={{ left: hoverLabelPos.x, top: hoverLabelPos.y }}
-        >
-          <span className="font-semibold text-rose-300">{hoveredItem.name}</span>
-          <span className="text-[10px] text-zinc-400 ml-1.5">• Click to Inspect</span>
-        </div>
-      )}
+      {/* ── Floating Hover Micro-Label (Direct DOM Ref for Zero-Flicker 120Hz Tracking) ── */}
+      <div
+        ref={hoverTooltipRef}
+        className="fixed pointer-events-none z-30 px-2.5 py-1 rounded-md bg-black/90 border border-rose-500/40 shadow-lg text-[11px] text-zinc-200 will-change-transform"
+        style={{ display: 'none', top: 0, left: 0 }}
+      >
+        <span ref={hoverTooltipNameRef} className="font-semibold text-rose-300"></span>
+        <span className="text-[10px] text-zinc-400 ml-1.5">• Click to Inspect</span>
+      </div>
 
       {/* ── 3D Projected Spatial Annotations ───────────────────────────────── */}
       {showAnnotations &&

@@ -295,20 +295,20 @@ export function createPhase04Attention(quality: QualityTier = 'high'): PhaseArti
           mat.emissiveIntensity = 1.35;
           m.scale.set(1.22, 1.22, 1.22);
         } else {
-          mat.emissiveIntensity = 0.18;
-          m.scale.set(0.9, 0.9, 0.9);
+          mat.emissiveIntensity = 0.35;
+          m.scale.set(0.95, 0.95, 0.95);
         }
       });
 
-      // Isolate beams from this query
+      // Isolate beams from this query while keeping overall figure architecture visible
       beams.forEach((b) => {
         const mat = b.line.material as THREE.LineBasicMaterial;
         if (b.qIdx === qSelected) {
           mat.color.setHex(0xf43f5e);
-          mat.opacity = Math.max(b.weight * 1.0, 0.28);
+          mat.opacity = Math.max(b.weight * 1.0, 0.4);
         } else {
-          mat.color.setHex(0x1e293b);
-          mat.opacity = 0.02;
+          mat.color.setHex(0x334155);
+          mat.opacity = 0.14;
         }
       });
     } else if (item.id.startsWith('key-token-')) {
@@ -321,20 +321,20 @@ export function createPhase04Attention(quality: QualityTier = 'high'): PhaseArti
           mat.emissiveIntensity = 1.35;
           m.scale.set(1.22, 1.22, 1.22);
         } else {
-          mat.emissiveIntensity = 0.18;
-          m.scale.set(0.9, 0.9, 0.9);
+          mat.emissiveIntensity = 0.35;
+          m.scale.set(0.95, 0.95, 0.95);
         }
       });
 
-      // Isolate beams into this key
+      // Isolate beams into this key while keeping overall figure architecture visible
       beams.forEach((b) => {
         const mat = b.line.material as THREE.LineBasicMaterial;
         if (b.kIdx === kSelected) {
           mat.color.setHex(0x38bdf8);
-          mat.opacity = Math.max(b.weight * 1.0, 0.28);
+          mat.opacity = Math.max(b.weight * 1.0, 0.4);
         } else {
-          mat.color.setHex(0x1e293b);
-          mat.opacity = 0.02;
+          mat.color.setHex(0x334155);
+          mat.opacity = 0.14;
         }
       });
     }
