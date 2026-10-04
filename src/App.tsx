@@ -11,7 +11,6 @@ import { SplineWires } from './components/SplineWires';
 import { GraphNode } from './components/GraphNode';
 import { TopNavbar } from './components/TopNavbar';
 import { CanvasControlsDock } from './components/CanvasControlsDock';
-import { WorkspaceCADSubNavbar } from './components/workspace/WorkspaceCADSubNavbar';
 import { WorkspaceCADToolRail, WorkspaceToolMode } from './components/workspace/WorkspaceCADToolRail';
 import { WorkspaceCADInspector } from './components/workspace/WorkspaceCADInspector';
 import { WorkspaceCADStatusBar } from './components/workspace/WorkspaceCADStatusBar';
@@ -2255,40 +2254,6 @@ export default function App() {
                   ) : (
                     <GraphErrorBoundary onResetGraph={handleResetGraph}>
                       <div className="w-full h-full relative overflow-hidden flex flex-col">
-                        {/* 1. Studio CAD Viewport Sub-Navbar (Header Strip) */}
-                        <WorkspaceCADSubNavbar
-                          activePreset={activePreset as any}
-                          onSelectPreset={handleSelectPreset}
-                          wireStyle={wireStyle}
-                          onChangeWireStyle={(s) => {
-                            playSound('secondaryClick');
-                            setWireStyle(s);
-                          }}
-                          showGrid={showGrid}
-                          onToggleGrid={() => {
-                            playSound('toggle');
-                            setShowGrid(!showGrid);
-                          }}
-                          isSimulating={isSimulating}
-                          onToggleSimulate={() => {
-                            playSound('connect');
-                            setIsSimulating(!isSimulating);
-                          }}
-                          onFitScreen={handleFitScreen}
-                          sidebarOpen={isCADSidebarOpen}
-                          onToggleSidebar={() => {
-                            playSound('toggle');
-                            setIsCADSidebarOpen(!isCADSidebarOpen);
-                          }}
-                          onOpenAddNode={
-                            (currentTabKey === 'project' || activeNavTab === 'projects' || activePreset === 'project')
-                              ? () => setIsAddNodeOpen(true)
-                              : undefined
-                          }
-                          nodeCount={filteredNodes.length}
-                          splineCount={filteredConnections.length}
-                          scale={transform.scale}
-                        />
 
                         {/* 2. Interactive CAD Spatial Viewport Canvas */}
                         <div
@@ -2406,19 +2371,44 @@ export default function App() {
                           />
                         </div>
 
-                        {/* 5. Studio CAD Precision Status Bar (Footer Strip) */}
+                        {/* Unified CAD Spatial Workspace Control & Precision Status Bar */}
                         {(() => {
                           const visitorCount = filteredNodes.filter((n) => n.category === 'visitor').length;
                           const officialCount = filteredNodes.length - visitorCount;
                           return (
                             <WorkspaceCADStatusBar
                               activePreset={activePreset as any}
+                              onSelectPreset={handleSelectPreset}
+                              wireStyle={wireStyle}
+                              onChangeWireStyle={(s) => {
+                                playSound('secondaryClick');
+                                setWireStyle(s);
+                              }}
+                              showGrid={showGrid}
+                              onToggleGrid={() => {
+                                playSound('toggle');
+                                setShowGrid(!showGrid);
+                              }}
+                              isSimulating={isSimulating}
+                              onToggleSimulate={() => {
+                                playSound('connect');
+                                setIsSimulating(!isSimulating);
+                              }}
+                              onFitScreen={handleFitScreen}
+                              sidebarOpen={isCADSidebarOpen}
+                              onToggleSidebar={() => {
+                                playSound('toggle');
+                                setIsCADSidebarOpen(!isCADSidebarOpen);
+                              }}
+                              onOpenAddNode={
+                                (currentTabKey === 'project' || activeNavTab === 'projects' || activePreset === 'project')
+                                  ? () => setIsAddNodeOpen(true)
+                                  : undefined
+                              }
                               nodeCount={officialCount}
                               visitorCount={visitorCount}
                               splineCount={filteredConnections.length}
                               scale={transform.scale}
-                              onFitScreen={handleFitScreen}
-                              isSimulating={isSimulating}
                             />
                           );
                         })()}
