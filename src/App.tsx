@@ -1938,6 +1938,9 @@ export default function App() {
                             cadToolMode === 'pan' ? 'cursor-grab active:cursor-grabbing' : 'cursor-default'
                           }`}
                         >
+                          {/* Subtle architectural background texture */}
+                          <div className="absolute inset-0 pattern-bg pointer-events-none opacity-35" />
+
                           {/* Spatial Transformed Canvas */}
                           <div
                             style={{
