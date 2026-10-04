@@ -262,9 +262,7 @@ export default function App() {
   const [activePreset, setActivePreset] = useState<string>(initialTab === 'projects' ? 'project' : 'network');
   const [connections, setConnections] = useState<Connection[]>(ALL_INITIAL_CONNECTIONS);
   const [isAddNodeOpen, setIsAddNodeOpen] = useState<boolean>(false);
-  const [activeResearchCanvasPhase, setActiveResearchCanvasPhase] = useState<string | null>(
-    () => (initialTab === 'projects' ? 'phase-05' : null)
-  );
+  const [activeResearchCanvasPhase, setActiveResearchCanvasPhase] = useState<string | null>(null);
   const [chronicleActivePhaseId, setChronicleActivePhaseId] = useState<string>('m1');
 
   // Graph Data State:
@@ -1676,9 +1674,8 @@ export default function App() {
     const maxFitScale = Math.min(fitScaleX, fitScaleY) * 0.92;
 
     // Canonical reference desktop targets:
-    // Research tab: 0.65
-    // Network tab: 0.57 (matching exact 57% workspace configuration in image)
-    const canonicalTarget = preset === 'project' ? 0.65 : 0.57;
+    // Both Research and Network share the exact canonical 0.57 scale so cards stay identical in proportion and crispness
+    const canonicalTarget = 0.57;
 
     // Dynamic auto-scaling bounds:
     // Large Desktop / 4K: Caps at MAX_GRAPH_SCALE (0.85) so nodes never balloon disproportionately
@@ -2103,12 +2100,9 @@ export default function App() {
       setActiveView('canvas');
       setActivePreset('project');
       setSelectedNodeId(null);
-      centerViewForPreset('project', 0.70);
+      centerViewForPreset('project');
       isProgrammaticScrollRef.current = true;
       setTimeout(() => { isProgrammaticScrollRef.current = false; }, 500);
-
-      // Open dedicated 3D Research Canvas with entry sequence
-      setActiveResearchCanvasPhase((prev) => prev || 'phase-05');
 
       if (wasOnTimeline) {
         // Coming from Chronicle — skip scroll animation, land instantly in workspace
@@ -2153,6 +2147,11 @@ export default function App() {
     playSound('secondaryClick');
     setActivePreset(preset);
     setSelectedNodeId(null);
+    if (preset === 'project') {
+      setActiveNavTab('projects');
+    } else if (preset === 'network') {
+      setActiveNavTab('network');
+    }
     centerViewForPreset(preset);
   }, [centerViewForPreset]);
 
