@@ -12,9 +12,6 @@ interface WorkspaceCADSubNavbarProps {
   onFitScreen: () => void;
   sidebarOpen: boolean;
   onToggleSidebar: () => void;
-  nodeCount: number;
-  splineCount: number;
-  scale: number;
 }
 
 export const WorkspaceCADSubNavbar: React.FC<WorkspaceCADSubNavbarProps> = ({
@@ -23,8 +20,6 @@ export const WorkspaceCADSubNavbar: React.FC<WorkspaceCADSubNavbarProps> = ({
   onFitScreen,
   sidebarOpen,
   onToggleSidebar,
-  nodeCount,
-  splineCount,
 }) => {
   const [openMenu, setOpenMenu] = useState<'view' | null>(null);
   const menuContainerRef = useRef<HTMLDivElement>(null);
@@ -128,13 +123,6 @@ export const WorkspaceCADSubNavbar: React.FC<WorkspaceCADSubNavbarProps> = ({
           >
             NETWORK
           </button>
-        </div>
-
-        {/* Telemetry pill */}
-        <div className="hidden xl:flex items-center gap-1.5 px-2 py-0.5 rounded-[2px] bg-[#1a1d26] border border-[#2b313d] text-[9.5px] text-zinc-400">
-          <span>{nodeCount} NODES</span>
-          <span className="text-zinc-600">/</span>
-          <span>{splineCount} SPLINES</span>
         </div>
       </div>
 

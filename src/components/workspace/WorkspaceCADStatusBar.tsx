@@ -9,19 +9,9 @@ import { playSound } from '../../lib/sound';
 export interface WorkspaceCADStatusBarProps {
   activePreset: 'network' | 'project' | 'all';
   onSelectPreset: (preset: 'network' | 'project') => void;
-  wireStyle?: 'glow' | 'minimal' | 'cyber';
-  onChangeWireStyle?: (style: 'glow' | 'minimal' | 'cyber') => void;
-  showGrid?: boolean;
-  onToggleGrid?: () => void;
-  isSimulating?: boolean;
-  onToggleSimulate?: () => void;
   onFitScreen: () => void;
   sidebarOpen: boolean;
   onToggleSidebar: () => void;
-  onOpenAddNode?: () => void;
-  nodeCount: number;
-  visitorCount?: number;
-  splineCount: number;
   scale: number;
 }
 
@@ -31,9 +21,6 @@ export const WorkspaceCADStatusBar: React.FC<WorkspaceCADStatusBarProps> = ({
   onFitScreen,
   sidebarOpen,
   onToggleSidebar,
-  nodeCount,
-  visitorCount = 0,
-  splineCount,
   scale,
 }) => {
   const [openMenu, setOpenMenu] = useState<'view' | 'layout' | null>(null);
@@ -141,27 +128,15 @@ export const WorkspaceCADStatusBar: React.FC<WorkspaceCADStatusBarProps> = ({
         </div>
       </div>
 
-      {/* Center Cluster: Telemetry & Shortcuts */}
-      <div className="hidden md:flex items-center gap-2.5 text-[9.5px] text-zinc-400">
-        <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-[2px] bg-[#1a1d26] border border-[#2b313d] text-zinc-300">
-          <span className="font-semibold text-zinc-200">{nodeCount} NODES</span>
-          {visitorCount > 0 && (
-            <span className="text-rose-400 font-semibold">+{visitorCount} NOTES</span>
-          )}
-          <span className="text-zinc-600">/</span>
-          <span className="text-zinc-400">{splineCount} SPLINES</span>
-        </div>
-
-        {/* Keybinding Reference Hints for Wide Viewports */}
-        <div className="hidden 2xl:flex items-center gap-2 text-zinc-500 text-[9px]">
-          <span><strong className="text-zinc-400">LMB:</strong> Drag</span>
-          <span>&bull;</span>
-          <span><strong className="text-zinc-400">Wheel:</strong> Zoom</span>
-          <span>&bull;</span>
-          <span><strong className="text-zinc-400">N:</strong> Sidebar</span>
-          <span>&bull;</span>
-          <span><strong className="text-zinc-400">Home:</strong> Recenter</span>
-        </div>
+      {/* Center Cluster: Active Hotkeys Reference */}
+      <div className="hidden sm:flex items-center gap-2 text-zinc-500 text-[9.5px]">
+        <span><strong className="text-zinc-400">LMB:</strong> Drag</span>
+        <span>&bull;</span>
+        <span><strong className="text-zinc-400">Wheel:</strong> Zoom</span>
+        <span>&bull;</span>
+        <span><strong className="text-zinc-400">N:</strong> Sidebar</span>
+        <span>&bull;</span>
+        <span><strong className="text-zinc-400">Home:</strong> Recenter</span>
       </div>
 
       {/* Right Cluster: Sidebar & Zoom */}

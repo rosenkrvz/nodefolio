@@ -2012,26 +2012,17 @@ export default function App() {
                         </div>
 
                         {/* Unified CAD Spatial Workspace Control & Precision Status Bar */}
-                        {(() => {
-                          const visitorCount = filteredNodes.filter((n) => n.category === 'visitor').length;
-                          const officialCount = filteredNodes.length - visitorCount;
-                          return (
-                            <WorkspaceCADStatusBar
-                              activePreset={activePreset as any}
-                              onSelectPreset={handleSelectPreset}
-                              onFitScreen={handleFitScreen}
-                              sidebarOpen={isCADSidebarOpen}
-                              onToggleSidebar={() => {
-                                playSound('toggle');
-                                setIsCADSidebarOpen(!isCADSidebarOpen);
-                              }}
-                              nodeCount={officialCount}
-                              visitorCount={visitorCount}
-                              splineCount={filteredConnections.length}
-                              scale={transform.scale}
-                            />
-                          );
-                        })()}
+                        <WorkspaceCADStatusBar
+                          activePreset={activePreset as any}
+                          onSelectPreset={handleSelectPreset}
+                          onFitScreen={handleFitScreen}
+                          sidebarOpen={isCADSidebarOpen}
+                          onToggleSidebar={() => {
+                            playSound('toggle');
+                            setIsCADSidebarOpen(!isCADSidebarOpen);
+                          }}
+                          scale={transform.scale}
+                        />
                       </div>
                     </GraphErrorBoundary>
                   )}
