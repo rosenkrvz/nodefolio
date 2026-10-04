@@ -13,8 +13,6 @@ interface EditorialCoverProps {
   onOpenResearchCanvas3D?: (phaseId?: string) => void;
 }
 
-export type HomeCoverFormat = 'editorial' | 'telemetry' | 'executive';
-
 const EditorialCoverComponent: React.FC<EditorialCoverProps> = ({
   scrollProgress,
   activeNavTab = 'home',
@@ -27,7 +25,6 @@ const EditorialCoverComponent: React.FC<EditorialCoverProps> = ({
   const [entryStage, setEntryStage] = useState(0);
   const [isEntered, setIsEntered] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(false);
-  const [formatMode, setFormatMode] = useState<HomeCoverFormat>('editorial');
 
   // Check prefers-reduced-motion
   useEffect(() => {
@@ -132,11 +129,6 @@ const EditorialCoverComponent: React.FC<EditorialCoverProps> = ({
 
   const isFullyOffscreen = scrollProgress >= 0.96;
 
-  const handleFormatChange = (mode: HomeCoverFormat) => {
-    playSound('nav');
-    setFormatMode(mode);
-  };
-
   return (
     <section
       aria-label="Editorial Portfolio Cover"
@@ -199,53 +191,7 @@ const EditorialCoverComponent: React.FC<EditorialCoverProps> = ({
           <span className="text-zinc-400">RESEARCH &bull; SYSTEMS</span>
         </div>
 
-        {/* Center: Interactive Format Options Switcher */}
-        <div className="flex items-center gap-1.5 p-1 rounded-xl bg-white/[0.035] border border-white/[0.08] backdrop-blur-md shadow-inner">
-          <span className="hidden xl:inline-block font-mono text-[9.5px] uppercase tracking-widest text-zinc-400 pl-2 pr-1 font-semibold">
-            FORMAT:
-          </span>
-          <button
-            type="button"
-            onClick={() => handleFormatChange('editorial')}
-            className={`px-2.5 sm:px-3 py-1 rounded-lg font-mono text-[10px] sm:text-[11px] font-semibold tracking-wider uppercase transition-all cursor-pointer flex items-center gap-1.5 ${
-              formatMode === 'editorial'
-                ? 'bg-rose-500/20 text-white border border-rose-500/50 shadow-[0_0_10px_rgba(244,63,94,0.25)]'
-                : 'text-zinc-400 hover:text-white hover:bg-white/[0.04] border border-transparent'
-            }`}
-            title="Editorial visual overview"
-          >
-            <span className={`w-1.5 h-1.5 rounded-full ${formatMode === 'editorial' ? 'bg-rose-500 shadow-[0_0_6px_#f43f5e]' : 'bg-zinc-600'}`} />
-            <span>01 EDITORIAL</span>
-          </button>
 
-          <button
-            type="button"
-            onClick={() => handleFormatChange('telemetry')}
-            className={`px-2.5 sm:px-3 py-1 rounded-lg font-mono text-[10px] sm:text-[11px] font-semibold tracking-wider uppercase transition-all cursor-pointer flex items-center gap-1.5 ${
-              formatMode === 'telemetry'
-                ? 'bg-rose-500/20 text-white border border-rose-500/50 shadow-[0_0_10px_rgba(244,63,94,0.25)]'
-                : 'text-zinc-400 hover:text-white hover:bg-white/[0.04] border border-transparent'
-            }`}
-            title="Computational telemetry and systems"
-          >
-            <span className={`w-1.5 h-1.5 rounded-full ${formatMode === 'telemetry' ? 'bg-rose-500 shadow-[0_0_6px_#f43f5e]' : 'bg-zinc-600'}`} />
-            <span>02 TELEMETRY</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => handleFormatChange('executive')}
-            className={`px-2.5 sm:px-3 py-1 rounded-lg font-mono text-[10px] sm:text-[11px] font-semibold tracking-wider uppercase transition-all cursor-pointer flex items-center gap-1.5 ${
-              formatMode === 'executive'
-                ? 'bg-rose-500/20 text-white border border-rose-500/50 shadow-[0_0_10px_rgba(244,63,94,0.25)]'
-                : 'text-zinc-400 hover:text-white hover:bg-white/[0.04] border border-transparent'
-            }`}
-            title="Executive credentials and academic foundation"
-          >
-            <span className={`w-1.5 h-1.5 rounded-full ${formatMode === 'executive' ? 'bg-rose-500 shadow-[0_0_6px_#f43f5e]' : 'bg-zinc-600'}`} />
-            <span>03 EXECUTIVE</span>
-          </button>
-        </div>
 
         {/* Desktop Eyebrow Right */}
         <div className="hidden sm:flex items-center gap-3 shrink-0">
@@ -273,61 +219,8 @@ const EditorialCoverComponent: React.FC<EditorialCoverProps> = ({
       <div className="relative z-10 w-full max-w-[1780px] 2xl:max-w-[1920px] 3xl:max-w-[2160px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-12 items-end mt-2 min-[360px]:mt-3 min-[390px]:mt-4 mb-auto sm:my-auto py-1 sm:py-2">
         {/* Left / Main Column (col-span-8) */}
         <div className="lg:col-span-8 flex flex-col items-start w-full">
-          {/* Interactive Research Topic Pill Bar */}
-          <div
-            style={{
-              opacity: isEntered || entryStage >= 2 ? 1 : 0,
-              transition: isEntered ? 'none' : 'opacity 0.5s ease-out',
-            }}
-            className="flex flex-wrap items-center gap-1.5 sm:gap-2 mb-3.5"
-          >
-            <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-rose-500/10 border border-rose-500/30 text-rose-400 font-mono text-[9.5px] sm:text-[10.5px] font-semibold tracking-wider uppercase">
-              <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shadow-[0_0_8px_#f43f5e] animate-pulse" />
-              <span>ACTIVE SPECIFICATION</span>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => {
-                playSound('select');
-                if (onOpenResearchCanvas3D) onOpenResearchCanvas3D('phase-05');
-                else onSelectNavTab?.('notebook');
-              }}
-              className="px-2 py-0.5 rounded-md bg-white/[0.04] hover:bg-white/[0.09] border border-white/[0.08] hover:border-rose-500/40 font-mono text-[9px] sm:text-[10px] text-zinc-300 hover:text-white uppercase transition-all cursor-pointer"
-            >
-              [01 // COMPUTATIONAL GRAPHS]
-            </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                playSound('select');
-                if (onOpenResearchCanvas3D) onOpenResearchCanvas3D('phase-05');
-                else onSelectNavTab?.('notebook');
-              }}
-              className="px-2 py-0.5 rounded-md bg-white/[0.04] hover:bg-white/[0.09] border border-white/[0.08] hover:border-rose-500/40 font-mono text-[9px] sm:text-[10px] text-zinc-300 hover:text-white uppercase transition-all cursor-pointer"
-            >
-              [02 // RIEMANNIAN DYNAMICS]
-            </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                playSound('select');
-                if (onOpenResearchCanvas3D) onOpenResearchCanvas3D('phase-04');
-                else onSelectNavTab?.('notebook');
-              }}
-              className="hidden sm:inline-block px-2 py-0.5 rounded-md bg-white/[0.04] hover:bg-white/[0.09] border border-white/[0.08] hover:border-rose-500/40 font-mono text-[9px] sm:text-[10px] text-zinc-300 hover:text-white uppercase transition-all cursor-pointer"
-            >
-              [03 // KV-CACHE OPTIMIZATION]
-            </button>
-          </div>
-
-          {/* Format View 01: EDITORIAL (Default) */}
-          {formatMode === 'editorial' && (
-            <div className="w-full">
-              {/* Directionally Masked Monumental Display Name */}
-              <div className="overflow-hidden py-1 -my-1 mb-2 min-[360px]:mb-2.5 sm:mb-5">
+          {/* Directionally Masked Monumental Display Name */}
+          <div className="overflow-hidden py-1 -my-1 mb-2 min-[360px]:mb-2.5 sm:mb-5">
                 <h1
                   style={{
                     transform:
@@ -404,183 +297,8 @@ const EditorialCoverComponent: React.FC<EditorialCoverProps> = ({
                   <Compass className="w-3.5 h-3.5 min-[360px]:w-4 min-[360px]:h-4 text-rose-400 shrink-0" />
                   <span className="whitespace-nowrap">VIEW RESEARCH</span>
                 </button>
-
-                {onOpenResume && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      playSound('select');
-                      onOpenResume();
-                    }}
-                    className="w-full sm:w-auto justify-center px-3.5 py-2.5 sm:px-4 sm:py-3.5 rounded-xl bg-white/[0.025] hover:bg-white/[0.06] text-zinc-400 hover:text-white border border-white/[0.08] font-semibold text-xs sm:text-sm tracking-wider uppercase transition-all cursor-pointer flex items-center gap-2 min-h-[44px] sm:min-h-0"
-                  >
-                    <span>CURRICULUM VITAE</span>
-                  </button>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Format View 02: TELEMETRY (System Architecture & Computational Spec) */}
-          {formatMode === 'telemetry' && (
-            <div className="w-full max-w-2xl p-4 sm:p-6 rounded-2xl bg-[#0e1117]/90 border border-white/[0.12] backdrop-blur-md shadow-2xl space-y-5 animate-in fade-in duration-300">
-              <div className="flex items-center justify-between border-b border-white/[0.08] pb-3">
-                <div className="flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-pulse shadow-[0_0_8px_#f43f5e]" />
-                  <span className="font-tech text-xs sm:text-sm font-bold tracking-widest text-zinc-100 uppercase">
-                    SYSTEM // COMPUTATIONAL TELEMETRY
-                  </span>
-                </div>
-                <span className="font-mono text-[10px] text-rose-400/90 font-medium">
-                  NODE_ID: SF-2026-IITJ
-                </span>
               </div>
 
-              {/* Realtime Architecture Matrix */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                <div className="p-3 rounded-lg bg-white/[0.03] border border-white/[0.06] space-y-1">
-                  <span className="font-tech text-[9.5px] uppercase tracking-wider text-zinc-400 block">
-                    Latent Dimensions
-                  </span>
-                  <span className="font-tech text-sm sm:text-base font-bold text-white block">
-                    512-D Spherical
-                  </span>
-                  <span className="font-mono text-[9px] text-rose-400 block">Non-Euclidean Geodesics</span>
-                </div>
-
-                <div className="p-3 rounded-lg bg-white/[0.03] border border-white/[0.06] space-y-1">
-                  <span className="font-tech text-[9.5px] uppercase tracking-wider text-zinc-400 block">
-                    Compute Graphics
-                  </span>
-                  <span className="font-tech text-sm sm:text-base font-bold text-white block">
-                    WebGL / Canvas
-                  </span>
-                  <span className="font-mono text-[9px] text-emerald-400 block">Constant 60 FPS Target</span>
-                </div>
-
-                <div className="p-3 rounded-lg bg-white/[0.03] border border-white/[0.06] space-y-1 col-span-2 sm:col-span-1">
-                  <span className="font-tech text-[9.5px] uppercase tracking-wider text-zinc-400 block">
-                    Autograd Engine
-                  </span>
-                  <span className="font-tech text-sm sm:text-base font-bold text-white block">
-                    Reverse-Mode DAG
-                  </span>
-                  <span className="font-mono text-[9px] text-zinc-400 block">Tape Recording Tape</span>
-                </div>
-              </div>
-
-              <p className="font-body text-xs sm:text-sm text-zinc-300 leading-relaxed">
-                Active computational research encompasses score-matching vector fields, KV-cache tiling to minimize HBM IO overhead, and hyperspherical contrastive uniformity under InfoNCE formulations.
-              </p>
-
-              <div className="flex flex-wrap items-center gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    playSound('open');
-                    if (onOpenResearchCanvas3D) onOpenResearchCanvas3D('phase-05');
-                    else onExplore();
-                  }}
-                  className="px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-semibold text-xs tracking-wider uppercase flex items-center gap-2 cursor-pointer transition-all shadow-[0_0_16px_rgba(225,29,72,0.35)]"
-                >
-                  <span>LAUNCH 3D MANIFOLD EXPLORER</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    playSound('select');
-                    onSelectNavTab?.('notebook');
-                  }}
-                  className="px-4 py-2.5 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] text-zinc-200 border border-white/[0.1] font-semibold text-xs tracking-wider uppercase cursor-pointer transition-all"
-                >
-                  <span>CHRONICLE RESEARCH LAB</span>
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* Format View 03: EXECUTIVE (Credentials & Academic Overview) */}
-          {formatMode === 'executive' && (
-            <div className="w-full max-w-2xl p-4 sm:p-6 rounded-2xl bg-[#0e1117]/90 border border-white/[0.12] backdrop-blur-md shadow-2xl space-y-4 animate-in fade-in duration-300">
-              <div className="flex items-center justify-between border-b border-white/[0.08] pb-3">
-                <div className="space-y-0.5">
-                  <span className="font-display text-base sm:text-lg font-bold text-white uppercase tracking-wider block">
-                    SHUBHAM SHARMA
-                  </span>
-                  <span className="font-mono text-xs text-rose-400 font-semibold block">
-                    AI &amp; Data Science Scholar &bull; IIT Jodhpur
-                  </span>
-                </div>
-                <span className="px-2.5 py-1 rounded-md bg-emerald-500/10 border border-emerald-500/30 font-mono text-[9px] font-bold text-emerald-400 tracking-wider uppercase">
-                  VERIFIED PROFILE
-                </span>
-              </div>
-
-              <div className="space-y-2">
-                <span className="font-tech text-[10px] uppercase tracking-widest text-zinc-400 font-bold block">
-                  RESEARCH PHILOSOPHY &amp; OBJECTIVE
-                </span>
-                <p className="font-body text-xs sm:text-sm text-zinc-200 italic leading-relaxed bg-white/[0.02] p-3 rounded-lg border border-white/[0.05]">
-                  &ldquo;I work for a research-oriented approach towards a descriptive data-driven environment that focuses on purpose rather than just plain definition.&rdquo;
-                </p>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                <div className="p-3 rounded-lg bg-white/[0.03] border border-white/[0.06] space-y-1">
-                  <span className="font-tech text-[9.5px] uppercase tracking-wider text-rose-400 block font-semibold">
-                    Academic Foundation
-                  </span>
-                  <span className="font-body text-xs font-semibold text-zinc-100 block">
-                    Indian Institute of Technology Jodhpur
-                  </span>
-                  <span className="font-mono text-[10px] text-zinc-400 block">
-                    Bachelor of Science (B.S.) in AI &amp; Data Science (2025–2029)
-                  </span>
-                </div>
-
-                <div className="p-3 rounded-lg bg-white/[0.03] border border-white/[0.06] space-y-1">
-                  <span className="font-tech text-[9.5px] uppercase tracking-wider text-rose-400 block font-semibold">
-                    Industry &amp; Applied Practice
-                  </span>
-                  <span className="font-body text-xs font-semibold text-zinc-100 block">
-                    Doingly Analysis &bull; Visible Logic Labs
-                  </span>
-                  <span className="font-mono text-[10px] text-zinc-400 block">
-                    Quantitative modeling, client analytics &amp; systems
-                  </span>
-                </div>
-              </div>
-
-              <div className="flex flex-wrap items-center gap-3 pt-2">
-                {onOpenResume && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      playSound('open');
-                      onOpenResume();
-                    }}
-                    className="px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-semibold text-xs tracking-wider uppercase flex items-center gap-2 cursor-pointer transition-all shadow-[0_0_16px_rgba(225,29,72,0.35)]"
-                  >
-                    <span>OPEN / PRINT CURRICULUM VITAE</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
-                  </button>
-                )}
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    playSound('select');
-                    onViewWork();
-                  }}
-                  className="px-4 py-2.5 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] text-zinc-200 border border-white/[0.1] font-semibold text-xs tracking-wider uppercase cursor-pointer transition-all"
-                >
-                  <span>BROWSE ARCHIVED PROJECTS</span>
-                </button>
-              </div>
-            </div>
-          )}
 
           {/* Mobile Computational Domain Chips */}
           <div
