@@ -10,7 +10,6 @@ import { EXPANDED_RESEARCH_NODES, RESEARCH_CONNECTIONS, RESEARCH_CORE_COORDINATE
 import { SplineWires } from './components/SplineWires';
 import { GraphNode } from './components/GraphNode';
 import { TopNavbar } from './components/TopNavbar';
-import { CanvasControlsDock } from './components/CanvasControlsDock';
 import { WorkspaceCADToolRail, WorkspaceToolMode } from './components/workspace/WorkspaceCADToolRail';
 import { WorkspaceCADInspector } from './components/workspace/WorkspaceCADInspector';
 import { WorkspaceCADStatusBar } from './components/workspace/WorkspaceCADStatusBar';
