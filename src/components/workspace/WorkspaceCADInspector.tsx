@@ -2,14 +2,10 @@ import React, { useState } from 'react';
 import {
   Close,
   Maximize,
-  Sliders,
-  Grid,
-  Activity,
   ArrowUpRight,
   ExternalLink,
   Layers,
   ChevronRight,
-  Plus,
 } from '../icons';
 import { playSound } from '../../lib/sound';
 import { NodeData, Connection } from '../../types';
@@ -24,13 +20,6 @@ interface WorkspaceCADInspectorProps {
   onOpenFocusedNode: (node: NodeData) => void;
   transform: { x: number; y: number; scale: number };
   onFitScreen: () => void;
-  wireStyle: 'glow' | 'minimal' | 'cyber';
-  onChangeWireStyle: (style: 'glow' | 'minimal' | 'cyber') => void;
-  isSimulating: boolean;
-  onToggleSimulate: () => void;
-  showGrid: boolean;
-  onToggleGrid: () => void;
-  onOpenAddNode?: () => void;
 }
 
 export const WorkspaceCADInspector: React.FC<WorkspaceCADInspectorProps> = ({
@@ -43,13 +32,6 @@ export const WorkspaceCADInspector: React.FC<WorkspaceCADInspectorProps> = ({
   onOpenFocusedNode,
   transform,
   onFitScreen,
-  wireStyle,
-  onChangeWireStyle,
-  isSimulating,
-  onToggleSimulate,
-  showGrid,
-  onToggleGrid,
-  onOpenAddNode,
 }) => {
   const [activeTab, setActiveTab] = useState<'item' | 'graph' | 'view'>('item');
 
@@ -256,20 +238,6 @@ export const WorkspaceCADInspector: React.FC<WorkspaceCADInspectorProps> = ({
                     </button>
                   ))}
                 </div>
-
-                {onOpenAddNode && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      playSound('open');
-                      onOpenAddNode();
-                    }}
-                    className="w-full mt-2 py-1.5 px-2.5 rounded-[2px] bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/40 text-rose-300 hover:text-white text-[10.5px] font-semibold flex items-center justify-center gap-1.5 cursor-pointer transition-all"
-                  >
-                    <Plus className="w-3.5 h-3.5" />
-                    <span>INJECT CUSTOM RESEARCH NODE</span>
-                  </button>
-                )}
               </div>
             )}
           </>
@@ -277,61 +245,6 @@ export const WorkspaceCADInspector: React.FC<WorkspaceCADInspectorProps> = ({
 
         {activeTab === 'graph' && (
           <div className="space-y-4">
-            {/* Cable Spline Architecture */}
-            <div className="space-y-2">
-              <span className="text-[10px] text-zinc-400 uppercase tracking-wider font-bold block">
-                Cable Spline Style
-              </span>
-              <div className="grid grid-cols-3 gap-1 p-1 rounded-[3px] bg-[#1a1d26] border border-[#2b313d]">
-                {(['glow', 'cyber', 'minimal'] as const).map((style) => (
-                  <button
-                    key={style}
-                    type="button"
-                    onClick={() => {
-                      playSound('select');
-                      onChangeWireStyle(style);
-                    }}
-                    className={`py-1.5 rounded-[2px] text-[10px] font-semibold uppercase tracking-wider transition-all cursor-pointer ${
-                      wireStyle === style
-                        ? 'bg-rose-600 text-white shadow-sm'
-                        : 'text-zinc-400 hover:text-white'
-                    }`}
-                  >
-                    {style}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Physics & Force Simulation */}
-            <div className="space-y-2">
-              <span className="text-[10px] text-zinc-400 uppercase tracking-wider font-bold block">
-                Spline Dynamics
-              </span>
-              <div className="p-3 rounded-[3px] bg-[#1a1d26] border border-[#2b313d] space-y-2.5">
-                <div className="flex items-center justify-between">
-                  <span className="text-[10.5px] text-zinc-300">Force Simulation</span>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      playSound('connect');
-                      onToggleSimulate();
-                    }}
-                    className={`px-2 py-0.5 rounded-[2px] text-[10px] font-semibold uppercase cursor-pointer transition-all ${
-                      isSimulating
-                        ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/50'
-                        : 'bg-white/[0.05] text-zinc-400 border border-white/[0.1]'
-                    }`}
-                  >
-                    {isSimulating ? 'Active' : 'Disabled'}
-                  </button>
-                </div>
-                <p className="text-[9.5px] text-zinc-400 leading-relaxed">
-                  Real-time Hermite spline interpolation with cubic acceleration and live signal pulses.
-                </p>
-              </div>
-            </div>
-
             {/* Active Connections List */}
             <div className="space-y-2">
               <div className="flex items-center justify-between text-[10px] text-zinc-400 uppercase tracking-wider font-bold">
@@ -387,32 +300,6 @@ export const WorkspaceCADInspector: React.FC<WorkspaceCADInspectorProps> = ({
                 >
                   Recenter Graph [Home]
                 </button>
-              </div>
-            </div>
-
-            {/* Canvas Grid */}
-            <div className="space-y-2">
-              <span className="text-[10px] text-zinc-400 uppercase tracking-wider font-bold block">
-                Canvas Overlays
-              </span>
-              <div className="p-3 rounded-[3px] bg-[#1a1d26] border border-[#2b313d] space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-[10.5px] text-zinc-300">Coordinate Grid</span>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      playSound('toggle');
-                      onToggleGrid();
-                    }}
-                    className={`px-2 py-0.5 rounded-[2px] text-[10px] font-semibold uppercase cursor-pointer transition-all ${
-                      showGrid
-                        ? 'bg-rose-500/20 text-rose-300 border border-rose-500/50'
-                        : 'bg-white/[0.05] text-zinc-400 border border-white/[0.1]'
-                    }`}
-                  >
-                    {showGrid ? 'Visible' : 'Hidden'}
-                  </button>
-                </div>
               </div>
             </div>
           </div>

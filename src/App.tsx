@@ -40,18 +40,10 @@ const PrintCVDocument = React.lazy(() =>
     default: m.PrintCVDocument,
   }))
 );
-const AddVisitorNodeModal = React.lazy(() =>
-  import('./components/modals/AddVisitorNodeModal').then((m) => ({
-    default: m.AddVisitorNodeModal,
-  }))
-);
 import { useIsMobile } from './hooks/useIsMobile';
 import { MobileNodespace } from './components/MobileNodespace';
 import { GraphErrorBoundary } from './components/GraphErrorBoundary';
 import { getDevicePerformanceTier } from './lib/performanceTier';
-
-// Dynamically import Firebase module so the 402 kB Firestore SDK is loaded off the critical path
-const loadFirebase = () => import('./lib/firebase');
 
 const VISITOR_STORAGE_KEY = 'nodefolio_visitor_notes';
 const VISITOR_STORAGE_VERSION = 'v2';
@@ -287,49 +279,6 @@ export default function App() {
     document.documentElement.dataset.perfTier = tier;
   }, []);
 
-  // Real-time Firestore synchronization for community visitor nodes (Easter egg on Research tab)
-  // Defer until idle or after first render so it never blocks the initial critical path
-  useEffect(() => {
-    let unsubscribe: (() => void) | undefined;
-    let isCancelled = false;
-
-    const initFirebaseSync = () => {
-      loadFirebase()
-        .then(({ subscribeToCommunityVisitorNodes }) => {
-          if (isCancelled) return;
-          unsubscribe = subscribeToCommunityVisitorNodes((firestoreNodes) => {
-            if (!Array.isArray(firestoreNodes)) return;
-            setNodesByPreset((prev) => {
-              const officialResearch = prev.project.filter((n) => n.category !== 'visitor');
-              return {
-                ...prev,
-                project: [...officialResearch, ...firestoreNodes],
-              };
-            });
-          });
-        })
-        .catch((err) => {
-          console.info('[Firestore] Background sync deferred:', err);
-        });
-    };
-
-    if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
-      const id = (window as any).requestIdleCallback(initFirebaseSync, { timeout: 3000 });
-      return () => {
-        isCancelled = true;
-        (window as any).cancelIdleCallback?.(id);
-        unsubscribe?.();
-      };
-    } else {
-      const timer = setTimeout(initFirebaseSync, 1500);
-      return () => {
-        isCancelled = true;
-        clearTimeout(timer);
-        unsubscribe?.();
-      };
-    }
-  }, []);
-
   const currentTabKey = activePreset === 'project' || activePreset === 'all' ? 'project' : 'network';
   const currentTabKeyRef = useRef(currentTabKey);
   currentTabKeyRef.current = currentTabKey;
@@ -350,9 +299,6 @@ export default function App() {
     []
   );
   const [activeView, setActiveView] = useState<'canvas' | 'list' | 'timeline'>(initialTab === 'notebook' ? 'timeline' : 'canvas');
-  const [isSimulating, setIsSimulating] = useState<boolean>(false);
-  const [wireStyle, setWireStyle] = useState<'glow' | 'minimal' | 'cyber'>('glow');
-  const [showGrid, setShowGrid] = useState<boolean>(true);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [activeConnectionId, setActiveConnectionId] = useState<string | null>(null);
   const [isCADSidebarOpen, setIsCADSidebarOpen] = useState<boolean>(false);
@@ -412,34 +358,7 @@ export default function App() {
   const pendingResizeRef = useRef<Record<string, { width: number; x?: number }>>({});
   const resizeRafIdRef = useRef<number | null>(null);
 
-  // Deterministic harmonic drift personality configs for organic, controlled workspace life
-  const NODE_DRIFT_PROFILES: Record<
-    string,
-    { ampX: number; ampY: number; periodX: number; periodY: number; phaseX: number; phaseY: number }
-  > = useMemo(() => ({
-    'node-profile': { ampX: 10, ampY: 14, periodX: 4.8, periodY: 3.8, phaseX: 0.3, phaseY: 1.1 },
-    'node-models': { ampX: 12, ampY: 10, periodX: 5.2, periodY: 4.4, phaseX: 1.8, phaseY: 2.4 },
-    'node-credentials': { ampX: 11, ampY: 12, periodX: 4.9, periodY: 5.1, phaseX: 3.1, phaseY: 0.7 },
-    'node-systems': { ampX: 12, ampY: 12, periodX: 5.4, periodY: 4.2, phaseX: 4.2, phaseY: 2.9 },
-    'node-project': { ampX: 8, ampY: 10, periodX: 6.0, periodY: 5.0, phaseX: 5.0, phaseY: 3.8 },
-    'node-clock': { ampX: 10, ampY: 8, periodX: 4.2, periodY: 3.6, phaseX: 0.9, phaseY: 4.5 },
-    'node-inference': { ampX: 10, ampY: 9, periodX: 4.8, periodY: 4.0, phaseX: 2.1, phaseY: 1.7 },
-    'node-optimization': { ampX: 9, ampY: 12, periodX: 5.2, periodY: 4.5, phaseX: 3.8, phaseY: 0.9 },
-    'node-pipeline': { ampX: 12, ampY: 9, periodX: 4.4, periodY: 5.0, phaseX: 1.2, phaseY: 3.4 },
-    'node-eval': { ampX: 10, ampY: 11, periodX: 5.0, periodY: 4.2, phaseX: 4.6, phaseY: 2.1 },
-    'node-vector': { ampX: 11, ampY: 10, periodX: 5.6, periodY: 4.6, phaseX: 0.8, phaseY: 4.1 },
-    'node-vision': { ampX: 9, ampY: 11, periodX: 4.6, periodY: 3.9, phaseX: 2.9, phaseY: 1.5 },
-    'node-generative': { ampX: 11, ampY: 12, periodX: 5.8, periodY: 4.7, phaseX: 5.2, phaseY: 3.1 },
-    'node-software': { ampX: 10, ampY: 9, periodX: 4.9, periodY: 5.2, phaseX: 1.9, phaseY: 0.6 },
-    'node-lab': { ampX: 12, ampY: 11, periodX: 5.1, periodY: 4.3, phaseX: 3.3, phaseY: 4.8 },
-    'node-computational': { ampX: 9, ampY: 10, periodX: 4.5, periodY: 4.8, phaseX: 4.1, phaseY: 2.7 },
-  }), []);
-
-  // Subtle harmonic drift state
-  const [driftOffsets, setDriftOffsets] = useState<Record<string, { x: number; y: number }>>({});
   const isDraggingAnyNodeRef = useRef(false);
-  const driftStartTimeRef = useRef(Date.now());
-  const lastDriftFrameTimeRef = useRef(0);
 
   // Active nav tab ref for event listeners
   const activeNavTabRef = useRef(activeNavTab);
@@ -527,150 +446,9 @@ export default function App() {
   scrollProgressRef.current = scrollProgress;
 
   // Track dragging state from child nodes
-  const handleDragStateChange = useCallback((nodeId: string, isDragging: boolean) => {
+  const handleDragStateChange = useCallback((_nodeId: string, isDragging: boolean) => {
     isDraggingAnyNodeRef.current = isDragging;
-    if (isDragging) {
-      setDriftOffsets((prev) => ({
-        ...prev,
-        [nodeId]: { x: 0, y: 0 },
-      }));
-    }
   }, []);
-
-  // Autonomous controlled spatial drift loop (throttled to ~30 FPS for optimal battery and zero lag)
-  // Performance: drift offsets are stored in a ref to avoid creating new state objects every frame.
-  // A lightweight render tick counter triggers re-render only when drift values actually change.
-  const driftOffsetsRef = useRef<Record<string, { x: number; y: number }>>(driftOffsets);
-  const [, setDriftTick] = useState(0);
-
-  useEffect(() => {
-    // Completely freeze drift calculations if 3D Research Canvas, modals, or other views are open
-    const isModalOrSubsystemOpen =
-      !!activeResearchCanvasPhase ||
-      !!focusedNode ||
-      !!selectedProject ||
-      !!selectedCertificate ||
-      isResumeOpen ||
-      isContactOpen ||
-      isAddNodeOpen;
-
-    if (!isSimulating || activeView !== 'canvas' || isModalOrSubsystemOpen) {
-      if (!isModalOrSubsystemOpen && (!isSimulating || activeView !== 'canvas')) {
-        setDriftOffsets({});
-      }
-      return;
-    }
-
-    let animId: number | null = null;
-    let disposed = false;
-    let isRunning = false;
-
-    const prefersReducedMotion =
-      typeof window !== 'undefined' &&
-      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-    const requestNextFrame = () => {
-      if (disposed || isRunning || document.hidden || activeViewRef.current !== 'canvas') return;
-      isRunning = true;
-      animId = window.requestAnimationFrame(loop);
-    };
-
-    const stopLoop = () => {
-      isRunning = false;
-      if (animId !== null) {
-        window.cancelAnimationFrame(animId);
-        animId = null;
-      }
-    };
-
-    const loop = (timestamp: number) => {
-      isRunning = false;
-      if (disposed) return;
-      if (document.hidden || activeViewRef.current !== 'canvas') {
-        return;
-      }
-
-      if (timestamp - lastDriftFrameTimeRef.current >= 45) {
-        lastDriftFrameTimeRef.current = timestamp;
-
-        const isVisible = scrollProgressRef.current >= 0.20 || activeNavTabRef.current !== 'home';
-        const canSimulate =
-          isSimulating &&
-          !prefersReducedMotion &&
-          isVisible &&
-          !document.hidden &&
-          !isDraggingAnyNodeRef.current &&
-          !isPanningRef.current &&
-          !isWheelZoomingRef.current;
-
-        if (canSimulate) {
-          const t = (Date.now() - driftStartTimeRef.current) / 1000;
-          const prev = driftOffsetsRef.current;
-          let changed = false;
-
-          const nextOffsets: Record<string, { x: number; y: number }> = {};
-
-          for (const [nodeId, cfg] of Object.entries(NODE_DRIFT_PROFILES)) {
-            // Compound smooth sinusoidal harmonics - continuous derivative ensures zero jerk/jitter
-            const dx =
-              cfg.ampX * Math.sin((2 * Math.PI * t) / cfg.periodX + cfg.phaseX) +
-              cfg.ampX * 0.25 * Math.cos((Math.PI * t) / cfg.periodX);
-            const dy =
-              cfg.ampY * Math.cos((2 * Math.PI * t) / cfg.periodY + cfg.phaseY) +
-              cfg.ampY * 0.25 * Math.sin((1.4 * Math.PI * t) / cfg.periodY);
-
-            const rx = Math.round(dx);
-            const ry = Math.round(dy);
-
-            nextOffsets[nodeId] = { x: rx, y: ry };
-
-            // Only flag changed if values actually differ (avoids unnecessary re-renders)
-            const p = prev[nodeId];
-            if (!p || p.x !== rx || p.y !== ry) {
-              changed = true;
-            }
-          }
-
-          if (changed) {
-            driftOffsetsRef.current = nextOffsets;
-            setDriftOffsets(nextOffsets);
-            setDriftTick((c) => c + 1); // Lightweight re-render trigger
-          }
-        }
-      }
-
-      requestNextFrame();
-    };
-
-    const handleVisibilityChange = () => {
-      if (disposed) return;
-      if (document.hidden || activeViewRef.current !== 'canvas') {
-        stopLoop();
-      } else {
-        requestNextFrame();
-      }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    requestNextFrame();
-
-    return () => {
-      disposed = true;
-      stopLoop();
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
-  }, [
-    isSimulating,
-    activeView,
-    NODE_DRIFT_PROFILES,
-    !!activeResearchCanvasPhase,
-    !!focusedNode,
-    !!selectedProject,
-    !!selectedCertificate,
-    isResumeOpen,
-    isContactOpen,
-    isAddNodeOpen,
-  ]);
 
   // ─── HIGH-PRECISION VELOCITY-AWARE SCROLL ENGINE & MAGNETIC SETTLE ─────────
   const startSettleRef = useRef<((target: 0 | 1, customDuration?: number) => void) | null>(null);
@@ -1024,27 +802,22 @@ export default function App() {
 
 
 
-  // Pure deterministic pin coordinate calculation directly from nodes and drift offsets
+  // Pure deterministic pin coordinate calculation directly from node positions
   const pinPositions = useMemo(() => {
     const map: Record<string, { x: number; y: number }> = {};
     if (!Array.isArray(nodes)) return map;
     for (const node of nodes) {
       if (!node || typeof node !== 'object' || typeof node.id !== 'string') continue;
-      const drift = driftOffsets[node.id];
-      const dx = drift && typeof drift.x === 'number' && isFinite(drift.x) ? drift.x : 0;
-      const dy = drift && typeof drift.y === 'number' && isFinite(drift.y) ? drift.y : 0;
       const rawX = typeof node.x === 'number' && isFinite(node.x) ? node.x : 0;
       const rawY = typeof node.y === 'number' && isFinite(node.y) ? node.y : 0;
-      const currentX = rawX + dx;
-      const currentY = rawY + dy;
       const width = typeof node.width === 'number' && isFinite(node.width) && node.width > 0 ? node.width : 340;
 
       if (Array.isArray(node.inputs)) {
         node.inputs.forEach((pin, i) => {
           if (pin && typeof pin.id === 'string') {
             map[pin.id] = {
-              x: currentX + 18,
-              y: currentY + 54 + i * 24,
+              x: rawX + 18,
+              y: rawY + 54 + i * 24,
             };
           }
         });
@@ -1053,15 +826,15 @@ export default function App() {
         node.outputs.forEach((pin, j) => {
           if (pin && typeof pin.id === 'string') {
             map[pin.id] = {
-              x: currentX + width - 18,
-              y: currentY + 54 + j * 24,
+              x: rawX + width - 18,
+              y: rawY + 54 + j * 24,
             };
           }
         });
       }
     }
     return map;
-  }, [nodes, driftOffsets]);
+  }, [nodes]);
 
   // Node Dragging Handler - RAF-throttled batching across full canvas resolution space
   const handleNodeDrag = useCallback((nodeId: string, deltaX: number, deltaY: number) => {
@@ -1136,56 +909,7 @@ export default function App() {
     });
   }, []);
 
-  // Visitor node creation with local persistence, Firestore sync, and auto-focus (Research tab exclusive)
-  const handleAddVisitorNode = useCallback((newNode: NodeData) => {
-    setNodesByPreset((prev) => {
-      const nextProject = [...prev.project.filter((n) => n.id !== newNode.id), newNode];
-      return {
-        ...prev,
-        project: nextProject,
-      };
-    });
-
-    // Save to Firestore real-time backend & local cache via dynamic import
-    loadFirebase()
-      .then(({ saveCommunityVisitorNode }) => {
-        saveCommunityVisitorNode(newNode).catch((err) => {
-          console.info('[Firestore] Background sync notice:', err);
-        });
-      })
-      .catch((err) => {
-        console.info('[Firestore] Module load notice:', err);
-      });
-
-    // Immediately select and highlight the newly added visitor node
-    setSelectedNodeId(newNode.id);
-
-    // Pan camera to ensure the new visitor note is comfortably inside view
-    const vw = typeof window !== 'undefined' ? window.innerWidth : 1200;
-    const vh = typeof window !== 'undefined' ? window.innerHeight : 800;
-    setTransform((prev) => {
-      const s = prev.scale;
-      const nodeCenterX = newNode.x + newNode.width / 2;
-      const nodeCenterY = newNode.y + 110;
-      const screenX = nodeCenterX * s + prev.x;
-      const screenY = nodeCenterY * s + prev.y;
-      const margin = 100;
-      const isComfortablyInside =
-        screenX > margin && screenX < vw - margin && screenY > margin && screenY < vh - margin;
-
-      if (isComfortablyInside) {
-        return prev;
-      }
-
-      return {
-        ...prev,
-        x: Math.round(vw / 2 - nodeCenterX * s),
-        y: Math.round(vh / 2 - nodeCenterY * s),
-      };
-    });
-  }, []);
-
-  // Visitor node removal with Firestore sync
+  // Visitor node removal handler
   const handleDeleteVisitorNode = useCallback((nodeId: string) => {
     playSound('close');
     setNodesByPreset((prev) => {
@@ -1195,16 +919,6 @@ export default function App() {
         project: nextProject,
       };
     });
-
-    loadFirebase()
-      .then(({ deleteCommunityVisitorNode }) => {
-        deleteCommunityVisitorNode(nodeId).catch((err) => {
-          console.info('[Firestore] Background delete notice:', err);
-        });
-      })
-      .catch((err) => {
-        console.info('[Firestore] Module load notice:', err);
-      });
   }, []);
 
   // Filter nodes & connections based on active preset
@@ -1263,24 +977,10 @@ export default function App() {
     );
   }, [currentPresetConnections, activeNodeIds]);
 
-  // Memoized effective nodes combining base position with drift offsets
+  // Memoized effective nodes
   const effectiveNodes = useMemo(() => {
-    return filteredNodes
-      .filter((node): node is NodeData => Boolean(node && typeof node === 'object' && typeof node.id === 'string'))
-      .map((node) => {
-        const rawX = typeof node.x === 'number' && isFinite(node.x) ? node.x : 0;
-        const rawY = typeof node.y === 'number' && isFinite(node.y) ? node.y : 0;
-        const drift = driftOffsets[node.id];
-        const dx = drift && typeof drift.x === 'number' && isFinite(drift.x) ? drift.x : 0;
-        const dy = drift && typeof drift.y === 'number' && isFinite(drift.y) ? drift.y : 0;
-        if (dx === 0 && dy === 0 && node.x === rawX && node.y === rawY) return node;
-        return {
-          ...node,
-          x: rawX + dx,
-          y: rawY + dy,
-        };
-      });
-  }, [filteredNodes, driftOffsets]);
+    return filteredNodes.filter((node): node is NodeData => Boolean(node && typeof node === 'object' && typeof node.id === 'string'));
+  }, [filteredNodes]);
 
   // Stable event callbacks to avoid breaking React.memo in GraphNode and SplineWires
   const handleSelectNode = useCallback((id: string) => {
@@ -1812,18 +1512,10 @@ export default function App() {
       const inWorkspace = activeNavTabRef.current === 'network' || activeNavTabRef.current === 'projects' || scrollProgressRef.current >= 0.80;
       if (!inWorkspace) return;
 
-      if (e.key === 'g' || e.key === 'G') {
-        e.preventDefault();
-        playSound('toggle');
-        setShowGrid((prev) => !prev);
-      } else if (e.key === 'n' || e.key === 'N') {
+      if (e.key === 'n' || e.key === 'N') {
         e.preventDefault();
         playSound('toggle');
         setIsCADSidebarOpen((prev) => !prev);
-      } else if (e.key === 's' || e.key === 'S') {
-        e.preventDefault();
-        playSound('connect');
-        setIsSimulating((prev) => !prev);
       } else if (e.key === 'Home') {
         e.preventDefault();
         playSound('secondaryClick');
@@ -2156,8 +1848,6 @@ export default function App() {
       <TopNavbar
         activePreset={activePreset}
         onSelectPreset={handleSelectPreset}
-        isSimulating={isSimulating}
-        onToggleSimulate={() => setIsSimulating(!isSimulating)}
         onResetGraph={handleResetGraph}
         onOpenContact={() => setIsContactOpen(true)}
         onOpenResume={handleOpenResumeModal}
@@ -2232,9 +1922,6 @@ export default function App() {
                       onOpenResumeModal={handleOpenResumeModal}
                       onOpenFocusedNode={handleOpenFocusedNode}
                       onDeleteVisitorNode={handleDeleteVisitorNode}
-                      isSimulating={isSimulating}
-                      wireStyle={wireStyle}
-                      showGrid={showGrid}
                     />
                   ) : (
                     <GraphErrorBoundary onResetGraph={handleResetGraph}>
@@ -2252,18 +1939,6 @@ export default function App() {
                             cadToolMode === 'pan' ? 'cursor-grab active:cursor-grabbing' : 'cursor-default'
                           }`}
                         >
-                          {/* Interactive CAD Coordinate Dot-Matrix Grid */}
-                          {showGrid && (
-                            <div
-                              className="absolute inset-0 pointer-events-none z-0 transition-opacity duration-300"
-                              style={{
-                                backgroundImage: `radial-gradient(rgba(255, 255, 255, 0.16) 1.25px, transparent 1.25px)`,
-                                backgroundSize: `${Math.max(16, Math.round(28 * transform.scale))}px ${Math.max(16, Math.round(28 * transform.scale))}px`,
-                                backgroundPosition: `${transform.x % Math.max(16, Math.round(28 * transform.scale))}px ${transform.y % Math.max(16, Math.round(28 * transform.scale))}px`,
-                              }}
-                            />
-                          )}
-
                           {/* Spatial Transformed Canvas */}
                           <div
                             style={{
@@ -2276,8 +1951,6 @@ export default function App() {
                             <SplineWires
                               connections={filteredConnections}
                               pinPositions={pinPositions}
-                              isSimulating={isSimulating}
-                              wireStyle={wireStyle}
                               activeConnectionId={activeConnectionId}
                               selectedNodeId={selectedNodeId}
                               onSelectConnection={handleSelectConnection}
@@ -2317,33 +1990,11 @@ export default function App() {
                             onZoomIn={handleZoomIn}
                             onZoomOut={handleZoomOut}
                             onFitScreen={handleFitScreen}
-                            showGrid={showGrid}
-                            onToggleGrid={() => {
-                              playSound('toggle');
-                              setShowGrid(!showGrid);
-                            }}
                             sidebarOpen={isCADSidebarOpen}
                             onToggleSidebar={() => {
                               playSound('toggle');
                               setIsCADSidebarOpen(!isCADSidebarOpen);
                             }}
-                            wireStyle={wireStyle}
-                            onCycleWireStyle={() => {
-                              playSound('secondaryClick');
-                              const styles: ('glow' | 'minimal' | 'cyber')[] = ['glow', 'minimal', 'cyber'];
-                              const next = styles[(styles.indexOf(wireStyle) + 1) % styles.length];
-                              setWireStyle(next);
-                            }}
-                            isSimulating={isSimulating}
-                            onToggleSimulate={() => {
-                              playSound('connect');
-                              setIsSimulating(!isSimulating);
-                            }}
-                            onOpenAddNode={
-                              (currentTabKey === 'project' || activeNavTab === 'projects' || activePreset === 'project')
-                                ? () => setIsAddNodeOpen(true)
-                                : undefined
-                            }
                           />
 
                           {/* 4. Studio CAD Inspector (Right N-Panel Sidebar) */}
@@ -2357,17 +2008,6 @@ export default function App() {
                             onOpenFocusedNode={handleOpenFocusedNode}
                             transform={transform}
                             onFitScreen={handleFitScreen}
-                            wireStyle={wireStyle}
-                            onChangeWireStyle={setWireStyle}
-                            isSimulating={isSimulating}
-                            onToggleSimulate={() => setIsSimulating(!isSimulating)}
-                            showGrid={showGrid}
-                            onToggleGrid={() => setShowGrid(!showGrid)}
-                            onOpenAddNode={
-                              (currentTabKey === 'project' || activeNavTab === 'projects' || activePreset === 'project')
-                                ? () => setIsAddNodeOpen(true)
-                                : undefined
-                            }
                           />
                         </div>
 
@@ -2379,32 +2019,12 @@ export default function App() {
                             <WorkspaceCADStatusBar
                               activePreset={activePreset as any}
                               onSelectPreset={handleSelectPreset}
-                              wireStyle={wireStyle}
-                              onChangeWireStyle={(s) => {
-                                playSound('secondaryClick');
-                                setWireStyle(s);
-                              }}
-                              showGrid={showGrid}
-                              onToggleGrid={() => {
-                                playSound('toggle');
-                                setShowGrid(!showGrid);
-                              }}
-                              isSimulating={isSimulating}
-                              onToggleSimulate={() => {
-                                playSound('connect');
-                                setIsSimulating(!isSimulating);
-                              }}
                               onFitScreen={handleFitScreen}
                               sidebarOpen={isCADSidebarOpen}
                               onToggleSidebar={() => {
                                 playSound('toggle');
                                 setIsCADSidebarOpen(!isCADSidebarOpen);
                               }}
-                              onOpenAddNode={
-                                (currentTabKey === 'project' || activeNavTab === 'projects' || activePreset === 'project')
-                                  ? () => setIsAddNodeOpen(true)
-                                  : undefined
-                              }
                               nodeCount={officialCount}
                               visitorCount={visitorCount}
                               splineCount={filteredConnections.length}
@@ -2552,18 +2172,6 @@ export default function App() {
       <React.Suspense fallback={null}>
         <PrintCVDocument nodes={nodes} />
       </React.Suspense>
-
-      {isAddNodeOpen && (
-        <React.Suspense fallback={null}>
-          <AddVisitorNodeModal
-            isOpen={isAddNodeOpen}
-            onClose={() => setIsAddNodeOpen(false)}
-            onAddNode={handleAddVisitorNode}
-            existingVisitorCount={nodes.filter((n) => n.category === 'visitor').length}
-            currentTransform={transform}
-          />
-        </React.Suspense>
-      )}
     </div>
   );
 }

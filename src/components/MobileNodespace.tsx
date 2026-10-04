@@ -48,9 +48,6 @@ interface MobileNodespaceProps {
   onOpenResumeModal: () => void;
   onOpenFocusedNode: (node: NodeData) => void;
   onDeleteVisitorNode: (id: string) => void;
-  isSimulating: boolean;
-  wireStyle: 'glow' | 'minimal' | 'cyber';
-  showGrid?: boolean;
 }
 
 const CATEGORY_ICON_MAP: Record<string, React.ReactNode> = {
@@ -87,9 +84,6 @@ export const MobileNodespace: React.FC<MobileNodespaceProps> = ({
   onOpenResumeModal,
   onOpenFocusedNode,
   onDeleteVisitorNode,
-  isSimulating: _isSimulating,
-  wireStyle: _wireStyle,
-  showGrid = true,
 }) => {
   // Determine initial anchor node based on preset
   const defaultAnchorId = useMemo(() => {
@@ -108,7 +102,7 @@ export const MobileNodespace: React.FC<MobileNodespaceProps> = ({
   const [isTransitioning, setIsTransitioning] = useState<boolean>(false);
   const [activeTraversedConnId, setActiveTraversedConnId] = useState<string | null>(null);
   const [isIndexOpen, setIsIndexOpen] = useState<boolean>(false);
-  const [gridVisible, setGridVisible] = useState<boolean>(showGrid);
+  const [gridVisible, setGridVisible] = useState<boolean>(true);
 
   // Sync with external selectedNodeId changes
   useEffect(() => {

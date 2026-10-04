@@ -6,8 +6,6 @@ import { BrandLogo } from './ui/BrandLogo';
 interface TopNavbarProps {
   activePreset: string;
   onSelectPreset: (preset: string) => void;
-  isSimulating: boolean;
-  onToggleSimulate: () => void;
   onResetGraph: () => void;
   onOpenContact: () => void;
   onOpenResume?: () => void;
@@ -22,8 +20,6 @@ interface TopNavbarProps {
 const TopNavbarComponent: React.FC<TopNavbarProps> = ({
   activePreset,
   onSelectPreset,
-  isSimulating,
-  onToggleSimulate,
   onResetGraph,
   onOpenContact,
   onOpenResume,
