@@ -13,7 +13,7 @@ export const SKILL_CHARACTER_MAP: Record<string, SkillCharacterSpec> = {
     symbol: '≋',
     code: 'SDE-DIFFUSION',
     badge: 'SCORE SDE // STOCHASTIC',
-    formula: 'dx = -½ β(t)x dt + √β(t) dw',
+    formula: 'dx = -½ β(t)x dt + √β(t) dw • softmax(QKᵀ / √d_k)V',
     specs: [
       { label: 'SAMPLER', value: '50-step EDM / Heun' },
       { label: 'LATENT', value: '64×64×4 continuous' },

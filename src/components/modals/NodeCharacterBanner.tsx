@@ -335,14 +335,10 @@ export const NodeCharacterBanner: React.FC<NodeCharacterBannerProps> = ({
               }`}
             />
             <span className="font-mono text-[10px] font-bold text-rose-400 uppercase tracking-[0.2em] truncate">
-              {node.category} &bull; ARTIFACT {node.id.toUpperCase()}
+              {node.category.toUpperCase()} // ARTIFACT {meta.symbolTitle}
             </span>
             <span className="text-zinc-600 hidden sm:inline">&bull;</span>
-            <span className="text-zinc-400 text-[10px] font-mono uppercase tracking-widest hidden sm:inline">
-              LAYER 01 / SPATIAL SPEC
-            </span>
-            <span className="text-zinc-600 hidden md:inline">&bull;</span>
-            <span className="font-mono text-[10px] text-rose-300/80 uppercase tracking-widest hidden md:inline">
+            <span className="font-mono text-[10px] text-zinc-400 uppercase tracking-widest hidden sm:inline">
               {meta.domainBadge}
             </span>
           </div>
@@ -350,7 +346,7 @@ export const NodeCharacterBanner: React.FC<NodeCharacterBannerProps> = ({
           {/* Right Header Status & Dismissal */}
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             {status && (
-              <div className="hidden xs:flex sm:flex items-center gap-2 px-2.5 py-1 rounded-sm bg-black/60 border border-white/[0.12] text-[10px] font-mono text-zinc-300 uppercase tracking-wider backdrop-blur-xs">
+              <div className="flex items-center gap-2 px-2.5 py-1 rounded-sm bg-black/60 border border-white/[0.12] text-[10px] font-mono text-zinc-300 uppercase tracking-wider backdrop-blur-xs">
                 <span className="text-rose-400 font-bold">{status.label}:</span>
                 <span className="text-zinc-200">{status.state}</span>
               </div>
@@ -370,28 +366,28 @@ export const NodeCharacterBanner: React.FC<NodeCharacterBannerProps> = ({
           </div>
         </div>
 
-        {/* Center Hero: Symbol Insignia + Headline Title + Live Telemetry */}
+        {/* Center Hero: Symbol Insignia + Headline Title + Dedicated Secondary Specs Row */}
         <div
           style={{
             opacity: isContentVisible ? 1 : 0,
             transform: isContentVisible ? 'translateY(0)' : 'translateY(6px)',
             transition: 'opacity 280ms ease 60ms, transform 280ms cubic-bezier(0.16, 1, 0.3, 1) 60ms',
           }}
-          className="flex flex-col md:flex-row md:items-center justify-between gap-4"
+          className="flex flex-col gap-3.5"
         >
-          {/* Left: Thematic Emblem + Title */}
-          <div className="flex items-start sm:items-center gap-3.5 sm:gap-4 min-w-0">
+          {/* Main Title Row: 100% full horizontal width, bold typography, ZERO truncation or ellipses */}
+          <div className="flex items-start sm:items-center gap-3.5 sm:gap-4 w-full">
             {/* Thematic Character Emblem Badge */}
             <div className="relative group shrink-0">
               <div
-                className="w-13 h-13 sm:w-15 sm:h-15 rounded-md bg-black/80 border-2 border-rose-500/60 flex flex-col items-center justify-center shadow-[0_0_24px_rgba(225,29,72,0.30)] relative overflow-hidden transition-all duration-300 group-hover:border-rose-400"
+                className="w-12 h-12 sm:w-14 sm:h-14 rounded-md bg-black/80 border-2 border-rose-500/60 flex flex-col items-center justify-center shadow-[0_0_24px_rgba(225,29,72,0.30)] relative overflow-hidden transition-all duration-300 group-hover:border-rose-400"
               >
                 {/* Rotating background reticle */}
                 <div className="absolute inset-0 border border-rose-500/25 rounded-sm rotate-45 pointer-events-none" />
                 <span className="font-mono text-xl sm:text-2xl font-black text-rose-400 drop-shadow-[0_0_8px_#f43f5e] relative z-10 leading-none">
                   {meta.symbolGlyph}
                 </span>
-                <span className="font-mono text-[7px] font-bold text-zinc-400 uppercase tracking-tighter mt-1 relative z-10">
+                <span className="font-mono text-[7px] font-bold text-zinc-400 uppercase tracking-tighter mt-0.5 relative z-10">
                   {meta.symbolSub}
                 </span>
               </div>
@@ -400,17 +396,14 @@ export const NodeCharacterBanner: React.FC<NodeCharacterBannerProps> = ({
               <div className="absolute -bottom-1 -right-1 w-2 h-2 border-b-2 border-r-2 border-rose-400 pointer-events-none" />
             </div>
 
-            {/* Title & Coordinates */}
-            <div className="min-w-0">
-              <div className="flex flex-wrap items-center gap-2 mb-1">
+            {/* Title & Subtitle Container */}
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2 mb-1">
                 <span className="font-mono text-[9px] font-bold px-1.5 py-0.5 rounded-xs bg-rose-500/20 border border-rose-500/40 text-rose-300 uppercase tracking-widest">
                   {meta.symbolTitle}
                 </span>
-                <span className="font-mono text-[9px] text-zinc-400 uppercase tracking-widest hidden sm:inline">
-                  COORD: [{Math.round(node.x)}, {Math.round(node.y)}] &bull; WIDTH: {node.width}PX
-                </span>
               </div>
-              <h2 className="font-display text-xl sm:text-2xl md:text-3xl lg:text-4xl text-white font-bold tracking-tight uppercase leading-tight truncate">
+              <h2 className="font-display text-xl sm:text-2xl md:text-3xl lg:text-4xl text-white font-bold tracking-tight uppercase leading-tight whitespace-normal break-words">
                 {node.title}
               </h2>
               {node.subtitle && (
@@ -421,24 +414,18 @@ export const NodeCharacterBanner: React.FC<NodeCharacterBannerProps> = ({
             </div>
           </div>
 
-          {/* Right: Technical Telemetry & Formulation Pill */}
-          <div className="shrink-0 flex flex-col items-start md:items-end gap-2">
-            {/* Math Formula Snippet */}
-            <div className="font-mono text-[9px] text-zinc-300 tracking-wider uppercase bg-black/60 px-2.5 py-1 rounded border border-white/[0.08] hidden sm:block">
-              {meta.mathFormula}
-            </div>
-
-            {/* Micro Telemetry Chips */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 w-full sm:w-auto">
+          {/* Secondary Specs Row: Dedicated 4-column horizontal grid below title, giving full breathing room */}
+          <div className="pt-2 border-t border-white/[0.08] w-full">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 w-full">
               {meta.telemetry.map((t, i) => (
                 <div
                   key={i}
-                  className="px-2 py-1 rounded bg-black/60 border border-white/[0.10] shadow-2xs backdrop-blur-xs min-w-[70px]"
+                  className="px-2.5 py-1.5 rounded bg-black/60 border border-white/[0.10] shadow-2xs backdrop-blur-xs flex flex-col justify-center"
                 >
-                  <div className="font-mono text-[7.5px] text-rose-400 font-bold uppercase tracking-wider">
+                  <div className="font-mono text-[8px] text-rose-400 font-bold uppercase tracking-wider">
                     {t.label}
                   </div>
-                  <div className="font-mono text-[10px] font-semibold text-zinc-200 uppercase tracking-tight mt-0.5 truncate">
+                  <div className="font-mono text-[10px] sm:text-[11px] font-semibold text-zinc-200 uppercase tracking-tight mt-0.5 truncate">
                     {t.value}
                   </div>
                 </div>

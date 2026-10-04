@@ -3013,12 +3013,14 @@ ${currentPhaseMeta.description}
         </button>
       </div>
 
-      {/* Contextual Phase Specification Card (Left Floating, non-blocking) */}
+      {/* Contextual Phase Specification Card (Right-Hand Inspector Panel, keeping left toolbar 100% clear) */}
       {showIntroCard && (
         <aside
           role="region"
           aria-label="Phase Context Introduction"
-          className="absolute left-14 top-12 z-30 w-80 max-w-[calc(100vw-4rem)] p-3 bg-[#202020]/95 backdrop-blur-xl border border-[#383838] rounded-[2px] shadow-2xl pointer-events-auto text-zinc-300 select-none animate-in fade-in duration-200"
+          className={`absolute ${
+            nPanelOpen ? 'right-[20.5rem]' : 'right-4'
+          } top-12 z-30 w-80 max-w-[calc(100vw-2.5rem)] p-3.5 bg-[#202020]/95 backdrop-blur-xl border border-[#383838] rounded-[2px] shadow-2xl pointer-events-auto text-zinc-300 select-none animate-in fade-in duration-200`}
         >
           <div className="flex items-center justify-between border-b border-[#383838] pb-1.5 mb-2">
             <span className="font-mono text-[10px] font-bold text-rose-400 uppercase tracking-wider">
@@ -3080,7 +3082,9 @@ ${currentPhaseMeta.description}
          ─────────────────────────────────────────────────────────────────── */}
       {showGizmo && !nPanelOpen && (
         <div
-          className="hidden sm:flex flex-col items-center gap-1.5 fixed top-12 right-12 z-20 pointer-events-none select-none transition-all duration-200 animate-in fade-in duration-150"
+          className={`hidden sm:flex flex-col items-center gap-1.5 fixed ${
+            showIntroCard ? 'top-[380px]' : 'top-12'
+          } right-12 z-20 pointer-events-none select-none transition-all duration-300 animate-in fade-in duration-150`}
         >
           <div className="pointer-events-auto w-[68px] p-1.5 bg-[#1a1d24]/95 backdrop-blur-md border border-white/10 hover:border-white/20 rounded-md shadow-2xl flex flex-col items-center gap-1.5">
             {/* Header Reticle with Dock Shortcut */}

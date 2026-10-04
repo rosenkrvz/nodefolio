@@ -387,9 +387,14 @@ export const FocusedNodeModal: React.FC<FocusedNodeModalProps> = ({
           {node.category === 'profile' && node.profile && (
             <div className="space-y-6">
               {/* Personal Thesis Statement Quote (Editorial Lora Serif) */}
-              <div className="relative pl-5 border-l-2 border-rose-500 bg-white/[0.015] py-3 pr-4 rounded-r-sm">
-                <div className="font-mono text-[9px] font-bold text-rose-400 uppercase tracking-widest mb-1">
-                  RESEARCHER STATEMENT // IDENTITY THESIS
+              <div className="relative pl-5 border-l-2 border-rose-500 bg-white/[0.015] py-3 pr-4 rounded-r-sm space-y-2">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="font-mono text-[9px] font-bold text-rose-400 uppercase tracking-widest">
+                    RESEARCHER STATEMENT // IDENTITY THESIS
+                  </div>
+                  <div className="font-mono text-[9px] text-zinc-300 tracking-wider uppercase bg-black/60 px-2.5 py-0.5 rounded border border-white/[0.08]">
+                    argmax_θ 𝔼[log p_θ(x)] &bull; LATENT REPRESENTATION LEARNING
+                  </div>
                 </div>
                 <p className="font-serif italic text-sm sm:text-base text-zinc-200 leading-relaxed font-normal">
                   &ldquo;{node.profile.bio}&rdquo;
@@ -633,12 +638,17 @@ export const FocusedNodeModal: React.FC<FocusedNodeModalProps> = ({
               {/* Embedded Computational Artifact Viewport */}
               <div className="relative rounded-lg overflow-hidden border border-white/[0.14] bg-black/80 shadow-2xl">
                 {/* Viewport Header Reticle */}
-                <div className="flex items-center justify-between px-4 py-2 bg-black/90 border-b border-white/[0.08] text-[9px] font-mono text-zinc-400 uppercase tracking-widest">
+                <div className="flex flex-wrap items-center justify-between px-4 py-2 bg-black/90 border-b border-white/[0.08] text-[9px] font-mono text-zinc-400 uppercase tracking-widest gap-2">
                   <div className="flex items-center gap-2">
                     <span className="w-1.5 h-1.5 bg-rose-500 animate-pulse" />
                     <span>EMBEDDED VIEWPORT // ARTIFACT REG: LGV-2026</span>
                   </div>
-                  <div>PROJECTION MODE: TOPOLOGICAL MANIFOLD</div>
+                  <div className="flex items-center gap-2.5">
+                    <span className="text-zinc-300 bg-white/[0.04] px-2 py-0.5 rounded border border-white/[0.08] hidden sm:inline">
+                      f: ℝ⁵¹² ↦ ℳ³ &bull; GEODESIC DISTANCE MINIMIZATION
+                    </span>
+                    <span>PROJECTION MODE: TOPOLOGICAL MANIFOLD</span>
+                  </div>
                 </div>
 
                 {/* Viewport Frame with Image and Dimension Overlay */}
@@ -759,13 +769,18 @@ export const FocusedNodeModal: React.FC<FocusedNodeModalProps> = ({
              ------------------------------------------------------------- */}
           {node.category === 'certificates' && node.certificates && (
             <div className="space-y-6">
-              <div className="flex items-center justify-between border-b border-white/[0.06] pb-2.5">
+              <div className="flex flex-wrap items-center justify-between border-b border-white/[0.06] pb-2.5 gap-2">
                 <div className="font-mono text-[10px] font-bold tracking-[0.25em] text-zinc-400 uppercase flex items-center gap-2">
                   <Award className="w-3.5 h-3.5 text-rose-400" />
                   <span>THEORETICAL FOUNDATION &bull; FORMAL CURRICULUM</span>
                 </div>
-                <div className="font-mono text-[10px] text-zinc-400 tracking-widest uppercase">
-                  ACADEMIC RIGOR
+                <div className="flex items-center gap-3">
+                  <div className="font-mono text-[9px] text-zinc-300 tracking-wider uppercase bg-black/60 px-2.5 py-0.5 rounded border border-white/[0.08] hidden sm:block">
+                    ∀ ϵ &gt; 0 ∃ δ &gt; 0 • ∫_ℳ dω = ∫_{'{'}∂ℳ{'}'} ω • 𝒢 = (𝒱, ℰ, 𝒲)
+                  </div>
+                  <div className="font-mono text-[10px] text-zinc-400 tracking-widest uppercase">
+                    ACADEMIC RIGOR
+                  </div>
                 </div>
               </div>
 
@@ -889,14 +904,19 @@ export const FocusedNodeModal: React.FC<FocusedNodeModalProps> = ({
              ------------------------------------------------------------- */}
           {node.category === 'clock' && (
             <div className="space-y-6">
-              <div className="flex items-center justify-between border-b border-white/[0.06] pb-2.5">
+              <div className="flex flex-wrap items-center justify-between border-b border-white/[0.06] pb-2.5 gap-2">
                 <div className="font-mono text-[10px] font-bold tracking-[0.25em] text-zinc-400 uppercase flex items-center gap-2">
                   <Clock className="w-3.5 h-3.5 text-rose-400" />
                   <span>TEMPORAL COORDINATES &bull; SYSTEM CHRONOMETER</span>
                 </div>
-                <div className="flex items-center gap-1.5 text-rose-400 text-[10px] font-mono uppercase tracking-widest font-bold">
-                  <span className="w-1.5 h-1.5 bg-rose-500 animate-pulse" />
-                  <span>LIVE OSCILLATION</span>
+                <div className="flex items-center gap-3">
+                  <div className="font-mono text-[9px] text-zinc-300 tracking-wider uppercase bg-black/60 px-2.5 py-0.5 rounded border border-white/[0.08] hidden sm:block">
+                    y(t) = A sin(2π f₀ t + ϕ) &bull; DRIFT: ±0.002 MS
+                  </div>
+                  <div className="flex items-center gap-1.5 text-rose-400 text-[10px] font-mono uppercase tracking-widest font-bold">
+                    <span className="w-1.5 h-1.5 bg-rose-500 animate-pulse" />
+                    <span>LIVE OSCILLATION</span>
+                  </div>
                 </div>
               </div>
 

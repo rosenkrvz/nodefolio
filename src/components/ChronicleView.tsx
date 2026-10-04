@@ -3,7 +3,6 @@ import { ArrowLeft, ArrowUpRight, ChevronDown } from './icons';
 import { playSound } from '../lib/sound';
 import { BrandLogo } from './ui/BrandLogo';
 import { ChronicleMilestoneArtifact } from './chronicle/ChronicleArtifacts';
-import { ChronicleTimelineAxis, TimelinePhase } from './chronicle/ChronicleTimelineAxis';
 
 export interface ChronicleMilestone {
   id: string;
@@ -454,17 +453,6 @@ export const ChronicleView: React.FC<ChronicleViewProps> = ({
     return () => clearTimeout(timer);
   }, [activePhaseId, displayedPhaseId, reducedMotion]);
 
-  // Build timeline phases for the interactive axis
-  const timelinePhases: TimelinePhase[] = useMemo(() => {
-    return MILESTONES.map((m) => ({
-      id: m.id,
-      phase: m.phase,
-      year: m.displayYear || m.period.split('—')[0].trim(),
-      shortTitle: m.shortTopic || m.title.split(' ')[0] + ' ' + (m.title.split(' ')[1] || ''),
-      subTopic: m.subTopic,
-      status: m.status,
-    }));
-  }, []);
 
   const activeMilestone = useMemo(() => {
     return MILESTONES.find((m) => m.id === activePhaseId) || MILESTONES[0];
@@ -676,9 +664,20 @@ export const ChronicleView: React.FC<ChronicleViewProps> = ({
             }}
             className="pt-2"
           >
-            <div className="text-[11px] font-tech uppercase tracking-[0.25em] text-zinc-400 mb-3 flex items-center justify-between">
-              <span>SELECT RESEARCH PHASE FOR THEORETICAL BREAKDOWN</span>
-              <span className="hidden md:inline text-zinc-400 font-mono">CLICK TO JUMP</span>
+            <div className="text-[11px] font-tech uppercase tracking-[0.22em] text-zinc-400 mb-3 flex flex-wrap items-center justify-between gap-2.5">
+              <div className="flex items-center gap-2.5 flex-wrap">
+                <span className="text-zinc-100 font-bold">SELECT RESEARCH PHASE FOR THEORETICAL BREAKDOWN</span>
+                <span className="text-zinc-600 hidden sm:inline">&bull;</span>
+                <span className="font-mono text-[10px] text-rose-400 bg-rose-500/10 border border-rose-500/25 px-2 py-0.5 rounded font-semibold">
+                  2023 — 2025 ROADMAP [5 PHASES]
+                </span>
+              </div>
+              <div className="flex items-center gap-2 font-tech text-[10px] tracking-wider uppercase text-zinc-400">
+                <span className="hidden md:inline text-zinc-500">SELECTED:</span>
+                <span className="font-semibold text-rose-400">
+                  {displayedMilestone.phase} &bull; {displayedMilestone.shortTopic || displayedMilestone.title}
+                </span>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
@@ -746,21 +745,6 @@ export const ChronicleView: React.FC<ChronicleViewProps> = ({
         </div>
       </header>
 
-      {/* ═══════════ INTERACTIVE CHRONOLOGICAL AXIS ═══════════ */}
-      <nav
-        style={{
-          opacity: entryStage >= 4 ? 1 : 0,
-          transition: 'opacity 0.6s ease-out',
-        }}
-        className="sticky top-[calc(3.5rem+env(safe-area-inset-top,0px))] sm:top-16 z-30 shadow-2xl"
-      >
-        <ChronicleTimelineAxis
-          phases={timelinePhases}
-          activePhaseId={activePhaseId}
-          onSelectPhase={handleSelectPhase}
-        />
-      </nav>
-
       {/* ═══════════ EDITORIAL RESEARCH LEDGER ═══════════ */}
       <main id="chronicle-ledger" className="relative z-10 w-full max-w-[1780px] 2xl:max-w-[1920px] 3xl:max-w-[2160px] mx-auto px-4 sm:px-8 md:px-12 lg:px-16 2xl:px-20 pt-10 pb-16">
         {/* Section Title Header */}
@@ -802,7 +786,7 @@ export const ChronicleView: React.FC<ChronicleViewProps> = ({
 
 
       {/* ═══════════ CLOSING COLOPHON & ARCHIVE STAMP ═══════════ */}
-      <footer className="relative z-10 w-full max-w-[1780px] 2xl:max-w-[1920px] 3xl:max-w-[2160px] mx-auto px-4 sm:px-8 md:px-12 lg:px-16 2xl:px-20 mt-8 pb-[calc(env(safe-area-inset-bottom,0px)+32px)] sm:pb-24">
+      <footer className="relative z-10 w-full max-w-[1780px] 2xl:max-w-[1920px] 3xl:max-w-[2160px] mx-auto px-4 sm:px-8 md:px-12 lg:px-16 2xl:px-20 mt-8 pb-12 sm:pb-16">
         <div className="pt-10 border-t border-white/[0.08] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
           <div className="flex items-center gap-3 font-body text-xs tracking-[0.25em] uppercase text-zinc-400">
             <BrandLogo variant="icon" size={14} className="text-rose-400 shrink-0" />

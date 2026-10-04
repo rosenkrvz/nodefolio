@@ -68,7 +68,7 @@ export const INITIAL_NODES: NodeData[] = [
   // 3. Academic & Technical Foundation (Column 2, Row 2 - under Generative Architectures)
   {
     id: 'node-credentials',
-    title: 'Academic & Foundation',
+    title: 'Academic & Formal Foundations',
     subtitle: 'Mathematics & Computation',
     category: 'certificates',
     x: 560,
@@ -122,7 +122,7 @@ export const INITIAL_NODES: NodeData[] = [
   // 4. Neural Systems & Data Infrastructure (Column 3, Row 1)
   {
     id: 'node-systems',
-    title: 'Neural Systems & Data',
+    title: 'Neural Systems & Data Infrastructure',
     subtitle: 'Learning Infrastructure',
     category: 'skills',
     x: 1020,
