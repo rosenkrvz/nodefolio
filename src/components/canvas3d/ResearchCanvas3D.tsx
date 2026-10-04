@@ -406,11 +406,17 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
     if (!camera || !controls) return;
 
     const target = controls.target.clone();
+    if (!isFinite(target.x) || !isFinite(target.y) || !isFinite(target.z)) {
+      target.set(0, 0, 0);
+    }
     const dist = camera.position.distanceTo(target) || 12;
 
     const endPos = target.clone();
     if (axis === 'x') endPos.x += dist;
-    if (axis === 'y') endPos.y += dist;
+    if (axis === 'y') {
+      endPos.y += dist;
+      endPos.z += 0.01; // Avoid strict pole alignment / gimbal lock with camera.up = (0, 1, 0)
+    }
     if (axis === 'z') endPos.z += dist;
 
     cameraFocusTarget.current = {
@@ -430,7 +436,17 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
     const controls = controlsRef.current;
     if (!camera || !controls) return;
     const factor = direction === 'in' ? 0.72 : 1.38;
-    const offset = camera.position.clone().sub(controls.target).multiplyScalar(factor);
+    const offset = camera.position.clone().sub(controls.target);
+    const dist = offset.length();
+    const minD = (controls.minDistance || 2.0) + 0.5;
+    const maxD = (controls.maxDistance || 55.0) - 1.0;
+    const newDist = Math.max(minD, Math.min(maxD, (dist || 10) * factor));
+
+    if (dist > 0.001) {
+      offset.normalize().multiplyScalar(newDist);
+    } else {
+      offset.set(0, 2, 4);
+    }
     const endPos = controls.target.clone().add(offset);
 
     cameraFocusTarget.current = {
@@ -623,7 +639,9 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
   const handleFocusCamera = useCallback((targetWorldPos: THREE.Vector3) => {
     const camera = cameraRef.current;
     const controls = controlsRef.current;
-    if (!camera || !controls) return;
+    if (!camera || !controls || !targetWorldPos) return;
+    if (!isFinite(targetWorldPos.x) || !isFinite(targetWorldPos.y) || !isFinite(targetWorldPos.z)) return;
+    if (!isFinite(camera.position.x) || !isFinite(controls.target.x)) return;
 
     const offsetDir = camera.position.clone().sub(controls.target);
     const len = offsetDir.length();
@@ -655,6 +673,7 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
     const controls = controlsRef.current;
     const artifact = activeArtifactRef.current;
     if (!camera || !controls || !artifact) return;
+    if (!isFinite(camera.position.x) || !isFinite(controls.target.x)) return;
 
     const vw = containerRef.current?.clientWidth || window.innerWidth;
     const vh = containerRef.current?.clientHeight || window.innerHeight;
@@ -662,11 +681,11 @@ export const ResearchCanvas3D: React.FC<ResearchCanvas3DProps> = ({
 
     const framing = computeOptimalFraming(artifact.group, camera, vw, vh, isMob);
     const endPos =
-      framing && isFinite(framing.cameraPos.x)
+      framing && isFinite(framing.cameraPos.x) && isFinite(framing.cameraPos.y) && isFinite(framing.cameraPos.z)
         ? framing.cameraPos
         : new THREE.Vector3(...artifact.defaultCameraPosition);
     const endTarget =
-      framing && isFinite(framing.target.x)
+      framing && isFinite(framing.target.x) && isFinite(framing.target.y) && isFinite(framing.target.z)
         ? framing.target
         : new THREE.Vector3(...artifact.defaultTarget);
 
@@ -1588,18 +1607,43 @@ ${currentPhaseMeta.description}
     container.addEventListener('pointerup', onPointerUp);
 
     // 7. Dynamic Resize Observer (adapts to N-panel sidebar toggle & window resizing)
+    let lastWidth = 0;
+    let lastHeight = 0;
+    let lastDpr = 0;
+
     const onWindowResize = () => {
       if (!container || !renderer || !camera) return;
       const w = container.clientWidth || window.innerWidth;
       const h = container.clientHeight || window.innerHeight;
       if (w === 0 || h === 0) return;
-      camera.aspect = w / h;
-      camera.updateProjectionMatrix();
+
       const isLowTier = activeTier === 'low';
       const isMobile = w < 768;
       const maxDpr = isLowTier ? 1.0 : (isMobile ? 1.25 : (activeTier === 'high' ? Math.min(window.devicePixelRatio || 1, 2.0) : 1.5));
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, maxDpr));
-      renderer.setSize(w, h);
+      const targetDpr = Math.min(window.devicePixelRatio || 1, maxDpr);
+
+      // Only reallocate WebGL buffers if physical pixel dimensions actually changed
+      if (
+        Math.abs(w - lastWidth) < 1 &&
+        Math.abs(h - lastHeight) < 1 &&
+        Math.abs(targetDpr - lastDpr) < 0.01
+      ) {
+        return;
+      }
+
+      lastWidth = w;
+      lastHeight = h;
+      lastDpr = targetDpr;
+
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+      renderer.setPixelRatio(targetDpr);
+      renderer.setSize(w, h, false);
+
+      // Immediately render frame to prevent transparent/black flicker during buffer re-allocation
+      if (sceneRef.current) {
+        renderer.render(sceneRef.current, camera);
+      }
     };
 
     let resizeObserver: ResizeObserver | null = null;
@@ -1683,31 +1727,19 @@ ${currentPhaseMeta.description}
         const t = Math.min(focus.progress, 1);
         const ease = 1 - Math.pow(1 - t, 3);
 
-        camera.position.lerpVectors(focus.startPos, focus.endPos, ease);
-        controls.target.lerpVectors(focus.startTarget, focus.endTarget, ease);
+        if (
+          isFinite(focus.startPos.x) && isFinite(focus.endPos.x) &&
+          isFinite(focus.startTarget.x) && isFinite(focus.endTarget.x)
+        ) {
+          camera.position.lerpVectors(focus.startPos, focus.endPos, ease);
+          controls.target.lerpVectors(focus.startTarget, focus.endTarget, ease);
+          camera.lookAt(controls.target);
+        }
 
         if (t >= 1) {
           focus.active = false;
+          controls.update();
         }
-      }
-
-      // Self-healing camera guard: instantly restores view if position ever becomes non-finite
-      if (
-        !isFinite(camera.position.x) ||
-        !isFinite(camera.position.y) ||
-        !isFinite(camera.position.z) ||
-        !isFinite(controls.target.x) ||
-        !isFinite(controls.target.y) ||
-        !isFinite(controls.target.z)
-      ) {
-        const defPos = activeArtifactRef.current?.defaultCameraPosition || [3.8, 6.0, 14.0];
-        const defTgt = activeArtifactRef.current?.defaultTarget || [0, -0.2, 0];
-        camera.position.set(defPos[0], defPos[1], defPos[2]);
-        controls.target.set(defTgt[0], defTgt[1], defTgt[2]);
-        camera.near = 0.1;
-        camera.far = 250;
-        camera.updateProjectionMatrix();
-        controls.update();
       } else {
         controls.update();
       }
@@ -1748,6 +1780,26 @@ ${currentPhaseMeta.description}
         if (dockedGizmoElRef.current) {
           dockedGizmoElRef.current.style.transform = matrixStr;
         }
+      }
+
+      // Self-healing camera guard: immediately restores camera if position/target is ever non-finite right before draw call
+      if (
+        !isFinite(camera.position.x) ||
+        !isFinite(camera.position.y) ||
+        !isFinite(camera.position.z) ||
+        !isFinite(controls.target.x) ||
+        !isFinite(controls.target.y) ||
+        !isFinite(controls.target.z)
+      ) {
+        const defPos = activeArtifactRef.current?.defaultCameraPosition || [3.8, 6.0, 14.0];
+        const defTgt = activeArtifactRef.current?.defaultTarget || [0, -0.2, 0];
+        camera.position.set(defPos[0], defPos[1], defPos[2]);
+        controls.target.set(defTgt[0], defTgt[1], defTgt[2]);
+        camera.near = 0.1;
+        camera.far = 250;
+        camera.updateProjectionMatrix();
+        camera.lookAt(controls.target);
+        controls.update();
       }
 
       renderer.render(scene, camera);

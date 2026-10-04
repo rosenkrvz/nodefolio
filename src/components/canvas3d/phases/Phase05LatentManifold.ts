@@ -503,11 +503,26 @@ export function createPhase05LatentManifold(quality: QualityTier = 'high'): Phas
 
     progress1 = (progress1 + delta * 0.11) % 1.0;
     highway1Curve.getPointAt(progress1, scratchPt);
-    highway1Curve.getTangentAt(progress1, scratchTan).normalize();
+    highway1Curve.getTangentAt(progress1, scratchTan);
 
-    particle1.position.copy(scratchPt);
-    tangentArrow.position.copy(scratchPt);
-    tangentArrow.setDirection(scratchTan);
+    if (isFinite(scratchPt.x) && isFinite(scratchPt.y) && isFinite(scratchPt.z)) {
+      particle1.position.copy(scratchPt);
+      tangentArrow.position.copy(scratchPt);
+    }
+
+    if (
+      isFinite(scratchTan.x) &&
+      isFinite(scratchTan.y) &&
+      isFinite(scratchTan.z) &&
+      scratchTan.lengthSq() > 0.0001
+    ) {
+      scratchTan.normalize();
+      if (Math.abs(scratchTan.y) > 0.999) {
+        tangentArrow.quaternion.set(0, 0, 0, 1);
+      } else {
+        tangentArrow.setDirection(scratchTan);
+      }
+    }
 
     contactRingMat.opacity = 0.4 + Math.sin(time * 2.2) * 0.15;
   };

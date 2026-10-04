@@ -334,11 +334,26 @@ export function createPhase02Optimization(quality: QualityTier = 'high'): PhaseA
     progress = (progress + delta * 0.15) % 1.0;
 
     momCurve.getPointAt(progress, scratchPos);
-    descentParticle.position.copy(scratchPos);
+    momCurve.getTangentAt(progress, scratchTan);
 
-    momCurve.getTangentAt(progress, scratchTan).normalize();
-    descentArrow.position.copy(scratchPos);
-    descentArrow.setDirection(scratchTan);
+    if (isFinite(scratchPos.x) && isFinite(scratchPos.y) && isFinite(scratchPos.z)) {
+      descentParticle.position.copy(scratchPos);
+      descentArrow.position.copy(scratchPos);
+    }
+
+    if (
+      isFinite(scratchTan.x) &&
+      isFinite(scratchTan.y) &&
+      isFinite(scratchTan.z) &&
+      scratchTan.lengthSq() > 0.0001
+    ) {
+      scratchTan.normalize();
+      if (Math.abs(scratchTan.y) > 0.999) {
+        descentArrow.quaternion.set(0, 0, 0, 1);
+      } else {
+        descentArrow.setDirection(scratchTan);
+      }
+    }
 
     // Pulsing minimum ring
     const s = 1.0 + Math.sin(time * 2.8) * 0.12;
